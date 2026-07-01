@@ -1,0 +1,52 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('karyawans', function (Blueprint $table) {
+            $table->id();
+            $table->string('nip', 20)->unique();
+            $table->string('email', 100)->unique();
+            $table->string('kata_sandi');
+            $table->string('nama_depan', 100);
+            $table->string('nama_belakang', 100);
+            $table->string('nama_lengkap', 100);
+            $table->string('role', 20)->default('karyawan');
+            $table->string('jabatan', 100);
+            $table->string('foto_profil', 255)->nullable();
+            $table->string('nomor_telepon', 20)->nullable();
+            $table->text('alamat')->nullable();
+            $table->date('tanggal_bergabung');
+            $table->date('end_date')->nullable();
+            $table->integer('total_hari_kerja')->default(0); 
+            $table->text('reason_resigned')->nullable();
+            $table->string('status', 50)->default('Full-time');
+            $table->string('nik', 16)->unique();
+            $table->string('npwp', 20)->nullable();
+            $table->string('tempat_lahir', 50);
+            $table->date('tanggal_lahir');
+            $table->string('jenis_kelamin', 10);
+            $table->string('agama', 20);
+            $table->string('status_pernikahan', 20);
+            $table->string('pendidikan_terakhir', 50)->nullable();
+            $table->string('pendidikan_terakhir_new', 20)->nullable();
+            $table->string('universitas', 100)->nullable();
+            $table->string('jurusan', 100)->nullable();
+            $table->integer('tahun_lulus')->nullable();
+            $table->string('nama_kontak_darurat', 100)->nullable();
+            $table->string('telepon_kontak_darurat', 20)->nullable();
+            $table->rememberToken();
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('karyawans');
+    }
+};
