@@ -19,94 +19,66 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">NIP *</label>
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">NIP <span class="text-[#ec1d1d]">*</span></label>
                     <input type="text" name="nip" value="{{ old('nip') }}" required
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                     @error('nip') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Email *</label>
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Email <span class="text-[#ec1d1d]">*</span></label>
                     <input type="email" name="email" value="{{ old('email') }}" required
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                     @error('email') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Password *</label>
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Password <span class="text-[#ec1d1d]">*</span></label>
                     <input type="password" name="password" required
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                     @error('password') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Konfirmasi Password *</label>
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Konfirmasi Password <span class="text-[#ec1d1d]">*</span></label>
                     <input type="password" name="password_confirmation" required
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Nama Depan *</label>
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Nama Depan <span class="text-[#ec1d1d]">*</span></label>
                     <input type="text" name="nama_depan" value="{{ old('nama_depan') }}" required
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                     @error('nama_depan') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Nama Belakang *</label>
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Nama Belakang <span class="text-[#ec1d1d]">*</span></label>
                     <input type="text" name="nama_belakang" value="{{ old('nama_belakang') }}" required
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                     @error('nama_belakang') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Nama Lengkap *</label>
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Nama Lengkap <span class="text-[#ec1d1d]">*</span></label>
                     <input type="text" name="nama_lengkap" value="{{ old('nama_lengkap') }}" required
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                     @error('nama_lengkap') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">NIK *</label>
-                    <input type="text" name="nik" value="{{ old('nik') }}" required
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
-                    @error('nik') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">NPWP</label>
-                    <input type="text" name="npwp" value="{{ old('npwp') }}"
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Tempat Lahir *</label>
-                    <input type="text" name="tempat_lahir" value="{{ old('tempat_lahir') }}" required
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
-                    @error('tempat_lahir') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Tanggal Lahir *</label>
-                    <input type="date" name="tanggal_lahir" value="{{ old('tanggal_lahir') }}" required
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
-                    @error('tanggal_lahir') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Jenis Kelamin *</label>
-                    <select name="jenis_kelamin" required
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Jenis Kelamin</label>
+                    <select name="jenis_kelamin"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                         <option value="">Pilih</option>
                         <option value="Laki-laki" {{ old('jenis_kelamin') === 'Laki-laki' ? 'selected' : '' }}>Laki-laki</option>
                         <option value="Perempuan" {{ old('jenis_kelamin') === 'Perempuan' ? 'selected' : '' }}>Perempuan</option>
                     </select>
-                    @error('jenis_kelamin') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Agama *</label>
-                    <select name="agama" required
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Agama</label>
+                    <select name="agama"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                         <option value="">Pilih</option>
                         <option value="Islam" {{ old('agama') === 'Islam' ? 'selected' : '' }}>Islam</option>
@@ -116,19 +88,79 @@
                         <option value="Buddha" {{ old('agama') === 'Buddha' ? 'selected' : '' }}>Buddha</option>
                         <option value="Konghucu" {{ old('agama') === 'Konghucu' ? 'selected' : '' }}>Konghucu</option>
                     </select>
-                    @error('agama') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Status Pernikahan *</label>
-                    <select name="status_pernikahan" required
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Status Pernikahan</label>
+                    <select name="status_pernikahan"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                         <option value="">Pilih</option>
                         <option value="Belum Menikah" {{ old('status_pernikahan') === 'Belum Menikah' ? 'selected' : '' }}>Belum Menikah</option>
                         <option value="Menikah" {{ old('status_pernikahan') === 'Menikah' ? 'selected' : '' }}>Menikah</option>
                         <option value="Cerai" {{ old('status_pernikahan') === 'Cerai' ? 'selected' : '' }}>Cerai</option>
                     </select>
-                    @error('status_pernikahan') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Jumlah Anak</label>
+                    <input type="number" name="jumlah_anak" value="{{ old('jumlah_anak', 0) }}" min="0"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                    @error('jumlah_anak') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Golongan Darah</label>
+                    <select name="golongan_darah"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                        <option value="">Pilih</option>
+                        <option value="A" {{ old('golongan_darah') === 'A' ? 'selected' : '' }}>A</option>
+                        <option value="B" {{ old('golongan_darah') === 'B' ? 'selected' : '' }}>B</option>
+                        <option value="AB" {{ old('golongan_darah') === 'AB' ? 'selected' : '' }}>AB</option>
+                        <option value="O" {{ old('golongan_darah') === 'O' ? 'selected' : '' }}>O</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">NIK</label>
+                    <input type="text" name="nik" value="{{ old('nik') }}"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                    @error('nik') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">No KK</label>
+                    <input type="text" name="no_kk" value="{{ old('no_kk') }}"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">NPWP</label>
+                    <input type="text" name="npwp" value="{{ old('npwp') }}"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Tempat Lahir</label>
+                    <input type="text" name="tempat_lahir" value="{{ old('tempat_lahir') }}"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Tanggal Lahir</label>
+                    <input type="date" name="tanggal_lahir" value="{{ old('tanggal_lahir') }}"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Gelar Pendidikan</label>
+                    <input type="text" name="gelar_pendidikan" value="{{ old('gelar_pendidikan') }}" placeholder="Contoh: S.Kom, S.E, M.M"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Sedang Melanjutkan Pendidikan</label>
+                    <input type="text" name="sedang_melanjutkan_pendidikan" value="{{ old('sedang_melanjutkan_pendidikan') }}" placeholder="Contoh: S2 Manajemen"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                 </div>
 
                 <!-- Informasi Profesional -->
@@ -137,10 +169,28 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Jabatan *</label>
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Jabatan <span class="text-[#ec1d1d]">*</span></label>
                     <input type="text" name="jabatan" value="{{ old('jabatan') }}" required
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                     @error('jabatan') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Divisi</label>
+                    <select name="divisi"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                        <option value="">Pilih Divisi</option>
+                        <option value="MEDIA" {{ old('divisi') === 'MEDIA' ? 'selected' : '' }}>MEDIA</option>
+                        <option value="KPD" {{ old('divisi') === 'KPD' ? 'selected' : '' }}>KPD</option>
+                        <option value="IT" {{ old('divisi') === 'IT' ? 'selected' : '' }}>IT</option>
+                        <option value="HRD" {{ old('divisi') === 'HRD' ? 'selected' : '' }}>HRD</option>
+                        <option value="LPS" {{ old('divisi') === 'LPS' ? 'selected' : '' }}>LPS</option>
+                        <option value="PKA" {{ old('divisi') === 'PKA' ? 'selected' : '' }}>PKA</option>
+                        <option value="RG" {{ old('divisi') === 'RG' ? 'selected' : '' }}>RG</option>
+                        <option value="SAPRAS" {{ old('divisi') === 'SAPRAS' ? 'selected' : '' }}>SAPRAS</option>
+                        <option value="PENDIDIKAN" {{ old('divisi') === 'PENDIDIKAN' ? 'selected' : '' }}>PENDIDIKAN</option>
+                    </select>
+                    @error('divisi') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
@@ -153,14 +203,14 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Tanggal Bergabung *</label>
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Tanggal Bergabung <span class="text-[#ec1d1d]">*</span></label>
                     <input type="date" name="tanggal_bergabung" value="{{ old('tanggal_bergabung') }}" required
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                     @error('tanggal_bergabung') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Status *</label>
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Status <span class="text-[#ec1d1d]">*</span></label>
                     <select name="status" required
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                         <option value="Full-time" {{ old('status') === 'Full-time' ? 'selected' : '' }}>Full-time</option>

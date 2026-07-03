@@ -180,6 +180,86 @@
                         @enderror
                     </div>
 
+                    <!-- Tambahkan field-field baru di bagian Informasi Pribadi -->
+                    <div>
+                        <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Jumlah Anak</label>
+                        <input type="number" name="jumlah_anak"
+                            value="{{ old('jumlah_anak', $karyawan->jumlah_anak ?? 0) }}" min="0"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                        @error('jumlah_anak')
+                            <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Golongan Darah</label>
+                        <select name="golongan_darah"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                            <option value="">Pilih</option>
+                            <option value="A"
+                                {{ old('golongan_darah', $karyawan->golongan_darah) === 'A' ? 'selected' : '' }}>A</option>
+                            <option value="B"
+                                {{ old('golongan_darah', $karyawan->golongan_darah) === 'B' ? 'selected' : '' }}>B</option>
+                            <option value="AB"
+                                {{ old('golongan_darah', $karyawan->golongan_darah) === 'AB' ? 'selected' : '' }}>AB
+                            </option>
+                            <option value="O"
+                                {{ old('golongan_darah', $karyawan->golongan_darah) === 'O' ? 'selected' : '' }}>O</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-[#1B1B1B] mb-1">No KK</label>
+                        <input type="text" name="no_kk" value="{{ old('no_kk', $karyawan->no_kk) }}"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Gelar Pendidikan</label>
+                        <input type="text" name="gelar_pendidikan"
+                            value="{{ old('gelar_pendidikan', $karyawan->gelar_pendidikan) }}"
+                            placeholder="Contoh: S.Kom, S.E, M.M"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Sedang Melanjutkan Pendidikan</label>
+                        <input type="text" name="sedang_melanjutkan_pendidikan"
+                            value="{{ old('sedang_melanjutkan_pendidikan', $karyawan->sedang_melanjutkan_pendidikan) }}"
+                            placeholder="Contoh: S2 Manajemen"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Divisi</label>
+                        <select name="divisi"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                            <option value="">Pilih Divisi</option>
+                            <option value="MEDIA" {{ old('divisi', $karyawan->divisi) === 'MEDIA' ? 'selected' : '' }}>
+                                MEDIA</option>
+                            <option value="KPD" {{ old('divisi', $karyawan->divisi) === 'KPD' ? 'selected' : '' }}>KPD
+                            </option>
+                            <option value="IT" {{ old('divisi', $karyawan->divisi) === 'IT' ? 'selected' : '' }}>IT
+                            </option>
+                            <option value="HRD" {{ old('divisi', $karyawan->divisi) === 'HRD' ? 'selected' : '' }}>HRD
+                            </option>
+                            <option value="LPS" {{ old('divisi', $karyawan->divisi) === 'LPS' ? 'selected' : '' }}>LPS
+                            </option>
+                            <option value="PKA" {{ old('divisi', $karyawan->divisi) === 'PKA' ? 'selected' : '' }}>PKA
+                            </option>
+                            <option value="RG" {{ old('divisi', $karyawan->divisi) === 'RG' ? 'selected' : '' }}>RG
+                            </option>
+                            <option value="SAPRAS" {{ old('divisi', $karyawan->divisi) === 'SAPRAS' ? 'selected' : '' }}>
+                                SAPRAS</option>
+                            <option value="PENDIDIKAN"
+                                {{ old('divisi', $karyawan->divisi) === 'PENDIDIKAN' ? 'selected' : '' }}>PENDIDIKAN
+                            </option>
+                        </select>
+                        @error('divisi')
+                            <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p>
+                        @enderror
+                    </div>
+
                     <!-- Informasi Profesional -->
                     <div class="md:col-span-2">
                         <h3 class="text-lg font-semibold text-[#161758] border-b border-gray-200 pb-2 mb-4 mt-4">Informasi

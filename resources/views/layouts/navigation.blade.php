@@ -14,7 +14,7 @@
         <div class="flex justify-between h-16">
             <div class="flex justify-center items-center">
                 <a href="{{ route($dashboardRoute) }}" class="flex items-center space-x-2">
-                    <span class="text-[#FCC626] text-xl font-bold font-['Montserrat']">SIPegawai</span>
+                    <span class="text-[#FCC626] text-xl font-bold font-['Montserrat']">SIKEKAR</span>
                 </a>
             </div>
 

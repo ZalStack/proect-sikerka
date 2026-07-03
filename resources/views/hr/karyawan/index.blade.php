@@ -27,8 +27,8 @@
                     <thead class="bg-[#F5F5F5]">
                         <tr>
                             <th class="px-4 py-3 text-left text-sm font-semibold text-[#1B1B1B]">Foto</th>
-                            <th class="px-4 py-3 text-left text-sm font-semibold text-[#1B1B1B]">Nama</th>
-                            <th class="px-4 py-3 text-left text-sm font-semibold text-[#1B1B1B]">NIP</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-[#1B1B1B]">Nama Lengkap</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-[#1B1B1B]">Kode Karyawan</th>
                             <th class="px-4 py-3 text-left text-sm font-semibold text-[#1B1B1B]">Email</th>
                             <th class="px-4 py-3 text-left text-sm font-semibold text-[#1B1B1B]">Jabatan</th>
                             <th class="px-4 py-3 text-left text-sm font-semibold text-[#1B1B1B]">Status</th>

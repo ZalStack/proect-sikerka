@@ -21,6 +21,12 @@ class Karyawan extends Authenticatable
         'nama_lengkap',
         'role',
         'jabatan',
+        'divisi',
+        'golongan_darah',
+        'no_kk',
+        'gelar_pendidikan',
+        'sedang_melanjutkan_pendidikan',
+        'jumlah_anak',
         'foto_profil',
         'nomor_telepon',
         'alamat',
@@ -65,7 +71,6 @@ class Karyawan extends Authenticatable
         return $this->role === 'karyawan';
     }
 
-    // Cast dates
     protected $casts = [
         'tanggal_bergabung' => 'date',
         'tanggal_lahir' => 'date',

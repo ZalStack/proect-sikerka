@@ -31,34 +31,40 @@ class KaryawanController extends Controller
             'nama_belakang' => 'required|string|max:100',
             'nama_lengkap' => 'required|string|max:100',
             'jabatan' => 'required|string|max:100',
-            'nik' => 'required|string|max:16|unique:karyawans,nik',
+            'role' => 'nullable|in:hr,karyawan',
+            'divisi' => 'nullable|in:MEDIA,KPD,IT,HRD,LPS,PKA,RG,SAPRAS,PENDIDIKAN',
+            'status' => 'required|in:Full-time,Contract,Internship',
+            'tanggal_bergabung' => 'required|date',
+            'golongan_darah' => 'nullable|in:A,B,AB,O',
+            'no_kk' => 'nullable|string|max:20',
+            'gelar_pendidikan' => 'nullable|string|max:50',
+            'sedang_melanjutkan_pendidikan' => 'nullable|string|max:100',
+            'jumlah_anak' => 'nullable|integer|min:0',
+            'nik' => 'nullable|string|max:16|unique:karyawans,nik',
             'npwp' => 'nullable|string|max:20',
-            'tempat_lahir' => 'required|string|max:50',
-            'tanggal_lahir' => 'required|date',
-            'jenis_kelamin' => 'required|in:Laki-laki,Perempuan',
-            'agama' => 'required|string|max:20',
-            'status_pernikahan' => 'required|string|max:20',
+            'tempat_lahir' => 'nullable|string|max:50',
+            'tanggal_lahir' => 'nullable|date',
+            'jenis_kelamin' => 'nullable|in:Laki-laki,Perempuan',
+            'agama' => 'nullable|string|max:20',
+            'status_pernikahan' => 'nullable|string|max:20',
             'pendidikan_terakhir' => 'nullable|string|max:50',
             'pendidikan_terakhir_new' => 'nullable|in:SMP,SMA/MA,SMK,D1,D2,D3,D4,S1,S2',
             'universitas' => 'nullable|string|max:100',
             'jurusan' => 'nullable|string|max:100',
             'tahun_lulus' => 'nullable|integer|min:1900|max:' . date('Y'),
-            'tanggal_bergabung' => 'required|date',
-            'status' => 'required|in:Full-time,Contract,Internship',
             'nomor_telepon' => 'nullable|string|max:20',
             'alamat' => 'nullable|string',
             'foto_profil' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'nama_kontak_darurat' => 'nullable|string|max:100',
             'telepon_kontak_darurat' => 'nullable|string|max:20',
-            'role' => 'nullable|in:hr,karyawan',
         ]);
 
         $data = $request->except(['password', 'password_confirmation', 'foto_profil']);
 
-        // Set password
         $data['kata_sandi'] = Hash::make($request->password);
         $data['total_hari_kerja'] = 0;
         $data['role'] = $request->role ?? 'karyawan';
+        $data['jumlah_anak'] = $request->jumlah_anak ?? 0;
 
         if ($request->hasFile('foto_profil')) {
             $file = $request->file('foto_profil');
@@ -96,38 +102,42 @@ class KaryawanController extends Controller
             'nama_belakang' => 'required|string|max:100',
             'nama_lengkap' => 'required|string|max:100',
             'jabatan' => 'required|string|max:100',
-            'nik' => 'required|string|max:16|unique:karyawans,nik,' . $id,
+            'role' => 'nullable|in:hr,karyawan',
+            'divisi' => 'nullable|in:MEDIA,KPD,IT,HRD,LPS,PKA,RG,SAPRAS,PENDIDIKAN',
+            'status' => 'required|in:Full-time,Contract,Internship',
+            'tanggal_bergabung' => 'required|date',
+            'end_date' => 'nullable|date|after:tanggal_bergabung',
+            'golongan_darah' => 'nullable|in:A,B,AB,O',
+            'no_kk' => 'nullable|string|max:20',
+            'gelar_pendidikan' => 'nullable|string|max:50',
+            'sedang_melanjutkan_pendidikan' => 'nullable|string|max:100',
+            'jumlah_anak' => 'nullable|integer|min:0',
+            'reason_resigned' => 'nullable|string',
+            'nik' => 'nullable|string|max:16|unique:karyawans,nik,' . $id,
             'npwp' => 'nullable|string|max:20',
-            'tempat_lahir' => 'required|string|max:50',
-            'tanggal_lahir' => 'required|date',
-            'jenis_kelamin' => 'required|in:Laki-laki,Perempuan',
-            'agama' => 'required|string|max:20',
-            'status_pernikahan' => 'required|string|max:20',
+            'tempat_lahir' => 'nullable|string|max:50',
+            'tanggal_lahir' => 'nullable|date',
+            'jenis_kelamin' => 'nullable|in:Laki-laki,Perempuan',
+            'agama' => 'nullable|string|max:20',
+            'status_pernikahan' => 'nullable|string|max:20',
             'pendidikan_terakhir' => 'nullable|string|max:50',
             'pendidikan_terakhir_new' => 'nullable|in:SMP,SMA/MA,SMK,D1,D2,D3,D4,S1,S2',
             'universitas' => 'nullable|string|max:100',
             'jurusan' => 'nullable|string|max:100',
             'tahun_lulus' => 'nullable|integer|min:1900|max:' . date('Y'),
-            'tanggal_bergabung' => 'required|date',
-            'end_date' => 'nullable|date|after:tanggal_bergabung',
-            'status' => 'required|in:Full-time,Contract,Internship',
-            'reason_resigned' => 'nullable|string',
             'nomor_telepon' => 'nullable|string|max:20',
             'alamat' => 'nullable|string',
             'foto_profil' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'nama_kontak_darurat' => 'nullable|string|max:100',
             'telepon_kontak_darurat' => 'nullable|string|max:20',
-            'role' => 'nullable|in:hr,karyawan',
             'password' => 'nullable|min:8|confirmed',
             'total_hari_kerja' => 'nullable|integer|min:0',
         ]);
 
         $data = $request->except(['password', 'password_confirmation', 'foto_profil', '_token', '_method']);
 
-        // Set total_hari_kerja ke 0 jika null
-        if (!isset($data['total_hari_kerja']) || $data['total_hari_kerja'] === null) {
-            $data['total_hari_kerja'] = 0;
-        }
+        $data['total_hari_kerja'] = $data['total_hari_kerja'] ?? 0;
+        $data['jumlah_anak'] = $data['jumlah_anak'] ?? 0;
 
         if ($request->hasFile('foto_profil')) {
             if ($karyawan->foto_profil) {
@@ -139,7 +149,6 @@ class KaryawanController extends Controller
             $data['foto_profil'] = $path;
         }
 
-        // Jika password diisi, update password
         if ($request->filled('password')) {
             $data['kata_sandi'] = Hash::make($request->password);
         }

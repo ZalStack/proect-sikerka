@@ -30,13 +30,18 @@ class ProfileController extends Controller
             'email' => 'required|email|unique:karyawans,email,' . $user->id,
             'nomor_telepon' => 'nullable|string|max:20',
             'alamat' => 'nullable|string',
-            'nik' => 'required|string|max:16|unique:karyawans,nik,' . $user->id,
+            'nik' => 'nullable|string|max:16|unique:karyawans,nik,' . $user->id,
             'npwp' => 'nullable|string|max:20',
-            'tempat_lahir' => 'required|string|max:50',
-            'tanggal_lahir' => 'required|date',
-            'jenis_kelamin' => 'required|in:Laki-laki,Perempuan',
-            'agama' => 'required|string|max:20',
-            'status_pernikahan' => 'required|string|max:20',
+            'tempat_lahir' => 'nullable|string|max:50',
+            'tanggal_lahir' => 'nullable|date',
+            'jenis_kelamin' => 'nullable|in:Laki-laki,Perempuan',
+            'agama' => 'nullable|string|max:20',
+            'status_pernikahan' => 'nullable|string|max:20',
+            'golongan_darah' => 'nullable|in:A,B,AB,O',
+            'no_kk' => 'nullable|string|max:20',
+            'gelar_pendidikan' => 'nullable|string|max:50',
+            'sedang_melanjutkan_pendidikan' => 'nullable|string|max:100',
+            'jumlah_anak' => 'nullable|integer|min:0',
             'pendidikan_terakhir' => 'nullable|string|max:50',
             'pendidikan_terakhir_new' => 'nullable|in:SMP,SMA/MA,SMK,D1,D2,D3,D4,S1,S2',
             'universitas' => 'nullable|string|max:100',
@@ -47,29 +52,31 @@ class ProfileController extends Controller
             'foto_profil' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ];
 
-        // HR bisa edit semua field, Karyawan tidak bisa edit field tertentu
-        if (!$isHr) {
-            // Karyawan tidak bisa edit: jabatan, role, status, tanggal_bergabung
-            $rules['jabatan'] = 'sometimes|string|max:100';
-            $rules['status'] = 'sometimes|in:Full-time,Contract,Internship';
-            $rules['tanggal_bergabung'] = 'sometimes|date';
-        } else {
+        if ($isHr) {
             $rules['jabatan'] = 'required|string|max:100';
             $rules['status'] = 'required|in:Full-time,Contract,Internship';
             $rules['tanggal_bergabung'] = 'required|date';
+            $rules['divisi'] = 'nullable|in:MEDIA,KPD,IT,HRD,LPS,PKA,RG,SAPRAS,PENDIDIKAN';
+        } else {
+            $rules['jabatan'] = 'sometimes|string|max:100';
+            $rules['status'] = 'sometimes|in:Full-time,Contract,Internship';
+            $rules['tanggal_bergabung'] = 'sometimes|date';
+            $rules['divisi'] = 'sometimes|in:MEDIA,KPD,IT,HRD,LPS,PKA,RG,SAPRAS,PENDIDIKAN';
         }
 
         $request->validate($rules);
 
         $data = $request->except(['foto_profil', '_token', '_method']);
 
-        // Karyawan tidak boleh mengubah field tertentu
         if (!$isHr) {
             unset($data['jabatan']);
             unset($data['role']);
             unset($data['status']);
             unset($data['tanggal_bergabung']);
+            unset($data['divisi']);
         }
+
+        $data['jumlah_anak'] = $data['jumlah_anak'] ?? 0;
 
         if ($request->hasFile('foto_profil')) {
             if ($user->foto_profil) {
@@ -82,8 +89,6 @@ class ProfileController extends Controller
         }
 
         $user->update($data);
-
-        // Refresh user data
         $user->refresh();
 
         return redirect()->back()->with('success', 'Profile berhasil diupdate');
