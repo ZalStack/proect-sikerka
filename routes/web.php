@@ -5,6 +5,7 @@ use App\Http\Controllers\HRDashboardController;
 use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\KaryawanDashboardController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\AbsensiController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -30,10 +31,19 @@ Route::middleware('auth')->group(function () {
     Route::middleware('hr')->prefix('hr')->name('hr.')->group(function () {
         Route::get('/dashboard', [HRDashboardController::class, 'index'])->name('dashboard');
         Route::resource('karyawan', KaryawanController::class);
+
+        // Absensi Routes untuk HR
+        Route::get('/absensi', [AbsensiController::class, 'index'])->name('absensi.index');
+        Route::get('/absensi/export', [AbsensiController::class, 'exportExcel'])->name('absensi.export');
+        Route::get('/absensi/{id}', [AbsensiController::class, 'detail'])->name('absensi.detail');
+        Route::put('/absensi/{id}/status', [AbsensiController::class, 'updateStatus'])->name('absensi.update-status');
     });
 
     // Karyawan Routes
     Route::middleware('karyawan')->prefix('karyawan')->name('karyawan.')->group(function () {
         Route::get('/dashboard', [KaryawanDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/absensi', [AbsensiController::class, 'dashboard'])->name('absensi');
+        Route::post('/absensi/checkin', [AbsensiController::class, 'checkIn'])->name('absensi.checkin');
+        Route::post('/absensi/checkout', [AbsensiController::class, 'checkOut'])->name('absensi.checkout');
     });
 });

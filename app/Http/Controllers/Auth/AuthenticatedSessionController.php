@@ -20,22 +20,29 @@ class AuthenticatedSessionController extends Controller
     {
         $credentials = $request->only('email', 'password');
 
-        // Attempt login with custom field
         if (Auth::attempt(['email' => $credentials['email'], 'password' => $credentials['password']])) {
             $request->session()->regenerate();
 
             $user = Auth::user();
 
+            // Cegah redirect loop
             if ($user->role === 'hr') {
                 return redirect()->intended(route('hr.dashboard'));
             }
 
-            return redirect()->intended(route('karyawan.dashboard'));
+            if ($user->role === 'karyawan') {
+                return redirect()->intended(route('karyawan.dashboard'));
+            }
+
+            // Default redirect jika role tidak dikenal
+            return redirect('/');
         }
 
-        return back()->withErrors([
-            'email' => 'The provided credentials do not match our records.',
-        ])->onlyInput('email');
+        return back()
+            ->withErrors([
+                'email' => 'The provided credentials do not match our records.',
+            ])
+            ->onlyInput('email');
     }
 
     public function destroy(Request $request): RedirectResponse

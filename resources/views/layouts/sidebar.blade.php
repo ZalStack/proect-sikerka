@@ -3,13 +3,28 @@
     $isHr = $user && $user->role === 'hr';
     $currentRoute = Route::currentRouteName();
 
-    // Get user photo
     $userPhoto = $user->foto_profil ? Storage::url($user->foto_profil) : null;
     $userInitial = strtoupper(substr($user->nama_depan ?? 'U', 0, 1));
 @endphp
 
 <aside class="w-64 bg-[#161758] min-h-screen fixed left-0 top-0 pt-16">
     <div class="p-4">
+        <!-- User Profile Card -->
+        <div class="bg-[#27438D] rounded-lg p-4 mb-6">
+            <div class="flex items-center space-x-3">
+                <div class="w-12 h-12 rounded-full bg-[#00a2e9] flex items-center justify-center text-white text-xl font-bold overflow-hidden">
+                    @if($userPhoto)
+                        <img src="{{ $userPhoto }}" alt="{{ $user->nama_lengkap }}" class="w-full h-full object-cover">
+                    @else
+                        {{ $userInitial }}
+                    @endif
+                </div>
+                <div class="flex-1">
+                    <p class="text-white font-semibold text-sm truncate">{{ $user->nama_lengkap }}</p>
+                    <p class="text-[#00a2e9] text-xs">{{ ucfirst($user->role) }}</p>
+                </div>
+            </div>
+        </div>
 
         <div class="mb-8">
             <h3 class="text-[#00a2e9] text-xs font-bold uppercase tracking-wider">Menu</h3>
@@ -33,6 +48,13 @@
                     </svg>
                     <span>Data Karyawan</span>
                 </a>
+                <a href="{{ route('hr.absensi.index') }}"
+                   class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200 {{ $currentRoute === 'hr.absensi.index' || str_starts_with($currentRoute, 'hr.absensi.') ? 'bg-[#27438D] text-white' : 'text-[#F5F5F5] hover:bg-[#27438D] hover:text-white' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <span>Absensi</span>
+                </a>
             @else
                 <a href="{{ route('karyawan.dashboard') }}"
                    class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200 {{ $currentRoute === 'karyawan.dashboard' ? 'bg-[#27438D] text-white' : 'text-[#F5F5F5] hover:bg-[#27438D] hover:text-white' }}">
@@ -41,6 +63,13 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z"></path>
                     </svg>
                     <span>Dashboard</span>
+                </a>
+                <a href="{{ route('karyawan.absensi') }}"
+                   class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200 {{ $currentRoute === 'karyawan.absensi' ? 'bg-[#27438D] text-white' : 'text-[#F5F5F5] hover:bg-[#27438D] hover:text-white' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <span>Absensi</span>
                 </a>
             @endif
             <a href="{{ route('profile.edit') }}"

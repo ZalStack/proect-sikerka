@@ -12,19 +12,19 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
             <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-[#00a2e9]">
                 <p class="text-sm text-[#1B1B1B]">Total Karyawan</p>
-                <p class="text-2xl font-bold text-[#161758]">{{ $totalKaryawan }}</p>
+                <p class="text-2xl font-bold text-[#161758]">{{ $totalKaryawan ?? 0 }}</p>
             </div>
             <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-[#FCC626]">
                 <p class="text-sm text-[#1B1B1B]">Total HR</p>
-                <p class="text-2xl font-bold text-[#161758]">{{ $totalHr }}</p>
+                <p class="text-2xl font-bold text-[#161758]">{{ $totalHr ?? 0 }}</p>
             </div>
             <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-[#2E7D3E]">
                 <p class="text-sm text-[#1B1B1B]">Karyawan Aktif</p>
-                <p class="text-2xl font-bold text-[#161758]">{{ $totalKaryawanAktif }}</p>
+                <p class="text-2xl font-bold text-[#161758]">{{ $totalKaryawanAktif ?? 0 }}</p>
             </div>
             <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-[#ec1d1d]">
                 <p class="text-sm text-[#1B1B1B]">Total Hari Kerja</p>
-                <p class="text-2xl font-bold text-[#161758]">{{ $karyawanTerbaru->sum('total_hari_kerja') }}</p>
+                <p class="text-2xl font-bold text-[#161758]">{{ isset($karyawanTerbaru) ? $karyawanTerbaru->sum('total_hari_kerja') : 0 }}</p>
             </div>
         </div>
 
@@ -41,18 +41,22 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($karyawanTerbaru as $karyawan)
+                        @forelse(($karyawanTerbaru ?? []) as $karyawan)
                         <tr class="border-b border-gray-200">
-                            <td class="px-4 py-2 text-sm">{{ $karyawan->nama_lengkap }}</td>
-                            <td class="px-4 py-2 text-sm">{{ $karyawan->nip }}</td>
-                            <td class="px-4 py-2 text-sm">{{ $karyawan->jabatan }}</td>
+                            <td class="px-4 py-2 text-sm">{{ $karyawan->nama_lengkap ?? '-' }}</td>
+                            <td class="px-4 py-2 text-sm">{{ $karyawan->nip ?? '-' }}</td>
+                            <td class="px-4 py-2 text-sm">{{ $karyawan->jabatan ?? '-' }}</td>
                             <td class="px-4 py-2 text-sm">
-                                <span class="px-2 py-1 rounded-full text-xs font-medium {{ $karyawan->status === 'Full-time' ? 'bg-[#2E7D3E] text-white' : 'bg-[#FCC626] text-[#1B1B1B]' }}">
-                                    {{ $karyawan->status }}
+                                <span class="px-2 py-1 rounded-full text-xs font-medium {{ ($karyawan->status ?? '') === 'Full-time' ? 'bg-[#2E7D3E] text-white' : 'bg-[#FCC626] text-[#1B1B1B]' }}">
+                                    {{ $karyawan->status ?? '-' }}
                                 </span>
                             </td>
                         </tr>
-                        @endforeach
+                        @empty
+                        <tr>
+                            <td colspan="4" class="px-4 py-4 text-center text-sm text-[#1B1B1B]">Belum ada data karyawan</td>
+                        </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>

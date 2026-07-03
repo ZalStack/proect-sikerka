@@ -15,7 +15,7 @@
         <div class="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
             <div class="text-center mb-8">
                 <h1 class="text-3xl font-bold font-['Montserrat'] text-[#161758]">SIKEKAR</h1>
-                <p class="text-[#27438D] mt-2">Sistem Informasi Kinerja Karyawan</p>
+                <p class="text-[#27438D] mt-2">Sistem Informasi Kerja Karyawan</p>
             </div>
 
             <form method="POST" action="{{ route('login') }}">

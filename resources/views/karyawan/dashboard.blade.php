@@ -12,15 +12,15 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-[#00a2e9]">
                 <p class="text-sm text-[#1B1B1B]">Total Hari Kerja</p>
-                <p class="text-2xl font-bold text-[#161758]">{{ $user->total_hari_kerja }}</p>
+                <p class="text-2xl font-bold text-[#161758]">{{ $user->total_hari_kerja ?? 0 }}</p>
             </div>
             <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-[#2E7D3E]">
                 <p class="text-sm text-[#1B1B1B]">Status</p>
-                <p class="text-2xl font-bold text-[#161758]">{{ $user->status }}</p>
+                <p class="text-2xl font-bold text-[#161758]">{{ $user->status ?? '-' }}</p>
             </div>
             <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-[#FCC626]">
                 <p class="text-sm text-[#1B1B1B]">Jabatan</p>
-                <p class="text-2xl font-bold text-[#161758]">{{ $user->jabatan }}</p>
+                <p class="text-2xl font-bold text-[#161758]">{{ $user->jabatan ?? '-' }}</p>
             </div>
         </div>
 
@@ -28,14 +28,15 @@
             <h2 class="text-lg font-semibold text-[#161758] mb-4">Informasi Pribadi</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <p class="text-sm text-[#1B1B1B]"><strong>NIP:</strong> {{ $user->nip }}</p>
-                    <p class="text-sm text-[#1B1B1B]"><strong>Email:</strong> {{ $user->email }}</p>
-                    <p class="text-sm text-[#1B1B1B]"><strong>NIK:</strong> {{ $user->nik }}</p>
+                    <p class="text-sm text-[#1B1B1B]"><strong>NIP:</strong> {{ $user->nip ?? '-' }}</p>
+                    <p class="text-sm text-[#1B1B1B]"><strong>Email:</strong> {{ $user->email ?? '-' }}</p>
+                    <p class="text-sm text-[#1B1B1B]"><strong>NIK:</strong> {{ $user->nik ?? '-' }}</p>
+                    <p class="text-sm text-[#1B1B1B]"><strong>Divisi:</strong> {{ $user->divisi ?? '-' }}</p>
                 </div>
                 <div>
-                    <p class="text-sm text-[#1B1B1B]"><strong>Tanggal Bergabung:</strong> {{ $user->tanggal_bergabung->format('d-m-Y') }}</p>
-                    <p class="text-sm text-[#1B1B1B]"><strong>Tempat Lahir:</strong> {{ $user->tempat_lahir }}</p>
-                    <p class="text-sm text-[#1B1B1B]"><strong>Tanggal Lahir:</strong> {{ $user->tanggal_lahir->format('d-m-Y') }}</p>
+                    <p class="text-sm text-[#1B1B1B]"><strong>Tanggal Bergabung:</strong> {{ $user->tanggal_bergabung ? $user->tanggal_bergabung->format('d-m-Y') : '-' }}</p>
+                    <p class="text-sm text-[#1B1B1B]"><strong>Tempat Lahir:</strong> {{ $user->tempat_lahir ?? '-' }}</p>
+                    <p class="text-sm text-[#1B1B1B]"><strong>Tanggal Lahir:</strong> {{ $user->tanggal_lahir ? $user->tanggal_lahir->format('d-m-Y') : '-' }}</p>
                 </div>
             </div>
         </div>
