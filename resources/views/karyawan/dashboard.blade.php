@@ -32,11 +32,15 @@
                     <p class="text-sm text-[#1B1B1B]"><strong>Email:</strong> {{ $user->email ?? '-' }}</p>
                     <p class="text-sm text-[#1B1B1B]"><strong>NIK:</strong> {{ $user->nik ?? '-' }}</p>
                     <p class="text-sm text-[#1B1B1B]"><strong>Divisi:</strong> {{ $user->divisi ?? '-' }}</p>
+                    <p class="text-sm text-[#1B1B1B]"><strong>Golongan Darah:</strong> {{ $user->golongan_darah ?? '-' }}</p>
+                    <p class="text-sm text-[#1B1B1B]"><strong>Jumlah Anak:</strong> {{ $user->jumlah_anak ?? 0 }}</p>
                 </div>
                 <div>
                     <p class="text-sm text-[#1B1B1B]"><strong>Tanggal Bergabung:</strong> {{ $user->tanggal_bergabung ? $user->tanggal_bergabung->format('d-m-Y') : '-' }}</p>
                     <p class="text-sm text-[#1B1B1B]"><strong>Tempat Lahir:</strong> {{ $user->tempat_lahir ?? '-' }}</p>
                     <p class="text-sm text-[#1B1B1B]"><strong>Tanggal Lahir:</strong> {{ $user->tanggal_lahir ? $user->tanggal_lahir->format('d-m-Y') : '-' }}</p>
+                    <p class="text-sm text-[#1B1B1B]"><strong>Status:</strong> {{ $user->status ?? '-' }}</p>
+                    <p class="text-sm text-[#1B1B1B]"><strong>Role:</strong> {{ $user->role === 'hr' ? 'HR' : 'Karyawan' }}</p>
                 </div>
             </div>
         </div>

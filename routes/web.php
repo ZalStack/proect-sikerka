@@ -8,16 +8,28 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AbsensiController;
 use Illuminate\Support\Facades\Route;
 
+// Redirect root berdasarkan role
 Route::get('/', function () {
+    if (auth()->check()) {
+        $user = auth()->user();
+        if ($user->posisi === 'hr') {
+            return redirect()->route('hr.dashboard');
+        }
+        if ($user->posisi === 'karyawan') {
+            return redirect()->route('karyawan.dashboard');
+        }
+    }
     return redirect('/login');
 });
 
+// Guest routes
 Route::middleware('guest')->group(function () {
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
 });
 
+// Auth routes
 Route::middleware('auth')->group(function () {
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');

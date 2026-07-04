@@ -24,20 +24,18 @@ class KaryawanController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nip' => 'required|unique:karyawans,nip',
+            'kode_pegawai' => 'required|unique:karyawans,kode_pegawai',
             'email' => 'required|email|unique:karyawans,email',
             'password' => 'required|min:8|confirmed',
             'nama_depan' => 'required|string|max:100',
             'nama_belakang' => 'required|string|max:100',
             'nama_lengkap' => 'required|string|max:100',
             'jabatan' => 'required|string|max:100',
-            'role' => 'nullable|in:hr,karyawan',
-            'divisi' => 'nullable|in:MEDIA,KPD,IT,HRD,LPS,PKA,RG,SAPRAS,PENDIDIKAN',
+            'divisi' => 'required|in:HRD,IT,KPD,LPS,MEDIA,PENDIDIKAN,PKA,RG,SAPRAS',
             'status' => 'required|in:Full-time,Contract,Internship',
             'tanggal_bergabung' => 'required|date',
             'golongan_darah' => 'nullable|in:A,B,AB,O',
             'no_kk' => 'nullable|string|max:20',
-            'gelar_pendidikan' => 'nullable|string|max:50',
             'sedang_melanjutkan_pendidikan' => 'nullable|string|max:100',
             'jumlah_anak' => 'nullable|integer|min:0',
             'nik' => 'nullable|string|max:16|unique:karyawans,nik',
@@ -49,12 +47,14 @@ class KaryawanController extends Controller
             'status_pernikahan' => 'nullable|string|max:20',
             'pendidikan_terakhir' => 'nullable|string|max:50',
             'pendidikan_terakhir_new' => 'nullable|in:SMP,SMA/MA,SMK,D1,D2,D3,D4,S1,S2',
-            'universitas' => 'nullable|string|max:100',
+            'perguruan_tinggi' => 'nullable|string|max:100',
             'jurusan' => 'nullable|string|max:100',
             'tahun_lulus' => 'nullable|integer|min:1900|max:' . date('Y'),
             'nomor_telepon' => 'nullable|string|max:20',
+            'no_wa' => 'nullable|string|max:20',
             'alamat' => 'nullable|string',
             'foto_profil' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'nama_ibu_kandung' => 'nullable|string|max:100',
             'nama_kontak_darurat' => 'nullable|string|max:100',
             'telepon_kontak_darurat' => 'nullable|string|max:20',
         ]);
@@ -63,8 +63,10 @@ class KaryawanController extends Controller
 
         $data['kata_sandi'] = Hash::make($request->password);
         $data['total_hari_kerja'] = 0;
-        $data['role'] = $request->role ?? 'karyawan';
         $data['jumlah_anak'] = $request->jumlah_anak ?? 0;
+
+        // Set posisi otomatis berdasarkan divisi
+        $data['posisi'] = $this->determinePosisi($request->divisi);
 
         if ($request->hasFile('foto_profil')) {
             $file = $request->file('foto_profil');
@@ -96,20 +98,18 @@ class KaryawanController extends Controller
         $karyawan = Karyawan::findOrFail($id);
 
         $request->validate([
-            'nip' => 'required|unique:karyawans,nip,' . $id,
+            'kode_pegawai' => 'required|unique:karyawans,kode_pegawai,' . $id,
             'email' => 'required|email|unique:karyawans,email,' . $id,
             'nama_depan' => 'required|string|max:100',
             'nama_belakang' => 'required|string|max:100',
             'nama_lengkap' => 'required|string|max:100',
             'jabatan' => 'required|string|max:100',
-            'role' => 'nullable|in:hr,karyawan',
-            'divisi' => 'nullable|in:MEDIA,KPD,IT,HRD,LPS,PKA,RG,SAPRAS,PENDIDIKAN',
+            'divisi' => 'required|in:HRD,IT,KPD,LPS,MEDIA,PENDIDIKAN,PKA,RG,SAPRAS',
             'status' => 'required|in:Full-time,Contract,Internship',
             'tanggal_bergabung' => 'required|date',
             'end_date' => 'nullable|date|after:tanggal_bergabung',
             'golongan_darah' => 'nullable|in:A,B,AB,O',
             'no_kk' => 'nullable|string|max:20',
-            'gelar_pendidikan' => 'nullable|string|max:50',
             'sedang_melanjutkan_pendidikan' => 'nullable|string|max:100',
             'jumlah_anak' => 'nullable|integer|min:0',
             'reason_resigned' => 'nullable|string',
@@ -122,12 +122,14 @@ class KaryawanController extends Controller
             'status_pernikahan' => 'nullable|string|max:20',
             'pendidikan_terakhir' => 'nullable|string|max:50',
             'pendidikan_terakhir_new' => 'nullable|in:SMP,SMA/MA,SMK,D1,D2,D3,D4,S1,S2',
-            'universitas' => 'nullable|string|max:100',
+            'perguruan_tinggi' => 'nullable|string|max:100',
             'jurusan' => 'nullable|string|max:100',
             'tahun_lulus' => 'nullable|integer|min:1900|max:' . date('Y'),
             'nomor_telepon' => 'nullable|string|max:20',
+            'no_wa' => 'nullable|string|max:20',
             'alamat' => 'nullable|string',
             'foto_profil' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'nama_ibu_kandung' => 'nullable|string|max:100',
             'nama_kontak_darurat' => 'nullable|string|max:100',
             'telepon_kontak_darurat' => 'nullable|string|max:20',
             'password' => 'nullable|min:8|confirmed',
@@ -138,6 +140,9 @@ class KaryawanController extends Controller
 
         $data['total_hari_kerja'] = $data['total_hari_kerja'] ?? 0;
         $data['jumlah_anak'] = $data['jumlah_anak'] ?? 0;
+
+        // Set posisi otomatis berdasarkan divisi
+        $data['posisi'] = $this->determinePosisi($request->divisi);
 
         if ($request->hasFile('foto_profil')) {
             if ($karyawan->foto_profil) {
@@ -169,5 +174,14 @@ class KaryawanController extends Controller
 
         return redirect()->route('hr.karyawan.index')
             ->with('success', 'Karyawan berhasil dihapus');
+    }
+
+    /**
+     * Determine posisi based on division
+     * HRD = hr, others = karyawan
+     */
+    private function determinePosisi($divisi)
+    {
+        return $divisi === 'HRD' ? 'hr' : 'karyawan';
     }
 }

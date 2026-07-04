@@ -11,7 +11,7 @@ class HRDashboardController extends Controller
     public function index()
     {
         $totalKaryawan = Karyawan::count();
-        $totalHr = Karyawan::where('role', 'hr')->count();
+        $totalHr = Karyawan::where('posisi', 'hr')->count(); // Ganti 'role' menjadi 'posisi'
         $totalKaryawanAktif = Karyawan::where('status', 'Full-time')->count();
         $karyawanTerbaru = Karyawan::latest()->take(5)->get();
 

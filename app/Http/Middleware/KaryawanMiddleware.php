@@ -11,10 +11,14 @@ class KaryawanMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (Auth::check() && Auth::user()->role === 'karyawan') {
+        if (Auth::check() && Auth::user()->posisi === 'karyawan') {
             return $next($request);
         }
 
-        return redirect('/dashboard');
+        if (Auth::check() && Auth::user()->posisi === 'hr') {
+            return redirect('/hr/dashboard');
+        }
+
+        return redirect('/login');
     }
 }

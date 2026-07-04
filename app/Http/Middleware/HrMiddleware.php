@@ -11,10 +11,14 @@ class HrMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (Auth::check() && Auth::user()->role === 'hr') {
+        if (Auth::check() && Auth::user()->posisi === 'hr') {
             return $next($request);
         }
 
-        return redirect('/dashboard');
+        if (Auth::check() && Auth::user()->posisi === 'karyawan') {
+            return redirect('/karyawan/dashboard');
+        }
+
+        return redirect('/login');
     }
 }

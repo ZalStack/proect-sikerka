@@ -1,6 +1,6 @@
 @php
     $user = Auth::user();
-    $isHr = $user && $user->role === 'hr';
+    $isHr = $user && $user->posisi === 'hr'; // Ganti 'role' menjadi 'posisi'
     $currentRoute = Route::currentRouteName();
 
     $userPhoto = $user->foto_profil ? Storage::url($user->foto_profil) : null;
@@ -21,7 +21,7 @@
                 </div>
                 <div class="flex-1">
                     <p class="text-white font-semibold text-sm truncate">{{ $user->nama_lengkap }}</p>
-                    <p class="text-[#00a2e9] text-xs">{{ ucfirst($user->role) }}</p>
+                    <p class="text-[#00a2e9] text-xs">{{ ucfirst($user->posisi) }}</p> <!-- Ganti 'role' menjadi 'posisi' -->
                 </div>
             </div>
         </div>
@@ -31,6 +31,7 @@
         </div>
         <nav class="space-y-2">
             @if($isHr)
+                <!-- HR Dashboard -->
                 <a href="{{ route('hr.dashboard') }}"
                    class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200 {{ $currentRoute === 'hr.dashboard' ? 'bg-[#27438D] text-white' : 'text-[#F5F5F5] hover:bg-[#27438D] hover:text-white' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -41,6 +42,8 @@
                     </svg>
                     <span>Dashboard</span>
                 </a>
+
+                <!-- Data Karyawan -->
                 <a href="{{ route('hr.karyawan.index') }}"
                    class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200 {{ $currentRoute === 'hr.karyawan.index' || str_starts_with($currentRoute, 'hr.karyawan.') ? 'bg-[#27438D] text-white' : 'text-[#F5F5F5] hover:bg-[#27438D] hover:text-white' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -48,6 +51,8 @@
                     </svg>
                     <span>Data Karyawan</span>
                 </a>
+
+                <!-- Absensi HR -->
                 <a href="{{ route('hr.absensi.index') }}"
                    class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200 {{ $currentRoute === 'hr.absensi.index' || str_starts_with($currentRoute, 'hr.absensi.') ? 'bg-[#27438D] text-white' : 'text-[#F5F5F5] hover:bg-[#27438D] hover:text-white' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -56,6 +61,7 @@
                     <span>Absensi</span>
                 </a>
             @else
+                <!-- Karyawan Dashboard -->
                 <a href="{{ route('karyawan.dashboard') }}"
                    class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200 {{ $currentRoute === 'karyawan.dashboard' ? 'bg-[#27438D] text-white' : 'text-[#F5F5F5] hover:bg-[#27438D] hover:text-white' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -64,6 +70,8 @@
                     </svg>
                     <span>Dashboard</span>
                 </a>
+
+                <!-- Absensi Karyawan -->
                 <a href="{{ route('karyawan.absensi') }}"
                    class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200 {{ $currentRoute === 'karyawan.absensi' ? 'bg-[#27438D] text-white' : 'text-[#F5F5F5] hover:bg-[#27438D] hover:text-white' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -72,6 +80,8 @@
                     <span>Absensi</span>
                 </a>
             @endif
+
+            <!-- Profile (sama untuk semua) -->
             <a href="{{ route('profile.edit') }}"
                class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200 {{ $currentRoute === 'profile.edit' ? 'bg-[#27438D] text-white' : 'text-[#F5F5F5] hover:bg-[#27438D] hover:text-white' }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

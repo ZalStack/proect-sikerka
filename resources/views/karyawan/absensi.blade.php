@@ -41,23 +41,28 @@
                     <p class="text-sm text-[#1B1B1B]">Check-in</p>
                     <p class="text-xl font-bold text-[#161758]">
                         {{ $todayAbsensi && $todayAbsensi->check_in ? Carbon\Carbon::parse($todayAbsensi->check_in)->format('H:i') : '-' }}
+                        @if($todayAbsensi && $todayAbsensi->is_manual_checkin)
+                            <span class="text-xs text-[#00a2e9]">(Manual)</span>
+                        @endif
                     </p>
                 </div>
                 <div class="bg-[#F5F5F5] rounded-lg p-4">
                     <p class="text-sm text-[#1B1B1B]">Check-out</p>
                     <p class="text-xl font-bold text-[#161758]">
                         {{ $todayAbsensi && $todayAbsensi->check_out ? Carbon\Carbon::parse($todayAbsensi->check_out)->format('H:i') : '-' }}
+                        @if($todayAbsensi && $todayAbsensi->is_manual_checkout)
+                            <span class="text-xs text-[#00a2e9]">(Manual)</span>
+                        @endif
                     </p>
                 </div>
             </div>
         </div>
 
-        <!-- Form Check-in/Check-out -->
+        <!-- Form Check-in -->
         <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 class="text-lg font-semibold text-[#161758] mb-4">Absensi Hari Ini</h2>
+            <h2 class="text-lg font-semibold text-[#161758] mb-4">Check-in</h2>
 
             @if(!$todayAbsensi || !$todayAbsensi->check_in)
-                <!-- Form Check-in -->
                 <form action="{{ route('karyawan.absensi.checkin') }}" method="POST" class="space-y-4">
                     @csrf
                     <div>
@@ -70,28 +75,51 @@
                             @endforeach
                         </select>
                     </div>
+                    <div>
+                        <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Jam Check-in (Manual)</label>
+                        <input type="time" name="check_in_manual" step="60"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                        <p class="text-xs text-gray-500 mt-1">Kosongkan untuk menggunakan waktu sekarang</p>
+                    </div>
                     <button type="submit"
                             class="bg-[#2E7D3E] text-white px-6 py-2 rounded-lg hover:bg-[#009a4b] transition-colors duration-200">
                         Check-in
                     </button>
                 </form>
-            @elseif($todayAbsensi && $todayAbsensi->check_in && !$todayAbsensi->check_out)
-                <!-- Form Check-out -->
-                <form action="{{ route('karyawan.absensi.checkout') }}" method="POST">
-                    @csrf
-                    <div class="flex items-center space-x-4">
-                        <p class="text-[#1B1B1B]">Anda sudah check-in pada {{ Carbon\Carbon::parse($todayAbsensi->check_in)->format('H:i') }}</p>
-                        <button type="submit"
-                                class="bg-[#ec1d1d] text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200">
-                            Check-out
-                        </button>
-                    </div>
-                </form>
             @else
-                <div class="bg-[#2E7D3E] text-white p-4 rounded-lg">
-                    <p class="font-semibold">✅ Anda sudah menyelesaikan absensi hari ini.</p>
-                    <p class="text-sm mt-1">Check-in: {{ Carbon\Carbon::parse($todayAbsensi->check_in)->format('H:i') }} | Check-out: {{ Carbon\Carbon::parse($todayAbsensi->check_out)->format('H:i') }}</p>
-                    <p class="text-sm">Total Jam Kerja: {{ $todayAbsensi->total_jam_kerja }} jam</p>
+                <div class="bg-[#F5F5F5] p-4 rounded-lg">
+                    <p class="text-[#1B1B1B]">✅ Anda sudah check-in pada {{ Carbon\Carbon::parse($todayAbsensi->check_in)->format('H:i') }}</p>
+                    <p class="text-sm text-[#ec1d1d] mt-1">⚠️ Data check-in tidak dapat diubah atau dihapus!</p>
+                </div>
+            @endif
+        </div>
+
+        <!-- Form Check-out -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-lg font-semibold text-[#161758] mb-4">Check-out</h2>
+
+            @if($todayAbsensi && $todayAbsensi->check_in && !$todayAbsensi->check_out)
+                <form action="{{ route('karyawan.absensi.checkout') }}" method="POST" class="space-y-4">
+                    @csrf
+                    <div>
+                        <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Jam Check-out (Manual)</label>
+                        <input type="time" name="check_out_manual" step="60"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                        <p class="text-xs text-gray-500 mt-1">Kosongkan untuk menggunakan waktu sekarang</p>
+                    </div>
+                    <button type="submit"
+                            class="bg-[#ec1d1d] text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200">
+                        Check-out
+                    </button>
+                </form>
+            @elseif($todayAbsensi && $todayAbsensi->check_out)
+                <div class="bg-[#F5F5F5] p-4 rounded-lg">
+                    <p class="text-[#1B1B1B]">✅ Anda sudah check-out pada {{ Carbon\Carbon::parse($todayAbsensi->check_out)->format('H:i') }}</p>
+                    <p class="text-sm text-[#ec1d1d] mt-1">⚠️ Data check-out tidak dapat diubah atau dihapus!</p>
+                </div>
+            @else
+                <div class="bg-[#F5F5F5] p-4 rounded-lg">
+                    <p class="text-[#1B1B1B]">Silahkan check-in terlebih dahulu</p>
                 </div>
             @endif
         </div>

@@ -27,10 +27,12 @@
                     <thead class="bg-[#F5F5F5]">
                         <tr>
                             <th class="px-4 py-3 text-left text-sm font-semibold text-[#1B1B1B]">Foto</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-[#1B1B1B]">Kode Pegawai</th>
                             <th class="px-4 py-3 text-left text-sm font-semibold text-[#1B1B1B]">Nama Lengkap</th>
-                            <th class="px-4 py-3 text-left text-sm font-semibold text-[#1B1B1B]">Kode Karyawan</th>
                             <th class="px-4 py-3 text-left text-sm font-semibold text-[#1B1B1B]">Email</th>
                             <th class="px-4 py-3 text-left text-sm font-semibold text-[#1B1B1B]">Jabatan</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-[#1B1B1B]">Divisi</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-[#1B1B1B]">Posisi</th>
                             <th class="px-4 py-3 text-left text-sm font-semibold text-[#1B1B1B]">Status</th>
                             <th class="px-4 py-3 text-left text-sm font-semibold text-[#1B1B1B]">Aksi</th>
                         </tr>
@@ -47,10 +49,16 @@
                                     </div>
                                 @endif
                             </td>
+                            <td class="px-4 py-3 text-sm">{{ $karyawan->kode_pegawai }}</td>
                             <td class="px-4 py-3 text-sm">{{ $karyawan->nama_lengkap }}</td>
-                            <td class="px-4 py-3 text-sm">{{ $karyawan->nip }}</td>
                             <td class="px-4 py-3 text-sm">{{ $karyawan->email }}</td>
                             <td class="px-4 py-3 text-sm">{{ $karyawan->jabatan }}</td>
+                            <td class="px-4 py-3 text-sm">{{ $karyawan->divisi ?? '-' }}</td>
+                            <td class="px-4 py-3 text-sm">
+                                <span class="px-2 py-1 rounded-full text-xs font-medium {{ $karyawan->posisi === 'hr' ? 'bg-[#27438D] text-white' : 'bg-[#00a2e9] text-white' }}">
+                                    {{ $karyawan->posisi === 'hr' ? 'HR' : 'Karyawan' }}
+                                </span>
+                            </td>
                             <td class="px-4 py-3">
                                 <span class="px-2 py-1 rounded-full text-xs font-medium {{ $karyawan->status === 'Full-time' ? 'bg-[#2E7D3E] text-white' : ($karyawan->status === 'Contract' ? 'bg-[#FCC626] text-[#1B1B1B]' : 'bg-[#00a2e9] text-white') }}">
                                     {{ $karyawan->status }}
@@ -78,7 +86,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7" class="px-4 py-8 text-center text-[#1B1B1B]">
+                            <td colspan="9" class="px-4 py-8 text-center text-[#1B1B1B]">
                                 Belum ada data karyawan
                             </td>
                         </tr>

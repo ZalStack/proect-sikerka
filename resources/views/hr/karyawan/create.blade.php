@@ -19,10 +19,10 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">NIP <span class="text-[#ec1d1d]">*</span></label>
-                    <input type="text" name="nip" value="{{ old('nip') }}" required
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Kode Pegawai <span class="text-[#ec1d1d]">*</span></label>
+                    <input type="text" name="kode_pegawai" value="{{ old('kode_pegawai') }}" required
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
-                    @error('nip') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
+                    @error('kode_pegawai') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
@@ -97,7 +97,6 @@
                         <option value="">Pilih</option>
                         <option value="Belum Menikah" {{ old('status_pernikahan') === 'Belum Menikah' ? 'selected' : '' }}>Belum Menikah</option>
                         <option value="Menikah" {{ old('status_pernikahan') === 'Menikah' ? 'selected' : '' }}>Menikah</option>
-                        <option value="Cerai" {{ old('status_pernikahan') === 'Cerai' ? 'selected' : '' }}>Cerai</option>
                     </select>
                 </div>
 
@@ -152,8 +151,8 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Gelar Pendidikan</label>
-                    <input type="text" name="gelar_pendidikan" value="{{ old('gelar_pendidikan') }}" placeholder="Contoh: S.Kom, S.E, M.M"
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Nama Ibu Kandung</label>
+                    <input type="text" name="nama_ibu_kandung" value="{{ old('nama_ibu_kandung') }}"
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                 </div>
 
@@ -176,30 +175,30 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Divisi</label>
-                    <select name="divisi"
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Divisi <span class="text-[#ec1d1d]">*</span></label>
+                    <select name="divisi" id="divisi_select" required
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                         <option value="">Pilih Divisi</option>
-                        <option value="MEDIA" {{ old('divisi') === 'MEDIA' ? 'selected' : '' }}>MEDIA</option>
-                        <option value="KPD" {{ old('divisi') === 'KPD' ? 'selected' : '' }}>KPD</option>
-                        <option value="IT" {{ old('divisi') === 'IT' ? 'selected' : '' }}>IT</option>
                         <option value="HRD" {{ old('divisi') === 'HRD' ? 'selected' : '' }}>HRD</option>
+                        <option value="IT" {{ old('divisi') === 'IT' ? 'selected' : '' }}>IT</option>
+                        <option value="KPD" {{ old('divisi') === 'KPD' ? 'selected' : '' }}>KPD</option>
                         <option value="LPS" {{ old('divisi') === 'LPS' ? 'selected' : '' }}>LPS</option>
+                        <option value="MEDIA" {{ old('divisi') === 'MEDIA' ? 'selected' : '' }}>MEDIA</option>
+                        <option value="PENDIDIKAN" {{ old('divisi') === 'PENDIDIKAN' ? 'selected' : '' }}>PENDIDIKAN</option>
                         <option value="PKA" {{ old('divisi') === 'PKA' ? 'selected' : '' }}>PKA</option>
                         <option value="RG" {{ old('divisi') === 'RG' ? 'selected' : '' }}>RG</option>
                         <option value="SAPRAS" {{ old('divisi') === 'SAPRAS' ? 'selected' : '' }}>SAPRAS</option>
-                        <option value="PENDIDIKAN" {{ old('divisi') === 'PENDIDIKAN' ? 'selected' : '' }}>PENDIDIKAN</option>
                     </select>
+                    <p class="text-xs text-[#27438D] mt-1">* Posisi akan otomatis ditentukan berdasarkan divisi (HRD = HR, lainnya = Karyawan)</p>
                     @error('divisi') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Role</label>
-                    <select name="role"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
-                        <option value="karyawan" {{ old('role') === 'karyawan' ? 'selected' : '' }}>Karyawan</option>
-                        <option value="hr" {{ old('role') === 'hr' ? 'selected' : '' }}>HR</option>
-                    </select>
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Posisi</label>
+                    <input type="text" id="posisi_display" value="Karyawan" disabled
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100">
+                    <input type="hidden" name="posisi" id="posisi_hidden" value="karyawan">
+                    <p class="text-xs text-[#27438D] mt-1">* Posisi ditentukan otomatis berdasarkan divisi</p>
                 </div>
 
                 <div>
@@ -243,8 +242,8 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Universitas</label>
-                    <input type="text" name="universitas" value="{{ old('universitas') }}"
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Perguruan Tinggi</label>
+                    <input type="text" name="perguruan_tinggi" value="{{ old('perguruan_tinggi') }}"
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                 </div>
 
@@ -268,6 +267,12 @@
                 <div>
                     <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Nomor Telepon</label>
                     <input type="text" name="nomor_telepon" value="{{ old('nomor_telepon') }}"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">No WA</label>
+                    <input type="text" name="no_wa" value="{{ old('no_wa') }}"
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                 </div>
 
@@ -309,4 +314,27 @@
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const divisiSelect = document.getElementById('divisi_select');
+    const posisiDisplay = document.getElementById('posisi_display');
+    const posisiHidden = document.getElementById('posisi_hidden');
+
+    function updatePosisi() {
+        const divisi = divisiSelect.value;
+        if (divisi === 'HRD') {
+            posisiDisplay.value = 'HR';
+            posisiHidden.value = 'hr';
+        } else {
+            posisiDisplay.value = 'Karyawan';
+            posisiHidden.value = 'karyawan';
+        }
+    }
+
+    divisiSelect.addEventListener('change', updatePosisi);
+    // Initial update
+    updatePosisi();
+});
+</script>
 @endsection

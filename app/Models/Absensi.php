@@ -22,6 +22,8 @@ class Absensi extends Model
         'jam_lembur',
         'is_telat',
         'menit_telat',
+        'is_manual_checkin',
+        'is_manual_checkout',
     ];
 
     protected $casts = [
@@ -30,6 +32,8 @@ class Absensi extends Model
         'check_out' => 'datetime',
         'is_lembur' => 'boolean',
         'is_telat' => 'boolean',
+        'is_manual_checkin' => 'boolean',
+        'is_manual_checkout' => 'boolean',
     ];
 
     public function karyawan()

@@ -18,31 +18,23 @@ class AuthenticatedSessionController extends Controller
 
     public function store(LoginRequest $request): RedirectResponse
     {
-        $credentials = $request->only('email', 'password');
+        $request->authenticate();
 
-        if (Auth::attempt(['email' => $credentials['email'], 'password' => $credentials['password']])) {
-            $request->session()->regenerate();
+        $request->session()->regenerate();
 
-            $user = Auth::user();
+        $user = Auth::user();
 
-            // Cegah redirect loop
-            if ($user->role === 'hr') {
-                return redirect()->intended(route('hr.dashboard'));
-            }
-
-            if ($user->role === 'karyawan') {
-                return redirect()->intended(route('karyawan.dashboard'));
-            }
-
-            // Default redirect jika role tidak dikenal
-            return redirect('/');
+        // Cek posisi user
+        if ($user->posisi === 'hr') {
+            return redirect()->intended(route('hr.dashboard'));
         }
 
-        return back()
-            ->withErrors([
-                'email' => 'The provided credentials do not match our records.',
-            ])
-            ->onlyInput('email');
+        if ($user->posisi === 'karyawan') {
+            return redirect()->intended(route('karyawan.dashboard'));
+        }
+
+        // Default redirect jika posisi tidak dikenal
+        return redirect('/');
     }
 
     public function destroy(Request $request): RedirectResponse
@@ -52,6 +44,6 @@ class AuthenticatedSessionController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect('/login');
     }
 }

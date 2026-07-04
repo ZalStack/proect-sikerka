@@ -13,22 +13,22 @@ class Karyawan extends Authenticatable
     protected $primaryKey = 'id';
 
     protected $fillable = [
-        'nip',
+        'kode_pegawai',
         'email',
         'kata_sandi',
         'nama_depan',
         'nama_belakang',
         'nama_lengkap',
-        'role',
+        'posisi',
         'jabatan',
         'divisi',
         'golongan_darah',
         'no_kk',
-        'gelar_pendidikan',
         'sedang_melanjutkan_pendidikan',
         'jumlah_anak',
         'foto_profil',
         'nomor_telepon',
+        'no_wa',
         'alamat',
         'tanggal_bergabung',
         'end_date',
@@ -44,9 +44,10 @@ class Karyawan extends Authenticatable
         'status_pernikahan',
         'pendidikan_terakhir',
         'pendidikan_terakhir_new',
-        'universitas',
+        'perguruan_tinggi',
         'jurusan',
         'tahun_lulus',
+        'nama_ibu_kandung',
         'nama_kontak_darurat',
         'telepon_kontak_darurat',
     ];
@@ -63,12 +64,12 @@ class Karyawan extends Authenticatable
 
     public function isHr()
     {
-        return $this->role === 'hr';
+        return $this->posisi === 'hr';
     }
 
     public function isKaryawan()
     {
-        return $this->role === 'karyawan';
+        return $this->posisi === 'karyawan';
     }
 
     protected $casts = [

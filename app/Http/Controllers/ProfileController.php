@@ -14,21 +14,23 @@ class ProfileController extends Controller
     public function edit()
     {
         $user = Auth::user();
-        $isHr = $user->role === 'hr';
+        $isHr = $user->posisi === 'hr'; // Ganti 'role' menjadi 'posisi'
         return view('profile.edit', compact('user', 'isHr'));
     }
 
     public function update(Request $request)
     {
         $user = Auth::user();
-        $isHr = $user->role === 'hr';
+        $isHr = $user->posisi === 'hr'; // Ganti 'role' menjadi 'posisi'
 
         $rules = [
+            'kode_pegawai' => 'required|unique:karyawans,kode_pegawai,' . $user->id,
             'nama_depan' => 'required|string|max:100',
             'nama_belakang' => 'required|string|max:100',
             'nama_lengkap' => 'required|string|max:100',
             'email' => 'required|email|unique:karyawans,email,' . $user->id,
             'nomor_telepon' => 'nullable|string|max:20',
+            'no_wa' => 'nullable|string|max:20',
             'alamat' => 'nullable|string',
             'nik' => 'nullable|string|max:16|unique:karyawans,nik,' . $user->id,
             'npwp' => 'nullable|string|max:20',
@@ -39,12 +41,12 @@ class ProfileController extends Controller
             'status_pernikahan' => 'nullable|string|max:20',
             'golongan_darah' => 'nullable|in:A,B,AB,O',
             'no_kk' => 'nullable|string|max:20',
-            'gelar_pendidikan' => 'nullable|string|max:50',
+            'nama_ibu_kandung' => 'nullable|string|max:100',
             'sedang_melanjutkan_pendidikan' => 'nullable|string|max:100',
             'jumlah_anak' => 'nullable|integer|min:0',
             'pendidikan_terakhir' => 'nullable|string|max:50',
             'pendidikan_terakhir_new' => 'nullable|in:SMP,SMA/MA,SMK,D1,D2,D3,D4,S1,S2',
-            'universitas' => 'nullable|string|max:100',
+            'perguruan_tinggi' => 'nullable|string|max:100',
             'jurusan' => 'nullable|string|max:100',
             'tahun_lulus' => 'nullable|integer|min:1900|max:' . date('Y'),
             'nama_kontak_darurat' => 'nullable|string|max:100',
@@ -56,12 +58,7 @@ class ProfileController extends Controller
             $rules['jabatan'] = 'required|string|max:100';
             $rules['status'] = 'required|in:Full-time,Contract,Internship';
             $rules['tanggal_bergabung'] = 'required|date';
-            $rules['divisi'] = 'nullable|in:MEDIA,KPD,IT,HRD,LPS,PKA,RG,SAPRAS,PENDIDIKAN';
-        } else {
-            $rules['jabatan'] = 'sometimes|string|max:100';
-            $rules['status'] = 'sometimes|in:Full-time,Contract,Internship';
-            $rules['tanggal_bergabung'] = 'sometimes|date';
-            $rules['divisi'] = 'sometimes|in:MEDIA,KPD,IT,HRD,LPS,PKA,RG,SAPRAS,PENDIDIKAN';
+            $rules['divisi'] = 'required|in:HRD,IT,KPD,LPS,MEDIA,PENDIDIKAN,PKA,RG,SAPRAS';
         }
 
         $request->validate($rules);
@@ -70,7 +67,7 @@ class ProfileController extends Controller
 
         if (!$isHr) {
             unset($data['jabatan']);
-            unset($data['role']);
+            unset($data['posisi']);
             unset($data['status']);
             unset($data['tanggal_bergabung']);
             unset($data['divisi']);

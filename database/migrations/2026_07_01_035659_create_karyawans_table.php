@@ -10,22 +10,22 @@ return new class extends Migration
     {
         Schema::create('karyawans', function (Blueprint $table) {
             $table->id();
-            $table->string('nip', 20)->unique();
+            $table->string('kode_pegawai', 20)->unique();
             $table->string('email', 100)->unique();
             $table->string('kata_sandi');
             $table->string('nama_depan', 100);
             $table->string('nama_belakang', 100);
             $table->string('nama_lengkap', 100);
-            $table->string('role', 20)->default('karyawan');
+            $table->string('posisi', 20)->default('karyawan');
             $table->string('jabatan', 100);
             $table->string('divisi', 50)->nullable();
             $table->string('golongan_darah', 5)->nullable();
             $table->string('no_kk', 20)->nullable();
-            $table->string('gelar_pendidikan', 50)->nullable();
             $table->string('sedang_melanjutkan_pendidikan', 100)->nullable();
             $table->integer('jumlah_anak')->default(0);
             $table->string('foto_profil', 255)->nullable();
             $table->string('nomor_telepon', 20)->nullable();
+            $table->string('no_wa', 20)->nullable();
             $table->text('alamat')->nullable();
             $table->date('tanggal_bergabung');
             $table->date('end_date')->nullable();
@@ -41,9 +41,10 @@ return new class extends Migration
             $table->string('status_pernikahan', 20)->nullable();
             $table->string('pendidikan_terakhir', 50)->nullable();
             $table->string('pendidikan_terakhir_new', 20)->nullable();
-            $table->string('universitas', 100)->nullable();
+            $table->string('perguruan_tinggi', 100)->nullable();
             $table->string('jurusan', 100)->nullable();
             $table->integer('tahun_lulus')->nullable();
+            $table->string('nama_ibu_kandung', 100)->nullable();
             $table->string('nama_kontak_darurat', 100)->nullable();
             $table->string('telepon_kontak_darurat', 20)->nullable();
             $table->rememberToken();

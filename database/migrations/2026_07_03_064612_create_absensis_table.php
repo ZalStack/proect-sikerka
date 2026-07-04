@@ -15,16 +15,17 @@ return new class extends Migration
             $table->time('check_in')->nullable();
             $table->time('check_out')->nullable();
             $table->string('kantor_cabang', 50);
-            $table->string('status', 20)->default('Hadir'); 
+            $table->string('status', 20)->default('Hadir');
             $table->text('keterangan')->nullable();
             $table->integer('total_jam_kerja')->default(0);
             $table->boolean('is_lembur')->default(false);
             $table->integer('jam_lembur')->default(0);
             $table->boolean('is_telat')->default(false);
             $table->integer('menit_telat')->default(0);
+            $table->boolean('is_manual_checkin')->default(false);
+            $table->boolean('is_manual_checkout')->default(false);
             $table->timestamps();
 
-            // Unique constraint untuk satu hari satu karyawan
             $table->unique(['karyawan_id', 'tanggal']);
         });
     }
