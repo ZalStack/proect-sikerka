@@ -18,12 +18,8 @@ return new class extends Migration
             $table->string('status', 20)->default('Hadir');
             $table->text('keterangan')->nullable();
             $table->integer('total_jam_kerja')->default(0);
-            $table->boolean('is_lembur')->default(false);
-            $table->integer('jam_lembur')->default(0);
-            $table->boolean('is_telat')->default(false);
-            $table->integer('menit_telat')->default(0);
-            $table->boolean('is_manual_checkin')->default(false);
-            $table->boolean('is_manual_checkout')->default(false);
+            $table->string('ip_address', 50)->nullable();
+            $table->string('mac_address', 50)->nullable();
             $table->timestamps();
 
             $table->unique(['karyawan_id', 'tanggal']);
