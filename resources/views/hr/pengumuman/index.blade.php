@@ -32,7 +32,7 @@
                 <table class="w-full min-w-[800px]">
                     <thead class="bg-[#F5F5F5]">
                         <tr>
-                            <th class="px-4 py-3 text-left text-sm font-semibold text-[#1B1B1B]">No</th>
+                            <th class="px-4 py-3 text-left text-sm font-semibold text-[#1B1B1B]">#</th>
                             <th class="px-4 py-3 text-left text-sm font-semibold text-[#1B1B1B]">Judul</th>
                             <th class="px-4 py-3 text-left text-sm font-semibold text-[#1B1B1B]">Target</th>
                             <th class="px-4 py-3 text-left text-sm font-semibold text-[#1B1B1B]">WhatsApp</th>
@@ -56,22 +56,24 @@
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-sm">
-                                @if($item->is_sent_to_whatsapp)
-                                    <span class="px-2 py-1 rounded-full text-xs font-medium bg-[#2E7D3E] text-white">
+                                <span class="px-2 py-1 rounded-full text-xs font-medium {{ $item->whatsapp_status_color }}">
+                                    @if($item->whatsapp_status == 'sent')
                                         ✅ Terkirim
-                                    </span>
+                                    @elseif($item->whatsapp_status == 'pending')
+                                        ⏳ Menunggu
+                                    @else
+                                        ❌ Gagal
+                                    @endif
+                                </span>
+                                @if($item->sent_at)
                                     <div class="text-xs text-gray-500 mt-1">
-                                        {{ $item->sent_at ? $item->sent_at->format('d-m-Y H:i') : '-' }}
+                                        {{ $item->sent_at->format('d-m-Y H:i') }}
                                     </div>
-                                @else
-                                    <span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-300 text-gray-600">
-                                        ❌ Belum
-                                    </span>
                                 @endif
                             </td>
                             <td class="px-4 py-3 text-sm">
                                 <div>{{ $item->created_at->format('d-m-Y') }}</div>
-                                <div class="text-xs text-gray-500">{{ $item->creator->nama_lengkap }}</div>
+                                <div class="text-xs text-gray-500">{{ $item->creator->nama_lengkap ?? 'HR' }}</div>
                             </td>
                             <td class="px-4 py-3">
                                 <div class="flex flex-wrap gap-1">
@@ -83,7 +85,7 @@
                                        class="text-[#FCC626] hover:text-[#e6b222] text-sm">
                                         Edit
                                     </a>
-                                    @if(!$item->is_sent_to_whatsapp)
+                                    @if($item->whatsapp_status != 'sent')
                                     <form action="{{ route('hr.pengumuman.resend-whatsapp', $item->id) }}" method="POST" class="inline">
                                         @csrf
                                         <button type="submit" class="text-[#25D366] hover:text-green-700 text-sm">
@@ -118,7 +120,6 @@
                 </table>
             </div>
 
-            <!-- Pagination -->
             <div class="px-4 py-4 bg-white border-t border-gray-200">
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div class="text-sm text-[#1B1B1B] order-2 sm:order-1">
@@ -130,7 +131,6 @@
                         <span class="font-semibold">{{ $pengumuman->total() }}</span>
                         data
                     </div>
-
                     <div class="order-1 sm:order-2 w-full sm:w-auto">
                         {{ $pengumuman->links() }}
                     </div>

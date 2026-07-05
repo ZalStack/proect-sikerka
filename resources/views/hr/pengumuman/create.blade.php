@@ -29,9 +29,7 @@
             @csrf
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- KOLOM KIRI -->
                 <div class="md:col-span-2">
-                    <!-- Judul -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Judul Pengumuman <span class="text-[#ec1d1d]">*</span></label>
                         <input type="text" name="judul" value="{{ old('judul') }}" required
@@ -39,7 +37,6 @@
                         @error('judul') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
 
-                    <!-- Isi Pengumuman -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Isi Pengumuman <span class="text-[#ec1d1d]">*</span></label>
                         <textarea name="isi" rows="6" required
@@ -48,7 +45,6 @@
                     </div>
                 </div>
 
-                <!-- Target -->
                 <div>
                     <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Target Penerima <span class="text-[#ec1d1d]">*</span></label>
                     <select name="target" required
@@ -60,7 +56,6 @@
                     @error('target') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                 </div>
 
-                <!-- Kirim WhatsApp -->
                 <div>
                     <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Kirim ke WhatsApp</label>
                     <div class="flex items-center space-x-3 mt-2">
@@ -71,10 +66,8 @@
                         </label>
                     </div>
                     <p class="text-xs text-gray-500 mt-1">Nomor WhatsApp: <span class="font-semibold">082123439604</span></p>
-                    <p class="text-xs text-[#27438D] mt-1">⚠️ Pengumuman akan dikirim ke nomor WhatsApp yang terdaftar</p>
                 </div>
 
-                <!-- Gambar -->
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Gambar (Opsional)</label>
                     <input type="file" name="gambar" accept="image/*"
@@ -96,7 +89,6 @@
             </div>
         </form>
 
-        <!-- Info WhatsApp -->
         <div class="mt-6 bg-[#F5F5F5] rounded-lg p-4">
             <div class="flex items-center space-x-2">
                 <svg class="w-6 h-6 text-[#25D366]" fill="currentColor" viewBox="0 0 24 24">
@@ -105,7 +97,7 @@
                 <span class="text-sm font-semibold text-[#1B1B1B]">Nomor WhatsApp:</span>
                 <span class="text-sm text-[#27438D] font-mono font-bold">082123439604</span>
             </div>
-            <p class="text-xs text-gray-500 mt-1">Pengumuman akan dikirim ke WhatsApp karyawan yang memiliki nomor telepon terdaftar</p>
+            <p class="text-xs text-gray-500 mt-1">Pengumuman akan dikirim ke WhatsApp yang sudah terdaftar</p>
         </div>
     </div>
 </div>

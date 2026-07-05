@@ -50,21 +50,23 @@
                         <div>
                             <label class="text-sm text-[#1B1B1B] font-medium">Status WhatsApp</label>
                             <p class="text-[#27438D]">
-                                @if($pengumuman->is_sent_to_whatsapp)
-                                    <span class="px-2 py-1 rounded-full text-xs font-medium bg-[#2E7D3E] text-white">
+                                <span class="px-2 py-1 rounded-full text-xs font-medium {{ $pengumuman->whatsapp_status_color }}">
+                                    @if($pengumuman->whatsapp_status == 'sent')
                                         ✅ Terkirim
-                                    </span>
-                                    <div class="text-sm mt-1">Dikirim: {{ $pengumuman->sent_at ? $pengumuman->sent_at->format('d-m-Y H:i') : '-' }}</div>
-                                @else
-                                    <span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-300 text-gray-600">
-                                        ❌ Belum Terkirim
-                                    </span>
+                                    @elseif($pengumuman->whatsapp_status == 'pending')
+                                        ⏳ Menunggu
+                                    @else
+                                        ❌ Gagal
+                                    @endif
+                                </span>
+                                @if($pengumuman->sent_at)
+                                    <div class="text-sm mt-1">Dikirim: {{ $pengumuman->sent_at->format('d-m-Y H:i') }}</div>
                                 @endif
                             </p>
                         </div>
                         <div>
                             <label class="text-sm text-[#1B1B1B] font-medium">Dibuat Oleh</label>
-                            <p class="text-[#27438D]">{{ $pengumuman->creator->nama_lengkap }}</p>
+                            <p class="text-[#27438D]">{{ $pengumuman->creator->nama_lengkap ?? 'HR' }}</p>
                         </div>
                         <div>
                             <label class="text-sm text-[#1B1B1B] font-medium">Tanggal Dibuat</label>
@@ -73,7 +75,7 @@
                     </div>
                 </div>
 
-                @if(!$pengumuman->is_sent_to_whatsapp)
+                @if($pengumuman->whatsapp_status != 'sent')
                 <div class="mt-6 pt-6 border-t border-gray-200">
                     <form action="{{ route('hr.pengumuman.resend-whatsapp', $pengumuman->id) }}" method="POST" class="inline">
                         @csrf

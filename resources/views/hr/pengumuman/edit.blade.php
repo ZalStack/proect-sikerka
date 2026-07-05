@@ -9,12 +9,21 @@
             <p class="text-[#27438D]">Update pengumuman</p>
         </div>
 
+        @if($errors->any())
+            <div class="bg-[#ec1d1d] text-white p-4 rounded-lg mb-4">
+                <ul class="list-disc list-inside">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <form action="{{ route('hr.pengumuman.update', $pengumuman->id) }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-lg shadow-md p-6">
             @csrf
             @method('PUT')
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Judul -->
                 <div class="md:col-span-2">
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Judul Pengumuman <span class="text-[#ec1d1d]">*</span></label>
@@ -23,7 +32,6 @@
                         @error('judul') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
 
-                    <!-- Isi -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Isi Pengumuman <span class="text-[#ec1d1d]">*</span></label>
                         <textarea name="isi" rows="6" required
@@ -32,7 +40,6 @@
                     </div>
                 </div>
 
-                <!-- Target -->
                 <div>
                     <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Target Penerima <span class="text-[#ec1d1d]">*</span></label>
                     <select name="target" required
@@ -44,9 +51,8 @@
                     @error('target') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                 </div>
 
-                <!-- Gambar -->
                 <div>
-                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Gambar (Opsional)</label>
+                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Gambar</label>
                     <input type="file" name="gambar" accept="image/*"
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                     @if($pengumuman->gambar)

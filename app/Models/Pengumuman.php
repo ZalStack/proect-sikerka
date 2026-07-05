@@ -25,6 +25,8 @@ class Pengumuman extends Model
     protected $casts = [
         'is_sent_to_whatsapp' => 'boolean',
         'sent_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     public function creator()
@@ -50,5 +52,15 @@ class Pengumuman extends Model
             'failed' => 'Gagal'
         ];
         return $labels[$this->whatsapp_status] ?? $this->whatsapp_status;
+    }
+
+    public function getWhatsappStatusColorAttribute()
+    {
+        $colors = [
+            'pending' => 'bg-[#FCC626] text-[#1B1B1B]',
+            'sent' => 'bg-[#2E7D3E] text-white',
+            'failed' => 'bg-[#ec1d1d] text-white'
+        ];
+        return $colors[$this->whatsapp_status] ?? 'bg-gray-300 text-gray-600';
     }
 }

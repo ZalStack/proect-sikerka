@@ -8,12 +8,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Http;
 use Carbon\Carbon;
 
 class PengumumanController extends Controller
 {
-    // WhatsApp Gateway Configuration
     private $whatsappNumber = '082123439604';
 
     public function index()
@@ -32,36 +30,28 @@ class PengumumanController extends Controller
 
     public function store(Request $request)
     {
-        // Debug: log request data
-        \Log::info('Pengumuman store request:', $request->all());
-
         $request->validate([
             'judul' => 'required|string|max:200',
             'isi' => 'required|string',
             'gambar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'target' => 'required|in:semua,hr,karyawan',
-            'send_whatsapp' => 'nullable',
         ]);
 
         $data = [
             'judul' => $request->judul,
             'isi' => $request->isi,
             'target' => $request->target,
-            'created_by' => Auth::id(), // Pastikan user login
+            'created_by' => Auth::id(),
             'is_sent_to_whatsapp' => false,
             'whatsapp_status' => 'pending',
         ];
 
-        // Upload gambar jika ada
         if ($request->hasFile('gambar')) {
             $file = $request->file('gambar');
             $filename = time() . '_' . Str::slug($request->judul) . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('pengumuman', $filename, 'public');
             $data['gambar'] = $path;
         }
-
-        // Debug: check data before save
-        \Log::info('Data to save:', $data);
 
         try {
             $pengumuman = Pengumuman::create($data);
@@ -76,7 +66,6 @@ class PengumumanController extends Controller
                     ($request->has('send_whatsapp') ? ' dan dikirim ke WhatsApp' : ''));
 
         } catch (\Exception $e) {
-            \Log::error('Error saving pengumuman:', ['error' => $e->getMessage()]);
             return back()->with('error', 'Gagal menyimpan pengumuman: ' . $e->getMessage())
                 ->withInput();
         }
@@ -139,23 +128,17 @@ class PengumumanController extends Controller
             ->with('success', 'Pengumuman berhasil dihapus');
     }
 
-    // Kirim ke WhatsApp
     public function sendToWhatsApp($pengumuman)
     {
         try {
-            // Update status
             $pengumuman->whatsapp_status = 'sent';
             $pengumuman->is_sent_to_whatsapp = true;
             $pengumuman->sent_at = Carbon::now();
             $pengumuman->save();
 
-            // Format pesan
             $message = $this->formatWhatsAppMessage($pengumuman);
-
-            // Buat link WhatsApp
             $whatsappLink = "https://wa.me/{$this->whatsappNumber}?text=" . urlencode($message);
 
-            // Simpan link atau kirim ke log
             \Log::info('WhatsApp Link:', ['link' => $whatsappLink]);
 
             return true;
@@ -168,7 +151,6 @@ class PengumumanController extends Controller
         }
     }
 
-    // Kirim ulang ke WhatsApp
     public function resendWhatsApp($id)
     {
         $pengumuman = Pengumuman::findOrFail($id);
@@ -184,7 +166,6 @@ class PengumumanController extends Controller
         }
     }
 
-    // Format pesan WhatsApp
     private function formatWhatsAppMessage($pengumuman)
     {
         $message = "📢 *PENGUMUMAN*\n\n";
@@ -197,22 +178,5 @@ class PengumumanController extends Controller
         $message .= "🆔 *ID:* #" . str_pad($pengumuman->id, 4, '0', STR_PAD_LEFT);
 
         return $message;
-    }
-
-    // Manual send via WhatsApp button
-    public function manualSendWhatsApp($id)
-    {
-        $pengumuman = Pengumuman::findOrFail($id);
-
-        $message = $this->formatWhatsAppMessage($pengumuman);
-
-        $whatsappLink = "https://wa.me/{$this->whatsappNumber}?text=" . urlencode($message);
-
-        return response()->json([
-            'success' => true,
-            'message' => $message,
-            'link' => $whatsappLink,
-            'phone' => $this->whatsappNumber
-        ]);
     }
 }
