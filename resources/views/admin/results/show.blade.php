@@ -130,7 +130,7 @@
                     </button>
                 </form>
             @else
-                <form action="{{ route('admin.results.show', $attempt) }}" method="POST">
+                <form action="{{ route('admin.results.show-score', $attempt) }}" method="POST">
                     @csrf
                     <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition">
                         <i class="fas fa-eye mr-1"></i> Tampilkan Nilai

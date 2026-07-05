@@ -61,7 +61,7 @@
                    class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition">
                     <i class="fas fa-cog mr-2"></i> Pengaturan
                 </a>
-                <a href="{{ route('employee.dashboard') }}"
+                <a href="/"
                    class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-lg transition">
                     <i class="fas fa-arrow-left mr-2"></i> Kembali
                 </a>

@@ -19,10 +19,11 @@ class QuizController extends Controller
         return view('admin.quizzes.index', compact('quizzes'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $materials = Material::where('is_active', true)->get();
-        return view('admin.quizzes.create', compact('materials'));
+        $selectedMaterial = $request->get('material_id');
+        return view('admin.quizzes.create', compact('materials', 'selectedMaterial'));
     }
 
     public function store(Request $request)
@@ -31,15 +32,15 @@ class QuizController extends Controller
             'material_id' => 'required|exists:materials,id',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'start_date' => 'required|date|after:now',
+            'start_date' => 'required|date',
             'end_date' => 'required|date|after:start_date',
             'duration_minutes' => 'required|integer|min:1|max:480',
             'passing_score' => 'required|integer|min:0|max:100',
-            'is_random_questions' => 'boolean',
-            'show_score' => 'boolean',
-            'show_correct_answers' => 'boolean',
+            'is_random_questions' => 'nullable|boolean',
+            'show_score' => 'nullable|boolean',
+            'show_correct_answers' => 'nullable|boolean',
             'max_attempts' => 'required|integer|min:1',
-            'is_active' => 'boolean',
+            'is_active' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -54,11 +55,11 @@ class QuizController extends Controller
             'end_date' => $request->end_date,
             'duration_minutes' => $request->duration_minutes,
             'passing_score' => $request->passing_score,
-            'is_random_questions' => $request->is_random_questions ?? false,
-            'show_score' => $request->show_score ?? true,
-            'show_correct_answers' => $request->show_correct_answers ?? false,
+            'is_random_questions' => $request->has('is_random_questions'),
+            'show_score' => $request->has('show_score'),
+            'show_correct_answers' => $request->has('show_correct_answers'),
             'max_attempts' => $request->max_attempts,
-            'is_active' => $request->is_active ?? true,
+            'is_active' => $request->has('is_active'),
         ]);
 
         return redirect()
@@ -82,11 +83,11 @@ class QuizController extends Controller
             'end_date' => 'required|date|after:start_date',
             'duration_minutes' => 'required|integer|min:1|max:480',
             'passing_score' => 'required|integer|min:0|max:100',
-            'is_random_questions' => 'boolean',
-            'show_score' => 'boolean',
-            'show_correct_answers' => 'boolean',
+            'is_random_questions' => 'nullable|boolean',
+            'show_score' => 'nullable|boolean',
+            'show_correct_answers' => 'nullable|boolean',
             'max_attempts' => 'required|integer|min:1',
-            'is_active' => 'boolean',
+            'is_active' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -101,11 +102,11 @@ class QuizController extends Controller
             'end_date' => $request->end_date,
             'duration_minutes' => $request->duration_minutes,
             'passing_score' => $request->passing_score,
-            'is_random_questions' => $request->is_random_questions ?? false,
-            'show_score' => $request->show_score ?? true,
-            'show_correct_answers' => $request->show_correct_answers ?? false,
+            'is_random_questions' => $request->has('is_random_questions'),
+            'show_score' => $request->has('show_score'),
+            'show_correct_answers' => $request->has('show_correct_answers'),
             'max_attempts' => $request->max_attempts,
-            'is_active' => $request->is_active ?? true,
+            'is_active' => $request->has('is_active'),
         ]);
 
         return redirect()

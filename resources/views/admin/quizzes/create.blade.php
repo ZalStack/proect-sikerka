@@ -26,7 +26,7 @@
                             required>
                         <option value="">Pilih Materi</option>
                         @foreach($materials as $material)
-                            <option value="{{ $material->id }}" {{ old('material_id') == $material->id ? 'selected' : '' }}>
+                            <option value="{{ $material->id }}" {{ old('material_id', $selectedMaterial ?? '') == $material->id ? 'selected' : '' }}>
                                 {{ $material->title }}
                             </option>
                         @endforeach
@@ -137,7 +137,7 @@
                     </div>
                     <div>
                         <label class="flex items-center">
-                            <input type="checkbox" name="show_score" value="1" {{ old('show_score', '1') ? 'checked' : '' }}>
+                            <input type="checkbox" name="show_score" value="1" {{ old('show_score', true) ? 'checked' : '' }}>
                             <span class="ml-2 text-sm text-gray-700">Tampilkan nilai</span>
                         </label>
                     </div>
@@ -149,7 +149,7 @@
                     </div>
                     <div>
                         <label class="flex items-center">
-                            <input type="checkbox" name="is_active" value="1" {{ old('is_active', '1') ? 'checked' : '' }}>
+                            <input type="checkbox" name="is_active" value="1" {{ old('is_active', true) ? 'checked' : '' }}>
                             <span class="ml-2 text-sm text-gray-700">Aktif</span>
                         </label>
                     </div>

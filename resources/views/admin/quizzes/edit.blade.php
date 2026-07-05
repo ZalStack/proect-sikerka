@@ -67,7 +67,7 @@
                         <input type="datetime-local"
                                id="start_date"
                                name="start_date"
-                               value="{{ old('start_date', $quiz->start_date->format('Y-m-d\TH:i')) }}"
+                               value="{{ old('start_date', $quiz->start_date ? $quiz->start_date->format('Y-m-d\TH:i') : '') }}"
                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 @error('start_date') border-red-500 @enderror"
                                required>
                         @error('start_date')
@@ -79,7 +79,7 @@
                         <input type="datetime-local"
                                id="end_date"
                                name="end_date"
-                               value="{{ old('end_date', $quiz->end_date->format('Y-m-d\TH:i')) }}"
+                               value="{{ old('end_date', $quiz->end_date ? $quiz->end_date->format('Y-m-d\TH:i') : '') }}"
                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 @error('end_date') border-red-500 @enderror"
                                required>
                         @error('end_date')

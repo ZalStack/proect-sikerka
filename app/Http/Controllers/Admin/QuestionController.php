@@ -79,7 +79,7 @@ class QuestionController extends Controller
             'correct_option' => 'required_if:type,multiple_choice|integer|min:0',
             'correct_answer' => 'required_if:type,true_false,short_answer|string',
             'order_number' => 'nullable|integer',
-            'is_active' => 'boolean',
+            'is_active' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -91,12 +91,13 @@ class QuestionController extends Controller
             'question_text' => $request->question_text,
             'points' => $request->points,
             'order_number' => $request->order_number ?? 0,
-            'is_active' => $request->is_active ?? true,
+            'is_active' => $request->has('is_active'),
         ]);
 
         // Update options
+        $question->options()->delete();
+
         if ($request->type === 'multiple_choice') {
-            $question->options()->delete();
             foreach ($request->options as $index => $optionText) {
                 Option::create([
                     'question_id' => $question->id,
@@ -105,7 +106,6 @@ class QuestionController extends Controller
                 ]);
             }
         } elseif (in_array($request->type, ['true_false', 'short_answer'])) {
-            $question->options()->delete();
             Option::create([
                 'question_id' => $question->id,
                 'option_text' => $request->correct_answer,

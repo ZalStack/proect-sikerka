@@ -30,9 +30,9 @@ class MaterialController extends Controller
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'file' => 'required|file|max:2048', // 2MB max
+            'file' => 'required|file|max:2048',
             'order_number' => 'nullable|integer',
-            'is_active' => 'boolean',
+            'is_active' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -51,7 +51,7 @@ class MaterialController extends Controller
             'file_size' => $file->getSize(),
             'created_by' => auth()->id(),
             'order_number' => $request->order_number ?? 0,
-            'is_active' => $request->is_active ?? true,
+            'is_active' => $request->has('is_active'),
         ]);
 
         return redirect()
@@ -71,14 +71,19 @@ class MaterialController extends Controller
             'description' => 'required|string',
             'file' => 'nullable|file|max:2048',
             'order_number' => 'nullable|integer',
-            'is_active' => 'boolean',
+            'is_active' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
         }
 
-        $data = $request->only(['title', 'description', 'order_number', 'is_active']);
+        $data = [
+            'title' => $request->title,
+            'description' => $request->description,
+            'order_number' => $request->order_number ?? 0,
+            'is_active' => $request->has('is_active'),
+        ];
 
         if ($request->hasFile('file')) {
             // Delete old file
@@ -111,7 +116,10 @@ class MaterialController extends Controller
 
         // Delete associated quiz and its questions
         if ($material->quiz) {
-            $material->quiz->questions()->delete();
+            foreach ($material->quiz->questions as $question) {
+                $question->options()->delete();
+                $question->delete();
+            }
             $material->quiz->delete();
         }
 
@@ -126,5 +134,37 @@ class MaterialController extends Controller
     {
         $material->load(['creator', 'quiz.questions.options', 'tasks.user']);
         return view('admin.materials.show', compact('material'));
+    }
+
+    public function duplicate(Material $material)
+    {
+        // Duplicate material
+        $newMaterial = $material->replicate();
+        $newMaterial->title = $material->title . ' (Copy)';
+        $newMaterial->created_by = auth()->id();
+        $newMaterial->save();
+
+        // Duplicate quiz if exists
+        if ($material->quiz) {
+            $newQuiz = $material->quiz->replicate();
+            $newQuiz->material_id = $newMaterial->id;
+            $newQuiz->save();
+
+            foreach ($material->quiz->questions as $question) {
+                $newQuestion = $question->replicate();
+                $newQuestion->quiz_id = $newQuiz->id;
+                $newQuestion->save();
+
+                foreach ($question->options as $option) {
+                    $newOption = $option->replicate();
+                    $newOption->question_id = $newQuestion->id;
+                    $newOption->save();
+                }
+            }
+        }
+
+        return redirect()
+            ->route('admin.materials.index')
+            ->with('success', 'Materi berhasil diduplikasi.');
     }
 }
