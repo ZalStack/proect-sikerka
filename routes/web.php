@@ -6,6 +6,7 @@ use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\KaryawanDashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AbsensiController;
+use App\Http\Controllers\PengumumanController;
 use Illuminate\Support\Facades\Route;
 
 // Redirect root berdasarkan role
@@ -48,6 +49,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/absensi/export', [AbsensiController::class, 'exportExcel'])->name('absensi.export');
         Route::get('/absensi/{id}', [AbsensiController::class, 'detail'])->name('absensi.detail');
         Route::put('/absensi/{id}/status', [AbsensiController::class, 'updateStatus'])->name('absensi.update-status');
+
+        // Pengumuman Routes untuk HR
+        Route::resource('pengumuman', PengumumanController::class);
+        Route::post('/pengumuman/{id}/resend-whatsapp', [PengumumanController::class, 'resendWhatsApp'])->name('pengumuman.resend-whatsapp');
+        Route::get('/pengumuman/{id}/manual-send', [PengumumanController::class, 'manualSendWhatsApp'])->name('pengumuman.manual-send');
     });
 
     // Karyawan Routes
