@@ -14,41 +14,38 @@ class ProfileController extends Controller
     public function edit()
     {
         $user = Auth::user();
-        $isHr = $user->posisi === 'hr'; // Ganti 'role' menjadi 'posisi'
+        $isHr = $user->posisi === 'hr';
         return view('profile.edit', compact('user', 'isHr'));
     }
 
     public function update(Request $request)
     {
         $user = Auth::user();
-        $isHr = $user->posisi === 'hr'; // Ganti 'role' menjadi 'posisi'
+        $isHr = $user->posisi === 'hr';
 
         $rules = [
             'kode_pegawai' => 'required|unique:karyawans,kode_pegawai,' . $user->id,
-            'nama_depan' => 'required|string|max:100',
-            'nama_belakang' => 'required|string|max:100',
             'nama_lengkap' => 'required|string|max:100',
             'email' => 'required|email|unique:karyawans,email,' . $user->id,
-            'nomor_telepon' => 'nullable|string|max:20',
-            'no_wa' => 'nullable|string|max:20',
-            'alamat' => 'nullable|string',
-            'nik' => 'nullable|string|max:16|unique:karyawans,nik,' . $user->id,
-            'npwp' => 'nullable|string|max:20',
             'tempat_lahir' => 'nullable|string|max:50',
             'tanggal_lahir' => 'nullable|date',
             'jenis_kelamin' => 'nullable|in:Laki-laki,Perempuan',
-            'agama' => 'nullable|string|max:20',
-            'status_pernikahan' => 'nullable|string|max:20',
-            'golongan_darah' => 'nullable|in:A,B,AB,O',
-            'no_kk' => 'nullable|string|max:20',
             'nama_ibu_kandung' => 'nullable|string|max:100',
-            'sedang_melanjutkan_pendidikan' => 'nullable|string|max:100',
+            'nik' => 'nullable|string|max:16|unique:karyawans,nik,' . $user->id,
+            'no_kk' => 'nullable|string|max:20',
+            'status_pernikahan' => 'nullable|string|max:20',
             'jumlah_anak' => 'nullable|integer|min:0',
+            'golongan_darah' => 'nullable|in:A,B,AB,O',
+            'npwp' => 'nullable|string|max:20',
             'pendidikan_terakhir' => 'nullable|string|max:50',
             'pendidikan_terakhir_new' => 'nullable|in:SMP,SMA/MA,SMK,D1,D2,D3,D4,S1,S2',
+            'sedang_melanjutkan_pendidikan' => 'nullable|string|max:100',
             'perguruan_tinggi' => 'nullable|string|max:100',
             'jurusan' => 'nullable|string|max:100',
             'tahun_lulus' => 'nullable|integer|min:1900|max:' . date('Y'),
+            'nomor_telepon' => 'nullable|string|max:20',
+            'no_wa' => 'nullable|string|max:20',
+            'alamat' => 'nullable|string',
             'nama_kontak_darurat' => 'nullable|string|max:100',
             'telepon_kontak_darurat' => 'nullable|string|max:20',
             'foto_profil' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',

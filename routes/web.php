@@ -44,7 +44,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [HRDashboardController::class, 'index'])->name('dashboard');
         Route::resource('karyawan', KaryawanController::class);
 
-        // Absensi Routes untuk HR
         Route::get('/absensi', [AbsensiController::class, 'index'])->name('absensi.index');
         Route::get('/absensi/export', [AbsensiController::class, 'exportExcel'])->name('absensi.export');
         Route::get('/absensi/{id}', [AbsensiController::class, 'detail'])->name('absensi.detail');
@@ -55,7 +54,11 @@ Route::middleware('auth')->group(function () {
     Route::middleware('karyawan')->prefix('karyawan')->name('karyawan.')->group(function () {
         Route::get('/dashboard', [KaryawanDashboardController::class, 'index'])->name('dashboard');
         Route::get('/absensi', [AbsensiController::class, 'dashboard'])->name('absensi');
+
+        // API Routes untuk Absensi
+        Route::post('/absensi/check-wifi', [AbsensiController::class, 'checkWifi'])->name('absensi.check-wifi');
         Route::post('/absensi/checkin', [AbsensiController::class, 'checkIn'])->name('absensi.checkin');
         Route::post('/absensi/checkout', [AbsensiController::class, 'checkOut'])->name('absensi.checkout');
+        Route::get('/absensi/status', [AbsensiController::class, 'status'])->name('absensi.status');
     });
 });

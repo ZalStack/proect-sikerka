@@ -13,8 +13,6 @@ return new class extends Migration
             $table->string('kode_pegawai', 20)->unique();
             $table->string('email', 100)->unique();
             $table->string('kata_sandi');
-            $table->string('nama_depan', 100);
-            $table->string('nama_belakang', 100);
             $table->string('nama_lengkap', 100);
             $table->string('posisi', 20)->default('karyawan');
             $table->string('jabatan', 100);
@@ -29,11 +27,9 @@ return new class extends Migration
             $table->text('alamat')->nullable();
             $table->date('tanggal_bergabung');
             $table->date('end_date')->nullable();
-            $table->integer('total_hari_kerja')->default(0);
-            $table->text('reason_resigned')->nullable();
             $table->string('status', 50)->default('Full-time');
-            $table->string('nik', 16)->nullable();
-            $table->string('npwp', 20)->nullable();
+            $table->string('nik', 50)->nullable();
+            $table->string('npwp', 100)->nullable();
             $table->string('tempat_lahir', 50)->nullable();
             $table->date('tanggal_lahir')->nullable();
             $table->string('jenis_kelamin', 10)->nullable();

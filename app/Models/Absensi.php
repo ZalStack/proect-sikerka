@@ -18,22 +18,14 @@ class Absensi extends Model
         'status',
         'keterangan',
         'total_jam_kerja',
-        'is_lembur',
-        'jam_lembur',
-        'is_telat',
-        'menit_telat',
-        'is_manual_checkin',
-        'is_manual_checkout',
+        'ip_address',
+        'mac_address',
     ];
 
     protected $casts = [
         'tanggal' => 'date',
         'check_in' => 'datetime',
         'check_out' => 'datetime',
-        'is_lembur' => 'boolean',
-        'is_telat' => 'boolean',
-        'is_manual_checkin' => 'boolean',
-        'is_manual_checkout' => 'boolean',
     ];
 
     public function karyawan()
