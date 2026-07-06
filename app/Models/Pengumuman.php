@@ -25,8 +25,6 @@ class Pengumuman extends Model
     protected $casts = [
         'is_sent_to_whatsapp' => 'boolean',
         'sent_at' => 'datetime',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
     ];
 
     public function creator()
@@ -54,13 +52,35 @@ class Pengumuman extends Model
         return $labels[$this->whatsapp_status] ?? $this->whatsapp_status;
     }
 
-    public function getWhatsappStatusColorAttribute()
+    // Mendapatkan pesan WhatsApp
+    public function getWhatsAppMessageAttribute()
     {
-        $colors = [
-            'pending' => 'bg-[#FCC626] text-[#1B1B1B]',
-            'sent' => 'bg-[#2E7D3E] text-white',
-            'failed' => 'bg-[#ec1d1d] text-white'
-        ];
-        return $colors[$this->whatsapp_status] ?? 'bg-gray-300 text-gray-600';
+        $message = "📢 *PENGUMUMAN*\n\n";
+        $message .= "*{$this->judul}*\n\n";
+        $message .= "{$this->isi}\n\n";
+        $message .= "📅 *Tanggal:* " . $this->created_at->format('d-m-Y H:i') . "\n";
+        $message .= "👤 *Dibuat oleh:* " . ($this->creator ? $this->creator->nama_lengkap : 'HR') . "\n\n";
+        $message .= "---\n";
+        $message .= "📌 *Target:* " . $this->target_label . "\n";
+        $message .= "🆔 *ID:* #" . str_pad($this->id, 4, '0', STR_PAD_LEFT);
+
+        return $message;
+    }
+
+    // Mendapatkan URL WhatsApp
+    public function getWhatsAppUrlAttribute()
+    {
+        return "https://wa.me/?text=" . urlencode($this->whatsapp_message);
+    }
+
+    // Mendapatkan URL WhatsApp dengan nomor
+    public function getWhatsAppUrlToNumberAttribute($phone)
+    {
+        $cleanPhone = preg_replace('/[^0-9+]/', '', $phone);
+        if (strpos($cleanPhone, '0') === 0) {
+            $cleanPhone = '62' . substr($cleanPhone, 1);
+        }
+        $cleanPhone = str_replace('+', '', $cleanPhone);
+        return "https://wa.me/{$cleanPhone}?text=" . urlencode($this->whatsapp_message);
     }
 }

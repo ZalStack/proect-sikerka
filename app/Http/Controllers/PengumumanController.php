@@ -12,8 +12,6 @@ use Carbon\Carbon;
 
 class PengumumanController extends Controller
 {
-    private $whatsappNumber = '082123439604';
-
     public function index()
     {
         $pengumuman = Pengumuman::with('creator')
@@ -35,6 +33,7 @@ class PengumumanController extends Controller
             'isi' => 'required|string',
             'gambar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'target' => 'required|in:semua,hr,karyawan',
+            'send_whatsapp' => 'nullable',
         ]);
 
         $data = [
@@ -46,6 +45,7 @@ class PengumumanController extends Controller
             'whatsapp_status' => 'pending',
         ];
 
+        // Upload gambar jika ada
         if ($request->hasFile('gambar')) {
             $file = $request->file('gambar');
             $filename = time() . '_' . Str::slug($request->judul) . '.' . $file->getClientOriginalExtension();
@@ -56,14 +56,26 @@ class PengumumanController extends Controller
         try {
             $pengumuman = Pengumuman::create($data);
 
-            // Kirim ke WhatsApp jika dicentang
+            // Jika kirim ke WhatsApp, redirect ke halaman WhatsApp
             if ($request->has('send_whatsapp')) {
-                $this->sendToWhatsApp($pengumuman);
+                // Format pesan
+                $message = $this->formatWhatsAppMessage($pengumuman);
+
+                // Redirect ke WhatsApp dengan pesan
+                $whatsappUrl = "https://wa.me/?text=" . urlencode($message);
+
+                // Update status
+                $pengumuman->is_sent_to_whatsapp = true;
+                $pengumuman->sent_at = Carbon::now();
+                $pengumuman->whatsapp_status = 'sent';
+                $pengumuman->save();
+
+                // Redirect ke WhatsApp
+                return redirect()->away($whatsappUrl);
             }
 
             return redirect()->route('hr.pengumuman.index')
-                ->with('success', 'Pengumuman berhasil ditambahkan' .
-                    ($request->has('send_whatsapp') ? ' dan dikirim ke WhatsApp' : ''));
+                ->with('success', 'Pengumuman berhasil ditambahkan');
 
         } catch (\Exception $e) {
             return back()->with('error', 'Gagal menyimpan pengumuman: ' . $e->getMessage())
@@ -128,44 +140,55 @@ class PengumumanController extends Controller
             ->with('success', 'Pengumuman berhasil dihapus');
     }
 
-    public function sendToWhatsApp($pengumuman)
-    {
-        try {
-            $pengumuman->whatsapp_status = 'sent';
-            $pengumuman->is_sent_to_whatsapp = true;
-            $pengumuman->sent_at = Carbon::now();
-            $pengumuman->save();
-
-            $message = $this->formatWhatsAppMessage($pengumuman);
-            $whatsappLink = "https://wa.me/{$this->whatsappNumber}?text=" . urlencode($message);
-
-            \Log::info('WhatsApp Link:', ['link' => $whatsappLink]);
-
-            return true;
-
-        } catch (\Exception $e) {
-            \Log::error('Error sending to WhatsApp:', ['error' => $e->getMessage()]);
-            $pengumuman->whatsapp_status = 'failed';
-            $pengumuman->save();
-            return false;
-        }
-    }
-
-    public function resendWhatsApp($id)
+    // Kirim ulang ke WhatsApp
+    public function sendWhatsApp($id)
     {
         $pengumuman = Pengumuman::findOrFail($id);
 
-        $result = $this->sendToWhatsApp($pengumuman);
+        // Format pesan
+        $message = $this->formatWhatsAppMessage($pengumuman);
 
-        if ($result) {
-            return redirect()->route('hr.pengumuman.index')
-                ->with('success', 'Pengumuman berhasil dikirim ulang ke WhatsApp');
-        } else {
-            return redirect()->route('hr.pengumuman.index')
-                ->with('error', 'Gagal mengirim ulang pengumuman ke WhatsApp');
-        }
+        // Buat URL WhatsApp (tanpa nomor, biar user pilih kontak sendiri)
+        $whatsappUrl = "https://wa.me/?text=" . urlencode($message);
+
+        // Update status
+        $pengumuman->is_sent_to_whatsapp = true;
+        $pengumuman->sent_at = Carbon::now();
+        $pengumuman->whatsapp_status = 'sent';
+        $pengumuman->save();
+
+        // Redirect ke WhatsApp
+        return redirect()->away($whatsappUrl);
     }
 
+    // Kirim ke WhatsApp dengan nomor tertentu
+    public function sendWhatsAppToNumber($id, $phone = null)
+    {
+        $pengumuman = Pengumuman::findOrFail($id);
+
+        // Format pesan
+        $message = $this->formatWhatsAppMessage($pengumuman);
+
+        // Jika ada nomor, kirim ke nomor tersebut
+        if ($phone) {
+            $cleanPhone = $this->cleanPhoneNumber($phone);
+            $whatsappUrl = "https://wa.me/{$cleanPhone}?text=" . urlencode($message);
+        } else {
+            // Tanpa nomor, biar user pilih kontak
+            $whatsappUrl = "https://wa.me/?text=" . urlencode($message);
+        }
+
+        // Update status
+        $pengumuman->is_sent_to_whatsapp = true;
+        $pengumuman->sent_at = Carbon::now();
+        $pengumuman->whatsapp_status = 'sent';
+        $pengumuman->save();
+
+        // Redirect ke WhatsApp
+        return redirect()->away($whatsappUrl);
+    }
+
+    // Format pesan WhatsApp
     private function formatWhatsAppMessage($pengumuman)
     {
         $message = "📢 *PENGUMUMAN*\n\n";
@@ -178,5 +201,51 @@ class PengumumanController extends Controller
         $message .= "🆔 *ID:* #" . str_pad($pengumuman->id, 4, '0', STR_PAD_LEFT);
 
         return $message;
+    }
+
+    // Clean phone number
+    private function cleanPhoneNumber($phone)
+    {
+        $phone = preg_replace('/[^0-9+]/', '', $phone);
+
+        if (strpos($phone, '0') === 0) {
+            $phone = '62' . substr($phone, 1);
+        }
+
+        $phone = str_replace('+', '', $phone);
+
+        return $phone;
+    }
+
+    // Dapatkan daftar nomor WhatsApp karyawan
+    public function getWhatsAppContacts()
+    {
+        $karyawans = Karyawan::whereNotNull('no_wa')
+            ->orWhereNotNull('nomor_telepon')
+            ->select('id', 'nama_lengkap', 'no_wa', 'nomor_telepon')
+            ->get();
+
+        $contacts = [];
+        foreach ($karyawans as $k) {
+            $phone = $k->no_wa ?? $k->nomor_telepon;
+            if ($phone) {
+                $contacts[] = [
+                    'id' => $k->id,
+                    'nama' => $k->nama_lengkap,
+                    'phone' => $this->cleanPhoneNumber($phone)
+                ];
+            }
+        }
+
+        return $contacts;
+    }
+
+    // Tampilkan halaman pilih kontak WhatsApp
+    public function selectContact($id)
+    {
+        $pengumuman = Pengumuman::findOrFail($id);
+        $contacts = $this->getWhatsAppContacts();
+
+        return view('hr.pengumuman.select-contact', compact('pengumuman', 'contacts'));
     }
 }
