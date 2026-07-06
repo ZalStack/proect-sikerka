@@ -32,10 +32,6 @@
         <!-- Kirim ke WhatsApp - Tanpa Pilih Kontak -->
         <div class="bg-white rounded-lg shadow-md p-6 mb-6 border-2 border-[#25D366]">
             <h2 class="text-lg font-semibold text-[#161758] mb-4">📱 Kirim ke WhatsApp</h2>
-            <p class="text-sm text-[#1B1B1B] mb-4">
-                Klik tombol di bawah untuk membuka WhatsApp dan memilih kontak/grup secara manual.
-                <br>Seperti saat berbagi link di TikTok/Instagram, Anda bisa memilih kontak atau grup yang diinginkan.
-            </p>
             <a href="{{ route('hr.pengumuman.send-whatsapp', $pengumuman->id) }}"
                target="_blank"
                class="inline-flex items-center bg-[#25D366] text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors duration-200 text-lg font-semibold">
