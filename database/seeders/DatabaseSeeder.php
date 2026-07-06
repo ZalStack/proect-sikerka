@@ -4,21 +4,19 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use App\Models\Division;
 use App\Models\Employee;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // Truncate tables first (untuk fresh seed)
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-        DB::table('employees')->truncate();
-        DB::table('users')->truncate();
-        DB::table('divisions')->truncate();
+        Employee::truncate();
+        User::truncate();
+        Division::truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
         // Create Divisions
@@ -34,11 +32,6 @@ class DatabaseSeeder extends Seeder
             Division::create($division);
         }
 
-        // Get division IDs
-        $itDivision = Division::where('name', 'IT')->first();
-        $hrDivision = Division::where('name', 'HR')->first();
-        $financeDivision = Division::where('name', 'Finance')->first();
-
         // Create Admin
         $admin = User::create([
             'name' => 'Administrator',
@@ -46,50 +39,47 @@ class DatabaseSeeder extends Seeder
             'enroll_number' => 'ADMIN001',
             'password' => Hash::make('password123'),
             'role' => 'admin',
-            'division_id' => null,
             'is_active' => true,
-            'last_login_at' => Carbon::now(),
-            'email_verified_at' => Carbon::now(),
         ]);
 
         // Create Sample Employees
-        $employeeData = [
+        $employees = [
             [
                 'name' => 'Budi Santoso',
                 'email' => 'budi@company.com',
                 'enroll_number' => 'EMP001',
-                'division_id' => $itDivision->id,
+                'division_id' => 1, // IT
                 'password' => Hash::make('password123'),
                 'full_name' => 'Budi Santoso',
-                'phone' => '081234567890',
-                'address' => 'Jl. Merdeka No. 1, Jakarta',
-                'join_date' => '2024-01-01',
+                'phone' => '08123456789',
+                'address' => 'Jl. Merdeka No. 123, Jakarta',
+                'join_date' => now(),
             ],
             [
                 'name' => 'Siti Rahayu',
                 'email' => 'siti@company.com',
                 'enroll_number' => 'EMP002',
-                'division_id' => $hrDivision->id,
+                'division_id' => 2, // HR
                 'password' => Hash::make('password123'),
                 'full_name' => 'Siti Rahayu',
-                'phone' => '081234567891',
-                'address' => 'Jl. Sudirman No. 2, Jakarta',
-                'join_date' => '2024-01-15',
+                'phone' => '08123456790',
+                'address' => 'Jl. Sudirman No. 45, Jakarta',
+                'join_date' => now(),
             ],
             [
                 'name' => 'Ahmad Fauzi',
                 'email' => 'ahmad@company.com',
                 'enroll_number' => 'EMP003',
-                'division_id' => $financeDivision->id,
+                'division_id' => 3, // Finance
                 'password' => Hash::make('password123'),
                 'full_name' => 'Ahmad Fauzi',
-                'phone' => '081234567892',
-                'address' => 'Jl. Thamrin No. 3, Jakarta',
-                'join_date' => '2024-02-01',
+                'phone' => '08123456791',
+                'address' => 'Jl. Gatot Subroto No. 78, Jakarta',
+                'join_date' => now(),
             ],
         ];
 
-        foreach ($employeeData as $emp) {
+        foreach ($employees as $emp) {
             $user = User::create([
                 'name' => $emp['name'],
                 'email' => $emp['email'],
@@ -98,12 +88,11 @@ class DatabaseSeeder extends Seeder
                 'password' => $emp['password'],
                 'role' => 'employee',
                 'is_active' => true,
-                'last_login_at' => Carbon::now(),
-                'email_verified_at' => Carbon::now(),
             ]);
 
             Employee::create([
                 'user_id' => $user->id,
+                'division_id' => $emp['division_id'],
                 'full_name' => $emp['full_name'],
                 'phone' => $emp['phone'],
                 'address' => $emp['address'],
@@ -111,9 +100,5 @@ class DatabaseSeeder extends Seeder
                 'is_active' => true,
             ]);
         }
-
-        $this->command->info('Database seeded successfully!');
-        $this->command->info('Admin: ADMIN001 / password123');
-        $this->command->info('Employee: EMP001, EMP002, EMP003 / password123');
     }
 }

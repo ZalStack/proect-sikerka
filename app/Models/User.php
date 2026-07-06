@@ -18,6 +18,7 @@ class User extends Authenticatable
         'role',
         'division_id',
         'is_active',
+        'last_login_at',
     ];
 
     protected $hidden = [
@@ -51,5 +52,10 @@ class User extends Authenticatable
     public function tasks()
     {
         return $this->hasMany(Task::class);
+    }
+
+    public function enrollments()
+    {
+        return $this->hasMany(Enrollment::class);
     }
 }

@@ -11,7 +11,7 @@ class DivisionController extends Controller
 {
     public function index()
     {
-        $divisions = Division::withCount('employees')
+        $divisions = Division::withCount('users') // Gunakan users bukan employees
             ->latest()
             ->paginate(10);
 
@@ -28,7 +28,7 @@ class DivisionController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255|unique:divisions,name',
             'description' => 'nullable|string',
-            'is_active' => 'boolean',
+            'is_active' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -38,7 +38,7 @@ class DivisionController extends Controller
         Division::create([
             'name' => $request->name,
             'description' => $request->description,
-            'is_active' => $request->is_active ?? true,
+            'is_active' => $request->has('is_active'),
         ]);
 
         return redirect()
@@ -56,7 +56,7 @@ class DivisionController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255|unique:divisions,name,' . $division->id,
             'description' => 'nullable|string',
-            'is_active' => 'boolean',
+            'is_active' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -66,7 +66,7 @@ class DivisionController extends Controller
         $division->update([
             'name' => $request->name,
             'description' => $request->description,
-            'is_active' => $request->is_active ?? true,
+            'is_active' => $request->has('is_active'),
         ]);
 
         return redirect()
@@ -76,8 +76,8 @@ class DivisionController extends Controller
 
     public function destroy(Division $division)
     {
-        // Check if division has employees
-        if ($division->employees()->count() > 0) {
+        // Check if division has users
+        if ($division->users()->count() > 0) {
             return back()->with('error', 'Tidak dapat menghapus divisi yang memiliki karyawan.');
         }
 
