@@ -139,7 +139,7 @@
                             Ingat saya
                         </span>
                     </label>
-                    <a href="#" class="text-sm font-semibold text-[#00A2E9] hover:text-[#161758] transition-colors duration-200 hover:underline">
+                    <a href="{{ route('password.request') }}" class="text-sm font-semibold text-[#00A2E9] hover:text-[#161758] transition-colors duration-200 hover:underline">
                         Lupa password?
                     </a>
                 </div>
