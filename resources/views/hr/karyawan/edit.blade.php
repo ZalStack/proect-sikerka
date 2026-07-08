@@ -9,6 +9,22 @@
             <p class="text-[#27438D]">Update data karyawan</p>
         </div>
 
+        @if(session('error'))
+            <div class="bg-[#ec1d1d] text-white p-4 rounded-lg mb-4">
+                {{ session('error') }}
+            </div>
+        @endif
+
+        @if($errors->any())
+            <div class="bg-[#ec1d1d] text-white p-4 rounded-lg mb-4">
+                <ul class="list-disc list-inside">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <form action="{{ route('hr.karyawan.update', $karyawan->id) }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-lg shadow-md p-6">
             @csrf
             @method('PUT')
@@ -21,6 +37,7 @@
 
                 <!-- KOLOM KIRI -->
                 <div>
+                    <!-- ID Pegawai -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">ID Pegawai <span class="text-[#ec1d1d]">*</span></label>
                         <input type="text" name="kode_pegawai" value="{{ old('kode_pegawai', $karyawan->kode_pegawai) }}" required
@@ -28,6 +45,7 @@
                         @error('kode_pegawai') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
 
+                    <!-- Nama Lengkap -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Nama Lengkap <span class="text-[#ec1d1d]">*</span></label>
                         <input type="text" name="nama_lengkap" value="{{ old('nama_lengkap', $karyawan->nama_lengkap) }}" required
@@ -35,6 +53,7 @@
                         @error('nama_lengkap') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
 
+                    <!-- Tempat Lahir -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Tempat Lahir</label>
                         <input type="text" name="tempat_lahir" value="{{ old('tempat_lahir', $karyawan->tempat_lahir) }}"
@@ -42,6 +61,7 @@
                         @error('tempat_lahir') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
 
+                    <!-- Tanggal Lahir -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Tanggal Lahir</label>
                         <input type="date" name="tanggal_lahir" value="{{ old('tanggal_lahir', $karyawan->tanggal_lahir ? $karyawan->tanggal_lahir->format('Y-m-d') : '') }}"
@@ -49,6 +69,7 @@
                         @error('tanggal_lahir') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
 
+                    <!-- Jenis Kelamin -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Jenis Kelamin</label>
                         <select name="jenis_kelamin"
@@ -60,6 +81,7 @@
                         @error('jenis_kelamin') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
 
+                    <!-- Nama Ibu Kandung -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Nama Ibu Kandung</label>
                         <input type="text" name="nama_ibu_kandung" value="{{ old('nama_ibu_kandung', $karyawan->nama_ibu_kandung) }}"
@@ -67,6 +89,7 @@
                         @error('nama_ibu_kandung') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
 
+                    <!-- NIK -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">NIK</label>
                         <input type="text" name="nik" value="{{ old('nik', $karyawan->nik) }}"
@@ -74,6 +97,7 @@
                         @error('nik') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
 
+                    <!-- No KK -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">No KK</label>
                         <input type="text" name="no_kk" value="{{ old('no_kk', $karyawan->no_kk) }}"
@@ -84,6 +108,7 @@
 
                 <!-- KOLOM KANAN -->
                 <div>
+                    <!-- Status Pernikahan -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Status Pernikahan</label>
                         <select name="status_pernikahan"
@@ -95,6 +120,7 @@
                         @error('status_pernikahan') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
 
+                    <!-- Jumlah Anak -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Jumlah Anak</label>
                         <input type="number" name="jumlah_anak" value="{{ old('jumlah_anak', $karyawan->jumlah_anak ?? 0) }}" min="0"
@@ -102,6 +128,7 @@
                         @error('jumlah_anak') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
 
+                    <!-- Email -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Email <span class="text-[#ec1d1d]">*</span></label>
                         <input type="email" name="email" value="{{ old('email', $karyawan->email) }}" required
@@ -109,6 +136,7 @@
                         @error('email') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
 
+                    <!-- Password Baru -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Password Baru</label>
                         <input type="password" name="password"
@@ -117,6 +145,7 @@
                         @error('password') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
 
+                    <!-- Konfirmasi Password -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Konfirmasi Password Baru</label>
                         <input type="password" name="password_confirmation"
@@ -124,6 +153,7 @@
                         @error('password_confirmation') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
 
+                    <!-- Golongan Darah -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Golongan Darah</label>
                         <select name="golongan_darah"
@@ -145,6 +175,7 @@
 
                 <!-- KOLOM KIRI -->
                 <div>
+                    <!-- Jabatan -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Jabatan <span class="text-[#ec1d1d]">*</span></label>
                         <input type="text" name="jabatan" value="{{ old('jabatan', $karyawan->jabatan) }}" required
@@ -152,6 +183,7 @@
                         @error('jabatan') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
 
+                    <!-- Divisi -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Divisi <span class="text-[#ec1d1d]">*</span></label>
                         <select name="divisi" id="divisi_select" required
@@ -171,6 +203,7 @@
                         @error('divisi') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
 
+                    <!-- Posisi (Otomatis) -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Posisi</label>
                         <input type="text" id="posisi_display" value="{{ $karyawan->posisi === 'hr' ? 'HR' : 'Karyawan' }}" disabled
@@ -182,17 +215,19 @@
 
                 <!-- KOLOM KANAN -->
                 <div>
+                    <!-- Status Karyawan -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Status <span class="text-[#ec1d1d]">*</span></label>
                         <select name="status" required
                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
-                            <option value="Full-time" {{ old('status', $karyawan->status) === 'Full-time' ? 'selected' : '' }}>Full-time</option>
-                            <option value="Contract" {{ old('status', $karyawan->status) === 'Contract' ? 'selected' : '' }}>Contract</option>
-                            <option value="Internship" {{ old('status', $karyawan->status) === 'Internship' ? 'selected' : '' }}>Internship</option>
+                            <option value="Karyawan Tetap" {{ old('status', $karyawan->status) === 'Karyawan Tetap' ? 'selected' : '' }}>Karyawan Tetap</option>
+                            <option value="Contract" {{ old('status', $karyawan->status) === 'Contract' ? 'selected' : '' }}>Kontrak</option>
+                            <option value="Internship" {{ old('status', $karyawan->status) === 'Internship' ? 'selected' : '' }}>Magang</option>
                         </select>
                         @error('status') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
 
+                    <!-- Tanggal Bergabung -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Tanggal Bergabung <span class="text-[#ec1d1d]">*</span></label>
                         <input type="date" name="tanggal_bergabung" value="{{ old('tanggal_bergabung', $karyawan->tanggal_bergabung ? $karyawan->tanggal_bergabung->format('Y-m-d') : '') }}" required
@@ -200,19 +235,12 @@
                         @error('tanggal_bergabung') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
 
+                    <!-- NPWP -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">NPWP</label>
                         <input type="text" name="npwp" value="{{ old('npwp', $karyawan->npwp) }}"
                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                         @error('npwp') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
-                    </div>
-
-                    <!-- End Date -->
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Tanggal Berakhir</label>
-                        <input type="date" name="end_date" value="{{ old('end_date', $karyawan->end_date ? $karyawan->end_date->format('Y-m-d') : '') }}"
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
-                        @error('end_date') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
                 </div>
 
@@ -223,6 +251,7 @@
 
                 <!-- KOLOM KIRI -->
                 <div>
+                    <!-- Pendidikan Terakhir -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Pendidikan Terakhir</label>
                         <select name="pendidikan_terakhir_new"
@@ -241,6 +270,7 @@
                         @error('pendidikan_terakhir_new') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
 
+                    <!-- Sedang Melanjutkan Pendidikan -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Sedang Melanjutkan Pendidikan</label>
                         <input type="text" name="sedang_melanjutkan_pendidikan" value="{{ old('sedang_melanjutkan_pendidikan', $karyawan->sedang_melanjutkan_pendidikan) }}" placeholder="Contoh: S2 Manajemen"
@@ -251,6 +281,7 @@
 
                 <!-- KOLOM KANAN -->
                 <div>
+                    <!-- Perguruan Tinggi -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Perguruan Tinggi</label>
                         <input type="text" name="perguruan_tinggi" value="{{ old('perguruan_tinggi', $karyawan->perguruan_tinggi) }}"
@@ -258,6 +289,7 @@
                         @error('perguruan_tinggi') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
 
+                    <!-- Jurusan -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Jurusan</label>
                         <input type="text" name="jurusan" value="{{ old('jurusan', $karyawan->jurusan) }}"
@@ -265,6 +297,7 @@
                         @error('jurusan') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
 
+                    <!-- Tahun Lulus -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Tahun Lulus</label>
                         <input type="number" name="tahun_lulus" value="{{ old('tahun_lulus', $karyawan->tahun_lulus) }}" min="1900" max="{{ date('Y') }}"
@@ -280,6 +313,7 @@
 
                 <!-- KOLOM KIRI -->
                 <div>
+                    <!-- Nomor Telepon -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Nomor Telepon</label>
                         <input type="text" name="nomor_telepon" value="{{ old('nomor_telepon', $karyawan->nomor_telepon) }}"
@@ -287,6 +321,7 @@
                         @error('nomor_telepon') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
 
+                    <!-- No WA -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">No WA</label>
                         <input type="text" name="no_wa" value="{{ old('no_wa', $karyawan->no_wa) }}"
@@ -294,6 +329,7 @@
                         @error('no_wa') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
 
+                    <!-- Nama Kontak Darurat -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Nama Kontak Darurat</label>
                         <input type="text" name="nama_kontak_darurat" value="{{ old('nama_kontak_darurat', $karyawan->nama_kontak_darurat) }}"
@@ -304,6 +340,7 @@
 
                 <!-- KOLOM KANAN -->
                 <div>
+                    <!-- Alamat -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Alamat</label>
                         <textarea name="alamat" rows="3"
@@ -311,6 +348,7 @@
                         @error('alamat') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
 
+                    <!-- Telepon Kontak Darurat -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Telepon Kontak Darurat</label>
                         <input type="text" name="telepon_kontak_darurat" value="{{ old('telepon_kontak_darurat', $karyawan->telepon_kontak_darurat) }}"
@@ -318,6 +356,7 @@
                         @error('telepon_kontak_darurat') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
 
+                    <!-- Foto Profil -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Foto Profil</label>
                         <input type="file" name="foto_profil" accept="image/*"

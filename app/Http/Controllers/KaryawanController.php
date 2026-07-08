@@ -12,10 +12,8 @@ class KaryawanController extends Controller
 {
     public function index(Request $request)
     {
-        // Tambahkan pagination dengan 10 data per halaman
         $karyawans = Karyawan::orderBy('kode_pegawai', 'asc')->paginate(10);
 
-        // Jika ada pencarian
         if ($request->filled('search')) {
             $search = $request->search;
             $karyawans = Karyawan::where('nama_lengkap', 'LIKE', "%{$search}%")
@@ -45,7 +43,7 @@ class KaryawanController extends Controller
             'nama_lengkap' => 'required|string|max:100',
             'jabatan' => 'required|string|max:100',
             'divisi' => 'required|in:HRD,IT,KPD,LPS,MEDIA,PENDIDIKAN,PKA,RG,SAPRAS',
-            'status' => 'required|in:Full-time,Contract,Internship',
+            'status' => 'required|in:Karyawan Tetap,Contract,Internship',
             'tanggal_bergabung' => 'required|date',
             'tempat_lahir' => 'nullable|string|max:50',
             'tanggal_lahir' => 'nullable|date',
@@ -111,7 +109,7 @@ class KaryawanController extends Controller
             'nama_lengkap' => 'required|string|max:100',
             'jabatan' => 'required|string|max:100',
             'divisi' => 'required|in:HRD,IT,KPD,LPS,MEDIA,PENDIDIKAN,PKA,RG,SAPRAS',
-            'status' => 'required|in:Full-time,Contract,Internship',
+            'status' => 'required|in:Karyawan Tetap,Contract,Internship',
             'tanggal_bergabung' => 'required|date',
             'end_date' => 'nullable|date|after:tanggal_bergabung',
             'tempat_lahir' => 'nullable|string|max:50',

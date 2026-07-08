@@ -20,6 +20,7 @@ return new class extends Migration
             $table->integer('total_jam_kerja')->default(0);
             $table->string('ip_address', 50)->nullable();
             $table->string('mac_address', 50)->nullable();
+            $table->boolean('is_valid_wifi')->default(false);
             $table->timestamps();
 
             $table->unique(['karyawan_id', 'tanggal']);

@@ -23,24 +23,41 @@
 
         <div class="bg-white rounded-lg shadow-md overflow-hidden">
             <div class="p-6">
-                <div class="flex items-center space-x-6 mb-6">
-                    @if($karyawan->foto_profil)
-                        <img src="{{ Storage::url($karyawan->foto_profil) }}" alt="Foto" class="w-32 h-32 rounded-full object-cover border-4 border-[#00a2e9]">
-                    @else
-                        <div class="w-32 h-32 rounded-full bg-[#00a2e9] flex items-center justify-center text-white text-4xl font-bold">
-                            {{ strtoupper(substr($karyawan->nama_lengkap, 0, 1)) }}
-                        </div>
-                    @endif
-                    <div>
+                <!-- Profile Header -->
+                <div class="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6 mb-6">
+                    <div class="flex-shrink-0">
+                        @if($karyawan->foto_profil)
+                            <img src="{{ Storage::url($karyawan->foto_profil) }}" alt="Foto" class="w-32 h-32 rounded-full object-cover border-4 border-[#00a2e9]">
+                        @else
+                            <div class="w-32 h-32 rounded-full bg-[#00a2e9] flex items-center justify-center text-white text-4xl font-bold">
+                                {{ strtoupper(substr($karyawan->nama_lengkap, 0, 1)) }}
+                            </div>
+                        @endif
+                    </div>
+                    <div class="flex-1 text-center md:text-left">
                         <h2 class="text-2xl font-bold text-[#161758]">{{ $karyawan->nama_lengkap }}</h2>
                         <p class="text-[#27438D]">{{ $karyawan->jabatan }}</p>
-                        <span class="inline-block px-3 py-1 rounded-full text-sm font-medium mt-2 {{ $karyawan->status === 'Full-time' ? 'bg-[#2E7D3E] text-white' : ($karyawan->status === 'Contract' ? 'bg-[#FCC626] text-[#1B1B1B]' : 'bg-[#00a2e9] text-white') }}">
-                            {{ $karyawan->status }}
-                        </span>
+                        <div class="flex flex-wrap items-center gap-2 mt-2 justify-center md:justify-start">
+                            <span class="inline-block px-3 py-1 rounded-full text-sm font-medium {{ $karyawan->status_badge }}">
+                                {{ $karyawan->status_label }}
+                            </span>
+                            <span class="inline-block px-3 py-1 rounded-full text-sm font-medium {{ $karyawan->posisi === 'hr' ? 'bg-[#27438D] text-white' : 'bg-[#00a2e9] text-white' }}">
+                                {{ $karyawan->posisi === 'hr' ? 'HR' : 'Karyawan' }}
+                            </span>
+                            <span class="inline-block px-3 py-1 rounded-full text-sm font-medium bg-[#F5F5F5] text-[#1B1B1B]">
+                                {{ $karyawan->divisi ?? '-' }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <div class="text-sm text-gray-500">
+                            <p>Bergabung: {{ $karyawan->tanggal_bergabung ? $karyawan->tanggal_bergabung->format('d-m-Y') : '-' }}</p>
+                            <p>Total Hari Kerja: {{ $karyawan->total_hari_kerja ?? 0 }}</p>
+                        </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                     <!-- Informasi Pribadi -->
                     <div class="md:col-span-2">
                         <h3 class="text-lg font-semibold text-[#161758] border-b border-gray-200 pb-2">Informasi Pribadi</h3>
@@ -50,7 +67,7 @@
                     <div class="space-y-4">
                         <div>
                             <label class="text-sm text-[#1B1B1B] font-medium">ID Pegawai</label>
-                            <p class="text-[#27438D]">{{ $karyawan->kode_pegawai }}</p>
+                            <p class="text-[#27438D] font-semibold">{{ $karyawan->kode_pegawai }}</p>
                         </div>
                         <div>
                             <label class="text-sm text-[#1B1B1B] font-medium">Nama Lengkap</label>
@@ -104,6 +121,10 @@
                             <label class="text-sm text-[#1B1B1B] font-medium">NPWP</label>
                             <p class="text-[#27438D]">{{ $karyawan->npwp ?? '-' }}</p>
                         </div>
+                        <div>
+                            <label class="text-sm text-[#1B1B1B] font-medium">Agama</label>
+                            <p class="text-[#27438D]">{{ $karyawan->agama ?? '-' }}</p>
+                        </div>
                     </div>
 
                     <!-- Informasi Profesional -->
@@ -123,15 +144,23 @@
                         </div>
                         <div>
                             <label class="text-sm text-[#1B1B1B] font-medium">Posisi</label>
-                            <p class="text-[#27438D]">{{ $karyawan->posisi === 'hr' ? 'HR' : 'Karyawan' }}</p>
+                            <p class="text-[#27438D]">
+                                <span class="px-2 py-1 rounded-full text-xs font-medium {{ $karyawan->posisi === 'hr' ? 'bg-[#27438D] text-white' : 'bg-[#00a2e9] text-white' }}">
+                                    {{ $karyawan->posisi === 'hr' ? 'HR' : 'Karyawan' }}
+                                </span>
+                            </p>
                         </div>
                     </div>
 
                     <!-- KOLOM KANAN -->
                     <div class="space-y-4">
                         <div>
-                            <label class="text-sm text-[#1B1B1B] font-medium">Status</label>
-                            <p class="text-[#27438D]">{{ $karyawan->status }}</p>
+                            <label class="text-sm text-[#1B1B1B] font-medium">Status Karyawan</label>
+                            <p class="text-[#27438D]">
+                                <span class="px-2 py-1 rounded-full text-xs font-medium {{ $karyawan->status_badge }}">
+                                    {{ $karyawan->status_label }}
+                                </span>
+                            </p>
                         </div>
                         <div>
                             <label class="text-sm text-[#1B1B1B] font-medium">Tanggal Bergabung</label>
@@ -141,6 +170,12 @@
                         <div>
                             <label class="text-sm text-[#1B1B1B] font-medium">Tanggal Berakhir</label>
                             <p class="text-[#27438D]">{{ $karyawan->end_date->format('d-m-Y') }}</p>
+                        </div>
+                        @endif
+                        @if($karyawan->reason_resigned)
+                        <div>
+                            <label class="text-sm text-[#1B1B1B] font-medium">Alasan Resign</label>
+                            <p class="text-[#27438D]">{{ $karyawan->reason_resigned }}</p>
                         </div>
                         @endif
                     </div>

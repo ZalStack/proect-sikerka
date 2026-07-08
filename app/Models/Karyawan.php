@@ -75,4 +75,26 @@ class Karyawan extends Authenticatable
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+
+    // Accessor untuk status dengan label
+    public function getStatusLabelAttribute()
+    {
+        $labels = [
+            'Karyawan Tetap' => 'Karyawan Tetap',
+            'Contract' => 'Kontrak',
+            'Internship' => 'Magang'
+        ];
+        return $labels[$this->status] ?? $this->status;
+    }
+
+    // Accessor untuk status badge color
+    public function getStatusBadgeAttribute()
+    {
+        $colors = [
+            'Karyawan Tetap' => 'bg-[#2E7D3E] text-white',
+            'Contract' => 'bg-[#FCC626] text-[#1B1B1B]',
+            'Internship' => 'bg-[#00a2e9] text-white'
+        ];
+        return $colors[$this->status] ?? 'bg-gray-500 text-white';
+    }
 }

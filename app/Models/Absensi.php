@@ -20,12 +20,14 @@ class Absensi extends Model
         'total_jam_kerja',
         'ip_address',
         'mac_address',
+        'is_valid_wifi',
     ];
 
     protected $casts = [
         'tanggal' => 'date',
         'check_in' => 'datetime',
         'check_out' => 'datetime',
+        'is_valid_wifi' => 'boolean',
     ];
 
     public function karyawan()

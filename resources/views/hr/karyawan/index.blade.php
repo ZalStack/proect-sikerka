@@ -21,7 +21,7 @@
             </div>
         @endif
 
-        <!-- Search & Filter -->
+        <!-- Search -->
         <div class="bg-white rounded-lg shadow-md p-4 mb-6">
             <form action="{{ route('hr.karyawan.index') }}" method="GET" class="flex flex-col sm:flex-row gap-4">
                 <div class="flex-1">
@@ -87,7 +87,7 @@
                                 </span>
                             </td>
                             <td class="px-4 py-3">
-                                <span class="px-2 py-1 rounded-full text-xs font-medium {{ $karyawan->status === 'Full-time' ? 'bg-[#2E7D3E] text-white' : ($karyawan->status === 'Contract' ? 'bg-[#FCC626] text-[#1B1B1B]' : 'bg-[#00a2e9] text-white') }}">
+                                <span class="px-2 py-1 rounded-full text-xs font-medium {{ $karyawan->status === 'Karyawan Tetap' ? 'bg-[#2E7D3E] text-white' : ($karyawan->status === 'Contract' ? 'bg-[#FCC626] text-[#1B1B1B]' : 'bg-[#00a2e9] text-white') }}">
                                     {{ $karyawan->status }}
                                 </span>
                             </td>
@@ -145,23 +145,17 @@
                         @if ($karyawans->hasPages())
                             <nav class="flex justify-center" aria-label="Pagination">
                                 <ul class="flex flex-wrap gap-1">
-                                    {{-- Previous Page Link --}}
                                     @if ($karyawans->onFirstPage())
                                         <li class="disabled">
-                                            <span class="px-3 py-2 rounded-lg bg-gray-100 text-gray-400 cursor-not-allowed text-sm">
-                                                &laquo;
-                                            </span>
+                                            <span class="px-3 py-2 rounded-lg bg-gray-100 text-gray-400 cursor-not-allowed text-sm">&laquo;</span>
                                         </li>
                                     @else
                                         <li>
                                             <a href="{{ $karyawans->previousPageUrl() }}"
-                                               class="px-3 py-2 rounded-lg bg-gray-100 text-[#27438D] hover:bg-[#27438D] hover:text-white transition-colors duration-200 text-sm">
-                                                &laquo;
-                                            </a>
+                                               class="px-3 py-2 rounded-lg bg-gray-100 text-[#27438D] hover:bg-[#27438D] hover:text-white transition-colors duration-200 text-sm">&laquo;</a>
                                         </li>
                                     @endif
 
-                                    {{-- Pagination Elements --}}
                                     @php
                                         $start = max(1, $karyawans->currentPage() - 2);
                                         $end = min($start + 4, $karyawans->lastPage());
@@ -173,15 +167,11 @@
                                     @if ($start > 1)
                                         <li>
                                             <a href="{{ $karyawans->url(1) }}"
-                                               class="px-3 py-2 rounded-lg bg-gray-100 text-[#27438D] hover:bg-[#27438D] hover:text-white transition-colors duration-200 text-sm">
-                                                1
-                                            </a>
+                                               class="px-3 py-2 rounded-lg bg-gray-100 text-[#27438D] hover:bg-[#27438D] hover:text-white transition-colors duration-200 text-sm">1</a>
                                         </li>
                                         @if ($start > 2)
                                             <li class="disabled">
-                                                <span class="px-3 py-2 rounded-lg bg-gray-100 text-gray-400 cursor-not-allowed text-sm">
-                                                    ...
-                                                </span>
+                                                <span class="px-3 py-2 rounded-lg bg-gray-100 text-gray-400 cursor-not-allowed text-sm">...</span>
                                             </li>
                                         @endif
                                     @endif
@@ -189,16 +179,12 @@
                                     @for ($page = $start; $page <= $end; $page++)
                                         @if ($page == $karyawans->currentPage())
                                             <li class="active">
-                                                <span class="px-3 py-2 rounded-lg bg-[#27438D] text-white text-sm font-semibold">
-                                                    {{ $page }}
-                                                </span>
+                                                <span class="px-3 py-2 rounded-lg bg-[#27438D] text-white text-sm font-semibold">{{ $page }}</span>
                                             </li>
                                         @else
                                             <li>
                                                 <a href="{{ $karyawans->url($page) }}"
-                                                   class="px-3 py-2 rounded-lg bg-gray-100 text-[#27438D] hover:bg-[#27438D] hover:text-white transition-colors duration-200 text-sm">
-                                                    {{ $page }}
-                                                </a>
+                                                   class="px-3 py-2 rounded-lg bg-gray-100 text-[#27438D] hover:bg-[#27438D] hover:text-white transition-colors duration-200 text-sm">{{ $page }}</a>
                                             </li>
                                         @endif
                                     @endfor
@@ -206,32 +192,23 @@
                                     @if ($end < $karyawans->lastPage())
                                         @if ($end < $karyawans->lastPage() - 1)
                                             <li class="disabled">
-                                                <span class="px-3 py-2 rounded-lg bg-gray-100 text-gray-400 cursor-not-allowed text-sm">
-                                                    ...
-                                                </span>
+                                                <span class="px-3 py-2 rounded-lg bg-gray-100 text-gray-400 cursor-not-allowed text-sm">...</span>
                                             </li>
                                         @endif
                                         <li>
                                             <a href="{{ $karyawans->url($karyawans->lastPage()) }}"
-                                               class="px-3 py-2 rounded-lg bg-gray-100 text-[#27438D] hover:bg-[#27438D] hover:text-white transition-colors duration-200 text-sm">
-                                                {{ $karyawans->lastPage() }}
-                                            </a>
+                                               class="px-3 py-2 rounded-lg bg-gray-100 text-[#27438D] hover:bg-[#27438D] hover:text-white transition-colors duration-200 text-sm">{{ $karyawans->lastPage() }}</a>
                                         </li>
                                     @endif
 
-                                    {{-- Next Page Link --}}
                                     @if ($karyawans->hasMorePages())
                                         <li>
                                             <a href="{{ $karyawans->nextPageUrl() }}"
-                                               class="px-3 py-2 rounded-lg bg-gray-100 text-[#27438D] hover:bg-[#27438D] hover:text-white transition-colors duration-200 text-sm">
-                                                &raquo;
-                                            </a>
+                                               class="px-3 py-2 rounded-lg bg-gray-100 text-[#27438D] hover:bg-[#27438D] hover:text-white transition-colors duration-200 text-sm">&raquo;</a>
                                         </li>
                                     @else
                                         <li class="disabled">
-                                            <span class="px-3 py-2 rounded-lg bg-gray-100 text-gray-400 cursor-not-allowed text-sm">
-                                                &raquo;
-                                            </span>
+                                            <span class="px-3 py-2 rounded-lg bg-gray-100 text-gray-400 cursor-not-allowed text-sm">&raquo;</span>
                                         </li>
                                     @endif
                                 </ul>

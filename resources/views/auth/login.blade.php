@@ -40,10 +40,10 @@
                 </div>
 
                 <h1 class="text-4xl md:text-5xl font-['Montserrat'] font-extrabold text-[#161758] tracking-tight">
-                    SIKEKAR
+                    SIKEKAR KPM
                 </h1>
                 <p class="text-[#00A2E9] mt-2 text-sm font-semibold tracking-wide uppercase">
-                    Sistem Informasi Kinerja Karyawan
+                    Sistem Informasi Kinerja Karyawan KPM
                 </p>
                 <div class="w-16 h-1 bg-gradient-to-r from-[#00A2E9] to-[#FCC626] mx-auto mt-4 rounded-full"></div>
             </div>

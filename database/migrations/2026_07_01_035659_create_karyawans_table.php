@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('karyawans', function (Blueprint $table) {
             $table->id();
-            $table->string('kode_pegawai', 20)->unique();
+            $table->string('kode_pegawai', 50)->unique();
             $table->string('email', 100)->unique();
             $table->string('kata_sandi');
             $table->string('nama_lengkap', 100);
@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('jabatan', 100);
             $table->string('divisi', 50)->nullable();
             $table->string('golongan_darah', 5)->nullable();
-            $table->string('no_kk', 20)->nullable();
+            $table->string('no_kk', 100)->nullable();
             $table->string('sedang_melanjutkan_pendidikan', 100)->nullable();
             $table->integer('jumlah_anak')->default(0);
             $table->string('foto_profil', 255)->nullable();
@@ -27,8 +27,8 @@ return new class extends Migration
             $table->text('alamat')->nullable();
             $table->date('tanggal_bergabung');
             $table->date('end_date')->nullable();
-            $table->string('status', 50)->default('Full-time');
-            $table->string('nik', 50)->nullable();
+            $table->string('status', 50)->default('Karyawan Tetap');
+            $table->string('nik', 100)->nullable();
             $table->string('npwp', 100)->nullable();
             $table->string('tempat_lahir', 50)->nullable();
             $table->date('tanggal_lahir')->nullable();

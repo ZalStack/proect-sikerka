@@ -29,7 +29,7 @@ class DatabaseSeeder extends Seeder
             'alamat' => 'Jl. Sudirman No. 1, Jakarta Selatan',
             'tanggal_bergabung' => '2024-01-01',
             'end_date' => null,
-            'status' => 'Full-time',
+            'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             'nik' => '1234567890123456',
             'npwp' => '9876543210987654',
             'tempat_lahir' => 'Jakarta',
@@ -76,7 +76,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             // KPJ
             [
@@ -105,7 +105,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP003',
@@ -133,7 +133,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP004',
@@ -161,7 +161,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Ya',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP005',
@@ -189,7 +189,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP006',
@@ -217,7 +217,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             // PENDIDIKAN BOGOR
             [
@@ -246,7 +246,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP008',
@@ -274,7 +274,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP009',
@@ -302,7 +302,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Ya',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP010',
@@ -330,7 +330,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Ya',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP011',
@@ -358,7 +358,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Ya',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             // LPS
             [
@@ -387,7 +387,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP013',
@@ -415,7 +415,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP014',
@@ -443,7 +443,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Ya',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP015',
@@ -471,7 +471,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP016',
@@ -499,7 +499,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Ya',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP017',
@@ -527,7 +527,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             // PENDIDIKAN JAKARTA
             [
@@ -556,7 +556,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP019',
@@ -584,7 +584,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP020',
@@ -612,7 +612,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP021',
@@ -640,7 +640,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP022',
@@ -668,7 +668,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP023',
@@ -696,7 +696,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP024',
@@ -724,7 +724,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             // MEDIA
             [
@@ -753,7 +753,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Ya',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP026',
@@ -781,7 +781,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP027',
@@ -809,7 +809,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP028',
@@ -837,7 +837,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Ya',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             // RG
             [
@@ -866,7 +866,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP030',
@@ -894,7 +894,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP031',
@@ -922,7 +922,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP032',
@@ -950,7 +950,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             // KEUANGAN
             [
@@ -979,7 +979,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Ya',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP034',
@@ -1007,7 +1007,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             // PKA
             [
@@ -1036,7 +1036,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP036',
@@ -1064,7 +1064,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP037',
@@ -1092,7 +1092,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Ya',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP038',
@@ -1120,7 +1120,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Ya',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP039',
@@ -1148,7 +1148,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP040',
@@ -1176,7 +1176,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP041',
@@ -1204,7 +1204,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP042',
@@ -1232,7 +1232,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             // SAPRAS OB
             [
@@ -1261,7 +1261,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP044',
@@ -1289,7 +1289,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP045',
@@ -1317,7 +1317,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
             [
                 'kode_pegawai' => 'EMP046',
@@ -1345,7 +1345,7 @@ class DatabaseSeeder extends Seeder
                 'telepon_kontak_darurat' => null,
                 'sedang_melanjutkan_pendidikan' => 'Tidak',
                 'tanggal_bergabung' => '2024-01-01',
-                'status' => 'Full-time',
+                'status' => 'Karyawan Tetap', // Diubah dari 'Full-time'
             ],
         ];
 
@@ -1362,7 +1362,7 @@ class DatabaseSeeder extends Seeder
             $data['nama_kontak_darurat'] = $data['nama_kontak_darurat'] ?? null;
             $data['telepon_kontak_darurat'] = $data['telepon_kontak_darurat'] ?? null;
             $data['tanggal_bergabung'] = $data['tanggal_bergabung'] ?? '2024-01-01';
-            $data['status'] = $data['status'] ?? 'Full-time';
+            $data['status'] = $data['status'] ?? 'Karyawan Tetap'; // Default ke Karyawan Tetap
             $data['no_wa'] = $data['no_wa'] ?? $data['nomor_telepon'] ?? null;
 
             // Ubah format divisi jika ada
