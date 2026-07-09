@@ -12,6 +12,9 @@ use Carbon\Carbon;
 
 class PengumumanController extends Controller
 {
+    // WhatsApp Configuration - Updated
+    private $whatsappNumber = '628111912340'; // +62 811-1912-340 (tanpa + dan tanpa tanda hubung)
+
     public function index()
     {
         $pengumuman = Pengumuman::with('creator')
@@ -45,7 +48,6 @@ class PengumumanController extends Controller
             'whatsapp_status' => 'pending',
         ];
 
-        // Upload gambar jika ada
         if ($request->hasFile('gambar')) {
             $file = $request->file('gambar');
             $filename = time() . '_' . Str::slug($request->judul) . '.' . $file->getClientOriginalExtension();
@@ -56,21 +58,15 @@ class PengumumanController extends Controller
         try {
             $pengumuman = Pengumuman::create($data);
 
-            // Jika kirim ke WhatsApp, redirect ke halaman WhatsApp
             if ($request->has('send_whatsapp')) {
-                // Format pesan
                 $message = $this->formatWhatsAppMessage($pengumuman);
+                $whatsappUrl = "https://wa.me/{$this->whatsappNumber}?text=" . urlencode($message);
 
-                // Redirect ke WhatsApp dengan pesan
-                $whatsappUrl = "https://wa.me/?text=" . urlencode($message);
-
-                // Update status
                 $pengumuman->is_sent_to_whatsapp = true;
                 $pengumuman->sent_at = Carbon::now();
                 $pengumuman->whatsapp_status = 'sent';
                 $pengumuman->save();
 
-                // Redirect ke WhatsApp
                 return redirect()->away($whatsappUrl);
             }
 
@@ -140,24 +136,19 @@ class PengumumanController extends Controller
             ->with('success', 'Pengumuman berhasil dihapus');
     }
 
-    // Kirim ulang ke WhatsApp
+    // Kirim ke WhatsApp
     public function sendWhatsApp($id)
     {
         $pengumuman = Pengumuman::findOrFail($id);
 
-        // Format pesan
         $message = $this->formatWhatsAppMessage($pengumuman);
+        $whatsappUrl = "https://wa.me/{$this->whatsappNumber}?text=" . urlencode($message);
 
-        // Buat URL WhatsApp (tanpa nomor, biar user pilih kontak sendiri)
-        $whatsappUrl = "https://wa.me/?text=" . urlencode($message);
-
-        // Update status
         $pengumuman->is_sent_to_whatsapp = true;
         $pengumuman->sent_at = Carbon::now();
         $pengumuman->whatsapp_status = 'sent';
         $pengumuman->save();
 
-        // Redirect ke WhatsApp
         return redirect()->away($whatsappUrl);
     }
 
@@ -166,25 +157,20 @@ class PengumumanController extends Controller
     {
         $pengumuman = Pengumuman::findOrFail($id);
 
-        // Format pesan
         $message = $this->formatWhatsAppMessage($pengumuman);
 
-        // Jika ada nomor, kirim ke nomor tersebut
         if ($phone) {
             $cleanPhone = $this->cleanPhoneNumber($phone);
             $whatsappUrl = "https://wa.me/{$cleanPhone}?text=" . urlencode($message);
         } else {
-            // Tanpa nomor, biar user pilih kontak
-            $whatsappUrl = "https://wa.me/?text=" . urlencode($message);
+            $whatsappUrl = "https://wa.me/{$this->whatsappNumber}?text=" . urlencode($message);
         }
 
-        // Update status
         $pengumuman->is_sent_to_whatsapp = true;
         $pengumuman->sent_at = Carbon::now();
         $pengumuman->whatsapp_status = 'sent';
         $pengumuman->save();
 
-        // Redirect ke WhatsApp
         return redirect()->away($whatsappUrl);
     }
 
@@ -247,5 +233,21 @@ class PengumumanController extends Controller
         $contacts = $this->getWhatsAppContacts();
 
         return view('hr.pengumuman.select-contact', compact('pengumuman', 'contacts'));
+    }
+
+    // Resend WhatsApp
+    public function resendWhatsApp($id)
+    {
+        $pengumuman = Pengumuman::findOrFail($id);
+
+        $message = $this->formatWhatsAppMessage($pengumuman);
+        $whatsappUrl = "https://wa.me/{$this->whatsappNumber}?text=" . urlencode($message);
+
+        $pengumuman->is_sent_to_whatsapp = true;
+        $pengumuman->sent_at = Carbon::now();
+        $pengumuman->whatsapp_status = 'sent';
+        $pengumuman->save();
+
+        return redirect()->away($whatsappUrl);
     }
 }
