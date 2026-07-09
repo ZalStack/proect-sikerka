@@ -527,6 +527,9 @@ function handleCheckOut() {
     });
 }
 
+// ==========================================================
+// Interval pengecekan berkala
+// ==========================================================
 // Cek WiFi setiap 10 detik (mendeteksi jika karyawan pindah/putus dari WiFi kantor)
 setInterval(checkWifiStatus, 10000);
 // Load status absensi setiap 30 detik

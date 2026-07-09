@@ -7,8 +7,8 @@ use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\KaryawanDashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AbsensiController;
-use App\Http\Controllers\PengumumanController;
 use App\Http\Controllers\FhlController;
+use App\Http\Controllers\PengumumanController;
 use Illuminate\Support\Facades\Route;
 
 // Redirect root berdasarkan role
@@ -55,18 +55,15 @@ Route::middleware('auth')->group(function () {
             Route::get('/dashboard', [HRDashboardController::class, 'index'])->name('dashboard');
             Route::resource('karyawan', KaryawanController::class);
 
-            // Absensi Routes untuk HR
             Route::get('/absensi', [AbsensiController::class, 'index'])->name('absensi.index');
             Route::get('/absensi/export', [AbsensiController::class, 'exportExcel'])->name('absensi.export');
             Route::get('/absensi/{id}', [AbsensiController::class, 'detail'])->name('absensi.detail');
             Route::put('/absensi/{id}/status', [AbsensiController::class, 'updateStatus'])->name('absensi.update-status');
 
-            // Pengumuman Routes untuk HR
             Route::resource('pengumuman', PengumumanController::class);
             Route::get('/pengumuman/{id}/send-whatsapp', [PengumumanController::class, 'sendWhatsApp'])->name('pengumuman.send-whatsapp');
             Route::get('/pengumuman/{id}/send-whatsapp/{phone}', [PengumumanController::class, 'sendWhatsAppToNumber'])->name('pengumuman.send-whatsapp-number');
             Route::get('/pengumuman/{id}/select-contact', [PengumumanController::class, 'selectContact'])->name('pengumuman.select-contact');
-            Route::get('/pengumuman/{id}/resend-whatsapp', [PengumumanController::class, 'resendWhatsApp'])->name('pengumuman.resend-whatsapp');
 
             // FHL Routes untuk HR
             Route::get('/fhl', [FhlController::class, 'index'])->name('fhl.index');
@@ -81,6 +78,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/dashboard', [KaryawanDashboardController::class, 'index'])->name('dashboard');
             Route::get('/absensi', [AbsensiController::class, 'dashboard'])->name('absensi');
 
+            // API Routes untuk Absensi
             Route::post('/absensi/check-wifi', [AbsensiController::class, 'checkWifi'])->name('absensi.check-wifi');
             Route::post('/absensi/checkin', [AbsensiController::class, 'checkIn'])->name('absensi.checkin');
             Route::post('/absensi/checkout', [AbsensiController::class, 'checkOut'])->name('absensi.checkout');
