@@ -86,8 +86,8 @@
                 </a>
 
                 <!-- 7SPS -->
-                <a href="#"
-                   onclick="event.preventDefault(); alert('Menu 7SPS saat ini masih dalam tahap pengembangan dan akan segera tersedia. Terima kasih atas kesabaran Anda.');"
+                <a href="{{ route('hr.sunnah.index') }}"
+                   {{-- onclick="event.preventDefault(); alert('Menu 7SPS saat ini masih dalam tahap pengembangan dan akan segera tersedia. Terima kasih atas kesabaran Anda.');" --}}
                    class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200 text-[#F5F5F5] hover:bg-[#27438D] hover:text-white">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -150,8 +150,8 @@
                 </a>
 
                 <!-- 7SPS -->
-                <a href="#"
-                   onclick="event.preventDefault(); alert('Menu 7SPS saat ini masih dalam tahap pengembangan dan akan segera tersedia. Terima kasih atas kesabaran Anda.');"
+                <a href="{{ route('karyawan.sunnah.dashboard') }}"
+                   {{-- onclick="event.preventDefault(); alert('Menu 7SPS saat ini masih dalam tahap pengembangan dan akan segera tersedia. Terima kasih atas kesabaran Anda.');" --}}
                    class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200 text-[#F5F5F5] hover:bg-[#27438D] hover:text-white">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>

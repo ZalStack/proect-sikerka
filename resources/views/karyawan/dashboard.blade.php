@@ -11,7 +11,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-[#00a2e9]">
-                <p class="text-sm text-[#1B1B1B]">Kode Pegawai</p>
+                <p class="text-sm text-[#1B1B1B]">ID Pegawai</p>
                 <p class="text-2xl font-bold text-[#161758]">{{ $user->kode_pegawai ?? '-' }}</p>
             </div>
             <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-[#2E7D3E]">
@@ -32,7 +32,7 @@
             <h2 class="text-lg font-semibold text-[#161758] mb-4">Informasi Pribadi</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <p class="text-sm text-[#1B1B1B]"><strong>Kode Pegawai:</strong> {{ $user->kode_pegawai ?? '-' }}</p>
+                    <p class="text-sm text-[#1B1B1B]"><strong>ID Pegawai:</strong> {{ $user->kode_pegawai ?? '-' }}</p>
                     <p class="text-sm text-[#1B1B1B]"><strong>Email:</strong> {{ $user->email ?? '-' }}</p>
                     <p class="text-sm text-[#1B1B1B]"><strong>NIK:</strong> {{ $user->nik ?? '-' }}</p>
                     <p class="text-sm text-[#1B1B1B]"><strong>Divisi:</strong> {{ $user->divisi ?? '-' }}</p>

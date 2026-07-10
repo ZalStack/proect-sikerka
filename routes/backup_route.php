@@ -70,7 +70,6 @@ Route::middleware('auth')->group(function () {
             Route::get('/fhl/detail/{id}', [FhlController::class, 'detail'])->name('fhl.detail');
 
             Route::get('/sunnah', [SunnahController::class, 'index'])->name('sunnah.index');
-            Route::get('/sunnah/rekap', [SunnahController::class, 'rekapBulanan'])->name('sunnah.rekap');
             Route::get('/sunnah/detail/{id}', [SunnahController::class, 'detail'])->name('sunnah.detail');
             Route::post('/sunnah/approve/{id}', [SunnahController::class, 'approve'])->name('sunnah.approve');
         });
