@@ -45,7 +45,7 @@ class FhlController extends Controller
         // Cek apakah hari ini Jumat
         $isFriday = FhlAbsensi::isFriday();
 
-        // Data untuk grafik/detail
+        // Kirim data absensi ke view
         $absensi = $absensiBulanIni;
 
         return view('karyawan.fhl.dashboard', compact(
@@ -86,6 +86,7 @@ class FhlController extends Controller
             ], 400);
         }
 
+        // Waktu REAL-TIME menggunakan Carbon::now()
         $now = Carbon::now();
 
         // Upload foto

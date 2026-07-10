@@ -90,7 +90,7 @@
                             <td class="px-4 py-3 text-sm">{{ $loop->iteration + ($absensis->currentPage() - 1) * $absensis->perPage() }}</td>
                             <td class="px-4 py-3 text-sm">{{ $absen->karyawan->nama_lengkap }}</td>
                             <td class="px-4 py-3 text-sm">{{ $absen->tanggal->format('d-m-Y') }}</td>
-                            <td class="px-4 py-3 text-sm">{{ $absen->check_in ? Carbon\Carbon::parse($absen->check_in)->format('H:i') : '-' }}</td>
+                            <td class="px-4 py-3 text-sm">{{ $absen->check_in ? Carbon\Carbon::parse($absen->check_in)->format('H:i:s') : '-' }}</td>
                             <td class="px-4 py-3">
                                 <span class="px-2 py-1 rounded-full text-xs font-medium bg-[#2E7D3E] text-white">
                                     {{ $absen->status }}

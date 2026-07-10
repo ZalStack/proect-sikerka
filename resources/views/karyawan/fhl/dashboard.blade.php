@@ -28,7 +28,7 @@
                     <h2 class="text-lg font-semibold text-[#161758]">
                         {{ $isFriday ? '📅 Hari ini adalah Jumat!' : '📅 Hari ini bukan Jumat' }}
                     </h2>
-                    <p class="text-sm text-[#1B1B1B] mt-1">
+                    <p id="currentDateTime" class="text-sm text-[#1B1B1B] mt-1">
                         {{ Carbon\Carbon::now()->locale('id')->isoFormat('dddd, D MMMM YYYY') }}
                     </p>
                 </div>
@@ -124,13 +124,14 @@
                     <tbody>
                         @forelse($fridays as $friday)
                             @php
-                                $absen = $absensi->firstWhere('tanggal', $friday->format('Y-m-d'));
+                                // Cari absensi untuk tanggal ini
+                                $absen = $absensi->where('tanggal', $friday->format('Y-m-d'))->first();
                             @endphp
                             <tr class="border-b border-gray-200">
                                 <td class="px-4 py-2 text-sm">{{ $friday->format('d-m-Y') }}</td>
                                 <td class="px-4 py-2 text-sm">Jumat</td>
                                 <td class="px-4 py-2 text-sm">
-                                    {{ $absen && $absen->check_in ? Carbon\Carbon::parse($absen->check_in)->format('H:i') : '-' }}
+                                    {{ $absen && $absen->check_in ? Carbon\Carbon::parse($absen->check_in)->format('H:i:s') : '-' }}
                                 </td>
                                 <td class="px-4 py-2 text-sm">
                                     @if($absen)
@@ -173,6 +174,29 @@
 
 <script>
 const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+// ===== REAL-TIME CLOCK =====
+function updateClock() {
+    const now = new Date();
+    const dateTimeDisplay = document.getElementById('currentDateTime');
+    if (dateTimeDisplay) {
+        const options = {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        };
+        // Update dengan waktu real-time
+        dateTimeDisplay.textContent = now.toLocaleDateString('id-ID', options);
+    }
+}
+
+// Update clock setiap detik
+updateClock();
+setInterval(updateClock, 1000);
 
 // Preview Image
 document.getElementById('foto_bukti').addEventListener('change', function(e) {
