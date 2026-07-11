@@ -53,37 +53,74 @@
                     </div>
                 </div>
 
-                <!-- Checklist Detail dengan Berjamaah -->
+                <!-- Kelompok Sholat Wajib -->
                 <div class="mt-6 pt-6 border-t border-gray-200">
-                    <h3 class="text-lg font-semibold text-[#161758] mb-4">📋 Checklist Kegiatan</h3>
+                    <h3 class="text-lg font-semibold text-[#161758] mb-2">🕌 Sholat Wajib &amp; Berjamaah</h3>
+                    <p class="text-xs text-[#27438D] mb-4">
+                        <strong>Ketentuan poin:</strong><br>
+                        • 5/5 berjamaah (lengkap) = <strong>20 poin</strong> (5 × 4)<br>
+                        • 1-4/5 berjamaah = <strong>jumlah berjamaah × 1 poin</strong><br>
+                        • 0/5 berjamaah = <strong>0 poin</strong>
+                    </p>
+
+                    <div class="flex items-center gap-4 mb-4">
+                        <span class="px-4 py-2 rounded-lg bg-[#F5F5F5] text-sm font-medium text-[#1B1B1B]">
+                            Berjamaah: {{ $sunnah->jumlah_sholat_berjamaah }}/5
+                        </span>
+                        <span class="px-4 py-2 rounded-lg bg-[#161758] text-white text-sm font-bold">
+                            Poin Kelompok: {{ $sunnah->poin_sholat_wajib }}
+                        </span>
+                    </div>
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        @foreach($poinConfig as $key => $config)
+                        @foreach($sholatWajibKeys as $key)
+                            @php $config = $poinConfig[$key]; @endphp
                             <div class="flex items-center space-x-3 p-3 bg-[#F5F5F5] rounded-lg">
                                 <span class="text-xl">{{ $config['icon'] }}</span>
                                 <div class="flex-1">
                                     <p class="text-sm font-medium text-[#1B1B1B]">{{ $config['label'] }}</p>
                                     <p class="text-xs text-[#27438D]">
-                                        @if(($config['has_jamaah'] ?? false))
-                                            @if($sunnah->$key)
-                                                @if($sunnah->{$key . '_berjamaah'})
-                                                    {{ $config['poin_jamaah'] ?? $config['poin'] * 4 }} poin (Berjamaah) 🕌
-                                                @else
-                                                    {{ $config['poin'] }} poin (Sendiri)
-                                                @endif
+                                        @if($sunnah->$key)
+                                            @if($sunnah->{$key . '_berjamaah'})
+                                                Dikerjakan &middot; Berjamaah 🕌
                                             @else
-                                                {{ $config['poin'] }} poin
+                                                Dikerjakan &middot; Sendiri
                                             @endif
                                         @else
-                                            {{ $config['poin'] }} poin
+                                            Belum dikerjakan
                                         @endif
                                     </p>
                                 </div>
                                 <div class="text-right">
                                     @if($sunnah->$key)
                                         <span class="text-[#2E7D3E] text-xl">✅</span>
-                                        @if(($config['has_jamaah'] ?? false) && $sunnah->{$key . '_berjamaah'})
+                                        @if($sunnah->{$key . '_berjamaah'})
                                             <span class="text-xs text-[#27438D] block">🕌</span>
                                         @endif
+                                    @else
+                                        <span class="text-gray-300 text-xl">⬜</span>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <!-- Kegiatan Sunnah Lainnya -->
+                <div class="mt-6 pt-6 border-t border-gray-200">
+                    <h3 class="text-lg font-semibold text-[#161758] mb-4">📋 Kegiatan Sunnah Lainnya</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        @foreach($poinConfig as $key => $config)
+                            @continue(in_array($key, $sholatWajibKeys, true))
+                            <div class="flex items-center space-x-3 p-3 bg-[#F5F5F5] rounded-lg">
+                                <span class="text-xl">{{ $config['icon'] }}</span>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-[#1B1B1B]">{{ $config['label'] }}</p>
+                                    <p class="text-xs text-[#27438D]">{{ $config['poin'] }} poin</p>
+                                </div>
+                                <div class="text-right">
+                                    @if($sunnah->$key)
+                                        <span class="text-[#2E7D3E] text-xl">✅</span>
                                     @else
                                         <span class="text-gray-300 text-xl">⬜</span>
                                     @endif
@@ -102,9 +139,9 @@
                             <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Status</label>
                             <select name="status" required
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                                <option value="pending" {{ $sunnah->status_approval === 'pending' ? 'selected' : '' }}>⏳ Menunggu</option>
                                 <option value="approved" {{ $sunnah->status_approval === 'approved' ? 'selected' : '' }}>✅ Disetujui</option>
                                 <option value="rejected" {{ $sunnah->status_approval === 'rejected' ? 'selected' : '' }}>❌ Ditolak</option>
-                                <option value="pending" {{ $sunnah->status_approval === 'pending' ? 'selected' : '' }}>⏳ Menunggu</option>
                             </select>
                         </div>
                         <div>

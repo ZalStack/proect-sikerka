@@ -11,15 +11,25 @@ use Carbon\Carbon;
 class SunnahController extends Controller
 {
     // Dashboard Karyawan - 7SPS
-    public function dashboard()
+    public function dashboard(Request $request)
     {
         $user = Auth::user();
         $today = Carbon::today();
+        $yesterday = Carbon::yesterday();
         $month = Carbon::now()->month;
         $year = Carbon::now()->year;
 
+        // Karyawan hanya boleh mengisi/melihat checklist untuk hari ini atau kemarin
+        $selectedDate = $today;
+        if ($request->filled('tanggal')) {
+            $requested = Carbon::parse($request->input('tanggal'))->startOfDay();
+            if ($requested->isSameDay($yesterday)) {
+                $selectedDate = $yesterday;
+            }
+        }
+
         $todayData = SunnahDaily::where('karyawan_id', $user->id)
-            ->whereDate('tanggal', $today)
+            ->whereDate('tanggal', $selectedDate)
             ->first();
 
         $monthlyData = SunnahDaily::where('karyawan_id', $user->id)
@@ -30,6 +40,7 @@ class SunnahController extends Controller
 
         $totalPoin = $monthlyData->sum('total_poin');
         $poinConfig = SunnahDaily::getPoinConfig();
+        $sholatWajibKeys = SunnahDaily::getSholatWajibKeys();
 
         $statistik = [
             'total_hari' => $monthlyData->count(),
@@ -58,113 +69,133 @@ class SunnahController extends Controller
             'monthlyData',
             'totalPoin',
             'poinConfig',
+            'sholatWajibKeys',
             'statistik',
             'last30Days',
             'month',
             'year',
-            'today'
+            'today',
+            'yesterday',
+            'selectedDate'
         ));
     }
 
-    // Simpan checklist harian
+    // Simpan checklist harian (langsung tersimpan tanpa modal konfirmasi)
     public function saveDaily(Request $request)
     {
-        $user = Auth::user();
-        $today = Carbon::today();
+        try {
+            $user = Auth::user();
+            $today = Carbon::today();
+            $yesterday = Carbon::yesterday();
 
-        // Dapatkan semua field dari konfigurasi
-        $config = SunnahDaily::getPoinConfig();
-        $fields = array_keys($config);
+            $config = SunnahDaily::getPoinConfig();
+            $fields = array_keys($config);
 
-        // Field yang diizinkan untuk dikirim
-        $allowedFields = array_merge($fields, [
-            'sholat_subuh_berjamaah',
-            'sholat_zuhur_berjamaah',
-            'sholat_asar_berjamaah',
-            'sholat_maghrib_berjamaah',
-            'sholat_isya_berjamaah'
-        ]);
+            $request->validate([
+                'field_name' => 'required|string|in:' . implode(',', $fields),
+                'tanggal' => 'nullable|date',
+            ]);
 
-        $request->validate([
-            'field_name' => 'required|string|in:' . implode(',', $fields),
-        ]);
-
-        $fieldName = $request->input('field_name');
-        $fieldValue = $request->boolean($fieldName);
-
-        // Ambil atau buat record hari ini
-        $sunnah = SunnahDaily::firstOrNew([
-            'karyawan_id' => $user->id,
-            'tanggal' => $today->format('Y-m-d'),
-        ]);
-
-        // Jika record baru, set default semua field false
-        if (!$sunnah->exists) {
-            foreach ($fields as $field) {
-                $sunnah->$field = false;
+            // Karyawan hanya boleh mengisi untuk hari ini atau 1 hari kebelakang (kemarin)
+            $tanggal = $today;
+            if ($request->filled('tanggal')) {
+                $parsed = Carbon::parse($request->input('tanggal'))->startOfDay();
+                if ($parsed->isSameDay($yesterday)) {
+                    $tanggal = $yesterday;
+                } elseif ($parsed->isSameDay($today)) {
+                    $tanggal = $today;
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Checklist hanya dapat diisi untuk hari ini atau kemarin (H-1).',
+                    ], 422);
+                }
             }
-            // Set default berjamaah false
+
+            $fieldName = $request->input('field_name');
+            $fieldValue = $request->boolean($fieldName);
+
+            // Ambil atau buat record untuk tanggal terpilih
+            $sunnah = SunnahDaily::firstOrNew([
+                'karyawan_id' => $user->id,
+                'tanggal' => $tanggal->format('Y-m-d'),
+            ]);
+
+            // Jika record baru, set default semua field false
+            if (!$sunnah->exists) {
+                foreach ($fields as $field) {
+                    $sunnah->$field = false;
+                }
+                $jamaahFields = ['sholat_subuh_berjamaah', 'sholat_zuhur_berjamaah', 'sholat_asar_berjamaah', 'sholat_maghrib_berjamaah', 'sholat_isya_berjamaah'];
+                foreach ($jamaahFields as $jf) {
+                    $sunnah->$jf = false;
+                }
+            }
+
+            // Cek jika sudah approved
+            if ($sunnah->exists && $sunnah->status_approval === 'approved') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data tanggal ini sudah disetujui HR dan tidak dapat diubah lagi.',
+                ], 403);
+            }
+
+            // Update field yang dikirim
+            $sunnah->$fieldName = $fieldValue;
+            $sunnah->karyawan_id = $user->id;
+            $sunnah->tanggal = $tanggal->format('Y-m-d');
+
+            // Cek apakah field ini adalah sholat wajib yang memiliki opsi berjamaah
+            if (isset($config[$fieldName]) && ($config[$fieldName]['has_jamaah'] ?? false)) {
+                $jamaahKey = $fieldName . '_berjamaah';
+                if ($request->has($jamaahKey)) {
+                    $sunnah->$jamaahKey = $request->boolean($jamaahKey);
+                } elseif (!$fieldValue) {
+                    // Jika checklist sholat dibatalkan, otomatis batalkan status berjamaahnya juga
+                    $sunnah->$jamaahKey = false;
+                }
+            }
+
+            // Hitung total poin dari semua checklist
+            $currentData = [];
+            foreach ($fields as $field) {
+                $currentData[$field] = (bool) $sunnah->$field;
+            }
             $jamaahFields = ['sholat_subuh_berjamaah', 'sholat_zuhur_berjamaah', 'sholat_asar_berjamaah', 'sholat_maghrib_berjamaah', 'sholat_isya_berjamaah'];
             foreach ($jamaahFields as $jf) {
-                $sunnah->$jf = false;
+                $currentData[$jf] = (bool) $sunnah->$jf;
             }
-        }
 
-        // Cek jika sudah approved
-        if ($sunnah->exists && $sunnah->status_approval === 'approved') {
+            $sunnah->total_poin = SunnahDaily::calculateTotalPoin($currentData);
+
+            // Jika status masih pending atau null, set ke pending
+            if (!$sunnah->status_approval || $sunnah->status_approval === '') {
+                $sunnah->status_approval = 'pending';
+            }
+
+            $sunnah->save();
+            $sunnah->refresh();
+
+            // Kirim response dengan data yang diperlukan untuk update UI
+            return response()->json([
+                'success' => true,
+                'message' => 'Checklist berhasil disimpan',
+                'data' => [
+                    'total_poin' => $sunnah->total_poin,
+                    'poin_sholat_wajib' => $sunnah->poin_sholat_wajib,
+                    'jumlah_sholat_berjamaah' => $sunnah->jumlah_sholat_berjamaah,
+                    'tanggal' => $sunnah->tanggal->format('Y-m-d'),
+                    'status' => $sunnah->status_label,
+                    'status_approval' => $sunnah->status_approval,
+                ]
+            ]);
+
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Data hari ini sudah disetujui HR dan tidak dapat diubah lagi.',
-            ], 403);
+                'message' => 'Terjadi kesalahan pada server: ' . $e->getMessage(),
+            ], 500);
         }
-
-        // Update field yang dikirim
-        $sunnah->$fieldName = $fieldValue;
-        $sunnah->karyawan_id = $user->id;
-        $sunnah->tanggal = $today->format('Y-m-d');
-
-        // Cek apakah field ini adalah sholat wajib yang memiliki berjamaah
-        $config = SunnahDaily::getPoinConfig();
-        if (isset($config[$fieldName]) && ($config[$fieldName]['has_jamaah'] ?? false)) {
-            // Jika checkbox sholat dicentang, tampilkan opsi berjamaah di modal
-            // Data berjamaah akan dikirim via form
-            $jamaahKey = $fieldName . '_berjamaah';
-            if ($request->has($jamaahKey)) {
-                $sunnah->$jamaahKey = $request->boolean($jamaahKey);
-            } else {
-                // Jika tidak ada data berjamaah, default false
-                $sunnah->$jamaahKey = false;
-            }
-        }
-
-        // Hitung total poin dari semua checklist
-        $currentData = [];
-        foreach ($fields as $field) {
-            $currentData[$field] = (bool) $sunnah->$field;
-        }
-        // Tambahkan data berjamaah untuk perhitungan
-        $jamaahFields = ['sholat_subuh_berjamaah', 'sholat_zuhur_berjamaah', 'sholat_asar_berjamaah', 'sholat_maghrib_berjamaah', 'sholat_isya_berjamaah'];
-        foreach ($jamaahFields as $jf) {
-            $currentData[$jf] = (bool) $sunnah->$jf;
-        }
-
-        $sunnah->total_poin = SunnahDaily::calculateTotalPoin($currentData);
-        $sunnah->status_approval = 'pending';
-        $sunnah->save();
-
-        // Refresh data untuk response
-        $sunnah->refresh();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Checklist berhasil disimpan!',
-            'data' => [
-                'total_poin' => $sunnah->total_poin,
-                'status' => $sunnah->status_label,
-                'status_approval' => $sunnah->status_approval,
-                'checklist' => $currentData,
-            ]
-        ]);
     }
 
     // HR View - Monitoring 7SPS
@@ -172,16 +203,17 @@ class SunnahController extends Controller
     {
         $query = SunnahDaily::with('karyawan');
 
-        if ($request->filled('month') && $request->filled('year')) {
-            $query->whereMonth('tanggal', $request->month)
-                  ->whereYear('tanggal', $request->year);
+        $periode = $request->filled('periode') ? $request->input('periode') : null;
+        $month = null;
+        $year = null;
+
+        if ($periode && array_key_exists($periode, SunnahDaily::getPeriodeOptions())) {
+            $query->filterByPeriode($periode);
         } else {
-            $request->merge([
-                'month' => date('m'),
-                'year' => date('Y')
-            ]);
-            $query->whereMonth('tanggal', date('m'))
-                  ->whereYear('tanggal', date('Y'));
+            $periode = null;
+            $month = $request->filled('month') ? $request->month : date('m');
+            $year = $request->filled('year') ? $request->year : date('Y');
+            $query->whereMonth('tanggal', $month)->whereYear('tanggal', $year);
         }
 
         if ($request->filled('karyawan_id')) {
@@ -192,22 +224,51 @@ class SunnahController extends Controller
             $query->where('status_approval', $request->status);
         }
 
-        $sunnahData = (clone $query)->orderBy('tanggal', 'desc')->paginate(15);
-        $karyawans = Karyawan::all();
+        if ($request->filled('divisi')) {
+            $divisi = $request->input('divisi');
+            $query->whereHas('karyawan', function ($q) use ($divisi) {
+                $q->where('divisi', $divisi);
+            });
+        }
 
-        $month = $request->month ?? date('m');
-        $year = $request->year ?? date('Y');
+        $sunnahData = (clone $query)->orderBy('tanggal', 'desc')->get();
 
-        $filteredData = (clone $query)->get();
         $statistik = [
-            'total' => $filteredData->count(),
-            'pending' => $filteredData->where('status_approval', 'pending')->count(),
-            'approved' => $filteredData->where('status_approval', 'approved')->count(),
-            'rejected' => $filteredData->where('status_approval', 'rejected')->count(),
-            'total_poin' => $filteredData->sum('total_poin'),
+            'total' => $sunnahData->count(),
+            'pending' => $sunnahData->where('status_approval', 'pending')->count(),
+            'approved' => $sunnahData->where('status_approval', 'approved')->count(),
+            'rejected' => $sunnahData->where('status_approval', 'rejected')->count(),
+            'total_poin' => $sunnahData->sum('total_poin'),
         ];
 
-        return view('hr.sunnah.index', compact('sunnahData', 'karyawans', 'statistik', 'month', 'year'));
+        // Pengelompokan berdasarkan divisi karyawan
+        $groupedData = $sunnahData
+            ->groupBy(function ($item) {
+                return $item->karyawan->divisi ?? 'Tanpa Divisi';
+            })
+            ->sortKeys();
+
+        $karyawans = Karyawan::orderBy('nama_lengkap')->get();
+
+        $divisiList = Karyawan::query()
+            ->whereNotNull('divisi')
+            ->where('divisi', '!=', '')
+            ->distinct()
+            ->orderBy('divisi')
+            ->pluck('divisi');
+
+        $periodeOptions = SunnahDaily::getPeriodeOptions();
+
+        return view('hr.sunnah.index', compact(
+            'groupedData',
+            'karyawans',
+            'statistik',
+            'month',
+            'year',
+            'periode',
+            'periodeOptions',
+            'divisiList'
+        ));
     }
 
     // HR View - Rekap Bulanan
@@ -234,14 +295,15 @@ class SunnahController extends Controller
     {
         $sunnah = SunnahDaily::with('karyawan')->findOrFail($id);
         $poinConfig = SunnahDaily::getPoinConfig();
-        return view('hr.sunnah.detail', compact('sunnah', 'poinConfig'));
+        $sholatWajibKeys = SunnahDaily::getSholatWajibKeys();
+        return view('hr.sunnah.detail', compact('sunnah', 'poinConfig', 'sholatWajibKeys'));
     }
 
-    // HR Approve/Reject
+    // HR Approve/Reject (satuan)
     public function approve(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|in:approved,rejected',
+            'status' => 'required|in:approved,rejected,pending',
             'catatan_hr' => 'nullable|string',
         ]);
 
@@ -250,9 +312,37 @@ class SunnahController extends Controller
         $sunnah->catatan_hr = $request->catatan_hr;
         $sunnah->save();
 
-        $statusLabel = $request->status === 'approved' ? 'Disetujui' : 'Ditolak';
+        $statusLabel = $request->status === 'approved' ? 'Disetujui' : ($request->status === 'rejected' ? 'Ditolak' : 'Menunggu');
 
         return redirect()->route('hr.sunnah.index')
             ->with('success', "Status approval berhasil diubah menjadi {$statusLabel}");
+    }
+
+    // HR Approve/Reject (bulk / massal)
+    public function bulkApprove(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:sunnah_daily,id',
+            'target_status' => 'required|in:approved,rejected',
+            'catatan_hr' => 'nullable|string',
+        ]);
+
+        $ids = $request->input('ids');
+
+        // Hanya update yang statusnya belum approved
+        $jumlah = SunnahDaily::whereIn('id', $ids)
+            ->where('status_approval', '!=', 'approved')
+            ->update([
+                'status_approval' => $request->input('target_status'),
+                'catatan_hr' => $request->input('catatan_hr'),
+            ]);
+
+        $statusLabel = $request->input('target_status') === 'approved' ? 'Disetujui' : 'Ditolak';
+
+        return redirect()->route('hr.sunnah.index', $request->only([
+                'month', 'year', 'periode', 'karyawan_id', 'status', 'divisi',
+            ]))
+            ->with('success', "{$jumlah} data berhasil diubah menjadi {$statusLabel} secara massal");
     }
 }

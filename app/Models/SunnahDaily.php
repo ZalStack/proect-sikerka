@@ -4,12 +4,18 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class SunnahDaily extends Model
 {
     use HasFactory;
 
     protected $table = 'sunnah_daily';
+
+    // Poin kelompok sholat wajib (subuh, zuhur, asar, maghrib, isya)
+    const POIN_WAJIB_KOSONG   = 0;  // tidak ada satupun sholat wajib yang berjamaah
+    const POIN_WAJIB_PER_ITEM = 1;  // poin per sholat wajib yang berjamaah (jika tidak lengkap)
+    const POIN_WAJIB_LENGKAP  = 20; // seluruh (5 dari 5) sholat wajib berjamaah (5 × 4)
 
     protected $fillable = [
         'karyawan_id',
@@ -62,16 +68,16 @@ class SunnahDaily extends Model
         return $this->belongsTo(Karyawan::class, 'karyawan_id');
     }
 
-    // Konfigurasi poin per kegiatan
+    // Konfigurasi poin per kegiatan (untuk kegiatan sunnah non-wajib, dihitung per item seperti biasa)
     public static function getPoinConfig()
     {
         return [
             'sholat_tahajud' => ['label' => 'Sholat Tahajud', 'poin' => 35, 'icon' => '🌙', 'has_jamaah' => false],
-            'sholat_subuh' => ['label' => 'Sholat Subuh', 'poin' => 1, 'poin_jamaah' => 4, 'icon' => '🌅', 'has_jamaah' => true],
-            'sholat_zuhur' => ['label' => 'Sholat Zuhur', 'poin' => 1, 'poin_jamaah' => 4, 'icon' => '☀️', 'has_jamaah' => true],
-            'sholat_asar' => ['label' => 'Sholat Asar', 'poin' => 1, 'poin_jamaah' => 4, 'icon' => '🌤️', 'has_jamaah' => true],
-            'sholat_maghrib' => ['label' => 'Sholat Maghrib', 'poin' => 1, 'poin_jamaah' => 4, 'icon' => '🌆', 'has_jamaah' => true],
-            'sholat_isya' => ['label' => 'Sholat Isya', 'poin' => 1, 'poin_jamaah' => 4, 'icon' => '🌙', 'has_jamaah' => true],
+            'sholat_subuh' => ['label' => 'Sholat Subuh', 'icon' => '🌅', 'has_jamaah' => true],
+            'sholat_zuhur' => ['label' => 'Sholat Zuhur', 'icon' => '☀️', 'has_jamaah' => true],
+            'sholat_asar' => ['label' => 'Sholat Asar', 'icon' => '🌤️', 'has_jamaah' => true],
+            'sholat_maghrib' => ['label' => 'Sholat Maghrib', 'icon' => '🌆', 'has_jamaah' => true],
+            'sholat_isya' => ['label' => 'Sholat Isya', 'icon' => '🌙', 'has_jamaah' => true],
             'infaq_sedekah' => ['label' => 'Infaq/Sedekah', 'poin' => 5, 'icon' => '🤲', 'has_jamaah' => false],
             'dzikir_sholawat' => ['label' => 'Dzikir/Sholawat', 'poin' => 5, 'icon' => '📿', 'has_jamaah' => false],
             'tilawah_quran' => ['label' => 'Tilawah Quran', 'poin' => 5, 'icon' => '📖', 'has_jamaah' => false],
@@ -81,28 +87,86 @@ class SunnahDaily extends Model
         ];
     }
 
-    // Hitung total poin berdasarkan checklist dengan mempertimbangkan berjamaah
+    // 5 field sholat wajib yang dihitung sebagai satu kelompok (bukan per item)
+    public static function getSholatWajibKeys()
+    {
+        return [
+            'sholat_subuh',
+            'sholat_zuhur',
+            'sholat_asar',
+            'sholat_maghrib',
+            'sholat_isya',
+        ];
+    }
+
+    /**
+     * Hitung poin kelompok sholat wajib berdasarkan jumlah sholat yang dikerjakan berjamaah.
+     * - Jika semua 5 sholat berjamaah (lengkap) → 20 poin (5 × 4)
+     * - Jika sebagian (1-4) sholat berjamaah → jumlah × 1 poin
+     * - Jika tidak ada yang berjamaah → 0 poin
+     */
+    public static function hitungPoinWajib(array $data): array
+    {
+        $wajibKeys = self::getSholatWajibKeys();
+        $jumlahBerjamaah = 0;
+
+        foreach ($wajibKeys as $key) {
+            $jamaahKey = $key . '_berjamaah';
+            if (!empty($data[$key]) && !empty($data[$jamaahKey])) {
+                $jumlahBerjamaah++;
+            }
+        }
+
+        // Hitung poin berdasarkan jumlah sholat yang berjamaah
+        if ($jumlahBerjamaah >= 5) {
+            // Semua 5 sholat berjamaah → 5 × 4 = 20 poin
+            $poin = self::POIN_WAJIB_LENGKAP;
+        } elseif ($jumlahBerjamaah >= 1) {
+            // Sebagian sholat berjamaah (1-4) → jumlah × 1 poin
+            $poin = $jumlahBerjamaah * self::POIN_WAJIB_PER_ITEM;
+        } else {
+            // Tidak ada yang berjamaah → 0 poin
+            $poin = self::POIN_WAJIB_KOSONG;
+        }
+
+        return [
+            'jumlah_berjamaah' => $jumlahBerjamaah,
+            'poin' => $poin,
+        ];
+    }
+
+    // Hitung total poin berdasarkan checklist (kelompok wajib + kegiatan sunnah lain)
     public static function calculateTotalPoin($data)
     {
         $config = self::getPoinConfig();
-        $total = 0;
+        $wajibKeys = self::getSholatWajibKeys();
 
+        // Poin kelompok sholat wajib (subuh, zuhur, asar, maghrib, isya)
+        $total = self::hitungPoinWajib($data)['poin'];
+
+        // Poin kegiatan sunnah lainnya (dihitung per item seperti biasa)
         foreach ($config as $key => $value) {
-            if (isset($data[$key]) && $data[$key]) {
-                // Cek apakah ini sholat wajib dengan berjamaah
-                if ($value['has_jamaah'] ?? false) {
-                    $jamaahKey = $key . '_berjamaah';
-                    if (isset($data[$jamaahKey]) && $data[$jamaahKey]) {
-                        $total += $value['poin_jamaah'] ?? $value['poin'] * 4;
-                    } else {
-                        $total += $value['poin'];
-                    }
-                } else {
-                    $total += $value['poin'];
-                }
+            if (in_array($key, $wajibKeys, true)) {
+                continue; // sudah dihitung di atas sebagai kelompok
+            }
+            if (!empty($data[$key])) {
+                $total += $value['poin'];
             }
         }
+
         return $total;
+    }
+
+    // Jumlah sholat wajib yang dikerjakan secara berjamaah pada record ini
+    public function getJumlahSholatBerjamaahAttribute()
+    {
+        return self::hitungPoinWajib($this->attributesToArray())['jumlah_berjamaah'];
+    }
+
+    // Poin kelompok sholat wajib pada record ini
+    public function getPoinSholatWajibAttribute()
+    {
+        return self::hitungPoinWajib($this->attributesToArray())['poin'];
     }
 
     // Dapatkan label status approval
@@ -135,6 +199,41 @@ class SunnahDaily extends Model
                         ->whereYear('tanggal', $year);
         }
         return $query;
+    }
+
+    /**
+     * Scope untuk filter berdasarkan periode cepat: 3_hari, 1_minggu, 1_bulan.
+     * Rentang dihitung mundur dari hari ini (inklusif).
+     */
+    public function scopeFilterByPeriode($query, $periode)
+    {
+        $end = Carbon::today()->endOfDay();
+
+        switch ($periode) {
+            case '3_hari':
+                $start = Carbon::today()->subDays(2)->startOfDay();
+                break;
+            case '1_minggu':
+                $start = Carbon::today()->subDays(6)->startOfDay();
+                break;
+            case '1_bulan':
+                $start = Carbon::today()->subDays(29)->startOfDay();
+                break;
+            default:
+                return $query;
+        }
+
+        return $query->whereBetween('tanggal', [$start->format('Y-m-d'), $end->format('Y-m-d')]);
+    }
+
+    // Label periode untuk tampilan
+    public static function getPeriodeOptions()
+    {
+        return [
+            '3_hari' => '3 Hari Terakhir',
+            '1_minggu' => '1 Minggu Terakhir',
+            '1_bulan' => '1 Bulan Terakhir',
+        ];
     }
 
     /**
