@@ -103,6 +103,14 @@
                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                         @error('no_kk') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
+
+                    <!-- Agama -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Agama</label>
+                        <input type="text" name="agama" value="{{ old('agama') }}"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                        @error('agama') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
+                    </div>
                 </div>
 
                 <!-- KOLOM KANAN -->
@@ -115,6 +123,7 @@
                             <option value="">Pilih</option>
                             <option value="Belum Menikah" {{ old('status_pernikahan') === 'Belum Menikah' ? 'selected' : '' }}>Belum Menikah</option>
                             <option value="Menikah" {{ old('status_pernikahan') === 'Menikah' ? 'selected' : '' }}>Menikah</option>
+                            <option value="Cerai" {{ old('status_pernikahan') === 'Cerai' ? 'selected' : '' }}>Cerai</option>
                         </select>
                         @error('status_pernikahan') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
@@ -275,6 +284,14 @@
                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                         @error('sedang_melanjutkan_pendidikan') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
+
+                    <!-- IPK Terakhir -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-[#1B1B1B] mb-1">IPK Terakhir</label>
+                        <input type="number" name="ipk_terakhir" value="{{ old('ipk_terakhir') }}" step="0.01" min="0" max="4"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                        @error('ipk_terakhir') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
+                    </div>
                 </div>
 
                 <!-- KOLOM KANAN -->
@@ -346,12 +363,56 @@
                         @error('alamat') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                     </div>
 
+                    <!-- Alamat Domisili -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Alamat Domisili Saat Ini</label>
+                        <textarea name="alamat_domisili" rows="3"
+                                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">{{ old('alamat_domisili') }}</textarea>
+                        @error('alamat_domisili') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
+                    </div>
+
                     <!-- Telepon Kontak Darurat -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Telepon Kontak Darurat</label>
                         <input type="text" name="telepon_kontak_darurat" value="{{ old('telepon_kontak_darurat') }}"
                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                         @error('telepon_kontak_darurat') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+
+                <!-- Informasi Tambahan -->
+                <div class="md:col-span-2">
+                    <h3 class="text-lg font-semibold text-[#161758] border-b border-gray-200 pb-2 mb-4 mt-4">Informasi Tambahan</h3>
+                </div>
+
+                <!-- KOLOM KIRI -->
+                <div>
+                    <!-- Tanggal Pengangkatan Tetap -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Tanggal Pengangkatan Tetap</label>
+                        <input type="date" name="tanggal_pengangkatan_tetap" value="{{ old('tanggal_pengangkatan_tetap') }}"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                        @error('tanggal_pengangkatan_tetap') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
+                    </div>
+
+                    <!-- Nomor Rekening -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Nomor Rekening</label>
+                        <input type="text" name="nomor_rekening" value="{{ old('nomor_rekening') }}"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                        @error('nomor_rekening') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+
+                <!-- KOLOM KANAN -->
+                <div>
+                    <!-- Nama Bank (default BSI, tidak bisa diubah) -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Nama Bank</label>
+                        <input type="text" value="BSI" disabled
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100">
+                        <input type="hidden" name="nama_bank" value="BSI">
+                        <p class="text-xs text-[#27438D] mt-1">* Nama bank default BSI</p>
                     </div>
 
                     <!-- Foto Profil -->

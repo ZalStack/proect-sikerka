@@ -43,6 +43,11 @@ return new class extends Migration
             $table->string('nama_ibu_kandung', 100)->nullable();
             $table->string('nama_kontak_darurat', 100)->nullable();
             $table->string('telepon_kontak_darurat', 20)->nullable();
+            $table->date('tanggal_pengangkatan_tetap')->nullable();
+            $table->string('nomor_rekening', 50)->nullable();
+            $table->string('nama_bank', 50)->default('BSI');
+            $table->string('ipk_terakhir', 10)->nullable();
+            $table->text('alamat_domisili')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

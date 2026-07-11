@@ -13,7 +13,7 @@ use Carbon\Carbon;
 class PengumumanController extends Controller
 {
     // WhatsApp Configuration - Updated
-    private $whatsappNumber = '628111912340'; // +62 811-1912-340 (tanpa + dan tanpa tanda hubung)
+    private $whatsappNumber = '628111912340'; 
 
     public function index()
     {

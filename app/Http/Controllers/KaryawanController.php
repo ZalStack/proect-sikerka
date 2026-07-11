@@ -51,7 +51,7 @@ class KaryawanController extends Controller
             'nama_ibu_kandung' => 'nullable|string|max:100',
             'nik' => 'nullable|string|max:16|unique:karyawans,nik',
             'no_kk' => 'nullable|string|max:20',
-            'status_pernikahan' => 'nullable|string|max:20',
+            'status_pernikahan' => 'nullable|in:Belum Menikah,Menikah,Cerai',
             'jumlah_anak' => 'nullable|integer|min:0',
             'golongan_darah' => 'nullable|in:A,B,AB,O',
             'npwp' => 'nullable|string|max:20',
@@ -67,6 +67,10 @@ class KaryawanController extends Controller
             'nama_kontak_darurat' => 'nullable|string|max:100',
             'telepon_kontak_darurat' => 'nullable|string|max:20',
             'foto_profil' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'tanggal_pengangkatan_tetap' => 'nullable|date',
+            'nomor_rekening' => 'nullable|string|max:50',
+            'ipk_terakhir' => 'nullable|numeric|min:0|max:4',
+            'alamat_domisili' => 'nullable|string',
         ]);
 
         $data = $request->except(['password', 'password_confirmation', 'foto_profil']);
@@ -74,6 +78,7 @@ class KaryawanController extends Controller
         $data['kata_sandi'] = Hash::make($request->password);
         $data['jumlah_anak'] = $request->jumlah_anak ?? 0;
         $data['posisi'] = $this->determinePosisi($request->divisi);
+        $data['nama_bank'] = 'BSI';
 
         if ($request->hasFile('foto_profil')) {
             $file = $request->file('foto_profil');
@@ -118,7 +123,7 @@ class KaryawanController extends Controller
             'nama_ibu_kandung' => 'nullable|string|max:100',
             'nik' => 'nullable|string|max:16|unique:karyawans,nik,' . $id,
             'no_kk' => 'nullable|string|max:20',
-            'status_pernikahan' => 'nullable|string|max:20',
+            'status_pernikahan' => 'nullable|in:Belum Menikah,Menikah,Cerai',
             'jumlah_anak' => 'nullable|integer|min:0',
             'golongan_darah' => 'nullable|in:A,B,AB,O',
             'npwp' => 'nullable|string|max:20',
@@ -135,12 +140,17 @@ class KaryawanController extends Controller
             'telepon_kontak_darurat' => 'nullable|string|max:20',
             'foto_profil' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'password' => 'nullable|min:8|confirmed',
+            'tanggal_pengangkatan_tetap' => 'nullable|date',
+            'nomor_rekening' => 'nullable|string|max:50',
+            'ipk_terakhir' => 'nullable|numeric|min:0|max:4',
+            'alamat_domisili' => 'nullable|string',
         ]);
 
         $data = $request->except(['password', 'password_confirmation', 'foto_profil', '_token', '_method']);
 
         $data['jumlah_anak'] = $data['jumlah_anak'] ?? 0;
         $data['posisi'] = $this->determinePosisi($request->divisi);
+        $data['nama_bank'] = 'BSI';
 
         if ($request->hasFile('foto_profil')) {
             if ($karyawan->foto_profil) {

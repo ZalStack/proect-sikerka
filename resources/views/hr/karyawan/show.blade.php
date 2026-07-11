@@ -52,7 +52,7 @@
                     <div class="flex-shrink-0">
                         <div class="text-sm text-gray-500">
                             <p>Bergabung: {{ $karyawan->tanggal_bergabung ? $karyawan->tanggal_bergabung->format('d-m-Y') : '-' }}</p>
-                            <p>Total Hari Kerja: {{ $karyawan->total_hari_kerja ?? 0 }}</p>
+                            <p>ID Pegawai: {{ $karyawan->kode_pegawai }}</p>
                         </div>
                     </div>
                 </div>
@@ -97,6 +97,10 @@
                             <label class="text-sm text-[#1B1B1B] font-medium">No KK</label>
                             <p class="text-[#27438D]">{{ $karyawan->no_kk ?? '-' }}</p>
                         </div>
+                        <div>
+                            <label class="text-sm text-[#1B1B1B] font-medium">Agama</label>
+                            <p class="text-[#27438D]">{{ $karyawan->agama ?? '-' }}</p>
+                        </div>
                     </div>
 
                     <!-- KOLOM KANAN -->
@@ -120,10 +124,6 @@
                         <div>
                             <label class="text-sm text-[#1B1B1B] font-medium">NPWP</label>
                             <p class="text-[#27438D]">{{ $karyawan->npwp ?? '-' }}</p>
-                        </div>
-                        <div>
-                            <label class="text-sm text-[#1B1B1B] font-medium">Agama</label>
-                            <p class="text-[#27438D]">{{ $karyawan->agama ?? '-' }}</p>
                         </div>
                     </div>
 
@@ -172,12 +172,6 @@
                             <p class="text-[#27438D]">{{ $karyawan->end_date->format('d-m-Y') }}</p>
                         </div>
                         @endif
-                        @if($karyawan->reason_resigned)
-                        <div>
-                            <label class="text-sm text-[#1B1B1B] font-medium">Alasan Resign</label>
-                            <p class="text-[#27438D]">{{ $karyawan->reason_resigned }}</p>
-                        </div>
-                        @endif
                     </div>
 
                     <!-- Pendidikan -->
@@ -194,6 +188,10 @@
                         <div>
                             <label class="text-sm text-[#1B1B1B] font-medium">Sedang Melanjutkan Pendidikan</label>
                             <p class="text-[#27438D]">{{ $karyawan->sedang_melanjutkan_pendidikan ?? '-' }}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm text-[#1B1B1B] font-medium">IPK Terakhir</label>
+                            <p class="text-[#27438D]">{{ $karyawan->ipk_terakhir ?? '-' }}</p>
                         </div>
                     </div>
 
@@ -232,6 +230,10 @@
                             <label class="text-sm text-[#1B1B1B] font-medium">Nama Kontak Darurat</label>
                             <p class="text-[#27438D]">{{ $karyawan->nama_kontak_darurat ?? '-' }}</p>
                         </div>
+                        <div>
+                            <label class="text-sm text-[#1B1B1B] font-medium">Telepon Kontak Darurat</label>
+                            <p class="text-[#27438D]">{{ $karyawan->telepon_kontak_darurat ?? '-' }}</p>
+                        </div>
                     </div>
 
                     <!-- KOLOM KANAN -->
@@ -241,8 +243,41 @@
                             <p class="text-[#27438D]">{{ $karyawan->alamat ?? '-' }}</p>
                         </div>
                         <div>
-                            <label class="text-sm text-[#1B1B1B] font-medium">Telepon Kontak Darurat</label>
-                            <p class="text-[#27438D]">{{ $karyawan->telepon_kontak_darurat ?? '-' }}</p>
+                            <label class="text-sm text-[#1B1B1B] font-medium">Alamat Domisili</label>
+                            <p class="text-[#27438D]">{{ $karyawan->alamat_domisili ?? '-' }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Informasi Tambahan -->
+                    <div class="md:col-span-2">
+                        <h3 class="text-lg font-semibold text-[#161758] border-b border-gray-200 pb-2 mt-4">Informasi Tambahan</h3>
+                    </div>
+
+                    <!-- KOLOM KIRI -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-sm text-[#1B1B1B] font-medium">Tanggal Pengangkatan Tetap</label>
+                            <p class="text-[#27438D]">{{ $karyawan->tanggal_pengangkatan_tetap ? $karyawan->tanggal_pengangkatan_tetap->format('d-m-Y') : '-' }}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm text-[#1B1B1B] font-medium">Nomor Rekening</label>
+                            <p class="text-[#27438D]">{{ $karyawan->nomor_rekening ?? '-' }}</p>
+                        </div>
+                    </div>
+
+                    <!-- KOLOM KANAN -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-sm text-[#1B1B1B] font-medium">Nama Bank</label>
+                            <p class="text-[#27438D]">{{ $karyawan->nama_bank ?? 'BSI' }}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm text-[#1B1B1B] font-medium">Foto Profil</label>
+                            @if($karyawan->foto_profil)
+                                <img src="{{ Storage::url($karyawan->foto_profil) }}" alt="Foto Profil" class="w-20 h-20 rounded-full object-cover mt-1">
+                            @else
+                                <p class="text-[#27438D]">-</p>
+                            @endif
                         </div>
                     </div>
                 </div>

@@ -46,6 +46,11 @@ class Karyawan extends Authenticatable
         'nama_ibu_kandung',
         'nama_kontak_darurat',
         'telepon_kontak_darurat',
+        'tanggal_pengangkatan_tetap',
+        'nomor_rekening',
+        'nama_bank',
+        'ipk_terakhir',
+        'alamat_domisili',
     ];
 
     protected $hidden = [
@@ -72,6 +77,7 @@ class Karyawan extends Authenticatable
         'tanggal_bergabung' => 'date',
         'tanggal_lahir' => 'date',
         'end_date' => 'date',
+        'tanggal_pengangkatan_tetap' => 'date',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -96,5 +102,11 @@ class Karyawan extends Authenticatable
             'Internship' => 'bg-[#00a2e9] text-white'
         ];
         return $colors[$this->status] ?? 'bg-gray-500 text-white';
+    }
+
+    // Accessor untuk nama bank (selalu BSI)
+    public function getNamaBankAttribute($value)
+    {
+        return 'BSI';
     }
 }
