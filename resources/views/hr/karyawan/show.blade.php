@@ -27,9 +27,9 @@
                 <div class="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6 mb-6">
                     <div class="flex-shrink-0">
                         @if($karyawan->foto_profil)
-                            <img src="{{ Storage::url($karyawan->foto_profil) }}" alt="Foto" class="w-32 h-32 rounded-full object-cover border-4 border-[#00a2e9]">
+                            <img src="{{ Storage::url($karyawan->foto_profil) }}" alt="Foto" class="w-32 h-32 rounded-full object-cover border-4 {{ $karyawan->is_resigned ? 'border-red-500' : 'border-[#00a2e9]' }}">
                         @else
-                            <div class="w-32 h-32 rounded-full bg-[#00a2e9] flex items-center justify-center text-white text-4xl font-bold">
+                            <div class="w-32 h-32 rounded-full {{ $karyawan->is_resigned ? 'bg-red-500' : 'bg-[#00a2e9]' }} flex items-center justify-center text-white text-4xl font-bold">
                                 {{ strtoupper(substr($karyawan->nama_lengkap, 0, 1)) }}
                             </div>
                         @endif
@@ -47,7 +47,17 @@
                             <span class="inline-block px-3 py-1 rounded-full text-sm font-medium bg-[#F5F5F5] text-[#1B1B1B]">
                                 {{ $karyawan->divisi ?? '-' }}
                             </span>
+                            @if($karyawan->is_resigned)
+                                <span class="inline-block px-3 py-1 rounded-full text-sm font-medium bg-red-500 text-white animate-pulse">
+                                    ⚠️ Resign
+                                </span>
+                            @endif
                         </div>
+                        @if($karyawan->is_resigned)
+                            <p class="text-sm text-red-500 mt-2">
+                                <strong>Tanggal Resign:</strong> {{ $karyawan->tanggal_resign ? $karyawan->tanggal_resign->format('d-m-Y') : '-' }}
+                            </p>
+                        @endif
                     </div>
                     <div class="flex-shrink-0">
                         <div class="text-sm text-gray-500">
@@ -170,6 +180,16 @@
                         <div>
                             <label class="text-sm text-[#1B1B1B] font-medium">Tanggal Berakhir</label>
                             <p class="text-[#27438D]">{{ $karyawan->end_date->format('d-m-Y') }}</p>
+                        </div>
+                        @endif
+                        @if($karyawan->is_resigned)
+                        <div>
+                            <label class="text-sm text-[#1B1B1B] font-medium">Status Akun</label>
+                            <p class="text-[#27438D]">
+                                <span class="px-2 py-1 rounded-full text-xs font-medium bg-red-500 text-white">
+                                    ❌ Tidak Aktif (Resign)
+                                </span>
+                            </p>
                         </div>
                         @endif
                     </div>

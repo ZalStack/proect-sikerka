@@ -51,6 +51,8 @@ class Karyawan extends Authenticatable
         'nama_bank',
         'ipk_terakhir',
         'alamat_domisili',
+        'is_resigned',
+        'tanggal_resign',
     ];
 
     protected $hidden = [
@@ -73,11 +75,19 @@ class Karyawan extends Authenticatable
         return $this->posisi === 'karyawan';
     }
 
+    // Cek apakah akun bisa login
+    public function canLogin()
+    {
+        return !$this->is_resigned;
+    }
+
     protected $casts = [
         'tanggal_bergabung' => 'date',
         'tanggal_lahir' => 'date',
         'end_date' => 'date',
         'tanggal_pengangkatan_tetap' => 'date',
+        'tanggal_resign' => 'date',
+        'is_resigned' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -85,6 +95,9 @@ class Karyawan extends Authenticatable
     // Accessor untuk status dengan label
     public function getStatusLabelAttribute()
     {
+        if ($this->is_resigned) {
+            return 'Resign';
+        }
         $labels = [
             'Karyawan Tetap' => 'Karyawan Tetap',
             'Contract' => 'Kontrak',
@@ -96,6 +109,9 @@ class Karyawan extends Authenticatable
     // Accessor untuk status badge color
     public function getStatusBadgeAttribute()
     {
+        if ($this->is_resigned) {
+            return 'bg-[#ec1d1d] text-white';
+        }
         $colors = [
             'Karyawan Tetap' => 'bg-[#2E7D3E] text-white',
             'Contract' => 'bg-[#FCC626] text-[#1B1B1B]',
@@ -108,5 +124,17 @@ class Karyawan extends Authenticatable
     public function getNamaBankAttribute($value)
     {
         return 'BSI';
+    }
+
+    // Scope untuk karyawan aktif (belum resign)
+    public function scopeActive($query)
+    {
+        return $query->where('is_resigned', false);
+    }
+
+    // Scope untuk karyawan resign
+    public function scopeResigned($query)
+    {
+        return $query->where('is_resigned', true);
     }
 }

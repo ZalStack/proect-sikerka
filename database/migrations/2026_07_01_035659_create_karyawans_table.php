@@ -48,6 +48,9 @@ return new class extends Migration
             $table->string('nama_bank', 50)->default('BSI');
             $table->string('ipk_terakhir', 10)->nullable();
             $table->text('alamat_domisili')->nullable();
+            // Field baru untuk resign
+            $table->boolean('is_resigned')->default(false);
+            $table->date('tanggal_resign')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

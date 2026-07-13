@@ -20,9 +20,20 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
-        $request->session()->regenerate();
-
         $user = Auth::user();
+
+        // Cek apakah karyawan sudah resign
+        if ($user->is_resigned) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('login')
+                ->with('error', 'Akun Anda sudah tidak aktif karena telah resign. Silahkan hubungi HRD untuk informasi lebih lanjut.')
+                ->with('resign', true);
+        }
+
+        $request->session()->regenerate();
 
         // Cek posisi user
         if ($user->posisi === 'hr') {

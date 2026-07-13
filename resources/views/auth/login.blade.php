@@ -48,6 +48,39 @@
                 <div class="w-16 h-1 bg-gradient-to-r from-[#00A2E9] to-[#FCC626] mx-auto mt-4 rounded-full"></div>
             </div>
 
+            <!-- Error Messages -->
+            @if(session('error'))
+                <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-lg">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-red-700">{{ session('error') }}</p>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            @if($errors->any())
+                <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-lg">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            @foreach($errors->all() as $error)
+                                <p class="text-sm text-red-700">{{ $error }}</p>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <!-- Login Form -->
             <form method="POST" action="{{ route('login') }}" class="space-y-6">
                 @csrf
@@ -185,6 +218,91 @@
             </p>
         </div>
     </div>
+
+    <!-- Resign Modal (Pop-up) -->
+    @if(session('resign') || session('error'))
+    <div id="resignModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8 transform transition-all duration-300 scale-100">
+            <!-- Icon -->
+            <div class="flex justify-center mb-4">
+                <div class="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center">
+                    <svg class="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Title -->
+            <h3 class="text-xl font-bold text-[#161758] text-center mb-2">
+                Akun Tidak Aktif
+            </h3>
+
+            <!-- Message -->
+            <p class="text-[#1B1B1B] text-center mb-6">
+                {{ session('error') ?: 'Akun Anda sudah tidak aktif karena telah resign. Silahkan hubungi HRD untuk informasi lebih lanjut.' }}
+            </p>
+
+            <!-- Button -->
+            <button onclick="closeResignModal()"
+                    class="w-full bg-gradient-to-r from-[#ec1d1d] to-red-600 text-white py-3 px-4 rounded-xl hover:shadow-lg hover:shadow-red-500/30 transform hover:-translate-y-0.5 transition-all duration-200 font-semibold">
+                Saya Mengerti
+            </button>
+        </div>
+    </div>
+
+    <style>
+        #resignModal {
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('resignModal');
+            if (modal) {
+                // Prevent background scroll
+                document.body.style.overflow = 'hidden';
+            }
+        });
+
+        function closeResignModal() {
+            const modal = document.getElementById('resignModal');
+            if (modal) {
+                modal.style.opacity = '0';
+                modal.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                    document.body.style.overflow = '';
+                }, 300);
+            }
+        }
+
+        // Close modal on outside click
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('resignModal');
+            if (modal && event.target === modal) {
+                closeResignModal();
+            }
+        });
+
+        // Close modal on ESC key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeResignModal();
+            }
+        });
+    </script>
+    @endif
 
     <!-- Password Toggle Script -->
     <script>

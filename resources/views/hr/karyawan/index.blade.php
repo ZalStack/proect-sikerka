@@ -21,7 +21,7 @@
             </div>
         @endif
 
-        <!-- Search -->
+        <!-- Search & Filter -->
         <div class="bg-white rounded-lg shadow-md p-4 mb-6">
             <form action="{{ route('hr.karyawan.index') }}" method="GET" class="flex flex-col sm:flex-row gap-4">
                 <div class="flex-1">
@@ -31,12 +31,20 @@
                            placeholder="Cari karyawan..."
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                 </div>
+                <div>
+                    <select name="status_filter"
+                            class="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                        <option value="">Semua Karyawan</option>
+                        <option value="active" {{ request('status_filter') === 'active' ? 'selected' : '' }}>Aktif</option>
+                        <option value="resigned" {{ request('status_filter') === 'resigned' ? 'selected' : '' }}>Resign</option>
+                    </select>
+                </div>
                 <div class="flex gap-2">
                     <button type="submit"
                             class="bg-[#27438D] text-white px-6 py-2 rounded-lg hover:bg-[#161758] transition-colors duration-200">
-                        Cari
+                        Filter
                     </button>
-                    @if(request('search'))
+                    @if(request('search') || request('status_filter'))
                         <a href="{{ route('hr.karyawan.index') }}"
                            class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors duration-200">
                             Reset
@@ -48,7 +56,7 @@
 
         <div class="bg-white rounded-lg shadow-md overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="w-full min-w-[800px]">
+                <table class="w-full min-w-[900px]">
                     <thead class="bg-[#F5F5F5]">
                         <tr>
                             <th class="px-4 py-3 text-left text-sm font-semibold text-[#1B1B1B]">No</th>
@@ -65,7 +73,7 @@
                     </thead>
                     <tbody>
                         @forelse($karyawans as $karyawan)
-                        <tr class="border-b border-gray-200 hover:bg-[#F5F5F5]">
+                        <tr class="border-b border-gray-200 hover:bg-[#F5F5F5] {{ $karyawan->is_resigned ? 'bg-red-50' : '' }}">
                             <td class="px-4 py-3 text-sm">{{ $loop->iteration + ($karyawans->currentPage() - 1) * $karyawans->perPage() }}</td>
                             <td class="px-4 py-3">
                                 @if($karyawan->foto_profil)
@@ -87,9 +95,14 @@
                                 </span>
                             </td>
                             <td class="px-4 py-3">
-                                <span class="px-2 py-1 rounded-full text-xs font-medium {{ $karyawan->status === 'Karyawan Tetap' ? 'bg-[#2E7D3E] text-white' : ($karyawan->status === 'Contract' ? 'bg-[#FCC626] text-[#1B1B1B]' : 'bg-[#00a2e9] text-white') }}">
-                                    {{ $karyawan->status }}
+                                <span class="px-2 py-1 rounded-full text-xs font-medium {{ $karyawan->status_badge }}">
+                                    {{ $karyawan->status_label }}
                                 </span>
+                                @if($karyawan->is_resigned)
+                                    <div class="text-xs text-[#ec1d1d] mt-1">
+                                        Resign: {{ $karyawan->tanggal_resign ? $karyawan->tanggal_resign->format('d-m-Y') : '-' }}
+                                    </div>
+                                @endif
                             </td>
                             <td class="px-4 py-3">
                                 <div class="flex flex-wrap gap-1">

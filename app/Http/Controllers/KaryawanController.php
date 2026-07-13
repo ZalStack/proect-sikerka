@@ -12,19 +12,29 @@ class KaryawanController extends Controller
 {
     public function index(Request $request)
     {
-        $karyawans = Karyawan::orderBy('kode_pegawai', 'asc')->paginate(10);
+        $query = Karyawan::orderBy('kode_pegawai', 'asc');
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $karyawans = Karyawan::where('nama_lengkap', 'LIKE', "%{$search}%")
-                ->orWhere('kode_pegawai', 'LIKE', "%{$search}%")
-                ->orWhere('email', 'LIKE', "%{$search}%")
-                ->orWhere('jabatan', 'LIKE', "%{$search}%")
-                ->orWhere('divisi', 'LIKE', "%{$search}%")
-                ->orderBy('kode_pegawai', 'asc')
-                ->paginate(10)
-                ->withQueryString();
+            $query->where(function($q) use ($search) {
+                $q->where('nama_lengkap', 'LIKE', "%{$search}%")
+                    ->orWhere('kode_pegawai', 'LIKE', "%{$search}%")
+                    ->orWhere('email', 'LIKE', "%{$search}%")
+                    ->orWhere('jabatan', 'LIKE', "%{$search}%")
+                    ->orWhere('divisi', 'LIKE', "%{$search}%");
+            });
         }
+
+        // Filter status resign
+        if ($request->filled('status_filter')) {
+            if ($request->status_filter === 'active') {
+                $query->active();
+            } elseif ($request->status_filter === 'resigned') {
+                $query->resigned();
+            }
+        }
+
+        $karyawans = $query->paginate(10)->withQueryString();
 
         return view('hr.karyawan.index', compact('karyawans'));
     }
@@ -42,7 +52,7 @@ class KaryawanController extends Controller
             'password' => 'required|min:8|confirmed',
             'nama_lengkap' => 'required|string|max:100',
             'jabatan' => 'required|string|max:100',
-            'divisi' => 'required|in:HRD,IT,KPD,LPS,MEDIA,PENDIDIKAN,PKA,RG,SAPRAS',
+            'divisi' => 'required|in:HRD,IT,KPJ,LPS,MEDIA,PENDIDIKAN,PKA,RG,SAPRAS',
             'status' => 'required|in:Karyawan Tetap,Contract,Internship',
             'tanggal_bergabung' => 'required|date',
             'tempat_lahir' => 'nullable|string|max:50',
@@ -79,6 +89,8 @@ class KaryawanController extends Controller
         $data['jumlah_anak'] = $request->jumlah_anak ?? 0;
         $data['posisi'] = $this->determinePosisi($request->divisi);
         $data['nama_bank'] = 'BSI';
+        $data['is_resigned'] = false;
+        $data['tanggal_resign'] = null;
 
         if ($request->hasFile('foto_profil')) {
             $file = $request->file('foto_profil');
@@ -113,7 +125,7 @@ class KaryawanController extends Controller
             'email' => 'required|email|unique:karyawans,email,' . $id,
             'nama_lengkap' => 'required|string|max:100',
             'jabatan' => 'required|string|max:100',
-            'divisi' => 'required|in:HRD,IT,KPD,LPS,MEDIA,PENDIDIKAN,PKA,RG,SAPRAS',
+            'divisi' => 'required|in:HRD,IT,KPJ,LPS,MEDIA,PENDIDIKAN,PKA,RG,SAPRAS',
             'status' => 'required|in:Karyawan Tetap,Contract,Internship',
             'tanggal_bergabung' => 'required|date',
             'end_date' => 'nullable|date|after:tanggal_bergabung',
@@ -144,6 +156,8 @@ class KaryawanController extends Controller
             'nomor_rekening' => 'nullable|string|max:50',
             'ipk_terakhir' => 'nullable|numeric|min:0|max:4',
             'alamat_domisili' => 'nullable|string',
+            'is_resigned' => 'nullable|boolean',
+            'tanggal_resign' => 'nullable|required_if:is_resigned,1|date|after_or_equal:tanggal_bergabung',
         ]);
 
         $data = $request->except(['password', 'password_confirmation', 'foto_profil', '_token', '_method']);
@@ -151,6 +165,12 @@ class KaryawanController extends Controller
         $data['jumlah_anak'] = $data['jumlah_anak'] ?? 0;
         $data['posisi'] = $this->determinePosisi($request->divisi);
         $data['nama_bank'] = 'BSI';
+
+        // Handle resign
+        $data['is_resigned'] = $request->has('is_resigned') ? true : false;
+        if (!$data['is_resigned']) {
+            $data['tanggal_resign'] = null;
+        }
 
         if ($request->hasFile('foto_profil')) {
             if ($karyawan->foto_profil) {

@@ -53,6 +53,8 @@ class DatabaseSeeder extends Seeder
             'nama_bank' => 'BSI',
             'ipk_terakhir' => 3.85,
             'alamat_domisili' => 'Jl. Merdeka No. 1, Jakarta',
+            'is_resigned' => false,
+            'tanggal_resign' => null,
         ]);
 
         // Data karyawan IT
@@ -95,17 +97,19 @@ class DatabaseSeeder extends Seeder
             'nama_bank' => 'BSI',
             'ipk_terakhir' => 3.75,
             'alamat_domisili' => 'Jl. Sudirman No. 5, Jakarta',
+            'is_resigned' => false,
+            'tanggal_resign' => null,
         ]);
 
-        // Data karyawan KPD
+        // Data karyawan KPJ (dulu KPD)
         Karyawan::create([
-            'kode_pegawai' => 'KPD001',
-            'email' => 'kpd@company.com',
+            'kode_pegawai' => 'KPJ001',
+            'email' => 'kpj@company.com',
             'kata_sandi' => Hash::make('password123'),
             'nama_lengkap' => 'Siti Aminah',
             'posisi' => 'karyawan',
-            'jabatan' => 'Staff KPD',
-            'divisi' => 'KPD',
+            'jabatan' => 'Staff KPJ',
+            'divisi' => 'KPJ',
             'golongan_darah' => 'O',
             'no_kk' => '1234567890123458',
             'sedang_melanjutkan_pendidikan' => 'S2 Manajemen',
@@ -137,6 +141,8 @@ class DatabaseSeeder extends Seeder
             'nama_bank' => 'BSI',
             'ipk_terakhir' => 3.90,
             'alamat_domisili' => 'Jl. Gatot Subroto No. 10, Jakarta',
+            'is_resigned' => false,
+            'tanggal_resign' => null,
         ]);
 
         // Data karyawan LPS
@@ -179,6 +185,8 @@ class DatabaseSeeder extends Seeder
             'nama_bank' => 'BSI',
             'ipk_terakhir' => 3.60,
             'alamat_domisili' => 'Jl. Rasuna Said No. 15, Jakarta',
+            'is_resigned' => false,
+            'tanggal_resign' => null,
         ]);
 
         // Data karyawan MEDIA
@@ -221,6 +229,8 @@ class DatabaseSeeder extends Seeder
             'nama_bank' => 'BSI',
             'ipk_terakhir' => 3.80,
             'alamat_domisili' => 'Jl. Thamrin No. 20, Jakarta',
+            'is_resigned' => false,
+            'tanggal_resign' => null,
         ]);
 
         // Data karyawan PENDIDIKAN
@@ -263,9 +273,11 @@ class DatabaseSeeder extends Seeder
             'nama_bank' => 'BSI',
             'ipk_terakhir' => 3.88,
             'alamat_domisili' => 'Jl. Cikini No. 8, Jakarta',
+            'is_resigned' => false,
+            'tanggal_resign' => null,
         ]);
 
-        // Data karyawan PKA (Contract)
+        // Data karyawan PKA (Contract) - Contoh Resign
         Karyawan::create([
             'kode_pegawai' => 'PKA001',
             'email' => 'pka@company.com',
@@ -305,6 +317,8 @@ class DatabaseSeeder extends Seeder
             'nama_bank' => 'BSI',
             'ipk_terakhir' => 3.45,
             'alamat_domisili' => 'Jl. Kuningan No. 12, Jakarta',
+            'is_resigned' => true, // Contoh karyawan resign
+            'tanggal_resign' => '2024-01-15',
         ]);
 
         // Data karyawan RG (Internship)
@@ -347,6 +361,8 @@ class DatabaseSeeder extends Seeder
             'nama_bank' => 'BSI',
             'ipk_terakhir' => 3.20,
             'alamat_domisili' => 'Jl. Pasar Minggu No. 7, Jakarta',
+            'is_resigned' => false,
+            'tanggal_resign' => null,
         ]);
 
         // Data karyawan SAPRAS (Cerai)
@@ -389,6 +405,8 @@ class DatabaseSeeder extends Seeder
             'nama_bank' => 'BSI',
             'ipk_terakhir' => 3.50,
             'alamat_domisili' => 'Jl. Kemang No. 18, Jakarta',
+            'is_resigned' => false,
+            'tanggal_resign' => null,
         ]);
 
         // Data karyawan tambahan untuk IT
@@ -431,9 +449,11 @@ class DatabaseSeeder extends Seeder
             'nama_bank' => 'BSI',
             'ipk_terakhir' => 3.55,
             'alamat_domisili' => 'Jl. Pejaten No. 4, Jakarta',
+            'is_resigned' => false,
+            'tanggal_resign' => null,
         ]);
 
-        // Data karyawan tambahan untuk MEDIA
+        // Data karyawan tambahan untuk MEDIA (Contract)
         Karyawan::create([
             'kode_pegawai' => 'MEDIA002',
             'email' => 'media2@company.com',
@@ -473,6 +493,8 @@ class DatabaseSeeder extends Seeder
             'nama_bank' => 'BSI',
             'ipk_terakhir' => 3.70,
             'alamat_domisili' => 'Jl. Sudirman No. 25, Jakarta',
+            'is_resigned' => true, // Contoh karyawan resign
+            'tanggal_resign' => '2024-02-01',
         ]);
     }
 }
