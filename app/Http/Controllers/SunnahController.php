@@ -64,6 +64,14 @@ class SunnahController extends Controller
             ];
         }
 
+        // Point milestone untuk motivasi
+        $milestones = [
+            40 => ['message' => 'Bangun tingkatkan lagi ibadahmu!', 'sound' => '40-point.mp3', 'duration' => 2],
+            75 => ['message' => 'Ayo sedikit lagi!', 'sound' => '75-point.mp3', 'duration' => 2],
+            90 => ['message' => 'Aku yakin kamu pasti bisa!', 'sound' => '90-point.mp3', 'duration' => 2],
+            100 => ['message' => 'Wah hebat kamu mencapai suprasional!', 'sound' => '100-point.mp3', 'duration' => 3],
+        ];
+
         return view('karyawan.sunnah.dashboard', compact(
             'todayData',
             'monthlyData',
@@ -76,7 +84,8 @@ class SunnahController extends Controller
             'year',
             'today',
             'yesterday',
-            'selectedDate'
+            'selectedDate',
+            'milestones'
         ));
     }
 
@@ -166,7 +175,9 @@ class SunnahController extends Controller
                 $currentData[$jf] = (bool) $sunnah->$jf;
             }
 
-            $sunnah->total_poin = SunnahDaily::calculateTotalPoin($currentData);
+            $oldPoin = $sunnah->total_poin ?? 0;
+            $newPoin = SunnahDaily::calculateTotalPoin($currentData);
+            $sunnah->total_poin = $newPoin;
 
             // Jika status masih pending atau null, set ke pending
             if (!$sunnah->status_approval || $sunnah->status_approval === '') {
@@ -187,6 +198,8 @@ class SunnahController extends Controller
                     'tanggal' => $sunnah->tanggal->format('Y-m-d'),
                     'status' => $sunnah->status_label,
                     'status_approval' => $sunnah->status_approval,
+                    'old_poin' => $oldPoin,
+                    'new_poin' => $newPoin,
                 ]
             ]);
 
