@@ -7,6 +7,7 @@ use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\KaryawanDashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AbsensiController;
+use App\Http\Controllers\CutiController;
 use App\Http\Controllers\FhlController;
 use App\Http\Controllers\PengumumanController;
 use App\Http\Controllers\SunnahController;
@@ -74,6 +75,11 @@ Route::middleware('auth')->group(function () {
             Route::get('/sunnah/detail/{id}', [SunnahController::class, 'detail'])->name('sunnah.detail');
             Route::post('/sunnah/approve/{id}', [SunnahController::class, 'approve'])->name('sunnah.approve');
             Route::post('/sunnah/bulk-approve', [SunnahController::class, 'bulkApprove'])->name('sunnah.bulk-approve');
+
+            Route::get('/cuti', [CutiController::class, 'index'])->name('cuti.index');
+            Route::get('/cuti/{id}', [CutiController::class, 'show'])->name('cuti.show');
+            Route::post('/cuti/approve/{id}', [CutiController::class, 'approve'])->name('cuti.approve');
+            Route::post('/cuti/bulk-approve', [CutiController::class, 'bulkApprove'])->name('cuti.bulk-approve');
         });
 
     // Karyawan Routes
@@ -95,5 +101,9 @@ Route::middleware('auth')->group(function () {
 
             Route::get('/sunnah', [SunnahController::class, 'dashboard'])->name('sunnah.dashboard');
             Route::post('/sunnah/save', [SunnahController::class, 'saveDaily'])->name('sunnah.save');
+
+            Route::get('/cuti', [CutiController::class, 'dashboard'])->name('cuti.dashboard');
+            Route::get('/cuti/create', [CutiController::class, 'create'])->name('cuti.create');
+            Route::post('/cuti/store', [CutiController::class, 'store'])->name('cuti.store');
         });
 });
