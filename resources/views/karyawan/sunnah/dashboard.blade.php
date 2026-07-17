@@ -339,7 +339,6 @@
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
 }
 </style>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
@@ -470,6 +469,117 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // ============================================================
+    // REVISI: Fungsi update bar chart 30 hari terakhir
+    // ============================================================
+    function updateBarChart(dateIso, newPoin) {
+        // Update bar untuk tanggal tertentu
+        const barEl = document.getElementById(`bar-${dateIso}`);
+        const poinEl = document.getElementById(`poin-${dateIso}`);
+
+        if (barEl && poinEl) {
+            // Update angka poin
+            poinEl.textContent = newPoin;
+
+            // Update tinggi bar berdasarkan poin
+            // Maksimal tinggi bar adalah 32px (untuk poin 64 ke atas)
+            // Skala: poin 0 -> 8px (minimal), poin 64 -> 32px (maksimal)
+            let height;
+            if (newPoin === 0) {
+                height = 8; // Minimal height untuk bar kosong
+            } else {
+                // Skala linier: poin 1-64 -> 8-32px
+                height = Math.min(8 + (newPoin / 64) * 24, 32);
+                // Pastikan minimal 10px untuk poin > 0
+                height = Math.max(height, 10);
+            }
+
+            barEl.style.height = `${height}px`;
+
+            // Update class untuk styling
+            if (newPoin > 0) {
+                barEl.className = 'mt-1 w-full rounded transition-all duration-500 bg-gradient-to-t from-[#FCC626] via-[#2E7D3E] to-[#00a2e9]';
+            } else {
+                barEl.className = 'mt-1 w-full rounded transition-all duration-500 bg-gray-200';
+            }
+
+            // Update tooltip atau warna tambahan
+            barEl.title = `${newPoin} poin`;
+        }
+    }
+
+    // ============================================================
+    // REVISI: Fungsi update semua bar chart 30 hari terakhir
+    // ============================================================
+    function updateAllBars(poinData) {
+        // poinData: object { 'YYYY-MM-DD': poin_value }
+        Object.keys(poinData).forEach(dateIso => {
+            const poin = poinData[dateIso];
+            const barEl = document.getElementById(`bar-${dateIso}`);
+            const poinEl = document.getElementById(`poin-${dateIso}`);
+
+            if (barEl && poinEl) {
+                poinEl.textContent = poin;
+
+                let height;
+                if (poin === 0) {
+                    height = 8;
+                } else {
+                    height = Math.min(8 + (poin / 64) * 24, 32);
+                    height = Math.max(height, 10);
+                }
+
+                barEl.style.height = `${height}px`;
+
+                if (poin > 0) {
+                    barEl.className = 'mt-1 w-full rounded transition-all duration-500 bg-gradient-to-t from-[#FCC626] via-[#2E7D3E] to-[#00a2e9]';
+                } else {
+                    barEl.className = 'mt-1 w-full rounded transition-all duration-500 bg-gray-200';
+                }
+
+                barEl.title = `${poin} poin`;
+            }
+        });
+    }
+
+    // ============================================================
+    // REVISI: Inisialisasi bar chart dari data PHP
+    // ============================================================
+    function initializeBarChart() {
+        const last30Days = @json($last30Days);
+        const poinData = {};
+
+        last30Days.forEach(day => {
+            const dateIso = day.iso;
+            const poin = day.poin || 0;
+            poinData[dateIso] = poin;
+
+            const barEl = document.getElementById(`bar-${dateIso}`);
+            const poinEl = document.getElementById(`poin-${dateIso}`);
+
+            if (barEl && poinEl) {
+                poinEl.textContent = poin;
+
+                let height;
+                if (poin === 0) {
+                    height = 8;
+                } else {
+                    height = Math.min(8 + (poin / 64) * 24, 32);
+                    height = Math.max(height, 10);
+                }
+
+                barEl.style.height = `${height}px`;
+                barEl.title = `${poin} poin`;
+
+                if (poin > 0) {
+                    barEl.className = 'mt-1 w-full rounded transition-all duration-500 bg-gradient-to-t from-[#FCC626] via-[#2E7D3E] to-[#00a2e9]';
+                } else {
+                    barEl.className = 'mt-1 w-full rounded transition-all duration-500 bg-gray-200';
+                }
+            }
+        });
+    }
+
     // Update progress bar with animation
     function updateProgressBar(poin) {
         const progressBar = document.getElementById('progress-bar');
@@ -570,19 +680,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            // Update riwayat 30 hari
-            const barEl = document.getElementById(`bar-${d.tanggal}`);
-            const poinEl = document.getElementById(`poin-${d.tanggal}`);
-            if (barEl && poinEl) {
-                poinEl.textContent = d.total_poin;
-                const height = d.total_poin > 0 ? Math.min(d.total_poin / 2, 32) : 8;
-                barEl.style.height = `${height}px`;
-                if (d.total_poin > 0) {
-                    barEl.className = 'mt-1 w-full rounded transition-all duration-500 bg-gradient-to-t from-[#FCC626] via-[#2E7D3E] to-[#00a2e9]';
-                } else {
-                    barEl.className = 'mt-1 w-full rounded transition-all duration-500 bg-gray-200';
-                }
-            }
+            // ============================================================
+            // REVISI: Update bar chart 30 hari terakhir
+            // ============================================================
+            updateBarChart(d.tanggal, d.total_poin);
 
             // Update statistik bulanan
             if (!hasEntry) {
@@ -607,9 +708,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Simpan checklist untuk checkbox "Berjamaah" (sholat wajib) yang sudah digabung ke grid.
-    // Satu checkbox ini mewakili field "dikerjakan" DAN "berjamaah" sekaligus (nilainya selalu disamakan),
-    // sehingga hasil hitungan poin di backend PERSIS SAMA seperti saat dulu kedua checkbox dicentang bersamaan.
+    // Simpan checklist untuk checkbox "Berjamaah" (sholat wajib)
     function simpanChecklistBerjamaah(fieldName, checkbox) {
         if (isLocked) {
             checkbox.checked = !checkbox.checked;
@@ -662,19 +761,10 @@ document.addEventListener('DOMContentLoaded', function() {
             approvalBadge.className = 'ml-2 px-3 py-1 rounded-full text-xs font-medium ' +
                 (statusBadgeClasses[d.status_approval] || '');
 
-            // Update riwayat 30 hari
-            const barEl = document.getElementById(`bar-${d.tanggal}`);
-            const poinEl = document.getElementById(`poin-${d.tanggal}`);
-            if (barEl && poinEl) {
-                poinEl.textContent = d.total_poin;
-                const height = d.total_poin > 0 ? Math.min(d.total_poin / 2, 32) : 8;
-                barEl.style.height = `${height}px`;
-                if (d.total_poin > 0) {
-                    barEl.className = 'mt-1 w-full rounded transition-all duration-500 bg-gradient-to-t from-[#FCC626] via-[#2E7D3E] to-[#00a2e9]';
-                } else {
-                    barEl.className = 'mt-1 w-full rounded transition-all duration-500 bg-gray-200';
-                }
-            }
+            // ============================================================
+            // REVISI: Update bar chart 30 hari terakhir
+            // ============================================================
+            updateBarChart(d.tanggal, d.total_poin);
 
             // Update statistik bulanan
             if (!hasEntry) {
@@ -712,12 +802,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Checklist "Berjamaah" (sholat wajib, sudah digabung ke grid)
+    // Checklist "Berjamaah" (sholat wajib)
     document.querySelectorAll('.jamaah-only-check[data-field]').forEach(checkbox => {
         checkbox.addEventListener('change', function () {
             simpanChecklistBerjamaah(this.dataset.field, this);
         });
     });
+
+    // ============================================================
+    // REVISI: Inisialisasi bar chart saat load
+    // ============================================================
+    initializeBarChart();
 
     // Initialize progress bar on load
     const initialPoin = {{ $todayData->total_poin ?? 0 }};
