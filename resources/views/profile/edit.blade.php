@@ -614,10 +614,17 @@
                             <div>
                                 <div class="mb-4">
                                     <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Tanggal Pengangkatan Tetap</label>
-                                    <input type="date" name="tanggal_pengangkatan_tetap"
-                                        value="{{ old('tanggal_pengangkatan_tetap', $user->tanggal_pengangkatan_tetap ? $user->tanggal_pengangkatan_tetap->format('Y-m-d') : '') }}"
-                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
-                                    @error('tanggal_pengangkatan_tetap') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
+                                    @if ($isHr)
+                                        <input type="date" name="tanggal_pengangkatan_tetap"
+                                            value="{{ old('tanggal_pengangkatan_tetap', $user->tanggal_pengangkatan_tetap ? $user->tanggal_pengangkatan_tetap->format('Y-m-d') : '') }}"
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                                        @error('tanggal_pengangkatan_tetap') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
+                                    @else
+                                        <input type="text" readonly disabled
+                                            value="{{ $user->tanggal_pengangkatan_tetap ? $user->tanggal_pengangkatan_tetap->format('d-m-Y') : '-' }}"
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed">
+                                        <p class="mt-1 text-xs text-gray-400">Hanya HR yang dapat mengubah data ini</p>
+                                    @endif
                                 </div>
 
                                 <div class="mb-4">

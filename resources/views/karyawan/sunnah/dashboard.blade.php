@@ -15,58 +15,7 @@
             </div>
         @endif
 
-        <!-- Progress Bar dengan Animasi 4 Warna -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <div class="flex justify-between items-center mb-2">
-                <h2 class="text-lg font-semibold text-[#161758]">🎯 Progress Poin Hari Ini</h2>
-                <span id="poin-counter" class="text-2xl font-bold text-[#2E7D3E]">{{ $todayData->total_poin ?? 0 }}</span>
-            </div>
-            <div class="relative w-full h-10 bg-gray-200 rounded-full overflow-hidden shadow-inner">
-                <!-- Progress Bar dengan 4 Warna -->
-                <div id="progress-bar"
-                     class="absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-out"
-                     style="width: {{ min(($todayData->total_poin ?? 0), 100) }}%;">
-                    <!-- Gradient 4 Warna dengan animasi -->
-                    <div class="w-full h-full rounded-full animate-gradient-shift"
-                         style="background: linear-gradient(90deg,
-                                #FCC626 0%,
-                                #FF6B35 25%,
-                                #2E7D3E 50%,
-                                #00a2e9 75%,
-                                #FCC626 100%);
-                                background-size: 300% 100%;">
-                    </div>
-                </div>
-                <div class="absolute inset-0 flex items-center justify-center">
-                    <span id="progress-text" class="text-sm font-bold text-white drop-shadow-lg">
-                        {{ min(($todayData->total_poin ?? 0), 100) }}%
-                    </span>
-                </div>
-            </div>
-            <div class="flex justify-between text-xs text-gray-500 mt-1 px-1">
-                <span>0</span>
-                <span>40</span>
-                <span>75</span>
-                <span>90</span>
-                <span>100</span>
-            </div>
-            <!-- Milestone Points Indicator -->
-            <div class="flex justify-between mt-2 px-1">
-                @foreach([40, 75, 90, 100] as $point)
-                    <div class="flex flex-col items-center">
-                        <div id="milestone-dot-{{ $point }}"
-                             class="w-3 h-3 rounded-full transition-all duration-500 {{ ($todayData->total_poin ?? 0) >= $point ? 'bg-[#2E7D3E] scale-125 shadow-lg' : 'bg-gray-300' }}">
-                        </div>
-                        <span class="text-[10px] text-gray-400 mt-1">{{ $point }}</span>
-                    </div>
-                @endforeach
-            </div>
 
-            <!-- Milestone Messages -->
-            <div id="milestone-message" class="mt-4 text-center font-semibold text-[#161758] transition-all duration-500 opacity-0 transform scale-95">
-                <!-- Akan diisi oleh JavaScript -->
-            </div>
-        </div>
 
         <!-- Statistik -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -148,13 +97,6 @@
                     <strong id="poin-wajib-badge" class="text-[#161758]">{{ $todayData->poin_sholat_wajib ?? 0 }}</strong>
                 </div>
             </div>
-            <p class="text-xs text-[#27438D] mb-4">
-                <strong>Ketentuan poin:</strong><br>
-                • 5/5 berjamaah (lengkap) = <strong>20 poin</strong> (5 × 4)<br>
-                • 1-4/5 berjamaah = <strong>jumlah berjamaah × 1 poin</strong><br>
-                • 0/5 berjamaah = <strong>0 poin</strong><br>
-                <span class="text-xs text-gray-500">Sholat yang dikerjakan sendiri (tidak berjamaah) tidak menyumbang poin.</span>
-            </p>
             <div class="space-y-2" id="wajib-list">
                 @foreach($sholatWajibKeys as $key)
                     @php $config = $poinConfig[$key]; @endphp
@@ -185,6 +127,59 @@
                         </div>
                     </div>
                 @endforeach
+            </div>
+        </div>
+
+         <!-- Progress Bar dengan Animasi 4 Warna -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-lg font-semibold text-[#161758]">🎯 Progress Poin Hari Ini</h2>
+                <span id="poin-counter" class="text-2xl font-bold text-[#2E7D3E]">{{ $todayData->total_poin ?? 0 }}</span>
+            </div>
+            <div class="relative w-full h-10 bg-gray-200 rounded-full overflow-hidden shadow-inner">
+                <!-- Progress Bar dengan 4 Warna -->
+                <div id="progress-bar"
+                     class="absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-out"
+                     style="width: {{ min(($todayData->total_poin ?? 0), 100) }}%;">
+                    <!-- Gradient 4 Warna dengan animasi -->
+                    <div class="w-full h-full rounded-full animate-gradient-shift"
+                         style="background: linear-gradient(90deg,
+                                #FCC626 0%,
+                                #FF6B35 25%,
+                                #2E7D3E 50%,
+                                #00a2e9 75%,
+                                #FCC626 100%);
+                                background-size: 300% 100%;">
+                    </div>
+                </div>
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <span id="progress-text" class="text-sm font-bold text-white drop-shadow-lg">
+                        {{ min(($todayData->total_poin ?? 0), 100) }}%
+                    </span>
+                </div>
+            </div>
+            <div class="flex justify-between text-xs text-gray-500 mt-1 px-1">
+                <span>0</span>
+                <span>40</span>
+                <span>75</span>
+                <span>90</span>
+                <span>100</span>
+            </div>
+            <!-- Milestone Points Indicator -->
+            <div class="flex justify-between mt-2 px-1">
+                @foreach([40, 75, 90, 100] as $point)
+                    <div class="flex flex-col items-center">
+                        <div id="milestone-dot-{{ $point }}"
+                             class="w-3 h-3 rounded-full transition-all duration-500 {{ ($todayData->total_poin ?? 0) >= $point ? 'bg-[#2E7D3E] scale-125 shadow-lg' : 'bg-gray-300' }}">
+                        </div>
+                        <span class="text-[10px] text-gray-400 mt-1">{{ $point }}</span>
+                    </div>
+                @endforeach
+            </div>
+
+            <!-- Milestone Messages -->
+            <div id="milestone-message" class="mt-4 text-center font-semibold text-[#161758] transition-all duration-500 opacity-0 transform scale-95">
+                <!-- Akan diisi oleh JavaScript -->
             </div>
         </div>
 

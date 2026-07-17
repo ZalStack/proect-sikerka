@@ -72,6 +72,7 @@ class ProfileController extends Controller
             unset($data['status']);
             unset($data['tanggal_bergabung']);
             unset($data['divisi']);
+            unset($data['tanggal_pengangkatan_tetap']);
         }
 
         $data['jumlah_anak'] = $data['jumlah_anak'] ?? 0;
