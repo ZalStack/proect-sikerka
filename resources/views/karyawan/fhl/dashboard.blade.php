@@ -124,8 +124,8 @@
                     <tbody>
                         @forelse($fridays as $friday)
                             @php
-                                // Cari absensi untuk tanggal ini
-                                $absen = $absensi->where('tanggal', $friday->format('Y-m-d'))->first();
+                                // Cari absensi untuk tanggal ini (lookup by key, akurat & anti-error)
+                                $absen = $absensi->get($friday->format('Y-m-d'));
                             @endphp
                             <tr class="border-b border-gray-200">
                                 <td class="px-4 py-2 text-sm">{{ $friday->format('d-m-Y') }}</td>

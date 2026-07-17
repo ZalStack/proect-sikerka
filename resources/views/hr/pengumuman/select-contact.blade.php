@@ -33,8 +33,8 @@
             <div class="bg-white rounded-lg shadow-md p-6 mb-6 border-2 border-[#25D366]">
                 <h2 class="text-lg font-semibold text-[#161758] mb-4">📱 Kirim ke WhatsApp</h2>
                 <p class="text-sm text-[#1B1B1B] mb-4">
-                    Klik tombol di bawah untuk membuka WhatsApp dan memilih kontak/grup secara manual.
-                    <br>Seperti saat berbagi link, Anda bisa memilih kontak atau grup yang diinginkan.
+                    Klik tombol di bawah untuk membuka WhatsApp. Pesan pengumuman sudah otomatis disiapkan —
+                    Anda tinggal memilih kontak atau grup tujuan dari daftar WhatsApp Anda sendiri.
                 </p>
                 <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                     <a href="{{ route('hr.pengumuman.send-whatsapp', $pengumuman->id) }}" target="_blank"
@@ -47,11 +47,11 @@
                         <span class="ml-2 text-sm font-normal">(Pilih Kontak/Grup)</span>
                     </a>
                     <div class="text-xs text-gray-500">
-                        <p>📱 Nomor: <span class="font-semibold text-[#27438D]">+62 811-1912-340</span></p>
+                        <p>📱 Admin HR: <span class="font-semibold text-[#27438D]">+62 811-1912-340</span></p>
                     </div>
                 </div>
                 <p class="text-xs text-gray-500 mt-3">
-                    💡 Akan membuka WhatsApp Web/App, Anda bisa memilih kontak atau grup yang tersimpan di HP
+                    💡 Akan membuka WhatsApp Web/App dan menampilkan daftar kontak serta grup Anda — pilih salah satu untuk mengirim pengumuman ini
                 </p>
             </div>
 

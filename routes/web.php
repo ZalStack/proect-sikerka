@@ -66,6 +66,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/pengumuman/{id}/send-whatsapp', [PengumumanController::class, 'sendWhatsApp'])->name('pengumuman.send-whatsapp');
             Route::get('/pengumuman/{id}/send-whatsapp/{phone}', [PengumumanController::class, 'sendWhatsAppToNumber'])->name('pengumuman.send-whatsapp-number');
             Route::get('/pengumuman/{id}/select-contact', [PengumumanController::class, 'selectContact'])->name('pengumuman.select-contact');
+            Route::post('/pengumuman/{id}/resend-whatsapp', [PengumumanController::class, 'resendWhatsApp'])->name('pengumuman.resend-whatsapp');
 
             Route::get('/fhl', [FhlController::class, 'index'])->name('fhl.index');
             Route::get('/fhl/detail/{id}', [FhlController::class, 'detail'])->name('fhl.detail');

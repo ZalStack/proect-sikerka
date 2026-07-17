@@ -45,8 +45,11 @@ class FhlController extends Controller
         // Cek apakah hari ini Jumat
         $isFriday = FhlAbsensi::isFriday();
 
-        // Kirim data absensi ke view
-        $absensi = $absensiBulanIni;
+        // Kirim data absensi ke view, di-index berdasarkan tanggal (Y-m-d)
+        // agar pencocokan tanggal di view akurat dan tidak error
+        $absensi = $absensiBulanIni->keyBy(function ($item) {
+            return $item->tanggal->format('Y-m-d');
+        });
 
         return view('karyawan.fhl.dashboard', compact(
             'todayAbsensi',

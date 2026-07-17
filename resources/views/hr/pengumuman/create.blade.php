@@ -130,8 +130,8 @@
                                     <span class="text-sm text-[#27438D] font-mono font-bold">+62 811-1912-340</span>
                                 </div>
                                 <p class="text-xs text-gray-500 mt-2">
-                                    💡 Pengumuman akan disimpan terlebih dahulu, kemudian Anda akan diarahkan ke WhatsApp
-                                    untuk mengirim pesan
+                                    💡 Pengumuman akan disimpan terlebih dahulu, kemudian Anda akan diarahkan ke halaman
+                                    pilih kontak/grup WhatsApp sebelum pesan dikirim
                                 </p>
                             </div>
                         </div>

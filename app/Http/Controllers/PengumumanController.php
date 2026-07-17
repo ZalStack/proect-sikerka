@@ -13,7 +13,7 @@ use Carbon\Carbon;
 class PengumumanController extends Controller
 {
     // WhatsApp Configuration - Updated
-    private $whatsappNumber = '628111912340'; 
+    private $whatsappNumber = '628111912340';
 
     public function index()
     {
@@ -59,15 +59,8 @@ class PengumumanController extends Controller
             $pengumuman = Pengumuman::create($data);
 
             if ($request->has('send_whatsapp')) {
-                $message = $this->formatWhatsAppMessage($pengumuman);
-                $whatsappUrl = "https://wa.me/{$this->whatsappNumber}?text=" . urlencode($message);
-
-                $pengumuman->is_sent_to_whatsapp = true;
-                $pengumuman->sent_at = Carbon::now();
-                $pengumuman->whatsapp_status = 'sent';
-                $pengumuman->save();
-
-                return redirect()->away($whatsappUrl);
+                return redirect()->route('hr.pengumuman.select-contact', $pengumuman->id)
+                    ->with('success', 'Pengumuman berhasil ditambahkan. Silakan pilih kontak/grup WhatsApp tujuan.');
             }
 
             return redirect()->route('hr.pengumuman.index')
@@ -136,13 +129,14 @@ class PengumumanController extends Controller
             ->with('success', 'Pengumuman berhasil dihapus');
     }
 
-    // Kirim ke WhatsApp
+    // Kirim ke WhatsApp - membuka daftar kontak/grup WhatsApp untuk dipilih manual
     public function sendWhatsApp($id)
     {
         $pengumuman = Pengumuman::findOrFail($id);
 
         $message = $this->formatWhatsAppMessage($pengumuman);
-        $whatsappUrl = "https://wa.me/{$this->whatsappNumber}?text=" . urlencode($message);
+        // Tanpa nomor tujuan -> WhatsApp akan menampilkan daftar kontak & grup untuk dipilih
+        $whatsappUrl = "https://wa.me/?text=" . urlencode($message);
 
         $pengumuman->is_sent_to_whatsapp = true;
         $pengumuman->sent_at = Carbon::now();
@@ -235,19 +229,11 @@ class PengumumanController extends Controller
         return view('hr.pengumuman.select-contact', compact('pengumuman', 'contacts'));
     }
 
-    // Resend WhatsApp
+    // Resend WhatsApp - arahkan ke halaman pilih kontak/grup, bukan langsung ke WhatsApp
     public function resendWhatsApp($id)
     {
         $pengumuman = Pengumuman::findOrFail($id);
 
-        $message = $this->formatWhatsAppMessage($pengumuman);
-        $whatsappUrl = "https://wa.me/{$this->whatsappNumber}?text=" . urlencode($message);
-
-        $pengumuman->is_sent_to_whatsapp = true;
-        $pengumuman->sent_at = Carbon::now();
-        $pengumuman->whatsapp_status = 'sent';
-        $pengumuman->save();
-
-        return redirect()->away($whatsappUrl);
+        return redirect()->route('hr.pengumuman.select-contact', $pengumuman->id);
     }
 }

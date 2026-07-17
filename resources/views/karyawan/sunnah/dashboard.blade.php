@@ -87,45 +87,58 @@
             </div>
         @endif
 
-        <!-- Kelompok Sholat Wajib (Berjamaah) -->
+        <!-- Sholat Berjamaah & Kegiatan Sunnah Lainnya (digabung dalam satu grid) -->
         <div class="bg-white rounded-lg shadow-md p-6 mb-6">
             <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
-                <h2 class="text-lg font-semibold text-[#161758]">🕌 Sholat Wajib &amp; Berjamaah</h2>
+                <h2 class="text-lg font-semibold text-[#161758]">🕌 Sholat Berjamaah &amp; Kegiatan Sunnah Lainnya</h2>
                 <div class="text-sm text-[#1B1B1B]">
                     Berjamaah: <strong id="jumlah-berjamaah">{{ $todayData->jumlah_sholat_berjamaah ?? 0 }}</strong>/5
                     &middot; Poin kelompok:
                     <strong id="poin-wajib-badge" class="text-[#161758]">{{ $todayData->poin_sholat_wajib ?? 0 }}</strong>
                 </div>
             </div>
-            <div class="space-y-2" id="wajib-list">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {{-- Sholat Wajib: hanya ceklis Berjamaah --}}
                 @foreach($sholatWajibKeys as $key)
                     @php $config = $poinConfig[$key]; @endphp
-                    <div class="flex items-center justify-between p-3 bg-[#F5F5F5] rounded-lg flex-wrap gap-2 transition-all duration-300 hover:bg-gray-100" id="row-{{ $key }}">
+                    <label for="check-{{ $key }}_berjamaah"
+                           class="flex items-center justify-between bg-[#F5F5F5] rounded-lg p-4 cursor-pointer hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 hover:shadow-md"
+                           id="row-{{ $key }}">
                         <div class="flex items-center space-x-3">
-                            <span class="text-xl">{{ $config['icon'] }}</span>
-                            <span class="text-sm font-medium text-[#1B1B1B]">{{ $config['label'] }}</span>
+                            <span class="text-2xl">{{ $config['icon'] }}</span>
+                            <div>
+                                <h3 class="font-semibold text-[#161758] text-sm">{{ $config['label'] }}</h3>
+                                <p class="text-xs text-[#27438D]">🕌 Berjamaah</p>
+                            </div>
                         </div>
-                        <div class="flex items-center space-x-4">
-                            <label class="flex items-center space-x-2 text-sm text-[#1B1B1B] cursor-pointer">
-                                <input type="checkbox"
-                                       data-field="{{ $key }}"
-                                       class="main-check w-5 h-5 rounded text-[#2E7D3E] focus:ring-2 focus:ring-[#2E7D3E] transition-all duration-200 cursor-pointer"
-                                       {{ ($todayData && $todayData->$key) ? 'checked' : '' }}
-                                       {{ $isLocked ? 'disabled' : '' }}>
-                                <span>Dikerjakan</span>
-                            </label>
-                            <label class="flex items-center space-x-2 text-sm text-[#27438D] cursor-pointer">
-                                <input type="checkbox"
-                                       data-field="{{ $key }}_berjamaah"
-                                       data-parent="{{ $key }}"
-                                       class="jamaah-check w-5 h-5 rounded text-[#27438D] focus:ring-2 focus:ring-[#27438D] transition-all duration-200 cursor-pointer"
-                                       {{ ($todayData && $todayData->{$key . '_berjamaah'}) ? 'checked' : '' }}
-                                       {{ (!($todayData && $todayData->$key)) ? 'disabled' : '' }}
-                                       {{ $isLocked ? 'disabled' : '' }}>
-                                <span>🕌 Berjamaah</span>
-                            </label>
+                        <input type="checkbox"
+                               id="check-{{ $key }}_berjamaah"
+                               data-field="{{ $key }}"
+                               class="jamaah-only-check w-5 h-5 rounded text-[#27438D] focus:ring-2 focus:ring-[#27438D] transition-all duration-200 cursor-pointer"
+                               {{ ($todayData && $todayData->{$key . '_berjamaah'}) ? 'checked' : '' }}
+                               {{ $isLocked ? 'disabled' : '' }}>
+                    </label>
+                @endforeach
+
+                {{-- Kegiatan Sunnah Lainnya --}}
+                @foreach($poinConfig as $key => $config)
+                    @continue(in_array($key, $sholatWajibKeys, true))
+                    <label for="check-{{ $key }}"
+                           class="flex items-center justify-between bg-[#F5F5F5] rounded-lg p-4 cursor-pointer hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 hover:shadow-md">
+                        <div class="flex items-center space-x-3">
+                            <span class="text-2xl">{{ $config['icon'] }}</span>
+                            <div>
+                                <h3 class="font-semibold text-[#161758] text-sm">{{ $config['label'] }}</h3>
+                                <p class="text-xs text-[#27438D]" id="poin-preview-{{ $key }}">{{ $config['poin'] }} poin</p>
+                            </div>
                         </div>
-                    </div>
+                        <input type="checkbox"
+                               id="check-{{ $key }}"
+                               data-field="{{ $key }}"
+                               class="main-check simple-check w-5 h-5 rounded text-[#2E7D3E] focus:ring-2 focus:ring-[#2E7D3E] transition-all duration-200 cursor-pointer"
+                               {{ ($todayData && $todayData->$key) ? 'checked' : '' }}
+                               {{ $isLocked ? 'disabled' : '' }}>
+                    </label>
                 @endforeach
             </div>
         </div>
@@ -180,32 +193,6 @@
             <!-- Milestone Messages -->
             <div id="milestone-message" class="mt-4 text-center font-semibold text-[#161758] transition-all duration-500 opacity-0 transform scale-95">
                 <!-- Akan diisi oleh JavaScript -->
-            </div>
-        </div>
-
-        <!-- Kegiatan Sunnah Lainnya -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 class="text-lg font-semibold text-[#161758] mb-4">📋 Kegiatan Sunnah Lainnya</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                @foreach($poinConfig as $key => $config)
-                    @continue(in_array($key, $sholatWajibKeys, true))
-                    <label for="check-{{ $key }}"
-                           class="flex items-center justify-between bg-[#F5F5F5] rounded-lg p-4 cursor-pointer hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 hover:shadow-md">
-                        <div class="flex items-center space-x-3">
-                            <span class="text-2xl">{{ $config['icon'] }}</span>
-                            <div>
-                                <h3 class="font-semibold text-[#161758] text-sm">{{ $config['label'] }}</h3>
-                                <p class="text-xs text-[#27438D]" id="poin-preview-{{ $key }}">{{ $config['poin'] }} poin</p>
-                            </div>
-                        </div>
-                        <input type="checkbox"
-                               id="check-{{ $key }}"
-                               data-field="{{ $key }}"
-                               class="main-check simple-check w-5 h-5 rounded text-[#2E7D3E] focus:ring-2 focus:ring-[#2E7D3E] transition-all duration-200 cursor-pointer"
-                               {{ ($todayData && $todayData->$key) ? 'checked' : '' }}
-                               {{ $isLocked ? 'disabled' : '' }}>
-                    </label>
-                @endforeach
             </div>
         </div>
 
@@ -329,6 +316,16 @@
 
 .jamaah-check:disabled {
     opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.jamaah-only-check:checked {
+    background-color: #27438D;
+    border-color: #27438D;
+}
+
+.jamaah-only-check:disabled {
+    opacity: 0.5;
     cursor: not-allowed;
 }
 
@@ -610,7 +607,99 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Checklist utama sholat wajib
+    // Simpan checklist untuk checkbox "Berjamaah" (sholat wajib) yang sudah digabung ke grid.
+    // Satu checkbox ini mewakili field "dikerjakan" DAN "berjamaah" sekaligus (nilainya selalu disamakan),
+    // sehingga hasil hitungan poin di backend PERSIS SAMA seperti saat dulu kedua checkbox dicentang bersamaan.
+    function simpanChecklistBerjamaah(fieldName, checkbox) {
+        if (isLocked) {
+            checkbox.checked = !checkbox.checked;
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('field_name', fieldName);
+        formData.append('tanggal', selectedDateIso);
+        formData.append(fieldName, checkbox.checked ? '1' : '0');
+        formData.append(fieldName + '_berjamaah', checkbox.checked ? '1' : '0');
+
+        setSaving(checkbox, true);
+
+        fetch('{{ route("karyawan.sunnah.save") }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: formData
+        })
+        .then(response => response.json().then(data => ({ ok: response.ok, data })))
+        .then(({ ok, data }) => {
+            setSaving(checkbox, false);
+
+            if (!ok || !data.success) {
+                alert(data.message || 'Terjadi kesalahan pada server');
+                checkbox.checked = !checkbox.checked;
+                return;
+            }
+
+            const d = data.data;
+
+            // Update progress bar dengan poin baru
+            updateProgressBar(d.total_poin);
+
+            // Update badge poin kelompok sholat wajib
+            const poinWajibBadge = document.getElementById('poin-wajib-badge');
+            const jumlahBerjamaah = document.getElementById('jumlah-berjamaah');
+            if (poinWajibBadge) poinWajibBadge.textContent = d.poin_sholat_wajib;
+            if (jumlahBerjamaah) jumlahBerjamaah.textContent = d.jumlah_sholat_berjamaah;
+
+            // Update status badge
+            document.getElementById('today-status-empty').classList.add('hidden');
+            document.getElementById('today-status-filled').classList.remove('hidden');
+            document.getElementById('today-poin-badge').textContent = `✅ Poin: ${d.total_poin}`;
+            const approvalBadge = document.getElementById('today-approval-badge');
+            approvalBadge.textContent = d.status;
+            approvalBadge.className = 'ml-2 px-3 py-1 rounded-full text-xs font-medium ' +
+                (statusBadgeClasses[d.status_approval] || '');
+
+            // Update riwayat 30 hari
+            const barEl = document.getElementById(`bar-${d.tanggal}`);
+            const poinEl = document.getElementById(`poin-${d.tanggal}`);
+            if (barEl && poinEl) {
+                poinEl.textContent = d.total_poin;
+                const height = d.total_poin > 0 ? Math.min(d.total_poin / 2, 32) : 8;
+                barEl.style.height = `${height}px`;
+                if (d.total_poin > 0) {
+                    barEl.className = 'mt-1 w-full rounded transition-all duration-500 bg-gradient-to-t from-[#FCC626] via-[#2E7D3E] to-[#00a2e9]';
+                } else {
+                    barEl.className = 'mt-1 w-full rounded transition-all duration-500 bg-gray-200';
+                }
+            }
+
+            // Update statistik bulanan
+            if (!hasEntry) {
+                statTotalHari += 1;
+                hasEntry = true;
+            }
+            statTotalPoin = statTotalPoin - currentEntryPoin + d.total_poin;
+            statTertinggi = Math.max(statTertinggi, d.total_poin);
+            currentEntryPoin = d.total_poin;
+
+            document.getElementById('stat-total-hari').textContent = statTotalHari;
+            document.getElementById('stat-total-poin').textContent = statTotalPoin;
+            document.getElementById('stat-tertinggi').textContent = statTertinggi;
+            document.getElementById('stat-rata-rata').textContent =
+                statTotalHari > 0 ? (statTotalPoin / statTotalHari).toFixed(1) : 0;
+        })
+        .catch((error) => {
+            setSaving(checkbox, false);
+            checkbox.checked = !checkbox.checked;
+            console.error('Error:', error);
+            alert('Terjadi kesalahan pada server');
+        });
+    }
+
+    // Checklist utama (Kegiatan Sunnah Lainnya)
     document.querySelectorAll('.main-check[data-field]').forEach(checkbox => {
         checkbox.addEventListener('change', function () {
             const field = this.dataset.field;
@@ -623,10 +712,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Checklist berjamaah
-    document.querySelectorAll('.jamaah-check').forEach(checkbox => {
+    // Checklist "Berjamaah" (sholat wajib, sudah digabung ke grid)
+    document.querySelectorAll('.jamaah-only-check[data-field]').forEach(checkbox => {
         checkbox.addEventListener('change', function () {
-            simpanChecklist(this.dataset.field, this);
+            simpanChecklistBerjamaah(this.dataset.field, this);
         });
     });
 
