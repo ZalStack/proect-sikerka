@@ -809,9 +809,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // ============================================================
-    // REVISI: Inisialisasi bar chart saat load
-    // ============================================================
     initializeBarChart();
 
     // Initialize progress bar on load
