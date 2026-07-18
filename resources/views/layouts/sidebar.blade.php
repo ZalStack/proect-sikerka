@@ -166,7 +166,7 @@
 
                     <!-- Absensi Karyawan -->
                     <a href="#"
-                        onclick="event.preventDefault(); alert('Menu Pamer Suku saat ini masih dalam tahap pengembangan dan akan segera tersedia.');"
+                        onclick="event.preventDefault(); alert('Menu Absensi saat ini masih dalam tahap pengembangan dan akan segera tersedia.');"
                         class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200 {{ $currentRoute === 'karyawan.absensi' ? 'bg-[#27438D] text-white' : 'text-[#F5F5F5] hover:bg-[#27438D] hover:text-white' }}">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
