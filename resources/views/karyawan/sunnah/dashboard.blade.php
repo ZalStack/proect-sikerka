@@ -44,7 +44,7 @@
                         <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-2">
                             📅 {{ $selectedDate->locale('id')->isoFormat('dddd, D MMMM YYYY') }}
                             @if($selectedDate->isSameDay($yesterday))
-                                <span class="text-[10px] sm:text-xs font-normal text-[#27438D]">(Kemarin / H-1)</span>
+                                <span class="text-[10px] sm:text-xs font-normal text-[#27438D]">(Kemarin)</span>
                             @endif
                         </h2>
                         <div class="flex flex-wrap gap-2">
@@ -54,10 +54,10 @@
                             </a>
                             <a href="{{ route('karyawan.sunnah.dashboard', ['tanggal' => $yesterday->format('Y-m-d')]) }}"
                                class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 {{ $selectedDate->isSameDay($yesterday) ? 'bg-[#27438D] text-white shadow-md' : 'bg-[#F5F5F5] text-[#1B1B1B] hover:bg-gray-200 hover:shadow-md' }}">
-                                Kemarin (H-1)
+                                Kemarin
                             </a>
                         </div>
-                        <p class="text-[10px] sm:text-xs text-[#27438D] mt-2">Checklist hanya dapat diisi untuk hari ini atau H-1 (kemarin).</p>
+                        <p class="text-[10px] sm:text-xs text-[#27438D] mt-2">Checklist hanya dapat diisi untuk hari ini atau (kemarin).</p>
                     </div>
                     <div>
                         <div id="today-status-empty" class="{{ $todayData ? 'hidden' : '' }}">
@@ -87,10 +87,52 @@
                 </div>
             @endif
 
+            <!-- Progress Bar dengan Animasi 4 Warna -->
+            <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 gap-2">
+                    <h2 class="text-base sm:text-lg font-semibold text-[#161758]">🎯 Progress Poin Hari Ini</h2>
+                    <span id="poin-counter" class="text-xl sm:text-2xl font-bold text-[#2E7D3E]">{{ $todayData->total_poin ?? 0 }}</span>
+                </div>
+                <div class="relative w-full h-8 sm:h-10 bg-gray-200 rounded-full overflow-hidden shadow-inner">
+                    <div id="progress-bar"
+                         class="absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-out"
+                         style="width: {{ min(($todayData->total_poin ?? 0), 100) }}%;">
+                        <div class="w-full h-full rounded-full animate-gradient-shift"
+                             style="background: linear-gradient(90deg,
+                                    #FCC626 0%,
+                                    #FF6B35 25%,
+                                    #2E7D3E 50%,
+                                    #00a2e9 75%,
+                                    #FCC626 100%);
+                                    background-size: 300% 100%;">
+                        </div>
+                    </div>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <span id="progress-text" class="text-xs sm:text-sm font-bold text-white drop-shadow-lg">
+                            {{ min(($todayData->total_poin ?? 0), 100) }}%
+                        </span>
+                    </div>
+                </div>
+                <!-- Milestone Points Indicator -->
+                <div class="flex justify-between mt-2 px-1">
+                    @foreach([40, 75, 90, 100] as $point)
+                        <div class="flex flex-col items-center">
+                            <div id="milestone-dot-{{ $point }}"
+                                 class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full transition-all duration-500 {{ ($todayData->total_poin ?? 0) >= $point ? 'bg-[#2E7D3E] scale-125 shadow-lg' : 'bg-gray-300' }}">
+                            </div>
+                            <span class="text-[8px] sm:text-[10px] text-gray-400 mt-1">{{ $point }}</span>
+                        </div>
+                    @endforeach
+                </div>
+
+                <div id="milestone-message" class="mt-4 text-center font-semibold text-[#161758] transition-all duration-500 opacity-0 transform scale-95">
+                </div>
+            </div>
+
             <!-- Sholat Berjamaah & Kegiatan Sunnah Lainnya (digabung dalam satu grid) -->
             <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
                 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2">
-                    <h2 class="text-base sm:text-lg font-semibold text-[#161758]">🕌 Sholat Berjamaah &amp; Kegiatan Sunnah Lainnya</h2>
+                    <h2 class="text-base sm:text-lg font-semibold text-[#161758]">🕌 Kegiatan Sunnah </h2>
                     <div class="text-xs sm:text-sm text-[#1B1B1B]">
                         Berjamaah: <strong id="jumlah-berjamaah">{{ $todayData->jumlah_sholat_berjamaah ?? 0 }}</strong>/5
                         &middot; Poin kelompok:
@@ -140,55 +182,6 @@
                                    {{ $isLocked ? 'disabled' : '' }}>
                         </label>
                     @endforeach
-                </div>
-            </div>
-
-            <!-- Progress Bar dengan Animasi 4 Warna -->
-            <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 gap-2">
-                    <h2 class="text-base sm:text-lg font-semibold text-[#161758]">🎯 Progress Poin Hari Ini</h2>
-                    <span id="poin-counter" class="text-xl sm:text-2xl font-bold text-[#2E7D3E]">{{ $todayData->total_poin ?? 0 }}</span>
-                </div>
-                <div class="relative w-full h-8 sm:h-10 bg-gray-200 rounded-full overflow-hidden shadow-inner">
-                    <div id="progress-bar"
-                         class="absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-out"
-                         style="width: {{ min(($todayData->total_poin ?? 0), 100) }}%;">
-                        <div class="w-full h-full rounded-full animate-gradient-shift"
-                             style="background: linear-gradient(90deg,
-                                    #FCC626 0%,
-                                    #FF6B35 25%,
-                                    #2E7D3E 50%,
-                                    #00a2e9 75%,
-                                    #FCC626 100%);
-                                    background-size: 300% 100%;">
-                        </div>
-                    </div>
-                    <div class="absolute inset-0 flex items-center justify-center">
-                        <span id="progress-text" class="text-xs sm:text-sm font-bold text-white drop-shadow-lg">
-                            {{ min(($todayData->total_poin ?? 0), 100) }}%
-                        </span>
-                    </div>
-                </div>
-                <div class="flex justify-between text-[10px] sm:text-xs text-gray-500 mt-1 px-1">
-                    <span>0</span>
-                    <span>40</span>
-                    <span>75</span>
-                    <span>90</span>
-                    <span>100</span>
-                </div>
-                <!-- Milestone Points Indicator -->
-                <div class="flex justify-between mt-2 px-1">
-                    @foreach([40, 75, 90, 100] as $point)
-                        <div class="flex flex-col items-center">
-                            <div id="milestone-dot-{{ $point }}"
-                                 class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full transition-all duration-500 {{ ($todayData->total_poin ?? 0) >= $point ? 'bg-[#2E7D3E] scale-125 shadow-lg' : 'bg-gray-300' }}">
-                            </div>
-                            <span class="text-[8px] sm:text-[10px] text-gray-400 mt-1">{{ $point }}</span>
-                        </div>
-                    @endforeach
-                </div>
-
-                <div id="milestone-message" class="mt-4 text-center font-semibold text-[#161758] transition-all duration-500 opacity-0 transform scale-95">
                 </div>
             </div>
 
