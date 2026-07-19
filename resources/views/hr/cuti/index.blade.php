@@ -1,20 +1,20 @@
+{{-- views/hr/cuti/index.blade.php --}}
 @extends('layouts.app')
 
 @section('content')
 <div class="flex min-h-screen">
     @include('layouts.sidebar')
-    <!-- Main Content -->
-    <div class="main-content flex-1 transition-all duration-300 md:ml-64 pt-6">
-        <div class="p-4 sm:p-6">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+    <div class="flex-1 transition-all duration-300 md:ml-64 pt-6">
+        <div class="p-3 sm:p-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3 sm:gap-4">
                 <div>
                     <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">Manajemen Cuti</h1>
-                    <p class="text-[#27438D] text-sm sm:text-base">Kelola pengajuan cuti karyawan</p>
+                    <p class="text-sm sm:text-base text-[#27438D]">Kelola pengajuan cuti karyawan</p>
                 </div>
             </div>
 
             @if(session('success'))
-                <div class="bg-[#2E7D3E] text-white p-4 rounded-lg mb-4">
+                <div class="bg-[#2E7D3E] text-white p-3 sm:p-4 rounded-lg mb-4 text-sm">
                     {{ session('success') }}
                 </div>
             @endif
@@ -41,17 +41,17 @@
 
             <!-- Filter -->
             <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
-                <form action="{{ route('hr.cuti.index') }}" method="GET" class="flex flex-wrap gap-4">
-                    <div class="flex-1 min-w-[150px]">
-                        <select name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9] text-sm">
+                <form action="{{ route('hr.cuti.index') }}" method="GET" class="flex flex-wrap gap-3 sm:gap-4">
+                    <div class="flex-1 min-w-[140px] sm:min-w-[150px]">
+                        <select name="status" class="w-full px-3 sm:px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                             <option value="">Semua Status</option>
                             <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Menunggu</option>
                             <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>Disetujui</option>
                             <option value="rejected" {{ request('status') === 'rejected' ? 'selected' : '' }}>Ditolak</option>
                         </select>
                     </div>
-                    <div class="flex-1 min-w-[150px]">
-                        <select name="karyawan_id" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9] text-sm">
+                    <div class="flex-1 min-w-[140px] sm:min-w-[150px]">
+                        <select name="karyawan_id" class="w-full px-3 sm:px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                             <option value="">Semua Karyawan</option>
                             @foreach($karyawans as $karyawan)
                                 <option value="{{ $karyawan->id }}" {{ request('karyawan_id') == $karyawan->id ? 'selected' : '' }}>
@@ -60,11 +60,11 @@
                             @endforeach
                         </select>
                     </div>
-                    <button type="submit" class="bg-[#27438D] text-white px-6 py-2 rounded-lg hover:bg-[#161758] transition-colors text-sm">
+                    <button type="submit" class="bg-[#27438D] text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-[#161758] transition-colors text-sm">
                         Filter
                     </button>
                     @if(request('status') || request('karyawan_id'))
-                        <a href="{{ route('hr.cuti.index') }}" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors text-sm">
+                        <a href="{{ route('hr.cuti.index') }}" class="bg-gray-500 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors text-sm">
                             Reset
                         </a>
                     @endif
@@ -93,14 +93,12 @@
                                     <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">{{ $item->karyawan->nama_lengkap }}</td>
                                     <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
                                         {{ $item->tanggal_mulai ? $item->tanggal_mulai->format('d/m/Y') : '-' }}
-                                        <br class="sm:hidden">
-                                        <span class="text-xs text-gray-500">s/d</span>
-                                        <br class="sm:hidden">
+                                        <span class="text-[10px] sm:text-xs text-gray-500">s/d</span>
                                         {{ $item->tanggal_selesai ? $item->tanggal_selesai->format('d/m/Y') : '-' }}
                                     </td>
                                     <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold">{{ $item->durasi }} hari</td>
                                     <td class="px-3 sm:px-4 py-2 sm:py-3">
-                                        <span class="px-2 py-1 rounded-full text-xs font-medium {{ $item->status_badge }}">
+                                        <span class="px-2 py-1 rounded-full text-[10px] sm:text-xs font-medium {{ $item->status_badge }}">
                                             {{ $item->status_label }}
                                         </span>
                                     </td>
@@ -133,10 +131,10 @@
                                 <tr>
                                     <td colspan="6" class="px-4 py-8 text-center text-[#1B1B1B]">
                                         <div class="flex flex-col items-center">
-                                            <svg class="w-16 h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg class="w-12 sm:w-16 h-12 sm:h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                             </svg>
-                                            <p class="text-lg font-semibold">Belum ada pengajuan cuti</p>
+                                            <p class="text-base sm:text-lg font-semibold">Belum ada pengajuan cuti</p>
                                         </div>
                                     </td>
                                 </tr>
