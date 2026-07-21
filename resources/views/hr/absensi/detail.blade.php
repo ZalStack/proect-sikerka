@@ -69,26 +69,46 @@
                                     </span>
                                 </p>
                             </div>
-                            @if($absensi->is_telat)
-                            <div>
-                                <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Telat</label>
-                                <p class="text-sm sm:text-base text-[#ec1d1d] font-semibold">{{ $absensi->menit_telat }} menit</p>
-                            </div>
-                            @endif
-                            @if($absensi->is_lembur)
-                            <div>
-                                <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Lembur</label>
-                                <p class="text-sm sm:text-base text-[#00a2e9] font-semibold">{{ $absensi->jam_lembur }} jam</p>
-                            </div>
-                            @endif
-                            @if($absensi->keterangan)
-                            <div>
-                                <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Keterangan</label>
-                                <p class="text-sm sm:text-base text-[#27438D] break-words">{{ $absensi->keterangan }}</p>
-                            </div>
-                            @endif
                         </div>
                     </div>
+                </div>
+
+                <!-- Lokasi Absensi -->
+                <div class="mt-6 pt-6 border-t border-gray-200">
+                    <h3 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">📍 Lokasi Absensi</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div class="bg-[#F5F5F5] rounded-lg p-3">
+                            <p class="text-xs text-[#1B1B1B]">Latitude</p>
+                            <p class="text-sm font-semibold text-[#161758]">{{ $absensi->latitude ?? '-' }}</p>
+                        </div>
+                        <div class="bg-[#F5F5F5] rounded-lg p-3">
+                            <p class="text-xs text-[#1B1B1B]">Longitude</p>
+                            <p class="text-sm font-semibold text-[#161758]">{{ $absensi->longitude ?? '-' }}</p>
+                        </div>
+                        <div class="bg-[#F5F5F5] rounded-lg p-3">
+                            <p class="text-xs text-[#1B1B1B]">Akurasi</p>
+                            <p class="text-sm font-semibold text-[#161758]">{{ $absensi->location_accuracy ? $absensi->location_accuracy . ' meter' : '-' }}</p>
+                        </div>
+                        <div class="bg-[#F5F5F5] rounded-lg p-3">
+                            <p class="text-xs text-[#1B1B1B]">Valid Lokasi</p>
+                            <p class="text-sm font-semibold {{ $absensi->is_valid_location ? 'text-[#2E7D3E]' : 'text-[#ec1d1d]' }}">
+                                {{ $absensi->is_valid_location ? '✅ Valid' : '❌ Invalid' }}
+                            </p>
+                        </div>
+                    </div>
+
+                    @if(isset($distances) && count($distances) > 0)
+                    <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        @foreach($distances as $name => $distance)
+                        <div class="bg-[#F5F5F5] rounded-lg p-2 text-xs">
+                            <span class="font-medium">{{ $name }}:</span>
+                            <span class="{{ $distance <= 50 ? 'text-[#2E7D3E] font-bold' : 'text-[#ec1d1d]' }}">
+                                {{ number_format($distance, 2) }} meter
+                            </span>
+                        </div>
+                        @endforeach
+                    </div>
+                    @endif
                 </div>
 
                 <!-- Form Update Status -->

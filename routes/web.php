@@ -91,7 +91,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/dashboard', [KaryawanDashboardController::class, 'index'])->name('dashboard');
             Route::get('/absensi', [AbsensiController::class, 'dashboard'])->name('absensi');
 
-            Route::post('/absensi/check-wifi', [AbsensiController::class, 'checkWifi'])->name('absensi.check-wifi');
+            Route::get('/absensi/generate-qr', [AbsensiController::class, 'generateQrCode'])->name('absensi.generate-qr');
+            Route::post('/absensi/scan-qr', [AbsensiController::class, 'scanQrCode'])->name('absensi.scan-qr');
             Route::post('/absensi/checkin', [AbsensiController::class, 'checkIn'])->name('absensi.checkin');
             Route::post('/absensi/checkout', [AbsensiController::class, 'checkOut'])->name('absensi.checkout');
             Route::get('/absensi/status', [AbsensiController::class, 'status'])->name('absensi.status');

@@ -2,7 +2,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="flex min-h-screen">
+<div class="flex min-h-screen bg-gray-50">
     @include('layouts.sidebar')
     <div class="flex-1 transition-all duration-300 md:ml-64 pt-6">
         <div class="p-3 sm:p-6">
@@ -24,31 +24,35 @@
             @endif
 
             <!-- Ringkasan / Chart -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
                 <div class="lg:col-span-1 bg-white rounded-lg shadow-md p-4 sm:p-6">
                     <h3 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">Ringkasan Status</h3>
                     <canvas id="chartAbsensi" height="220"></canvas>
                 </div>
-                <div class="lg:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                <div class="lg:col-span-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
                     <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 text-center">
                         <p class="text-xs sm:text-sm text-[#1B1B1B]">Total</p>
-                        <p class="text-xl sm:text-2xl font-bold text-[#161758]">{{ $chartData['total'] }}</p>
+                        <p class="text-xl sm:text-2xl font-bold text-[#161758]">{{ $chartData['total'] ?? 0 }}</p>
                     </div>
                     <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 text-center">
                         <p class="text-xs sm:text-sm text-[#1B1B1B]">Hadir</p>
-                        <p class="text-xl sm:text-2xl font-bold text-[#2E7D3E]">{{ $chartData['hadir'] }}</p>
+                        <p class="text-xl sm:text-2xl font-bold text-[#2E7D3E]">{{ $chartData['hadir'] ?? 0 }}</p>
                     </div>
                     <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 text-center">
                         <p class="text-xs sm:text-sm text-[#1B1B1B]">Izin</p>
-                        <p class="text-xl sm:text-2xl font-bold text-[#FCC626]">{{ $chartData['izin'] }}</p>
+                        <p class="text-xl sm:text-2xl font-bold text-[#FCC626]">{{ $chartData['izin'] ?? 0 }}</p>
                     </div>
                     <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 text-center">
                         <p class="text-xs sm:text-sm text-[#1B1B1B]">Sakit</p>
-                        <p class="text-xl sm:text-2xl font-bold text-[#00a2e9]">{{ $chartData['sakit'] }}</p>
+                        <p class="text-xl sm:text-2xl font-bold text-[#00a2e9]">{{ $chartData['sakit'] ?? 0 }}</p>
                     </div>
-                    <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 text-center col-span-2">
+                    <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 text-center">
                         <p class="text-xs sm:text-sm text-[#1B1B1B]">Alpha</p>
-                        <p class="text-xl sm:text-2xl font-bold text-[#ec1d1d]">{{ $chartData['alpha'] }}</p>
+                        <p class="text-xl sm:text-2xl font-bold text-[#ec1d1d]">{{ $chartData['alpha'] ?? 0 }}</p>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 text-center">
+                        <p class="text-xs sm:text-sm text-[#1B1B1B]">Valid Lokasi</p>
+                        <p class="text-xl sm:text-2xl font-bold text-[#27438D]">{{ $chartData['valid_location'] ?? 0 }}</p>
                     </div>
                 </div>
             </div>
@@ -126,22 +130,31 @@
                                     <th class="px-3 sm:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Check-out</th>
                                     <th class="px-3 sm:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Kantor</th>
                                     <th class="px-3 sm:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Status</th>
-                                    <th class="px-3 sm:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">WiFi</th>
+                                    <th class="px-3 sm:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Lokasi</th>
+                                    <th class="px-3 sm:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Jarak</th>
                                     <th class="px-3 sm:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($absensis as $i => $absen)
-                                <tr class="border-b border-gray-200">
+                                <tr class="border-b border-gray-200 hover:bg-gray-50 transition-colors duration-150">
                                     <td class="px-3 sm:px-4 py-2 text-xs sm:text-sm">{{ $absensis->firstItem() + $i }}</td>
                                     <td class="px-3 sm:px-4 py-2 text-xs sm:text-sm">
                                         {{ $absen->karyawan->nama_lengkap ?? '-' }}
                                         <div class="text-[10px] sm:text-xs text-gray-500">{{ $absen->karyawan->kode_pegawai ?? '' }}</div>
                                     </td>
                                     <td class="px-3 sm:px-4 py-2 text-xs sm:text-sm">{{ $absen->tanggal->format('d-m-Y') }}</td>
-                                    <td class="px-3 sm:px-4 py-2 text-xs sm:text-sm">{{ $absen->check_in ? \Carbon\Carbon::parse($absen->check_in)->format('H:i:s') : '-' }}</td>
-                                    <td class="px-3 sm:px-4 py-2 text-xs sm:text-sm">{{ $absen->check_out ? \Carbon\Carbon::parse($absen->check_out)->format('H:i:s') : '-' }}</td>
-                                    <td class="px-3 sm:px-4 py-2 text-xs sm:text-sm">{{ $absen->kantor_cabang ?? '-' }}</td>
+                                    <td class="px-3 sm:px-4 py-2 text-xs sm:text-sm">
+                                        {{ $absen->check_in ? \Carbon\Carbon::parse($absen->check_in)->format('H:i:s') : '-' }}
+                                    </td>
+                                    <td class="px-3 sm:px-4 py-2 text-xs sm:text-sm">
+                                        {{ $absen->check_out ? \Carbon\Carbon::parse($absen->check_out)->format('H:i:s') : '-' }}
+                                    </td>
+                                    <td class="px-3 sm:px-4 py-2 text-xs sm:text-sm">
+                                        <span class="text-xs">
+                                            {{ $absen->kantor_cabang ?? '-' }}
+                                        </span>
+                                    </td>
                                     <td class="px-3 sm:px-4 py-2 text-xs sm:text-sm">
                                         <span class="px-2 py-1 rounded-full text-[10px] sm:text-xs font-medium
                                             {{ $absen->status == 'Hadir' ? 'bg-[#2E7D3E] text-white' :
@@ -151,21 +164,55 @@
                                         </span>
                                     </td>
                                     <td class="px-3 sm:px-4 py-2 text-xs sm:text-sm">
-                                        @if($absen->is_valid_wifi)
+                                        @if($absen->is_valid_location)
                                             <span class="text-[#2E7D3E] text-[10px] sm:text-xs font-semibold">✅ Valid</span>
+                                            @if($absen->latitude)
+                                            <div class="text-[10px] text-gray-500 truncate max-w-[80px]">
+                                                {{ number_format($absen->latitude, 4) }}, {{ number_format($absen->longitude, 4) }}
+                                            </div>
+                                            @endif
                                         @else
-                                            <span class="text-[#ec1d1d] text-[10px] sm:text-xs font-semibold">❌ Tidak Valid</span>
+                                            <span class="text-[#ec1d1d] text-[10px] sm:text-xs font-semibold">❌ Invalid</span>
                                         @endif
                                     </td>
                                     <td class="px-3 sm:px-4 py-2 text-xs sm:text-sm">
+                                        @php
+                                            $distance = '-';
+                                            if ($absen->latitude && $absen->longitude) {
+                                                $locations = \App\Models\Absensi::getOfficeLocations();
+                                                $minDist = PHP_FLOAT_MAX;
+                                                foreach ($locations as $coords) {
+                                                    $d = \App\Models\Absensi::haversineDistance(
+                                                        $absen->latitude,
+                                                        $absen->longitude,
+                                                        $coords['latitude'],
+                                                        $coords['longitude']
+                                                    );
+                                                    if ($d < $minDist) $minDist = $d;
+                                                }
+                                                $distance = $minDist < PHP_FLOAT_MAX ? round($minDist, 1) . 'm' : '-';
+                                            }
+                                        @endphp
+                                        <span class="{{ $distance !== '-' && (float) $distance <= 50 ? 'text-[#2E7D3E]' : 'text-[#ec1d1d]' }}">
+                                            {{ $distance }}
+                                        </span>
+                                    </td>
+                                    <td class="px-3 sm:px-4 py-2 text-xs sm:text-sm">
                                         <a href="{{ route('hr.absensi.detail', $absen->id) }}"
-                                           class="text-[#27438D] hover:text-[#161758] font-semibold">Detail</a>
+                                           class="text-[#27438D] hover:text-[#161758] font-semibold transition-colors duration-200">
+                                            Detail
+                                        </a>
                                     </td>
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="9" class="px-4 py-6 text-center text-xs sm:text-sm text-gray-500">
-                                        Tidak ada data absensi untuk filter yang dipilih.
+                                    <td colspan="10" class="px-4 py-6 text-center text-xs sm:text-sm text-gray-500">
+                                        <div class="flex flex-col items-center justify-center py-6">
+                                            <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                            </svg>
+                                            <span>Tidak ada data absensi untuk filter yang dipilih.</span>
+                                        </div>
                                     </td>
                                 </tr>
                                 @endforelse
@@ -185,28 +232,53 @@
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script>
-    const ctx = document.getElementById('chartAbsensi');
-    new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Hadir', 'Izin', 'Sakit', 'Alpha'],
-            datasets: [{
-                data: [
-                    {{ $chartData['hadir'] }},
-                    {{ $chartData['izin'] }},
-                    {{ $chartData['sakit'] }},
-                    {{ $chartData['alpha'] }}
-                ],
-                backgroundColor: ['#2E7D3E', '#FCC626', '#00a2e9', '#ec1d1d'],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: { position: 'bottom' }
-            }
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('chartAbsensi');
+        if (ctx) {
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Hadir', 'Izin', 'Sakit', 'Alpha'],
+                    datasets: [{
+                        data: [
+                            {{ $chartData['hadir'] ?? 0 }},
+                            {{ $chartData['izin'] ?? 0 }},
+                            {{ $chartData['sakit'] ?? 0 }},
+                            {{ $chartData['alpha'] ?? 0 }}
+                        ],
+                        backgroundColor: ['#2E7D3E', '#FCC626', '#00a2e9', '#ec1d1d'],
+                        borderWidth: 0,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 12,
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
+                                    return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
+                                }
+                            }
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
         }
     });
 </script>
