@@ -23,11 +23,6 @@ class AbsensiController extends Controller
     private int $maxRadius = 50;
 
     /**
-     * Durasi valid QR Code dalam detik (20 detik)
-     */
-    private int $qrValiditySeconds = 20;
-
-    /**
      * Konfigurasi titik koordinat kantor KPM
      */
     private function getOfficeLocations(): array
@@ -118,136 +113,19 @@ class AbsensiController extends Controller
     }
 
     /**
-     * Generate QR Code sederhana tanpa library external
-     * Menggunakan pendekatan base64 encoding dengan token
+     * Check-in
      */
-    private function generateQrCodeImage($data): string
-    {
-        // Karena tidak ada library QR Code, kita buat QR Code sederhana
-        // yang bisa di-scan menggunakan jsQR di client-side
-        // Data yang di-encode adalah JSON string
-
-        $jsonData = json_encode($data);
-
-        // Buat representasi QR Code sebagai string biner sederhana
-        // Ini akan di-decode oleh jsQR di sisi client
-        $qrData = $this->encodeToQrFormat($jsonData);
-
-        // Kembalikan sebagai data URI dengan format khusus
-        // Client akan mengenali ini sebagai QR Code
-        return 'data:application/json;base64,' . base64_encode($jsonData);
-    }
-
-    /**
-     * Encode data ke format yang bisa dibaca jsQR
-     * Ini adalah fallback sederhana tanpa library external
-     */
-    private function encodeToQrFormat($data): string
-    {
-        // Buat string dengan format yang bisa dikenali jsQR
-        // jsQR bisa membaca berbagai format, termasuk teks biasa
-        return $data;
-    }
-
-    /**
-     * Generate QR Code token
-     */
-    private function generateQrToken(): string
-    {
-        return bin2hex(random_bytes(32));
-    }
-
-    /**
-     * Generate QR Code untuk absensi
-     */
-    public function generateQrCode()
-    {
-        $token = $this->generateQrToken();
-        $now = Carbon::now($this->officeTimezone);
-        $expiresAt = $now->copy()->addSeconds($this->qrValiditySeconds);
-
-        // Simpan token ke session
-        session(['qr_absensi_token' => $token]);
-        session(['qr_absensi_expires' => $expiresAt->timestamp]);
-        session(['qr_absensi_created' => $now->timestamp]);
-
-        // Data QR Code
-        $qrData = [
-            'token' => $token,
-            'timestamp' => $now->timestamp,
-            'expires' => $expiresAt->timestamp,
-        ];
-
-        // Generate QR Code image (tanpa library)
-        $qrImage = $this->generateSimpleQrCode($qrData);
-
-        return response()->json([
-            'success' => true,
-            'qr_code' => $qrImage,
-            'token' => $token,
-            'expires_at' => $expiresAt->toIso8601String(),
-            'expires_in' => $this->qrValiditySeconds,
-        ]);
-    }
-
-    /**
-     * Generate Simple QR Code tanpa library external
-     * Menggunakan canvas rendering di client-side
-     */
-    private function generateSimpleQrCode($data): string
-    {
-        // Karena kita tidak bisa generate QR Code murni di PHP tanpa library,
-        // kita kirimkan data sebagai JSON yang akan dirender oleh client-side jsQR
-        // Client akan menggunakan jsQR untuk membaca QR Code dari gambar/stream
-
-        // Kirim data sebagai base64 encoded JSON
-        $jsonData = json_encode($data);
-        return 'data:text/plain;base64,' . base64_encode($jsonData);
-    }
-
-    /**
-     * Validasi QR Code token
-     */
-    private function validateQrToken($token): bool
-    {
-        $sessionToken = session('qr_absensi_token');
-        $expires = session('qr_absensi_expires', 0);
-
-        if (empty($sessionToken) || $token !== $sessionToken) {
-            return false;
-        }
-
-        if (Carbon::now($this->officeTimezone)->timestamp > $expires) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Endpoint untuk scan QR Code dan absensi
-     */
-    public function scanQrCode(Request $request)
+    public function checkIn(Request $request)
     {
         $request->validate([
-            'qr_token' => 'required|string',
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
             'accuracy' => 'nullable|numeric',
-            'action' => 'required|in:checkin,checkout',
         ]);
 
         $user = Auth::user();
         $today = Carbon::today($this->officeTimezone);
-
-        // Validasi QR Code
-        if (!$this->validateQrToken($request->qr_token)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'QR Code tidak valid atau sudah kadaluarsa. Silakan refresh QR Code.',
-                'code' => 'INVALID_QR',
-            ], 400);
-        }
+        $now = Carbon::now($this->officeTimezone);
 
         // Validasi lokasi
         $locationCheck = $this->isValidLocation(
@@ -259,7 +137,7 @@ class AbsensiController extends Controller
         if (!$locationCheck['valid']) {
             return response()->json([
                 'success' => false,
-                'message' => 'Absensi ditolak! Anda berada di luar radius kantor (minimal 50 meter). ' .
+                'message' => 'Absensi ditolak! Anda berada di luar radius kantor (50 meter). ' .
                     'Jarak terdekat: ' . $locationCheck['distance'] . ' meter dari ' .
                     ($locationCheck['nearest'] ?? 'lokasi terdekat'),
                 'distance' => $locationCheck['distance'],
@@ -273,129 +151,130 @@ class AbsensiController extends Controller
             ->whereDate('tanggal', $today)
             ->first();
 
-        $now = Carbon::now($this->officeTimezone);
-
-        if ($request->action === 'checkin') {
-            if ($absensi && $absensi->check_in) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Anda sudah melakukan check-in hari ini!',
-                    'code' => 'ALREADY_CHECKIN',
-                ], 400);
-            }
-
-            $absensi = Absensi::updateOrCreate(
-                [
-                    'karyawan_id' => $user->id,
-                    'tanggal' => $today,
-                ],
-                [
-                    'check_in' => $now,
-                    'kantor_cabang' => $locationCheck['location_name'] ?? $locationCheck['nearest'],
-                    'status' => 'Hadir',
-                    'latitude' => $request->latitude,
-                    'longitude' => $request->longitude,
-                    'location_accuracy' => $request->accuracy ?? 0,
-                    'is_valid_location' => $locationCheck['valid'],
-                    'qr_code_token' => $request->qr_token,
-                ]
-            );
-
-            // Hapus token setelah digunakan
-            session()->forget('qr_absensi_token');
-            session()->forget('qr_absensi_expires');
-
+        if ($absensi && $absensi->check_in) {
             return response()->json([
-                'success' => true,
-                'message' => 'Check-in berhasil!',
-                'data' => [
-                    'waktu' => $now->format('H:i:s'),
-                    'tanggal' => $now->format('d-m-Y'),
-                    'kantor' => $locationCheck['location_name'] ?? $locationCheck['nearest'],
-                    'status' => 'Hadir',
-                    'distance' => $locationCheck['distance'],
-                    'location' => [
-                        'latitude' => $request->latitude,
-                        'longitude' => $request->longitude,
-                    ],
-                    'server_timestamp_ms' => $now->getTimestampMs(),
-                ],
-            ]);
-
-        } elseif ($request->action === 'checkout') {
-            if (!$absensi || !$absensi->check_in) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Anda belum melakukan check-in!',
-                    'code' => 'NO_CHECKIN',
-                ], 400);
-            }
-
-            if ($absensi->check_out) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Anda sudah melakukan check-out hari ini!',
-                    'code' => 'ALREADY_CHECKOUT',
-                ], 400);
-            }
-
-            $checkInTime = Carbon::parse($absensi->check_in);
-            $totalJamKerja = (int) round($checkInTime->diffInMinutes($now) / 60);
-
-            $absensi->total_jam_kerja = $totalJamKerja;
-            $absensi->check_out = $now;
-            $absensi->latitude = $request->latitude;
-            $absensi->longitude = $request->longitude;
-            $absensi->location_accuracy = $request->accuracy ?? 0;
-            $absensi->is_valid_location = $locationCheck['valid'];
-            $absensi->qr_code_token = $request->qr_token;
-            $absensi->save();
-
-            // Hapus token setelah digunakan
-            session()->forget('qr_absensi_token');
-            session()->forget('qr_absensi_expires');
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Check-out berhasil!',
-                'data' => [
-                    'waktu' => $now->format('H:i:s'),
-                    'tanggal' => $now->format('d-m-Y'),
-                    'total_jam' => $totalJamKerja,
-                    'kantor' => $absensi->kantor_cabang,
-                    'distance' => $locationCheck['distance'],
-                    'location' => [
-                        'latitude' => $request->latitude,
-                        'longitude' => $request->longitude,
-                    ],
-                    'server_timestamp_ms' => $now->getTimestampMs(),
-                ],
-            ]);
+                'success' => false,
+                'message' => 'Anda sudah melakukan check-in hari ini!',
+                'code' => 'ALREADY_CHECKIN',
+            ], 400);
         }
 
+        $absensi = Absensi::updateOrCreate(
+            [
+                'karyawan_id' => $user->id,
+                'tanggal' => $today,
+            ],
+            [
+                'check_in' => $now,
+                'kantor_cabang' => $locationCheck['location_name'] ?? $locationCheck['nearest'],
+                'status' => 'Hadir',
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
+                'location_accuracy' => $request->accuracy ?? 0,
+                'is_valid_location' => $locationCheck['valid'],
+            ]
+        );
+
         return response()->json([
-            'success' => false,
-            'message' => 'Aksi tidak dikenali',
-            'code' => 'INVALID_ACTION',
-        ], 400);
+            'success' => true,
+            'message' => 'Check-in berhasil!',
+            'data' => [
+                'waktu' => $now->format('H:i:s'),
+                'tanggal' => $now->format('d-m-Y'),
+                'kantor' => $locationCheck['location_name'] ?? $locationCheck['nearest'],
+                'status' => 'Hadir',
+                'distance' => $locationCheck['distance'],
+                'location' => [
+                    'latitude' => $request->latitude,
+                    'longitude' => $request->longitude,
+                ],
+                'server_timestamp_ms' => $now->getTimestampMs(),
+            ],
+        ]);
     }
 
     /**
-     * Check-in via QR Code
-     */
-    public function checkIn(Request $request)
-    {
-        $request->merge(['action' => 'checkin']);
-        return $this->scanQrCode($request);
-    }
-
-    /**
-     * Check-out via QR Code
+     * Check-out
      */
     public function checkOut(Request $request)
     {
-        $request->merge(['action' => 'checkout']);
-        return $this->scanQrCode($request);
+        $request->validate([
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+            'accuracy' => 'nullable|numeric',
+        ]);
+
+        $user = Auth::user();
+        $today = Carbon::today($this->officeTimezone);
+        $now = Carbon::now($this->officeTimezone);
+
+        // Validasi lokasi
+        $locationCheck = $this->isValidLocation(
+            (float) $request->latitude,
+            (float) $request->longitude,
+            $this->maxRadius
+        );
+
+        if (!$locationCheck['valid']) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Absensi ditolak! Anda berada di luar radius kantor (50 meter). ' .
+                    'Jarak terdekat: ' . $locationCheck['distance'] . ' meter dari ' .
+                    ($locationCheck['nearest'] ?? 'lokasi terdekat'),
+                'distance' => $locationCheck['distance'],
+                'nearest_location' => $locationCheck['nearest'],
+                'code' => 'INVALID_LOCATION',
+            ], 403);
+        }
+
+        // Cek absensi hari ini
+        $absensi = Absensi::where('karyawan_id', $user->id)
+            ->whereDate('tanggal', $today)
+            ->first();
+
+        if (!$absensi || !$absensi->check_in) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda belum melakukan check-in!',
+                'code' => 'NO_CHECKIN',
+            ], 400);
+        }
+
+        if ($absensi->check_out) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda sudah melakukan check-out hari ini!',
+                'code' => 'ALREADY_CHECKOUT',
+            ], 400);
+        }
+
+        $checkInTime = Carbon::parse($absensi->check_in);
+        $totalJamKerja = (int) round($checkInTime->diffInMinutes($now) / 60);
+
+        $absensi->total_jam_kerja = $totalJamKerja;
+        $absensi->check_out = $now;
+        $absensi->latitude = $request->latitude;
+        $absensi->longitude = $request->longitude;
+        $absensi->location_accuracy = $request->accuracy ?? 0;
+        $absensi->is_valid_location = $locationCheck['valid'];
+        $absensi->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Check-out berhasil!',
+            'data' => [
+                'waktu' => $now->format('H:i:s'),
+                'tanggal' => $now->format('d-m-Y'),
+                'total_jam' => $totalJamKerja,
+                'kantor' => $absensi->kantor_cabang,
+                'distance' => $locationCheck['distance'],
+                'location' => [
+                    'latitude' => $request->latitude,
+                    'longitude' => $request->longitude,
+                ],
+                'server_timestamp_ms' => $now->getTimestampMs(),
+            ],
+        ]);
     }
 
     /**
@@ -413,23 +292,6 @@ class AbsensiController extends Controller
 
         $todayName = $now->locale('id')->isoFormat('dddd');
 
-        // Generate QR Code baru setiap request
-        $qrToken = $this->generateQrToken();
-        $expiresAt = $now->copy()->addSeconds($this->qrValiditySeconds);
-
-        session(['qr_absensi_token' => $qrToken]);
-        session(['qr_absensi_expires' => $expiresAt->timestamp]);
-        session(['qr_absensi_created' => $now->timestamp]);
-
-        // Data QR Code
-        $qrData = [
-            'token' => $qrToken,
-            'timestamp' => $now->timestamp,
-            'expires' => $expiresAt->timestamp,
-        ];
-
-        $qrImage = $this->generateSimpleQrCode($qrData);
-
         return response()->json([
             'success' => true,
             'data' => [
@@ -443,15 +305,8 @@ class AbsensiController extends Controller
                 'is_valid_location' => $absensi ? $absensi->is_valid_location : false,
                 'latitude' => $absensi ? $absensi->latitude : null,
                 'longitude' => $absensi ? $absensi->longitude : null,
-                // QR Code
-                'qr_code' => $qrImage,
-                'qr_token' => $qrToken,
-                'qr_expires_at' => $expiresAt->toIso8601String(),
-                'qr_expires_in' => $this->qrValiditySeconds,
-                // Server time
                 'server_timestamp_ms' => $now->getTimestampMs(),
                 'server_time_iso' => $now->toIso8601String(),
-                // Lokasi kantor
                 'office_locations' => $this->getOfficeLocations(),
                 'max_radius' => $this->maxRadius,
             ],
@@ -476,7 +331,7 @@ class AbsensiController extends Controller
     }
 
     // ==========================================================
-    // HR Methods (tidak berubah)
+    // HR Methods
     // ==========================================================
 
     public function index(Request $request)
