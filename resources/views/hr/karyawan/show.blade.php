@@ -64,7 +64,7 @@
                         <div class="flex-shrink-0 text-center md:text-right">
                             <div class="text-xs sm:text-sm text-gray-500">
                                 <p>Bergabung: {{ $karyawan->tanggal_bergabung ? $karyawan->tanggal_bergabung->format('d-m-Y') : '-' }}</p>
-                                <p>ID Pegawai: {{ $karyawan->kode_pegawai }}</p>
+                                <p>ID Karyawan: {{ $karyawan->kode_pegawai }}</p>
                             </div>
                         </div>
                     </div>
@@ -78,7 +78,7 @@
                         <!-- KOLOM KIRI -->
                         <div class="space-y-3 sm:space-y-4">
                             <div>
-                                <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">ID Pegawai</label>
+                                <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">ID Karyawan</label>
                                 <p class="text-sm sm:text-base text-[#27438D] font-semibold break-words">{{ $karyawan->kode_pegawai }}</p>
                             </div>
                             <div>

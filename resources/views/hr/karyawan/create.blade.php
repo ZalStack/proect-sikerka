@@ -41,7 +41,7 @@
                         <div>
                             <!-- ID Pegawai -->
                             <div class="mb-4">
-                                <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">ID Pegawai <span class="text-[#ec1d1d]">*</span></label>
+                                <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">ID Karyawan <span class="text-[#ec1d1d]">*</span></label>
                                 <input type="text" name="kode_pegawai" value="{{ old('kode_pegawai') }}" required
                                     class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                                 @error('kode_pegawai')

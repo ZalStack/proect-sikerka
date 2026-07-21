@@ -44,7 +44,7 @@
                         <div>
                             <!-- ID Pegawai -->
                             <div class="mb-4">
-                                <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">ID Pegawai <span
+                                <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">ID Karyawan <span
                                         class="text-[#ec1d1d]">*</span></label>
                                 <input type="text" name="kode_pegawai"
                                     value="{{ old('kode_pegawai', $karyawan->kode_pegawai) }}" required

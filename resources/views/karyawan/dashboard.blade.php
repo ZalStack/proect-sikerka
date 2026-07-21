@@ -171,7 +171,7 @@
                     </div>
                     <div class="space-y-2.5">
                         <div class="flex justify-between items-center text-sm">
-                            <span class="text-gray-500">ID Pegawai</span>
+                            <span class="text-gray-500">ID Karyawan</span>
                             <span class="font-medium text-gray-700">{{ $user->kode_pegawai ?? '-' }}</span>
                         </div>
                         <div class="flex justify-between items-center text-sm">

@@ -57,7 +57,7 @@
                         <div class="flex-shrink-0">
                             <div class="text-sm text-gray-500">
                                 <p>Bergabung: {{ $user->tanggal_bergabung ? $user->tanggal_bergabung->format('d-m-Y') : '-' }}</p>
-                                <p>ID Pegawai: {{ $user->kode_pegawai }}</p>
+                                <p>ID Karyawan: {{ $user->kode_pegawai }}</p>
                             </div>
                         </div>
                     </div>
@@ -71,7 +71,7 @@
                         <!-- KOLOM KIRI -->
                         <div class="space-y-4">
                             <div>
-                                <label class="text-sm text-[#1B1B1B] font-medium">ID Pegawai</label>
+                                <label class="text-sm text-[#1B1B1B] font-medium">ID Karyawan</label>
                                 <p class="text-[#27438D] font-semibold">{{ $user->kode_pegawai }}</p>
                             </div>
                             <div>
@@ -307,7 +307,7 @@
                             <!-- KOLOM KIRI -->
                             <div>
                                 <div class="mb-4">
-                                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">ID Pegawai <span class="text-[#ec1d1d]">*</span></label>
+                                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">ID Karyawan <span class="text-[#ec1d1d]">*</span></label>
                                     <input type="text" name="kode_pegawai" value="{{ old('kode_pegawai', $user->kode_pegawai) }}" required
                                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                                     @error('kode_pegawai') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
