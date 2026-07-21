@@ -101,8 +101,9 @@
                     <ul class="list-disc list-inside mt-1 space-y-1 text-xs sm:text-sm">
                         <li>Absensi dilakukan dengan <strong>deteksi lokasi GPS</strong></li>
                         <li>Lokasi Anda harus berada dalam <strong>radius 50 meter</strong> dari kantor KPM</li>
+                        <li>Sinyal GPS harus cukup akurat (akurasi lebih baik dari 75 meter). Jika di dalam ruangan/gedung, coba dekat jendela atau area terbuka</li>
                         <li>Check-in hanya 1 kali per hari, Check-out setelah Check-in</li>
-                        <li>Jam yang digunakan adalah <strong>jam server</strong> (realtime)</li>
+                        <li>Jam yang digunakan adalah <strong>jam server</strong> (realtime), bukan jam HP Anda</li>
                     </ul>
                 </div>
             </div>
@@ -461,6 +462,9 @@ function performAbsensi(action) {
             let errorMsg = data.message;
             if (data.code === 'INVALID_LOCATION') {
                 errorMsg = 'Lokasi tidak valid! Jarak terdekat: ' + (data.distance || 0) + 'm dari ' + (data.nearest_location || 'kantor');
+                getLocation();
+            } else if (data.code === 'POOR_GPS_ACCURACY') {
+                errorMsg = data.message || 'Sinyal GPS kurang akurat. Coba pindah ke area terbuka.';
                 getLocation();
             }
 

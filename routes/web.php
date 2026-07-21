@@ -91,8 +91,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/dashboard', [KaryawanDashboardController::class, 'index'])->name('dashboard');
             Route::get('/absensi', [AbsensiController::class, 'dashboard'])->name('absensi');
 
-            Route::post('/absensi/checkin', [AbsensiController::class, 'checkIn'])->name('absensi.checkin');
-            Route::post('/absensi/checkout', [AbsensiController::class, 'checkOut'])->name('absensi.checkout');
+            Route::post('/absensi/checkin', [AbsensiController::class, 'checkIn'])->name('absensi.checkin')->middleware('throttle:10,1');
+            Route::post('/absensi/checkout', [AbsensiController::class, 'checkOut'])->name('absensi.checkout')->middleware('throttle:10,1');
             Route::get('/absensi/status', [AbsensiController::class, 'status'])->name('absensi.status');
             Route::get('/absensi/server-time', [AbsensiController::class, 'serverTime'])->name('absensi.server-time');
 

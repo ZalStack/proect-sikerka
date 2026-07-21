@@ -1,5 +1,4 @@
 <?php
-// app/Http/Controllers/AbsensiController.php
 
 namespace App\Http\Controllers;
 
@@ -23,32 +22,14 @@ class AbsensiController extends Controller
     private int $maxRadius = 50;
 
     /**
-     * Konfigurasi titik koordinat kantor KPM
+     * Konfigurasi titik koordinat kantor KPM.
+     * Diambil dari App\Models\Absensi supaya HANYA ada satu sumber data
+     * (dipakai juga oleh views/hr/absensi/index.blade.php), sehingga
+     * menambah/mengubah titik kantor cukup dilakukan di satu tempat saja.
      */
     private function getOfficeLocations(): array
     {
-        return [
-            'KPM LALADON' => [
-                'latitude' => -6.586886661039424,
-                'longitude' => 106.75890044642712,
-            ],
-            'KPM SEMPLAK' => [
-                'latitude' => -6.553776866673678,
-                'longitude' => 106.76227926589081,
-            ],
-            'KPM RAWAMANGUN' => [
-                'latitude' => -6.197799964780801,
-                'longitude' => 106.88646119657936,
-            ],
-            'KPM CIRATA' => [
-                'latitude' => -6.587336147929745,
-                'longitude' => 106.75705888792925,
-            ],
-            'KPM PAGELARAN' => [
-                'latitude' => -6.592773750035168,
-                'longitude' => 106.76223439877839,
-            ],
-        ];
+        return Absensi::getOfficeLocations();
     }
 
     /**
@@ -56,60 +37,17 @@ class AbsensiController extends Controller
      */
     private function haversineDistance($lat1, $lon1, $lat2, $lon2): float
     {
-        $earthRadius = 6371000; // meter
-
-        $dLat = deg2rad($lat2 - $lat1);
-        $dLon = deg2rad($lon2 - $lon1);
-
-        $a = sin($dLat / 2) * sin($dLat / 2) +
-             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
-             sin($dLon / 2) * sin($dLon / 2);
-
-        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-
-        return $earthRadius * $c;
+        return Absensi::haversineDistance($lat1, $lon1, $lat2, $lon2);
     }
 
     /**
-     * Cek apakah lokasi berada dalam radius tertentu dari salah satu kantor
+     * Cek apakah lokasi (dan akurasi GPS-nya) valid untuk absensi.
+     * Validasi jarak & akurasi dilakukan sepenuhnya di server (Absensi model)
+     * -- nilai "valid" dari client TIDAK PERNAH dipercaya.
      */
-    private function isValidLocation($latitude, $longitude, $radius = 50): array
+    private function isValidLocation($latitude, $longitude, $radius = 50, $accuracy = null): array
     {
-        $locations = $this->getOfficeLocations();
-        $nearestLocation = null;
-        $nearestDistance = PHP_FLOAT_MAX;
-
-        foreach ($locations as $name => $coords) {
-            $distance = $this->haversineDistance(
-                $latitude,
-                $longitude,
-                $coords['latitude'],
-                $coords['longitude']
-            );
-
-            if ($distance < $nearestDistance) {
-                $nearestDistance = $distance;
-                $nearestLocation = $name;
-            }
-
-            if ($distance <= $radius) {
-                return [
-                    'valid' => true,
-                    'distance' => round($distance, 2),
-                    'location_name' => $name,
-                    'nearest' => $name,
-                    'nearest_distance' => round($distance, 2),
-                ];
-            }
-        }
-
-        return [
-            'valid' => false,
-            'distance' => round($nearestDistance, 2),
-            'location_name' => null,
-            'nearest' => $nearestLocation,
-            'nearest_distance' => round($nearestDistance, 2),
-        ];
+        return Absensi::isValidLocation($latitude, $longitude, $radius, $accuracy);
     }
 
     /**
@@ -120,21 +58,46 @@ class AbsensiController extends Controller
         $request->validate([
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
-            'accuracy' => 'nullable|numeric',
+            // Akurasi WAJIB dikirim dan harus masuk akal (perangkat GPS asli
+            // selalu melaporkan akurasi > 0). Ini mempersulit klien yang
+            // mencoba mengosongkan/memalsukan nilai akurasi.
+            'accuracy' => 'required|numeric|min:0.1|max:5000',
         ]);
 
         $user = Auth::user();
         $today = Carbon::today($this->officeTimezone);
         $now = Carbon::now($this->officeTimezone);
 
-        // Validasi lokasi
+        // Validasi lokasi + akurasi GPS, 100% dihitung ulang di server
         $locationCheck = $this->isValidLocation(
             (float) $request->latitude,
             (float) $request->longitude,
-            $this->maxRadius
+            $this->maxRadius,
+            (float) $request->accuracy
         );
 
         if (!$locationCheck['valid']) {
+            Log::warning('Percobaan check-in ditolak', [
+                'karyawan_id' => $user->id,
+                'reason' => $locationCheck['accuracy_reason'] ?? 'out_of_radius',
+                'distance' => $locationCheck['distance'],
+                'accuracy' => $request->accuracy,
+                'lat' => $request->latitude,
+                'lng' => $request->longitude,
+                'ip' => $request->ip(),
+            ]);
+
+            if (!$locationCheck['accuracy_ok']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Absensi ditolak! Sinyal GPS Anda kurang akurat (± ' .
+                        $request->accuracy . ' meter). Coba pindah ke area terbuka lalu ulangi.',
+                    'distance' => $locationCheck['distance'],
+                    'nearest_location' => $locationCheck['nearest'],
+                    'code' => 'POOR_GPS_ACCURACY',
+                ], 403);
+            }
+
             return response()->json([
                 'success' => false,
                 'message' => 'Absensi ditolak! Anda berada di luar radius kantor (50 meter). ' .
@@ -170,8 +133,12 @@ class AbsensiController extends Controller
                 'status' => 'Hadir',
                 'latitude' => $request->latitude,
                 'longitude' => $request->longitude,
-                'location_accuracy' => $request->accuracy ?? 0,
+                'location_accuracy' => $request->accuracy,
                 'is_valid_location' => $locationCheck['valid'],
+                'ip_address' => $request->ip(),
+                'user_agent' => substr((string) $request->userAgent(), 0, 255),
+                'is_suspicious' => false,
+                'suspicious_reason' => null,
             ]
         );
 
@@ -201,21 +168,33 @@ class AbsensiController extends Controller
         $request->validate([
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
-            'accuracy' => 'nullable|numeric',
+            'accuracy' => 'required|numeric|min:0.1|max:5000',
         ]);
 
         $user = Auth::user();
         $today = Carbon::today($this->officeTimezone);
         $now = Carbon::now($this->officeTimezone);
 
-        // Validasi lokasi
+        // Validasi lokasi + akurasi GPS, 100% dihitung ulang di server
         $locationCheck = $this->isValidLocation(
             (float) $request->latitude,
             (float) $request->longitude,
-            $this->maxRadius
+            $this->maxRadius,
+            (float) $request->accuracy
         );
 
         if (!$locationCheck['valid']) {
+            if (!$locationCheck['accuracy_ok']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Absensi ditolak! Sinyal GPS Anda kurang akurat (± ' .
+                        $request->accuracy . ' meter). Coba pindah ke area terbuka lalu ulangi.',
+                    'distance' => $locationCheck['distance'],
+                    'nearest_location' => $locationCheck['nearest'],
+                    'code' => 'POOR_GPS_ACCURACY',
+                ], 403);
+            }
+
             return response()->json([
                 'success' => false,
                 'message' => 'Absensi ditolak! Anda berada di luar radius kantor (50 meter). ' .
@@ -249,14 +228,18 @@ class AbsensiController extends Controller
         }
 
         $checkInTime = Carbon::parse($absensi->check_in);
-        $totalJamKerja = (int) round($checkInTime->diffInMinutes($now) / 60);
+        // total jam kerja dihitung murni dari jam server (bukan input klien),
+        // sehingga tidak bisa dimanipulasi dari sisi browser/HP.
+        $totalJamKerja = max(0, (int) round($checkInTime->diffInMinutes($now) / 60));
 
         $absensi->total_jam_kerja = $totalJamKerja;
         $absensi->check_out = $now;
         $absensi->latitude = $request->latitude;
         $absensi->longitude = $request->longitude;
-        $absensi->location_accuracy = $request->accuracy ?? 0;
+        $absensi->location_accuracy = $request->accuracy;
         $absensi->is_valid_location = $locationCheck['valid'];
+        $absensi->ip_address = $request->ip();
+        $absensi->user_agent = substr((string) $request->userAgent(), 0, 255);
         $absensi->save();
 
         return response()->json([
@@ -309,6 +292,7 @@ class AbsensiController extends Controller
                 'server_time_iso' => $now->toIso8601String(),
                 'office_locations' => $this->getOfficeLocations(),
                 'max_radius' => $this->maxRadius,
+                'max_gps_accuracy' => Absensi::MAX_GPS_ACCURACY,
             ],
         ]);
     }

@@ -26,6 +26,12 @@ return new class extends Migration
             $table->boolean('is_valid_location')->default(false);
             $table->string('qr_code_token', 100)->nullable();
 
+            // Kolom audit trail & anti-manipulasi data
+            $table->string('ip_address', 45)->nullable(); // jejak IP saat check-in/out
+            $table->string('user_agent', 255)->nullable(); // jejak perangkat/browser
+            $table->boolean('is_suspicious')->default(false); // ditandai otomatis oleh server saat akurasi GPS jelek/tidak wajar
+            $table->string('suspicious_reason', 100)->nullable(); // alasan singkat kenapa ditandai mencurigakan
+
             $table->timestamps();
 
             $table->unique(['karyawan_id', 'tanggal']);

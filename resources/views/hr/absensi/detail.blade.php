@@ -109,6 +109,27 @@
                         @endforeach
                     </div>
                     @endif
+
+                    @if($absensi->is_suspicious)
+                    <div class="mt-3 bg-[#FCC626]/20 border border-[#FCC626] text-[#1B1B1B] rounded-lg p-3 text-xs sm:text-sm">
+                        ⚠️ Data ini ditandai <strong>mencurigakan</strong> oleh sistem{{ $absensi->suspicious_reason ? ': ' . $absensi->suspicious_reason : '' }}. Mohon ditinjau.
+                    </div>
+                    @endif
+                </div>
+
+                <!-- Jejak Audit -->
+                <div class="mt-6 pt-6 border-t border-gray-200">
+                    <h3 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">🔒 Jejak Audit (Anti-Manipulasi)</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <div class="bg-[#F5F5F5] rounded-lg p-3">
+                            <p class="text-xs text-[#1B1B1B]">Alamat IP</p>
+                            <p class="text-sm font-semibold text-[#161758] break-words">{{ $absensi->ip_address ?? '-' }}</p>
+                        </div>
+                        <div class="bg-[#F5F5F5] rounded-lg p-3 sm:col-span-2 lg:col-span-2">
+                            <p class="text-xs text-[#1B1B1B]">Perangkat / Browser</p>
+                            <p class="text-xs font-semibold text-[#161758] break-words">{{ $absensi->user_agent ?? '-' }}</p>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Form Update Status -->

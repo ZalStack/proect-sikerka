@@ -1,5 +1,4 @@
 <?php
-// app/Models/Absensi.php
 
 namespace App\Models;
 
@@ -24,6 +23,10 @@ class Absensi extends Model
         'location_accuracy',
         'is_valid_location',
         'qr_code_token',
+        'ip_address',
+        'user_agent',
+        'is_suspicious',
+        'suspicious_reason',
     ];
 
     protected $casts = [
@@ -31,6 +34,7 @@ class Absensi extends Model
         'check_in' => 'datetime',
         'check_out' => 'datetime',
         'is_valid_location' => 'boolean',
+        'is_suspicious' => 'boolean',
         'latitude' => 'float',
         'longitude' => 'float',
         'location_accuracy' => 'float',
@@ -111,17 +115,50 @@ class Absensi extends Model
                 'latitude' => -6.592773750035168,
                 'longitude' => 106.76223439877839,
             ],
+            'KPM CABANG POLTANGAN' => [
+                'latitude' => -6.297271839927471,
+                'longitude' => 106.84699770957265,
+            ],
         ];
     }
 
     /**
-     * Cek apakah lokasi berada dalam radius 50 meter dari salah satu kantor
+     * Batas akurasi GPS maksimum yang masih dianggap layak dipakai (meter).
+     * Bacaan GPS yang lebih buruk dari ini (mis. dari sinyal wifi/cell tower,
+     * indoor, atau aplikasi fake-GPS yang malas mensimulasikan akurasi)
+     * ditolak karena tidak bisa dipercaya untuk validasi radius 50 meter.
      */
-    public static function isValidLocation($latitude, $longitude, $radius = 50)
+    const MAX_GPS_ACCURACY = 75; // meter
+
+    /**
+     * Cek apakah lokasi berada dalam radius tertentu dari salah satu kantor.
+     *
+     * Selain jarak, fungsi ini juga mempertimbangkan akurasi GPS ($accuracy)
+     * agar hasil "valid/tidak valid" lebih bisa dipercaya:
+     * - Jika akurasi tidak masuk akal (<= 0) atau lebih buruk dari
+     *   MAX_GPS_ACCURACY meter, lokasi otomatis ditolak (reason: poor_accuracy).
+     * - Jarak yang dipakai untuk keputusan tetap jarak sebenarnya ke kantor
+     *   (radius TIDAK diperlonggar oleh akurasi) supaya orang tidak bisa lolos
+     *   hanya dengan melaporkan akurasi yang jelek/besar.
+     */
+    public static function isValidLocation($latitude, $longitude, $radius = 50, $accuracy = null)
     {
         $locations = self::getOfficeLocations();
         $nearestLocation = null;
         $nearestDistance = PHP_FLOAT_MAX;
+
+        // Validasi kualitas sinyal GPS terlebih dahulu
+        $accuracyOk = true;
+        $accuracyReason = null;
+        if ($accuracy !== null) {
+            if ($accuracy <= 0) {
+                $accuracyOk = false;
+                $accuracyReason = 'invalid_accuracy';
+            } elseif ($accuracy > self::MAX_GPS_ACCURACY) {
+                $accuracyOk = false;
+                $accuracyReason = 'poor_accuracy';
+            }
+        }
 
         foreach ($locations as $name => $coords) {
             $distance = self::haversineDistance(
@@ -135,22 +172,17 @@ class Absensi extends Model
                 $nearestDistance = $distance;
                 $nearestLocation = $name;
             }
-
-            if ($distance <= $radius) {
-                return [
-                    'valid' => true,
-                    'distance' => round($distance, 2),
-                    'location_name' => $name,
-                    'nearest' => $name,
-                    'nearest_distance' => round($distance, 2),
-                ];
-            }
         }
 
+        $withinRadius = $nearestDistance <= $radius;
+
         return [
-            'valid' => false,
+            'valid' => $withinRadius && $accuracyOk,
+            'within_radius' => $withinRadius,
+            'accuracy_ok' => $accuracyOk,
+            'accuracy_reason' => $accuracyReason,
             'distance' => round($nearestDistance, 2),
-            'location_name' => null,
+            'location_name' => ($withinRadius && $accuracyOk) ? $nearestLocation : null,
             'nearest' => $nearestLocation,
             'nearest_distance' => round($nearestDistance, 2),
         ];
