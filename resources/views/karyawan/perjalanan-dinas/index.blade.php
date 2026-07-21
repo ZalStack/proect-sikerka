@@ -1,0 +1,207 @@
+@extends('layouts.app')
+
+@section('content')
+<div class="flex">
+    @include('layouts.sidebar')
+    <div class="flex-1 ml-0 md:ml-64 pt-14 sm:pt-16">
+        <div class="p-4 sm:p-6">
+            <!-- Header -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-bold text-[#161758]">Perjalanan Dinas Saya</h1>
+                    <p class="text-sm text-gray-500 mt-1">Kelola pengajuan perjalanan dinas Anda</p>
+                </div>
+                <a href="{{ route('karyawan.perjalanan-dinas.create') }}"
+                   class="px-4 py-2 bg-[#00a2e9] text-white rounded-lg hover:bg-[#0088c4] transition flex items-center space-x-2 text-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    <span>Ajukan Perjalanan Dinas</span>
+                </a>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4 mb-6">
+                <div class="bg-white rounded-xl shadow-sm p-3 sm:p-4 border-l-4 border-[#161758]">
+                    <p class="text-xs text-gray-500">Total</p>
+                    <p class="text-xl sm:text-2xl font-bold text-[#161758]">{{ $stats['total'] }}</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm p-3 sm:p-4 border-l-4 border-yellow-500">
+                    <p class="text-xs text-gray-500">Pending</p>
+                    <p class="text-xl sm:text-2xl font-bold text-yellow-500">{{ $stats['pending'] }}</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm p-3 sm:p-4 border-l-4 border-green-500">
+                    <p class="text-xs text-gray-500">Disetujui</p>
+                    <p class="text-xl sm:text-2xl font-bold text-green-500">{{ $stats['approved'] }}</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm p-3 sm:p-4 border-l-4 border-red-500">
+                    <p class="text-xs text-gray-500">Ditolak</p>
+                    <p class="text-xl sm:text-2xl font-bold text-red-500">{{ $stats['rejected'] }}</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm p-3 sm:p-4 border-l-4 border-blue-500">
+                    <p class="text-xs text-gray-500">Selesai</p>
+                    <p class="text-xl sm:text-2xl font-bold text-blue-500">{{ $stats['selesai'] }}</p>
+                </div>
+            </div>
+
+            <!-- Filter -->
+            <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
+                <form action="{{ route('karyawan.perjalanan-dinas.index') }}" method="GET" class="flex flex-wrap gap-3">
+                    <select name="status" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent text-sm bg-white">
+                        <option value="semua">Semua Status</option>
+                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                        <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Disetujui</option>
+                        <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Ditolak</option>
+                        <option value="selesai" {{ request('status') == 'selesai' ? 'selected' : '' }}>Selesai</option>
+                    </select>
+                    <button type="submit" class="px-4 py-2 bg-[#00a2e9] text-white rounded-lg hover:bg-[#0088c4] transition text-sm">
+                        Filter
+                    </button>
+                    <a href="{{ route('karyawan.perjalanan-dinas.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm">
+                        Reset
+                    </a>
+                </form>
+            </div>
+
+            <!-- Table -->
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Judul</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Surat Tugas</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @forelse($perjalananDinas as $index => $item)
+                            <tr class="hover:bg-gray-50 transition">
+                                <td class="px-4 py-3 text-sm text-gray-500">{{ $perjalananDinas->firstItem() + $index }}</td>
+                                <td class="px-4 py-3">
+                                    <p class="text-sm font-medium text-gray-900">{{ Str::limit($item->judul, 35) }}</p>
+                                    <p class="text-xs text-gray-500">{{ Str::limit($item->agenda, 45) }}</p>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <p class="text-sm text-gray-900">{{ $item->tanggal_mulai->format('d/m/Y') }}</p>
+                                    <p class="text-xs text-gray-500">s/d {{ $item->tanggal_selesai->format('d/m/Y') }}</p>
+                                </td>
+                                <td class="px-4 py-3">
+                                    @php
+                                        $statusColors = [
+                                            'pending' => 'bg-yellow-100 text-yellow-800',
+                                            'approved' => 'bg-green-100 text-green-800',
+                                            'rejected' => 'bg-red-100 text-red-800',
+                                            'selesai' => 'bg-blue-100 text-blue-800',
+                                        ];
+                                    @endphp
+                                    <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {{ $statusColors[$item->status] ?? 'bg-gray-100 text-gray-800' }}">
+                                        {{ ucfirst($item->status) }}
+                                    </span>
+                                    @if($item->status === 'rejected' && $item->catatan_hr)
+                                        <div class="text-xs text-red-600 mt-1">
+                                            <button onclick="showCatatan('{{ addslashes($item->catatan_hr) }}')" class="underline">Lihat alasan</button>
+                                        </div>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3">
+                                    @if($item->surat_tugas)
+                                        <a href="{{ route('karyawan.perjalanan-dinas.download', $item->id) }}"
+                                           class="text-[#00a2e9] hover:text-[#0088c4] text-sm flex items-center space-x-1">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                            </svg>
+                                            <span>Download</span>
+                                        </a>
+                                    @else
+                                        <span class="text-xs text-gray-400">Tidak ada</span>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3">
+                                    <div class="flex items-center space-x-2">
+                                        @if($item->status === 'pending')
+                                            <a href="{{ route('karyawan.perjalanan-dinas.edit', $item->id) }}"
+                                               class="text-blue-600 hover:text-blue-800 text-sm">
+                                                Edit
+                                            </a>
+                                            <form action="{{ route('karyawan.perjalanan-dinas.destroy', $item->id) }}"
+                                                  method="POST" class="inline"
+                                                  onsubmit="return confirm('Hapus pengajuan ini?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-red-600 hover:text-red-800 text-sm">
+                                                    Hapus
+                                                </button>
+                                            </form>
+                                        @else
+                                            <span class="text-xs text-gray-400">-</span>
+                                        @endif
+                                    </div>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="6" class="px-4 py-8 text-center text-gray-500">
+                                    <svg class="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                    <p>Belum ada pengajuan perjalanan dinas.</p>
+                                    <a href="{{ route('karyawan.perjalanan-dinas.create') }}" class="text-[#00a2e9] hover:underline text-sm mt-2 inline-block">
+                                        Ajukan sekarang
+                                    </a>
+                                </td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="px-4 py-3 bg-gray-50 border-t border-gray-200">
+                    {{ $perjalananDinas->appends(request()->query())->links() }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Catatan -->
+<div id="catatanModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onclick="closeCatatan()"></div>
+        <div class="relative bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-[#161758]">Alasan Penolakan</h3>
+                <button onclick="closeCatatan()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="bg-red-50 rounded-lg p-4 border-l-4 border-red-500">
+                <p id="catatanText" class="text-gray-700"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showCatatan(text) {
+    document.getElementById('catatanText').textContent = text;
+    document.getElementById('catatanModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeCatatan() {
+    document.getElementById('catatanModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeCatatan();
+});
+</script>
+@endsection
