@@ -1,4 +1,5 @@
 <?php
+// app/Models/Absensi.php
 
 namespace App\Models;
 
@@ -70,7 +71,7 @@ class Absensi extends Model
      */
     public static function haversineDistance($lat1, $lon1, $lat2, $lon2)
     {
-        $earthRadius = 6371000; // meter
+        $earthRadius = 6371000;
 
         $dLat = deg2rad($lat2 - $lat1);
         $dLon = deg2rad($lon2 - $lon1);
