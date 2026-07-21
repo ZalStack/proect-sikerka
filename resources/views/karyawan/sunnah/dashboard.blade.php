@@ -113,18 +113,6 @@
                         </span>
                     </div>
                 </div>
-                <!-- Milestone Points Indicator -->
-                <div class="flex justify-between mt-2 px-1">
-                    @foreach([40, 75, 90, 100] as $point)
-                        <div class="flex flex-col items-center">
-                            <div id="milestone-dot-{{ $point }}"
-                                 class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full transition-all duration-500 {{ ($todayData->total_poin ?? 0) >= $point ? 'bg-[#2E7D3E] scale-125 shadow-lg' : 'bg-gray-300' }}">
-                            </div>
-                            <span class="text-[8px] sm:text-[10px] text-gray-400 mt-1">{{ $point }}</span>
-                        </div>
-                    @endforeach
-                </div>
-
                 <div id="milestone-message" class="mt-4 text-center font-semibold text-[#161758] transition-all duration-500 opacity-0 transform scale-95">
                 </div>
             </div>
