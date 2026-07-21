@@ -6,6 +6,7 @@ use App\Models\Karyawan;
 use App\Models\Absensi;
 use App\Models\Cuti;
 use App\Models\FhlAbsensi;
+use App\Models\PerjalananDinas;
 use App\Models\SunnahDaily;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,9 +24,7 @@ class HRDashboardController extends Controller
 
         // Absensi Statistics
         $absensiHariIni = Absensi::whereDate('tanggal', Carbon::today())->count();
-        $absensiTerlambat = Absensi::whereDate('tanggal', Carbon::today())
-            ->where('status', 'Terlambat')
-            ->count();
+        $absensiTerlambat = Absensi::whereDate('tanggal', Carbon::today())->where('status', 'Terlambat')->count();
 
         // Cuti Statistics
         $cutiPending = Cuti::where('status', 'pending')->count();
@@ -56,35 +55,13 @@ class HRDashboardController extends Controller
 
         // Recent Activities
         $karyawanTerbaru = Karyawan::latest()->take(5)->get();
-        $absensiTerbaru = Absensi::with('karyawan')
-            ->latest('check_in')
-            ->take(5)
-            ->get();
-        $cutiTerbaru = Cuti::with('karyawan')
-            ->latest('tanggal_pengajuan')
-            ->take(5)
-            ->get();
+        $absensiTerbaru = Absensi::with('karyawan')->latest('check_in')->take(5)->get();
+        $cutiTerbaru = Cuti::with('karyawan')->latest('tanggal_pengajuan')->take(5)->get();
 
-        return view('hr.dashboard', compact(
-            'totalKaryawan',
-            'totalHr',
-            'totalKaryawanAktif',
-            'totalKaryawanResigned',
-            'absensiHariIni',
-            'absensiTerlambat',
-            'cutiPending',
-            'cutiApproved',
-            'fhlHariIni',
-            'sunnahPending',
-            'sunnahBulanIni',
-            'absensiChart',
-            'statusKaryawanChart',
-            'cutiChart',
-            'topSunnah',
-            'karyawanTerbaru',
-            'absensiTerbaru',
-            'cutiTerbaru'
-        ));
+        // Perjalanan Dinas Terbaru
+        $perjalananDinasTerbaru = PerjalananDinas::with('karyawan')->latest('created_at')->take(6)->get();
+
+        return view('hr.dashboard', compact('totalKaryawan', 'totalHr', 'totalKaryawanAktif', 'totalKaryawanResigned', 'absensiHariIni', 'absensiTerlambat', 'cutiPending', 'cutiApproved', 'fhlHariIni', 'sunnahPending', 'sunnahBulanIni', 'absensiChart', 'statusKaryawanChart', 'cutiChart', 'topSunnah', 'karyawanTerbaru', 'absensiTerbaru', 'cutiTerbaru', 'perjalananDinasTerbaru'));
     }
 
     private function getAbsensiChartData()
@@ -100,7 +77,7 @@ class HRDashboardController extends Controller
 
         return [
             'labels' => $labels,
-            'data' => $data
+            'data' => $data,
         ];
     }
 
@@ -122,7 +99,7 @@ class HRDashboardController extends Controller
         return [
             'labels' => $statuses,
             'data' => $data,
-            'colors' => $colors
+            'colors' => $colors,
         ];
     }
 
@@ -137,27 +114,18 @@ class HRDashboardController extends Controller
             $month = Carbon::now()->subMonths($i);
             $labels[] = $month->format('M Y');
 
-            $approved[] = Cuti::where('status', 'approved')
-                ->whereMonth('tanggal_mulai', $month->month)
-                ->whereYear('tanggal_mulai', $month->year)
-                ->count();
+            $approved[] = Cuti::where('status', 'approved')->whereMonth('tanggal_mulai', $month->month)->whereYear('tanggal_mulai', $month->year)->count();
 
-            $pending[] = Cuti::where('status', 'pending')
-                ->whereMonth('tanggal_pengajuan', $month->month)
-                ->whereYear('tanggal_pengajuan', $month->year)
-                ->count();
+            $pending[] = Cuti::where('status', 'pending')->whereMonth('tanggal_pengajuan', $month->month)->whereYear('tanggal_pengajuan', $month->year)->count();
 
-            $rejected[] = Cuti::where('status', 'rejected')
-                ->whereMonth('tanggal_pengajuan', $month->month)
-                ->whereYear('tanggal_pengajuan', $month->year)
-                ->count();
+            $rejected[] = Cuti::where('status', 'rejected')->whereMonth('tanggal_pengajuan', $month->month)->whereYear('tanggal_pengajuan', $month->year)->count();
         }
 
         return [
             'labels' => $labels,
             'approved' => $approved,
             'pending' => $pending,
-            'rejected' => $rejected
+            'rejected' => $rejected,
         ];
     }
 

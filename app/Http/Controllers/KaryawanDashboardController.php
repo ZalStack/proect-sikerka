@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Absensi;
 use App\Models\Cuti;
 use App\Models\FhlAbsensi;
+use App\Models\PerjalananDinas;
 use App\Models\SunnahDaily;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,7 +13,7 @@ use Carbon\Carbon;
 
 class KaryawanDashboardController extends Controller
 {
-    public function index()
+   public function index()
     {
         $user = Auth::user();
 
@@ -86,6 +87,12 @@ class KaryawanDashboardController extends Controller
             ->take(5)
             ->get();
 
+        // Perjalanan Dinas Terbaru
+        $perjalananDinasTerbaru = PerjalananDinas::where('karyawan_id', $user->id)
+            ->latest('created_at')
+            ->take(6)
+            ->get();
+
         return view('karyawan.dashboard', compact(
             'user',
             'absensiHariIni',
@@ -103,7 +110,8 @@ class KaryawanDashboardController extends Controller
             'absensiChart',
             'sunnahChart',
             'absensiTerbaru',
-            'cutiTerbaru'
+            'cutiTerbaru',
+            'perjalananDinasTerbaru'
         ));
     }
 
