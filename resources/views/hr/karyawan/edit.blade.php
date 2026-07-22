@@ -282,7 +282,6 @@
                                         {{ old('divisi', $karyawan->divisi) === 'IT' ? 'selected' : '' }}>IT</option>
                                     <option value="KPJ"
                                         {{ old('divisi', $karyawan->divisi) === 'KPJ' ? 'selected' : '' }}>KPJ</option>
-                                    <!-- Perbaiki ini -->
                                     <option value="LPS"
                                         {{ old('divisi', $karyawan->divisi) === 'LPS' ? 'selected' : '' }}>LPS</option>
                                     <option value="MEDIA"

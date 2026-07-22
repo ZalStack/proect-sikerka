@@ -250,7 +250,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectedDateIso = "{{ $selectedDate->format('Y-m-d') }}";
     const serverTodayIso = "{{ $today->format('Y-m-d') }}";
     const milestones = @json($milestones);
-    let lastMilestoneReached = 0;
     let currentEntryPoin = {{ $todayData->total_poin ?? 0 }};
     let hasEntry = {{ $todayData ? 'true' : 'false' }};
     let statTotalHari = {{ $statistik['total_hari'] }};
@@ -267,48 +266,103 @@ document.addEventListener('DOMContentLoaded', function() {
         el.disabled = saving || isLocked;
     }
 
-    function playMilestoneSound(poin) {
+    // Kunci milestone terurut (40, 75, 90, 100)
+    const milestoneKeys = Object.keys(milestones).map(Number).sort((a, b) => a - b);
+
+    // Set milestone yang sedang tercapai berdasarkan poin saat ini
+    let reachedMilestones = new Set();
+
+    // Antrian audio, supaya jika beberapa milestone terlewati sekaligus,
+    // suara diputar satu per satu (tidak bertumpuk)
+    let audioQueue = [];
+    let isPlayingAudio = false;
+
+    function enqueueMilestoneAudio(milestoneKey, direction) {
+        audioQueue.push({ milestoneKey, direction });
+        processAudioQueue();
+    }
+
+    function processAudioQueue() {
+        if (isPlayingAudio || audioQueue.length === 0) return;
+        isPlayingAudio = true;
+
+        const { milestoneKey, direction } = audioQueue.shift();
+        const milestoneData = milestones[milestoneKey];
         const audio = document.getElementById('milestone-audio');
         const milestoneMessage = document.getElementById('milestone-message');
-        let milestoneKey = null;
-        let milestoneData = null;
 
-        const sortedKeys = Object.keys(milestones).map(Number).sort((a, b) => a - b);
-        for (const key of sortedKeys) {
-            if (poin >= key) {
-                milestoneKey = key;
-                milestoneData = milestones[key];
-            }
+        const message = direction === 'up'
+            ? milestoneData.message
+            : (milestoneData.message_turun || `Poinmu turun di bawah ${milestoneKey}%`);
+
+        milestoneMessage.textContent = message;
+        milestoneMessage.className = 'mt-4 text-center font-semibold text-[#161758] transition-all duration-500 opacity-100 transform scale-100';
+
+        const dot = document.getElementById(`milestone-dot-${milestoneKey}`);
+        if (dot && direction === 'up') {
+            dot.classList.add('milestone-active');
+            setTimeout(() => dot.classList.remove('milestone-active'), 3000);
         }
 
-        if (milestoneKey && milestoneKey > lastMilestoneReached && milestoneData) {
-            lastMilestoneReached = milestoneKey;
-            milestoneMessage.textContent = milestoneData.message;
-            milestoneMessage.className = 'mt-4 text-center font-semibold text-[#161758] transition-all duration-500 opacity-100 transform scale-100';
+        audio.src = `/storage/sounds/${milestoneData.sound}`;
+        audio.currentTime = 0;
+        const playPromise = audio.play();
 
-            const dot = document.getElementById(`milestone-dot-${milestoneKey}`);
-            if (dot) {
-                dot.classList.add('milestone-active');
-                setTimeout(() => dot.classList.remove('milestone-active'), 3000);
-            }
+        if (direction === 'up' && milestoneKey === 100) {
+            triggerConfetti();
+            document.getElementById('progress-bar').classList.add('animate-pulse');
+            setTimeout(() => {
+                document.getElementById('progress-bar').classList.remove('animate-pulse');
+            }, 3000);
+        }
 
-            const audioPath = `/storage/sounds/${milestoneData.sound}`;
-            audio.src = audioPath;
-            audio.currentTime = 0;
-            audio.play().catch(e => console.log('Audio play failed:', e));
+        const duration = (milestoneData.duration || 2) * 1000 + 500;
 
-            if (milestoneKey === 100) {
-                triggerConfetti();
-                document.getElementById('progress-bar').classList.add('animate-pulse');
-                setTimeout(() => {
-                    document.getElementById('progress-bar').classList.remove('animate-pulse');
-                }, 3000);
-            }
-
-            const duration = (milestoneData.duration || 2) * 1000 + 1000;
+        const finishPlayback = () => {
             setTimeout(() => {
                 milestoneMessage.className = 'mt-4 text-center font-semibold text-[#161758] transition-all duration-500 opacity-0 transform scale-95';
-            }, duration);
+            }, 300);
+            isPlayingAudio = false;
+            processAudioQueue();
+        };
+
+        if (playPromise && typeof playPromise.then === 'function') {
+            playPromise
+                .then(() => setTimeout(finishPlayback, duration))
+                .catch((e) => {
+                    console.log('Audio play failed:', e);
+                    setTimeout(finishPlayback, duration);
+                });
+        } else {
+            setTimeout(finishPlayback, duration);
+        }
+    }
+
+    // Deteksi milestone yang baru tercapai (naik) atau baru lepas (turun)
+    // dibandingkan dengan state poin sebelumnya, lalu putar suara untuk tiap milestone yang terlewati
+    function checkMilestoneCrossing(newPoin) {
+        const newReached = new Set(milestoneKeys.filter(k => newPoin >= k));
+
+        milestoneKeys.forEach(key => {
+            const wasReached = reachedMilestones.has(key);
+            const isReached = newReached.has(key);
+
+            if (isReached && !wasReached) {
+                enqueueMilestoneAudio(key, 'up');
+            } else if (!isReached && wasReached) {
+                enqueueMilestoneAudio(key, 'down');
+            }
+        });
+
+        reachedMilestones = newReached;
+    }
+
+    // Pengumuman awal saat halaman dimuat: putar suara milestone tertinggi yang sudah tercapai (jika ada)
+    function announceInitialMilestone(poin) {
+        reachedMilestones = new Set(milestoneKeys.filter(k => poin >= k));
+        if (reachedMilestones.size > 0) {
+            const highest = Math.max(...reachedMilestones);
+            setTimeout(() => enqueueMilestoneAudio(highest, 'up'), 500);
         }
     }
 
@@ -390,7 +444,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        playMilestoneSound(poin);
+        checkMilestoneCrossing(poin);
     }
 
     function simpanChecklist(fieldName, checkbox) {
@@ -570,11 +624,33 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     const initialPoin = {{ $todayData->total_poin ?? 0 }};
-    updateProgressBar(initialPoin);
 
-    if (initialPoin > 0) {
-        setTimeout(() => playMilestoneSound(initialPoin), 500);
-    }
+    // Set tampilan progress bar dulu tanpa memicu deteksi crossing (karena reachedMilestones
+    // masih kosong di titik ini), lalu baru umumkan milestone yang sudah tercapai sejak awal.
+    (function initProgressBarOnly(poin) {
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const poinCounter = document.getElementById('poin-counter');
+        const percentage = Math.min(poin, 100);
+        progressBar.style.width = percentage + '%';
+        progressText.textContent = percentage + '%';
+        poinCounter.textContent = poin;
+
+        [40, 75, 90, 100].forEach(point => {
+            const dot = document.getElementById(`milestone-dot-${point}`);
+            if (dot) {
+                if (poin >= point) {
+                    dot.classList.remove('bg-gray-300');
+                    dot.classList.add('bg-[#2E7D3E]', 'scale-125', 'shadow-lg');
+                } else {
+                    dot.classList.add('bg-gray-300');
+                    dot.classList.remove('bg-[#2E7D3E]', 'scale-125', 'shadow-lg');
+                }
+            }
+        });
+    })(initialPoin);
+
+    announceInitialMilestone(initialPoin);
 });
 </script>
 @endsection

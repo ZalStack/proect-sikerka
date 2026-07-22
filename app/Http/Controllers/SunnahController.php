@@ -66,10 +66,10 @@ class SunnahController extends Controller
 
         // Point milestone untuk motivasi
         $milestones = [
-            40 => ['message' => 'Bangun tingkatkan lagi ibadahmu!', 'sound' => '40-point.mp3', 'duration' => 2],
-            75 => ['message' => 'Ayo sedikit lagi!', 'sound' => '75-point.mp3', 'duration' => 2],
-            90 => ['message' => 'Aku yakin kamu pasti bisa!', 'sound' => '90-point.mp3', 'duration' => 2],
-            100 => ['message' => 'Wah hebat kamu mencapai suprasional!', 'sound' => '100-point.mp3', 'duration' => 3],
+            40 => ['message' => 'Bangun tingkatkan lagi ibadahmu!', 'message_turun' => 'Poinmu turun di bawah 40%, ayo semangat lagi!', 'sound' => 'point-40.mp4', 'duration' => 2],
+            75 => ['message' => 'Ayo sedikit lagi!', 'message_turun' => 'Poinmu turun di bawah 75%, jangan menyerah!', 'sound' => 'point-75.mp4', 'duration' => 2],
+            90 => ['message' => 'Aku yakin kamu pasti bisa!', 'message_turun' => 'Poinmu turun di bawah 90%, sedikit lagi tadi!', 'sound' => 'point-90.mp4', 'duration' => 2],
+            100 => ['message' => 'Wah hebat kamu mencapai suprasional!', 'message_turun' => 'Poinmu turun dari 100%, ayo kembali sempurnakan!', 'sound' => 'point-100.mp4', 'duration' => 3],
         ];
 
         return view('karyawan.sunnah.dashboard', compact(

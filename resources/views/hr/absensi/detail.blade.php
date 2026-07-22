@@ -4,14 +4,14 @@
 @section('content')
 <div class="flex min-h-screen">
     @include('layouts.sidebar')
-    <div class="flex-1 transition-all duration-300 md:ml-64 pt-6">
-        <div class="p-4 sm:p-6">
+    <div class="flex-1 transition-all duration-300 md:ml-64 pt-6 w-full">
+        <div class="p-3 sm:p-6">
             <div class="mb-6">
                 <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">Detail Absensi</h1>
                 <p class="text-sm sm:text-base text-[#27438D]">Informasi lengkap absensi karyawan</p>
             </div>
 
-            <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
+            <div class="bg-white rounded-lg shadow-md p-3 sm:p-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     <div>
                         <h3 class="text-base sm:text-lg font-semibold text-[#161758] border-b border-gray-200 pb-2 mb-4">Informasi Karyawan</h3>
@@ -62,9 +62,7 @@
                                 <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Status</label>
                                 <p class="text-sm sm:text-base text-[#27438D]">
                                     <span class="px-2 py-1 rounded-full text-xs font-medium
-                                        {{ $absensi->status == 'Hadir' ? 'bg-[#2E7D3E] text-white' :
-                                           ($absensi->status == 'Izin' ? 'bg-[#FCC626] text-[#1B1B1B]' :
-                                           ($absensi->status == 'Sakit' ? 'bg-[#00a2e9] text-white' : 'bg-[#ec1d1d] text-white')) }}">
+                                        {{ $absensi->status == 'Hadir' ? 'bg-[#2E7D3E] text-white' : ($absensi->status == 'Izin' ? 'bg-[#FCC626] text-[#1B1B1B]' : ($absensi->status == 'Sakit' ? 'bg-[#00a2e9] text-white' : 'bg-[#ec1d1d] text-white')) }}">
                                         {{ $absensi->status }}
                                     </span>
                                 </p>
@@ -76,14 +74,14 @@
                 <!-- Lokasi Absensi -->
                 <div class="mt-6 pt-6 border-t border-gray-200">
                     <h3 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">📍 Lokasi Absensi</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                         <div class="bg-[#F5F5F5] rounded-lg p-3">
                             <p class="text-xs text-[#1B1B1B]">Latitude</p>
-                            <p class="text-sm font-semibold text-[#161758]">{{ $absensi->latitude ?? '-' }}</p>
+                            <p class="text-sm font-semibold text-[#161758] break-all">{{ $absensi->latitude ?? '-' }}</p>
                         </div>
                         <div class="bg-[#F5F5F5] rounded-lg p-3">
                             <p class="text-xs text-[#1B1B1B]">Longitude</p>
-                            <p class="text-sm font-semibold text-[#161758]">{{ $absensi->longitude ?? '-' }}</p>
+                            <p class="text-sm font-semibold text-[#161758] break-all">{{ $absensi->longitude ?? '-' }}</p>
                         </div>
                         <div class="bg-[#F5F5F5] rounded-lg p-3">
                             <p class="text-xs text-[#1B1B1B]">Akurasi</p>
@@ -123,11 +121,11 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         <div class="bg-[#F5F5F5] rounded-lg p-3">
                             <p class="text-xs text-[#1B1B1B]">Alamat IP</p>
-                            <p class="text-sm font-semibold text-[#161758] break-words">{{ $absensi->ip_address ?? '-' }}</p>
+                            <p class="text-sm font-semibold text-[#161758] break-all">{{ $absensi->ip_address ?? '-' }}</p>
                         </div>
                         <div class="bg-[#F5F5F5] rounded-lg p-3 sm:col-span-2 lg:col-span-2">
                             <p class="text-xs text-[#1B1B1B]">Perangkat / Browser</p>
-                            <p class="text-xs font-semibold text-[#161758] break-words">{{ $absensi->user_agent ?? '-' }}</p>
+                            <p class="text-xs font-semibold text-[#161758] break-all">{{ $absensi->user_agent ?? '-' }}</p>
                         </div>
                     </div>
                 </div>

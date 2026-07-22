@@ -13,9 +13,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // ==========================================================
-        // Data HR (dipertahankan sesuai data yang sudah ada)
-        // ==========================================================
         Karyawan::create([
             'kode_pegawai' => 'HRD001',
             'email' => 'hrd@company.com',
@@ -639,11 +636,6 @@ class DatabaseSeeder extends Seeder
         $this->command->info('👥 Total ' . count($karyawanData) . ' employees seeded.');
     }
 
-    /**
-     * Generate email from full name
-     * Format: firstname.lastname@gmail.com
-     * Jika ada gelar (Dr., M.Si., dll) akan diabaikan
-     */
     private function generateEmail($fullName): string
     {
         // Remove titles and suffixes (Dr., M.Si., S.E., etc)

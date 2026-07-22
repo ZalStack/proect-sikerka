@@ -11,11 +11,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="font-['Poppins'] antialiased bg-[#F5F5F5]">
-    <div class="min-h-screen bg-[#F5F5F5]">
+<body class="font-['Poppins'] antialiased bg-[#F5F5F5] overflow-x-hidden">
+    <div class="min-h-screen bg-[#F5F5F5] flex flex-col">
         @include('layouts.navigation')
         <!-- Page Content -->
-        <main>
+        <main class="flex-1 pt-14 sm:pt-16">
             @yield('content')
         </main>
         @include('layouts.footer')
