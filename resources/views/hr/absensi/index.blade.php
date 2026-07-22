@@ -29,7 +29,7 @@
                     <h3 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">Ringkasan Status</h3>
                     <canvas id="chartAbsensi" height="220"></canvas>
                 </div>
-                <div class="lg:col-span-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <div class="lg:col-span-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
                     <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 text-center">
                         <p class="text-xs sm:text-sm text-[#1B1B1B]">Total</p>
                         <p class="text-xl sm:text-2xl font-bold text-[#161758]">{{ $chartData['total'] ?? 0 }}</p>
@@ -49,6 +49,10 @@
                     <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 text-center">
                         <p class="text-xs sm:text-sm text-[#1B1B1B]">Alpha</p>
                         <p class="text-xl sm:text-2xl font-bold text-[#ec1d1d]">{{ $chartData['alpha'] ?? 0 }}</p>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 text-center">
+                        <p class="text-xs sm:text-sm text-[#1B1B1B]">Perjalanan Dinas</p>
+                        <p class="text-xl sm:text-2xl font-bold text-purple-600">{{ $chartData['perjalanan_dinas'] ?? 0 }}</p>
                     </div>
                     <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 text-center">
                         <p class="text-xs sm:text-sm text-[#1B1B1B]">Valid Lokasi</p>
@@ -148,8 +152,17 @@
                                     <td class="px-2 sm:px-4 py-2 text-xs hidden md:table-cell">{{ $absen->check_out ? \Carbon\Carbon::parse($absen->check_out)->format('H:i:s') : '-' }}</td>
                                     <td class="px-2 sm:px-4 py-2 text-xs hidden lg:table-cell">{{ $absen->kantor_cabang ?? '-' }}</td>
                                     <td class="px-2 sm:px-4 py-2 text-xs">
-                                        <span class="px-2 py-1 rounded-full text-[10px] font-medium
-                                            {{ $absen->status == 'Hadir' ? 'bg-[#2E7D3E] text-white' : ($absen->status == 'Izin' ? 'bg-[#FCC626] text-[#1B1B1B]' : ($absen->status == 'Sakit' ? 'bg-[#00a2e9] text-white' : 'bg-[#ec1d1d] text-white')) }}">
+                                        @php
+                                            $statusClass = match($absen->status) {
+                                                'Hadir' => 'bg-[#2E7D3E] text-white',
+                                                'Izin' => 'bg-[#FCC626] text-[#1B1B1B]',
+                                                'Sakit' => 'bg-[#00a2e9] text-white',
+                                                'Alpha' => 'bg-[#ec1d1d] text-white',
+                                                'Perjalanan Dinas' => 'bg-purple-600 text-white',
+                                                default => 'bg-gray-200 text-gray-800',
+                                            };
+                                        @endphp
+                                        <span class="px-2 py-1 rounded-full text-[10px] font-medium {{ $statusClass }}">
                                             {{ $absen->status }}
                                         </span>
                                     </td>
@@ -221,15 +234,16 @@
             new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Hadir', 'Izin', 'Sakit', 'Alpha'],
+                    labels: ['Hadir', 'Izin', 'Sakit', 'Alpha', 'Perjalanan Dinas'],
                     datasets: [{
                         data: [
                             {{ $chartData['hadir'] ?? 0 }},
                             {{ $chartData['izin'] ?? 0 }},
                             {{ $chartData['sakit'] ?? 0 }},
-                            {{ $chartData['alpha'] ?? 0 }}
+                            {{ $chartData['alpha'] ?? 0 }},
+                            {{ $chartData['perjalanan_dinas'] ?? 0 }}
                         ],
-                        backgroundColor: ['#2E7D3E', '#FCC626', '#00a2e9', '#ec1d1d'],
+                        backgroundColor: ['#2E7D3E', '#FCC626', '#00a2e9', '#ec1d1d', '#9333ea'],
                         borderWidth: 0,
                         hoverOffset: 8
                     }]

@@ -113,8 +113,6 @@
                         </span>
                     </div>
                 </div>
-                <div id="milestone-message" class="mt-4 text-center font-semibold text-[#161758] transition-all duration-500 opacity-0 transform scale-95">
-                </div>
             </div>
 
             <!-- Sholat Berjamaah & Kegiatan Sunnah Lainnya (digabung dalam satu grid) -->
@@ -249,7 +247,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const isLocked = @json($isLocked);
     const selectedDateIso = "{{ $selectedDate->format('Y-m-d') }}";
     const serverTodayIso = "{{ $today->format('Y-m-d') }}";
-    const milestones = @json($milestones);
+    // Konfigurasi suara milestone (file & durasi asli file, dalam detik)
+    const milestoneSounds = {
+        40: { file: 'point-40.mp3', duration: 5 },
+        75: { file: 'point-75.mp3', duration: 3 },
+        90: { file: 'point-90.mp3', duration: 4 },
+        100: { file: 'point-100.mp3', duration: 7 },
+    };
     let currentEntryPoin = {{ $todayData->total_poin ?? 0 }};
     let hasEntry = {{ $todayData ? 'true' : 'false' }};
     let statTotalHari = {{ $statistik['total_hari'] }};
@@ -267,7 +271,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Kunci milestone terurut (40, 75, 90, 100)
-    const milestoneKeys = Object.keys(milestones).map(Number).sort((a, b) => a - b);
+    const milestoneKeys = Object.keys(milestoneSounds).map(Number).sort((a, b) => a - b);
 
     // Set milestone yang sedang tercapai berdasarkan poin saat ini
     let reachedMilestones = new Set();
@@ -287,16 +291,8 @@ document.addEventListener('DOMContentLoaded', function() {
         isPlayingAudio = true;
 
         const { milestoneKey, direction } = audioQueue.shift();
-        const milestoneData = milestones[milestoneKey];
+        const milestoneData = milestoneSounds[milestoneKey];
         const audio = document.getElementById('milestone-audio');
-        const milestoneMessage = document.getElementById('milestone-message');
-
-        const message = direction === 'up'
-            ? milestoneData.message
-            : (milestoneData.message_turun || `Poinmu turun di bawah ${milestoneKey}%`);
-
-        milestoneMessage.textContent = message;
-        milestoneMessage.className = 'mt-4 text-center font-semibold text-[#161758] transition-all duration-500 opacity-100 transform scale-100';
 
         const dot = document.getElementById(`milestone-dot-${milestoneKey}`);
         if (dot && direction === 'up') {
@@ -304,7 +300,7 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => dot.classList.remove('milestone-active'), 3000);
         }
 
-        audio.src = `/storage/sounds/${milestoneData.sound}`;
+        audio.src = `/storage/sounds/${milestoneData.file}`;
         audio.currentTime = 0;
         const playPromise = audio.play();
 
@@ -316,12 +312,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 3000);
         }
 
-        const duration = (milestoneData.duration || 2) * 1000 + 500;
+        // Durasi sesuai panjang file mp3 aslinya (40=5s, 75=3s, 90=4s, 100=7s)
+        const duration = milestoneData.duration * 1000 + 300;
 
         const finishPlayback = () => {
-            setTimeout(() => {
-                milestoneMessage.className = 'mt-4 text-center font-semibold text-[#161758] transition-all duration-500 opacity-0 transform scale-95';
-            }, 300);
             isPlayingAudio = false;
             processAudioQueue();
         };

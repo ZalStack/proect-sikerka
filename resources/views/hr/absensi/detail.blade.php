@@ -61,8 +61,17 @@
                             <div>
                                 <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Status</label>
                                 <p class="text-sm sm:text-base text-[#27438D]">
-                                    <span class="px-2 py-1 rounded-full text-xs font-medium
-                                        {{ $absensi->status == 'Hadir' ? 'bg-[#2E7D3E] text-white' : ($absensi->status == 'Izin' ? 'bg-[#FCC626] text-[#1B1B1B]' : ($absensi->status == 'Sakit' ? 'bg-[#00a2e9] text-white' : 'bg-[#ec1d1d] text-white')) }}">
+                                    @php
+                                        $statusClass = match($absensi->status) {
+                                            'Hadir' => 'bg-[#2E7D3E] text-white',
+                                            'Izin' => 'bg-[#FCC626] text-[#1B1B1B]',
+                                            'Sakit' => 'bg-[#00a2e9] text-white',
+                                            'Alpha' => 'bg-[#ec1d1d] text-white',
+                                            'Perjalanan Dinas' => 'bg-purple-600 text-white',
+                                            default => 'bg-gray-200 text-gray-800',
+                                        };
+                                    @endphp
+                                    <span class="px-2 py-1 rounded-full text-xs font-medium {{ $statusClass }}">
                                         {{ $absensi->status }}
                                     </span>
                                 </p>
@@ -144,6 +153,7 @@
                                 <option value="Izin" {{ $absensi->status == 'Izin' ? 'selected' : '' }}>Izin</option>
                                 <option value="Sakit" {{ $absensi->status == 'Sakit' ? 'selected' : '' }}>Sakit</option>
                                 <option value="Alpha" {{ $absensi->status == 'Alpha' ? 'selected' : '' }}>Alpha</option>
+                                <option value="Perjalanan Dinas" {{ $absensi->status == 'Perjalanan Dinas' ? 'selected' : '' }}>Perjalanan Dinas</option>
                             </select>
                         </div>
                         <div>

@@ -9,6 +9,9 @@ class Absensi extends Model
 {
     use HasFactory;
 
+    // Daftar status yang diperbolehkan
+    const STATUSES = ['Hadir', 'Izin', 'Sakit', 'Alpha', 'Perjalanan Dinas'];
+
     protected $fillable = [
         'karyawan_id',
         'tanggal',
@@ -123,23 +126,12 @@ class Absensi extends Model
     }
 
     /**
-     * Batas akurasi GPS maksimum yang masih dianggap layak dipakai (meter).
-     * Bacaan GPS yang lebih buruk dari ini (mis. dari sinyal wifi/cell tower,
-     * indoor, atau aplikasi fake-GPS yang malas mensimulasikan akurasi)
-     * ditolak karena tidak bisa dipercaya untuk validasi radius 50 meter.
+     * Batas akurasi GPS maksimum (meter)
      */
-    const MAX_GPS_ACCURACY = 75; // meter
+    const MAX_GPS_ACCURACY = 75;
 
     /**
-     * Cek apakah lokasi berada dalam radius tertentu dari salah satu kantor.
-     *
-     * Selain jarak, fungsi ini juga mempertimbangkan akurasi GPS ($accuracy)
-     * agar hasil "valid/tidak valid" lebih bisa dipercaya:
-     * - Jika akurasi tidak masuk akal (<= 0) atau lebih buruk dari
-     *   MAX_GPS_ACCURACY meter, lokasi otomatis ditolak (reason: poor_accuracy).
-     * - Jarak yang dipakai untuk keputusan tetap jarak sebenarnya ke kantor
-     *   (radius TIDAK diperlonggar oleh akurasi) supaya orang tidak bisa lolos
-     *   hanya dengan melaporkan akurasi yang jelek/besar.
+     * Cek validitas lokasi
      */
     public static function isValidLocation($latitude, $longitude, $radius = 50, $accuracy = null)
     {
@@ -147,7 +139,6 @@ class Absensi extends Model
         $nearestLocation = null;
         $nearestDistance = PHP_FLOAT_MAX;
 
-        // Validasi kualitas sinyal GPS terlebih dahulu
         $accuracyOk = true;
         $accuracyReason = null;
         if ($accuracy !== null) {

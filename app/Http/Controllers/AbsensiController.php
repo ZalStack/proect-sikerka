@@ -23,9 +23,6 @@ class AbsensiController extends Controller
 
     /**
      * Konfigurasi titik koordinat kantor KPM.
-     * Diambil dari App\Models\Absensi supaya HANYA ada satu sumber data
-     * (dipakai juga oleh views/hr/absensi/index.blade.php), sehingga
-     * menambah/mengubah titik kantor cukup dilakukan di satu tempat saja.
      */
     private function getOfficeLocations(): array
     {
@@ -42,8 +39,6 @@ class AbsensiController extends Controller
 
     /**
      * Cek apakah lokasi (dan akurasi GPS-nya) valid untuk absensi.
-     * Validasi jarak & akurasi dilakukan sepenuhnya di server (Absensi model)
-     * -- nilai "valid" dari client TIDAK PERNAH dipercaya.
      */
     private function isValidLocation($latitude, $longitude, $radius = 50, $accuracy = null): array
     {
@@ -58,9 +53,6 @@ class AbsensiController extends Controller
         $request->validate([
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
-            // Akurasi WAJIB dikirim dan harus masuk akal (perangkat GPS asli
-            // selalu melaporkan akurasi > 0). Ini mempersulit klien yang
-            // mencoba mengosongkan/memalsukan nilai akurasi.
             'accuracy' => 'required|numeric|min:0.1|max:5000',
         ]);
 
@@ -68,13 +60,7 @@ class AbsensiController extends Controller
         $today = Carbon::today($this->officeTimezone);
         $now = Carbon::now($this->officeTimezone);
 
-        // Validasi lokasi + akurasi GPS, 100% dihitung ulang di server
-        $locationCheck = $this->isValidLocation(
-            (float) $request->latitude,
-            (float) $request->longitude,
-            $this->maxRadius,
-            (float) $request->accuracy
-        );
+        $locationCheck = $this->isValidLocation((float) $request->latitude, (float) $request->longitude, $this->maxRadius, (float) $request->accuracy);
 
         if (!$locationCheck['valid']) {
             Log::warning('Percobaan check-in ditolak', [
@@ -88,38 +74,41 @@ class AbsensiController extends Controller
             ]);
 
             if (!$locationCheck['accuracy_ok']) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Absensi ditolak! Sinyal GPS Anda kurang akurat (± ' .
-                        $request->accuracy . ' meter). Coba pindah ke area terbuka lalu ulangi.',
-                    'distance' => $locationCheck['distance'],
-                    'nearest_location' => $locationCheck['nearest'],
-                    'code' => 'POOR_GPS_ACCURACY',
-                ], 403);
+                return response()->json(
+                    [
+                        'success' => false,
+                        'message' => 'Absensi ditolak! Sinyal GPS Anda kurang akurat (± ' . $request->accuracy . ' meter). Coba pindah ke area terbuka lalu ulangi.',
+                        'distance' => $locationCheck['distance'],
+                        'nearest_location' => $locationCheck['nearest'],
+                        'code' => 'POOR_GPS_ACCURACY',
+                    ],
+                    403,
+                );
             }
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Absensi ditolak! Anda berada di luar radius kantor (50 meter). ' .
-                    'Jarak terdekat: ' . $locationCheck['distance'] . ' meter dari ' .
-                    ($locationCheck['nearest'] ?? 'lokasi terdekat'),
-                'distance' => $locationCheck['distance'],
-                'nearest_location' => $locationCheck['nearest'],
-                'code' => 'INVALID_LOCATION',
-            ], 403);
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Absensi ditolak! Anda berada di luar radius kantor (50 meter). ' . 'Jarak terdekat: ' . $locationCheck['distance'] . ' meter dari ' . ($locationCheck['nearest'] ?? 'lokasi terdekat'),
+                    'distance' => $locationCheck['distance'],
+                    'nearest_location' => $locationCheck['nearest'],
+                    'code' => 'INVALID_LOCATION',
+                ],
+                403,
+            );
         }
 
-        // Cek absensi hari ini
-        $absensi = Absensi::where('karyawan_id', $user->id)
-            ->whereDate('tanggal', $today)
-            ->first();
+        $absensi = Absensi::where('karyawan_id', $user->id)->whereDate('tanggal', $today)->first();
 
         if ($absensi && $absensi->check_in) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Anda sudah melakukan check-in hari ini!',
-                'code' => 'ALREADY_CHECKIN',
-            ], 400);
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Anda sudah melakukan check-in hari ini!',
+                    'code' => 'ALREADY_CHECKIN',
+                ],
+                400,
+            );
         }
 
         $absensi = Absensi::updateOrCreate(
@@ -139,7 +128,7 @@ class AbsensiController extends Controller
                 'user_agent' => substr((string) $request->userAgent(), 0, 255),
                 'is_suspicious' => false,
                 'suspicious_reason' => null,
-            ]
+            ],
         );
 
         return response()->json([
@@ -175,61 +164,59 @@ class AbsensiController extends Controller
         $today = Carbon::today($this->officeTimezone);
         $now = Carbon::now($this->officeTimezone);
 
-        // Validasi lokasi + akurasi GPS, 100% dihitung ulang di server
-        $locationCheck = $this->isValidLocation(
-            (float) $request->latitude,
-            (float) $request->longitude,
-            $this->maxRadius,
-            (float) $request->accuracy
-        );
+        $locationCheck = $this->isValidLocation((float) $request->latitude, (float) $request->longitude, $this->maxRadius, (float) $request->accuracy);
 
         if (!$locationCheck['valid']) {
             if (!$locationCheck['accuracy_ok']) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Absensi ditolak! Sinyal GPS Anda kurang akurat (± ' .
-                        $request->accuracy . ' meter). Coba pindah ke area terbuka lalu ulangi.',
-                    'distance' => $locationCheck['distance'],
-                    'nearest_location' => $locationCheck['nearest'],
-                    'code' => 'POOR_GPS_ACCURACY',
-                ], 403);
+                return response()->json(
+                    [
+                        'success' => false,
+                        'message' => 'Absensi ditolak! Sinyal GPS Anda kurang akurat (± ' . $request->accuracy . ' meter). Coba pindah ke area terbuka lalu ulangi.',
+                        'distance' => $locationCheck['distance'],
+                        'nearest_location' => $locationCheck['nearest'],
+                        'code' => 'POOR_GPS_ACCURACY',
+                    ],
+                    403,
+                );
             }
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Absensi ditolak! Anda berada di luar radius kantor (50 meter). ' .
-                    'Jarak terdekat: ' . $locationCheck['distance'] . ' meter dari ' .
-                    ($locationCheck['nearest'] ?? 'lokasi terdekat'),
-                'distance' => $locationCheck['distance'],
-                'nearest_location' => $locationCheck['nearest'],
-                'code' => 'INVALID_LOCATION',
-            ], 403);
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Absensi ditolak! Anda berada di luar radius kantor (50 meter). ' . 'Jarak terdekat: ' . $locationCheck['distance'] . ' meter dari ' . ($locationCheck['nearest'] ?? 'lokasi terdekat'),
+                    'distance' => $locationCheck['distance'],
+                    'nearest_location' => $locationCheck['nearest'],
+                    'code' => 'INVALID_LOCATION',
+                ],
+                403,
+            );
         }
 
-        // Cek absensi hari ini
-        $absensi = Absensi::where('karyawan_id', $user->id)
-            ->whereDate('tanggal', $today)
-            ->first();
+        $absensi = Absensi::where('karyawan_id', $user->id)->whereDate('tanggal', $today)->first();
 
         if (!$absensi || !$absensi->check_in) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Anda belum melakukan check-in!',
-                'code' => 'NO_CHECKIN',
-            ], 400);
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Anda belum melakukan check-in!',
+                    'code' => 'NO_CHECKIN',
+                ],
+                400,
+            );
         }
 
         if ($absensi->check_out) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Anda sudah melakukan check-out hari ini!',
-                'code' => 'ALREADY_CHECKOUT',
-            ], 400);
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Anda sudah melakukan check-out hari ini!',
+                    'code' => 'ALREADY_CHECKOUT',
+                ],
+                400,
+            );
         }
 
         $checkInTime = Carbon::parse($absensi->check_in);
-        // total jam kerja dihitung murni dari jam server (bukan input klien),
-        // sehingga tidak bisa dimanipulasi dari sisi browser/HP.
         $totalJamKerja = max(0, (int) round($checkInTime->diffInMinutes($now) / 60));
 
         $absensi->total_jam_kerja = $totalJamKerja;
@@ -269,9 +256,7 @@ class AbsensiController extends Controller
         $today = Carbon::today($this->officeTimezone);
         $now = Carbon::now($this->officeTimezone);
 
-        $absensi = Absensi::where('karyawan_id', $user->id)
-            ->whereDate('tanggal', $today)
-            ->first();
+        $absensi = Absensi::where('karyawan_id', $user->id)->whereDate('tanggal', $today)->first();
 
         $todayName = $now->locale('id')->isoFormat('dddd');
 
@@ -327,8 +312,7 @@ class AbsensiController extends Controller
         }
 
         if ($request->filled('month') && $request->filled('year')) {
-            $query->whereMonth('tanggal', $request->month)
-                  ->whereYear('tanggal', $request->year);
+            $query->whereMonth('tanggal', $request->month)->whereYear('tanggal', $request->year);
         }
 
         if ($request->filled('karyawan_id')) {
@@ -348,29 +332,22 @@ class AbsensiController extends Controller
         $user = Auth::user();
         $today = Carbon::today($this->officeTimezone);
 
-        $todayAbsensi = Absensi::where('karyawan_id', $user->id)
-            ->whereDate('tanggal', $today)
-            ->first();
+        $todayAbsensi = Absensi::where('karyawan_id', $user->id)->whereDate('tanggal', $today)->first();
 
         $last7Days = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = Carbon::today($this->officeTimezone)->subDays($i);
-            $absensi = Absensi::where('karyawan_id', $user->id)
-                ->whereDate('tanggal', $date)
-                ->first();
+            $absensi = Absensi::where('karyawan_id', $user->id)->whereDate('tanggal', $date)->first();
 
             $distance = null;
             if ($absensi && $absensi->latitude && $absensi->longitude) {
                 $locations = $this->getOfficeLocations();
                 $minDist = PHP_FLOAT_MAX;
                 foreach ($locations as $coords) {
-                    $d = $this->haversineDistance(
-                        $absensi->latitude,
-                        $absensi->longitude,
-                        $coords['latitude'],
-                        $coords['longitude']
-                    );
-                    if ($d < $minDist) $minDist = $d;
+                    $d = $this->haversineDistance($absensi->latitude, $absensi->longitude, $coords['latitude'], $coords['longitude']);
+                    if ($d < $minDist) {
+                        $minDist = $d;
+                    }
                 }
                 $distance = $minDist < PHP_FLOAT_MAX ? round($minDist, 1) : null;
             }
@@ -400,8 +377,7 @@ class AbsensiController extends Controller
         }
 
         if ($request->filled('month') && $request->filled('year')) {
-            $query->whereMonth('tanggal', $request->month)
-                  ->whereYear('tanggal', $request->year);
+            $query->whereMonth('tanggal', $request->month)->whereYear('tanggal', $request->year);
         }
 
         if ($request->filled('karyawan_id')) {
@@ -424,14 +400,9 @@ class AbsensiController extends Controller
 
         $callback = function () use ($absensis) {
             $file = fopen('php://output', 'w');
-            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fprintf($file, chr(0xef) . chr(0xbb) . chr(0xbf));
 
-            fputcsv($file, [
-                'No', 'Nama Karyawan', 'Kode Pegawai', 'Tanggal',
-                'Check In', 'Check Out', 'Kantor Cabang', 'Status',
-                'Total Jam Kerja', 'Latitude', 'Longitude',
-                'Valid Lokasi', 'Jarak Terdekat (meter)', 'Keterangan'
-            ]);
+            fputcsv($file, ['No', 'Nama Karyawan', 'Kode Pegawai', 'Tanggal', 'Check In', 'Check Out', 'Kantor Cabang', 'Status', 'Total Jam Kerja', 'Latitude', 'Longitude', 'Valid Lokasi', 'Jarak Terdekat (meter)', 'Keterangan']);
 
             $no = 1;
             foreach ($absensis as $absen) {
@@ -440,33 +411,15 @@ class AbsensiController extends Controller
                     $locations = $this->getOfficeLocations();
                     $minDist = PHP_FLOAT_MAX;
                     foreach ($locations as $coords) {
-                        $d = $this->haversineDistance(
-                            $absen->latitude,
-                            $absen->longitude,
-                            $coords['latitude'],
-                            $coords['longitude']
-                        );
-                        if ($d < $minDist) $minDist = $d;
+                        $d = $this->haversineDistance($absen->latitude, $absen->longitude, $coords['latitude'], $coords['longitude']);
+                        if ($d < $minDist) {
+                            $minDist = $d;
+                        }
                     }
                     $distance = $minDist < PHP_FLOAT_MAX ? round($minDist, 2) : '-';
                 }
 
-                fputcsv($file, [
-                    $no++,
-                    $absen->karyawan->nama_lengkap,
-                    $absen->karyawan->kode_pegawai,
-                    $absen->tanggal->format('d-m-Y'),
-                    $absen->check_in ? Carbon::parse($absen->check_in)->format('H:i') : '-',
-                    $absen->check_out ? Carbon::parse($absen->check_out)->format('H:i') : '-',
-                    $absen->kantor_cabang,
-                    $absen->status,
-                    $absen->total_jam_kerja . ' jam',
-                    $absen->latitude ?? '-',
-                    $absen->longitude ?? '-',
-                    $absen->is_valid_location ? 'Ya' : 'Tidak',
-                    $distance,
-                    $absen->keterangan ?? '-',
-                ]);
+                fputcsv($file, [$no++, $absen->karyawan->nama_lengkap, $absen->karyawan->kode_pegawai, $absen->tanggal->format('d-m-Y'), $absen->check_in ? Carbon::parse($absen->check_in)->format('H:i') : '-', $absen->check_out ? Carbon::parse($absen->check_out)->format('H:i') : '-', $absen->kantor_cabang, $absen->status, $absen->total_jam_kerja . ' jam', $absen->latitude ?? '-', $absen->longitude ?? '-', $absen->is_valid_location ? 'Ya' : 'Tidak', $distance, $absen->keterangan ?? '-']);
             }
 
             fputcsv($file, []);
@@ -476,6 +429,7 @@ class AbsensiController extends Controller
             fputcsv($file, ['Total Izin', $absensis->where('status', 'Izin')->count()]);
             fputcsv($file, ['Total Sakit', $absensis->where('status', 'Sakit')->count()]);
             fputcsv($file, ['Total Alpha', $absensis->where('status', 'Alpha')->count()]);
+            fputcsv($file, ['Total Perjalanan Dinas', $absensis->where('status', 'Perjalanan Dinas')->count()]);
             fputcsv($file, ['Valid Lokasi', $absensis->where('is_valid_location', true)->count()]);
 
             fclose($file);
@@ -493,8 +447,7 @@ class AbsensiController extends Controller
         }
 
         if ($request->filled('month') && $request->filled('year')) {
-            $query->whereMonth('tanggal', $request->month)
-                  ->whereYear('tanggal', $request->year);
+            $query->whereMonth('tanggal', $request->month)->whereYear('tanggal', $request->year);
         }
 
         if ($request->filled('karyawan_id')) {
@@ -508,6 +461,7 @@ class AbsensiController extends Controller
             'izin' => $absensis->where('status', 'Izin')->count(),
             'sakit' => $absensis->where('status', 'Sakit')->count(),
             'alpha' => $absensis->where('status', 'Alpha')->count(),
+            'perjalanan_dinas' => $absensis->where('status', 'Perjalanan Dinas')->count(),
             'total' => $absensis->count(),
             'valid_location' => $absensis->where('is_valid_location', true)->count(),
             'invalid_location' => $absensis->where('is_valid_location', false)->count(),
@@ -521,12 +475,7 @@ class AbsensiController extends Controller
         $distances = [];
         if ($absensi->latitude && $absensi->longitude) {
             foreach ($this->getOfficeLocations() as $name => $coords) {
-                $distances[$name] = $this->haversineDistance(
-                    $absensi->latitude,
-                    $absensi->longitude,
-                    $coords['latitude'],
-                    $coords['longitude']
-                );
+                $distances[$name] = $this->haversineDistance($absensi->latitude, $absensi->longitude, $coords['latitude'], $coords['longitude']);
             }
         }
 
@@ -536,7 +485,7 @@ class AbsensiController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|in:Hadir,Izin,Sakit,Alpha',
+            'status' => 'required|in:Hadir,Izin,Sakit,Alpha,Perjalanan Dinas',
             'keterangan' => 'nullable|string',
         ]);
 
@@ -545,7 +494,6 @@ class AbsensiController extends Controller
         $absensi->keterangan = $request->keterangan;
         $absensi->save();
 
-        return redirect()->route('hr.absensi.index')
-            ->with('success', 'Status absensi berhasil diupdate');
+        return redirect()->route('hr.absensi.index')->with('success', 'Status absensi berhasil diupdate');
     }
 }

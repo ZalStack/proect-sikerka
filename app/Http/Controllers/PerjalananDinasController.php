@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PerjalananDinas;
 use App\Models\Karyawan;
+use App\Models\Absensi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -78,7 +79,7 @@ class PerjalananDinasController extends Controller
             'agenda' => 'required|string',
             'tanggal_mulai' => 'required|date|after_or_equal:today',
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
-            'surat_tugas' => 'nullable|file|mimes:pdf|max:2048', // max 2MB
+            'surat_tugas' => 'nullable|file|mimes:pdf|max:2048',
         ], [
             'surat_tugas.max' => 'Ukuran file surat tugas maksimal 2 MB.',
             'surat_tugas.mimes' => 'File surat tugas harus berformat PDF.',
@@ -100,7 +101,6 @@ class PerjalananDinasController extends Controller
         if ($request->hasFile('surat_tugas')) {
             $file = $request->file('surat_tugas');
 
-            // Validasi tambahan ukuran file
             if ($file->getSize() > 2 * 1024 * 1024) {
                 return redirect()->back()
                     ->withErrors(['surat_tugas' => 'Ukuran file surat tugas maksimal 2 MB.'])
@@ -125,7 +125,6 @@ class PerjalananDinasController extends Controller
     {
         $perjalananDinas = PerjalananDinas::with(['karyawan', 'approver'])->findOrFail($id);
 
-        // Cek akses: hanya HR atau pemilik data
         if (Auth::user()->posisi !== 'hr' && $perjalananDinas->karyawan_id !== Auth::id()) {
             abort(403, 'Anda tidak memiliki akses ke data ini.');
         }
@@ -140,7 +139,6 @@ class PerjalananDinasController extends Controller
     {
         $perjalananDinas = PerjalananDinas::findOrFail($id);
 
-        // Hanya pemilik data yang bisa edit (jika masih pending)
         if ($perjalananDinas->karyawan_id !== Auth::id() || $perjalananDinas->status !== 'pending') {
             abort(403, 'Anda tidak dapat mengedit pengajuan ini.');
         }
@@ -155,7 +153,6 @@ class PerjalananDinasController extends Controller
     {
         $perjalananDinas = PerjalananDinas::findOrFail($id);
 
-        // Hanya pemilik data yang bisa update (jika masih pending)
         if ($perjalananDinas->karyawan_id !== Auth::id() || $perjalananDinas->status !== 'pending') {
             abort(403, 'Anda tidak dapat mengedit pengajuan ini.');
         }
@@ -180,7 +177,6 @@ class PerjalananDinasController extends Controller
 
         $data = $request->except(['surat_tugas']);
 
-        // Handle file upload
         if ($request->hasFile('surat_tugas')) {
             $file = $request->file('surat_tugas');
 
@@ -190,7 +186,6 @@ class PerjalananDinasController extends Controller
                     ->withInput();
             }
 
-            // Hapus file lama
             if ($perjalananDinas->surat_tugas) {
                 Storage::disk('public')->delete($perjalananDinas->surat_tugas);
             }
@@ -213,12 +208,10 @@ class PerjalananDinasController extends Controller
     {
         $perjalananDinas = PerjalananDinas::findOrFail($id);
 
-        // Hanya pemilik data yang bisa hapus (jika masih pending)
         if ($perjalananDinas->karyawan_id !== Auth::id() || $perjalananDinas->status !== 'pending') {
             abort(403, 'Anda tidak dapat menghapus pengajuan ini.');
         }
 
-        // Hapus file
         if ($perjalananDinas->surat_tugas) {
             Storage::disk('public')->delete($perjalananDinas->surat_tugas);
         }
@@ -237,14 +230,12 @@ class PerjalananDinasController extends Controller
         $karyawanId = Auth::id();
         $query = PerjalananDinas::where('karyawan_id', $karyawanId);
 
-        // Filter by status
         if ($request->filled('status') && $request->status !== 'semua') {
             $query->where('status', $request->status);
         }
 
         $perjalananDinas = $query->orderBy('created_at', 'desc')->paginate(10);
 
-        // Stats
         $stats = [
             'total' => PerjalananDinas::where('karyawan_id', $karyawanId)->count(),
             'pending' => PerjalananDinas::where('karyawan_id', $karyawanId)->where('status', 'pending')->count(),
@@ -258,6 +249,7 @@ class PerjalananDinasController extends Controller
 
     /**
      * Approve perjalanan dinas by HR.
+     * Setelah disetujui, otomatis rekap ke absensi untuk setiap tanggal dalam rentang.
      */
     public function approve(Request $request, $id)
     {
@@ -288,8 +280,13 @@ class PerjalananDinasController extends Controller
 
         $perjalananDinas->save();
 
+        // --- REKAP KE ABSENSI (hanya jika status = approved) ---
+        if ($request->status === 'approved') {
+            $this->rekapKeAbsensi($perjalananDinas);
+        }
+
         $message = $request->status === 'approved'
-            ? 'Pengajuan perjalanan dinas berhasil disetujui.'
+            ? 'Pengajuan perjalanan dinas berhasil disetujui dan telah direkap ke absensi.'
             : 'Pengajuan perjalanan dinas ditolak.';
 
         return redirect()->route('hr.perjalanan-dinas.index')
@@ -298,6 +295,7 @@ class PerjalananDinasController extends Controller
 
     /**
      * Bulk approve perjalanan dinas.
+     * Otomatis rekap ke absensi untuk setiap pengajuan yang disetujui.
      */
     public function bulkApprove(Request $request)
     {
@@ -317,20 +315,86 @@ class PerjalananDinasController extends Controller
         $ids = $request->ids;
         $status = $request->status;
 
-        $updated = PerjalananDinas::whereIn('id', $ids)
+        // Ambil data perjalanan dinas yang pending
+        $items = PerjalananDinas::whereIn('id', $ids)
             ->where('status', 'pending')
-            ->update([
-                'status' => $status,
-                'approved_by' => Auth::id(),
-                'approved_at' => Carbon::now(),
-                'catatan_hr' => $request->catatan_hr ?? null
-            ]);
+            ->get();
+
+        if ($items->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak ada pengajuan yang dapat diproses.'
+            ], 400);
+        }
+
+        // Update status
+        $updated = 0;
+        foreach ($items as $item) {
+            $item->status = $status;
+            $item->approved_by = Auth::id();
+            $item->approved_at = Carbon::now();
+            if ($request->filled('catatan_hr')) {
+                $item->catatan_hr = $request->catatan_hr;
+            }
+            $item->save();
+
+            if ($status === 'approved') {
+                $this->rekapKeAbsensi($item);
+            }
+            $updated++;
+        }
 
         return response()->json([
             'success' => true,
-            'message' => "{$updated} pengajuan berhasil diproses.",
+            'message' => "{$updated} pengajuan berhasil diproses dan direkap ke absensi.",
             'updated' => $updated
         ]);
+    }
+
+    /**
+     * Rekap perjalanan dinas ke tabel absensi untuk setiap hari dalam rentang tanggal.
+     */
+    private function rekapKeAbsensi(PerjalananDinas $perjalananDinas)
+    {
+        $start = Carbon::parse($perjalananDinas->tanggal_mulai);
+        $end = Carbon::parse($perjalananDinas->tanggal_selesai);
+        $karyawanId = $perjalananDinas->karyawan_id;
+        $judul = $perjalananDinas->judul;
+
+        for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
+            $tanggal = $date->format('Y-m-d');
+
+            $absensi = Absensi::where('karyawan_id', $karyawanId)
+                ->whereDate('tanggal', $tanggal)
+                ->first();
+
+            if (!$absensi) {
+                Absensi::create([
+                    'karyawan_id' => $karyawanId,
+                    'tanggal' => $tanggal,
+                    'status' => 'Perjalanan Dinas',
+                    'kantor_cabang' => 'Perjalanan Dinas',
+                    'keterangan' => "Perjalanan Dinas: {$judul}",
+                    'check_in' => null,
+                    'check_out' => null,
+                    'total_jam_kerja' => 0,
+                    'is_valid_location' => false,
+                    'ip_address' => null,
+                    'user_agent' => null,
+                    'is_suspicious' => false,
+                    'suspicious_reason' => null,
+                ]);
+            } else {
+                $absensi->status = 'Perjalanan Dinas';
+                $absensi->kantor_cabang = 'Perjalanan Dinas';
+                $absensi->keterangan = "Perjalanan Dinas: {$judul}";
+                $absensi->check_in = null;
+                $absensi->check_out = null;
+                $absensi->total_jam_kerja = 0;
+                $absensi->is_valid_location = false;
+                $absensi->save();
+            }
+        }
     }
 
     /**
@@ -358,7 +422,6 @@ class PerjalananDinasController extends Controller
     {
         $perjalananDinas = PerjalananDinas::findOrFail($id);
 
-        // Cek akses
         if (Auth::user()->posisi !== 'hr' && $perjalananDinas->karyawan_id !== Auth::id()) {
             abort(403, 'Anda tidak memiliki akses ke file ini.');
         }
