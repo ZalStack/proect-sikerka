@@ -10,7 +10,7 @@
             <div class="px-4 sm:px-6 lg:px-8 py-4">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                        <h1 class="text-2xl sm:text-3xl font-bold font-['Montserrat'] text-[#161758] bg-clip-text">
                             Dashboard HR
                         </h1>
                         <p class="text-sm text-slate-500 mt-0.5 flex items-center gap-2">
