@@ -14,7 +14,6 @@
                             Dashboard Karyawan
                         </h1>
                         <p class="text-sm text-slate-500 mt-0.5 flex items-center gap-2">
-                            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                             Selamat datang, <span class="font-medium text-slate-700">{{ $user->nama_lengkap }}</span>
                         </p>
                     </div>
