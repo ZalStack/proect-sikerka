@@ -1,4 +1,5 @@
 <?php
+// app/Http/Controllers/KaryawanController.php
 
 namespace App\Http\Controllers;
 
@@ -25,7 +26,6 @@ class KaryawanController extends Controller
             });
         }
 
-        // Filter status resign
         if ($request->filled('status_filter')) {
             if ($request->status_filter === 'active') {
                 $query->active();
@@ -52,7 +52,7 @@ class KaryawanController extends Controller
             'password' => 'required|min:8|confirmed',
             'nama_lengkap' => 'required|string|max:100',
             'jabatan' => 'required|string|max:100',
-            'divisi' => 'required|in:HRD,IT,KPJ,LPS,MEDIA,PENDIDIKAN,PKA,RG,SAPRAS',
+            'divisi' => 'required|string|max:50', // Ubah menjadi string, tidak ada in:...
             'status' => 'required|in:Karyawan Tetap,Contract,Internship',
             'tanggal_bergabung' => 'required|date',
             'tempat_lahir' => 'nullable|string|max:50',
@@ -66,8 +66,6 @@ class KaryawanController extends Controller
             'golongan_darah' => 'nullable|in:A,B,AB,O',
             'npwp' => 'nullable|string|max:20',
             'pendidikan_terakhir' => 'nullable|string|max:50',
-            'pendidikan_terakhir_new' => 'nullable|in:SMP,SMA/MA,SMK,D1,D2,D3,D4,S1,S2',
-            'sedang_melanjutkan_pendidikan' => 'nullable|string|max:100',
             'perguruan_tinggi' => 'nullable|string|max:100',
             'jurusan' => 'nullable|string|max:100',
             'tahun_lulus' => 'nullable|integer|min:1900|max:' . date('Y'),
@@ -81,16 +79,22 @@ class KaryawanController extends Controller
             'nomor_rekening' => 'nullable|string|max:50',
             'ipk_terakhir' => 'nullable|numeric|min:0|max:4',
             'alamat_domisili' => 'nullable|string',
+            'is_continuing_education' => 'nullable|boolean',
+            'continuing_program' => 'required_if:is_continuing_education,1|nullable|in:D3,D4/S1,S2,S3',
+            'continuing_perguruan_tinggi' => 'required_if:is_continuing_education,1|nullable|string|max:100',
+            'continuing_jurusan' => 'required_if:is_continuing_education,1|nullable|string|max:100',
         ]);
 
         $data = $request->except(['password', 'password_confirmation', 'foto_profil']);
 
         $data['kata_sandi'] = Hash::make($request->password);
         $data['jumlah_anak'] = $request->jumlah_anak ?? 0;
+        // Tentukan posisi berdasarkan divisi (HRD -> hr, lainnya -> karyawan)
         $data['posisi'] = $this->determinePosisi($request->divisi);
         $data['nama_bank'] = 'BSI';
         $data['is_resigned'] = false;
         $data['tanggal_resign'] = null;
+        $data['is_continuing_education'] = $request->has('is_continuing_education') ? true : false;
 
         if ($request->hasFile('foto_profil')) {
             $file = $request->file('foto_profil');
@@ -125,7 +129,7 @@ class KaryawanController extends Controller
             'email' => 'required|email|unique:karyawans,email,' . $id,
             'nama_lengkap' => 'required|string|max:100',
             'jabatan' => 'required|string|max:100',
-            'divisi' => 'required|in:HRD,IT,KPJ,LPS,MEDIA,PENDIDIKAN,PKA,RG,SAPRAS',
+            'divisi' => 'required|string|max:50', // Ubah menjadi string
             'status' => 'required|in:Karyawan Tetap,Contract,Internship',
             'tanggal_bergabung' => 'required|date',
             'end_date' => 'nullable|date|after:tanggal_bergabung',
@@ -140,8 +144,6 @@ class KaryawanController extends Controller
             'golongan_darah' => 'nullable|in:A,B,AB,O',
             'npwp' => 'nullable|string|max:20',
             'pendidikan_terakhir' => 'nullable|string|max:50',
-            'pendidikan_terakhir_new' => 'nullable|in:SMP,SMA/MA,SMK,D1,D2,D3,D4,S1,S2',
-            'sedang_melanjutkan_pendidikan' => 'nullable|string|max:100',
             'perguruan_tinggi' => 'nullable|string|max:100',
             'jurusan' => 'nullable|string|max:100',
             'tahun_lulus' => 'nullable|integer|min:1900|max:' . date('Y'),
@@ -158,13 +160,19 @@ class KaryawanController extends Controller
             'alamat_domisili' => 'nullable|string',
             'is_resigned' => 'nullable|boolean',
             'tanggal_resign' => 'nullable|required_if:is_resigned,1|date|after_or_equal:tanggal_bergabung',
+            'is_continuing_education' => 'nullable|boolean',
+            'continuing_program' => 'required_if:is_continuing_education,1|nullable|in:D3,D4/S1,S2,S3',
+            'continuing_perguruan_tinggi' => 'required_if:is_continuing_education,1|nullable|string|max:100',
+            'continuing_jurusan' => 'required_if:is_continuing_education,1|nullable|string|max:100',
         ]);
 
         $data = $request->except(['password', 'password_confirmation', 'foto_profil', '_token', '_method']);
 
         $data['jumlah_anak'] = $data['jumlah_anak'] ?? 0;
+        // Tentukan posisi berdasarkan divisi
         $data['posisi'] = $this->determinePosisi($request->divisi);
         $data['nama_bank'] = 'BSI';
+        $data['is_continuing_education'] = $request->has('is_continuing_education') ? true : false;
 
         // Handle resign
         $data['is_resigned'] = $request->has('is_resigned') ? true : false;
@@ -204,6 +212,7 @@ class KaryawanController extends Controller
 
     private function determinePosisi($divisi)
     {
-        return $divisi === 'HRD' ? 'hr' : 'karyawan';
+        // Jika divisi tepat sama dengan "HRD" (case sensitive), maka posisi hr, selain itu karyawan
+        return trim($divisi) === 'HRD' ? 'hr' : 'karyawan';
     }
 }

@@ -1,4 +1,5 @@
 <?php
+// app/Http/Controllers/ProfileController.php
 
 namespace App\Http\Controllers;
 
@@ -14,14 +15,12 @@ class ProfileController extends Controller
     public function edit()
     {
         $user = Auth::user();
-        $isHr = $user->posisi === 'hr';
-        return view('profile.edit', compact('user', 'isHr'));
+        return view('profile.edit', compact('user'));
     }
 
     public function update(Request $request)
     {
         $user = Auth::user();
-        $isHr = $user->posisi === 'hr';
 
         $rules = [
             'kode_pegawai' => 'required|unique:karyawans,kode_pegawai,' . $user->id,
@@ -38,8 +37,6 @@ class ProfileController extends Controller
             'golongan_darah' => 'nullable|in:A,B,AB,O',
             'npwp' => 'nullable|string|max:20',
             'pendidikan_terakhir' => 'nullable|string|max:50',
-            'pendidikan_terakhir_new' => 'nullable|in:SMP,SMA/MA,SMK,D1,D2,D3,D4,S1,S2',
-            'sedang_melanjutkan_pendidikan' => 'nullable|string|max:100',
             'perguruan_tinggi' => 'nullable|string|max:100',
             'jurusan' => 'nullable|string|max:100',
             'tahun_lulus' => 'nullable|integer|min:1900|max:' . date('Y'),
@@ -53,30 +50,28 @@ class ProfileController extends Controller
             'nomor_rekening' => 'nullable|string|max:50',
             'ipk_terakhir' => 'nullable|numeric|min:0|max:4',
             'alamat_domisili' => 'nullable|string',
+            // Semua field profesional boleh diupdate semua role
+            'jabatan' => 'required|string|max:100',
+            'status' => 'required|in:Karyawan Tetap,Contract,Internship',
+            'tanggal_bergabung' => 'required|date',
+            'divisi' => 'required|string|max:50', // input text
+            // Pendidikan lanjutan
+            'is_continuing_education' => 'nullable|boolean',
+            'continuing_program' => 'required_if:is_continuing_education,1|nullable|in:D3,D4/S1,S2,S3',
+            'continuing_perguruan_tinggi' => 'required_if:is_continuing_education,1|nullable|string|max:100',
+            'continuing_jurusan' => 'required_if:is_continuing_education,1|nullable|string|max:100',
         ];
-
-        if ($isHr) {
-            $rules['jabatan'] = 'required|string|max:100';
-            $rules['status'] = 'required|in:Karyawan Tetap,Contract,Internship';
-            $rules['tanggal_bergabung'] = 'required|date';
-            $rules['divisi'] = 'required|in:HRD,IT,KPD,LPS,MEDIA,PENDIDIKAN,PKA,RG,SAPRAS';
-        }
 
         $request->validate($rules);
 
         $data = $request->except(['foto_profil', '_token', '_method']);
 
-        if (!$isHr) {
-            unset($data['jabatan']);
-            unset($data['posisi']);
-            unset($data['status']);
-            unset($data['tanggal_bergabung']);
-            unset($data['divisi']);
-            unset($data['tanggal_pengangkatan_tetap']);
-        }
-
         $data['jumlah_anak'] = $data['jumlah_anak'] ?? 0;
         $data['nama_bank'] = 'BSI';
+        $data['is_continuing_education'] = $request->has('is_continuing_education') ? true : false;
+
+        // Update posisi berdasarkan divisi
+        $data['posisi'] = $this->determinePosisi($request->divisi);
 
         if ($request->hasFile('foto_profil')) {
             if ($user->foto_profil) {
@@ -112,5 +107,10 @@ class ProfileController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Password berhasil diupdate');
+    }
+
+    private function determinePosisi($divisi)
+    {
+        return trim($divisi) === 'HRD' ? 'hr' : 'karyawan';
     }
 }

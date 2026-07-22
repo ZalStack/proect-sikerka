@@ -1,4 +1,5 @@
 <?php
+// app/Models/Karyawan.php
 
 namespace App\Models;
 
@@ -22,7 +23,6 @@ class Karyawan extends Authenticatable
         'divisi',
         'golongan_darah',
         'no_kk',
-        'sedang_melanjutkan_pendidikan',
         'jumlah_anak',
         'foto_profil',
         'nomor_telepon',
@@ -39,7 +39,6 @@ class Karyawan extends Authenticatable
         'agama',
         'status_pernikahan',
         'pendidikan_terakhir',
-        'pendidikan_terakhir_new',
         'perguruan_tinggi',
         'jurusan',
         'tahun_lulus',
@@ -53,6 +52,10 @@ class Karyawan extends Authenticatable
         'alamat_domisili',
         'is_resigned',
         'tanggal_resign',
+        'is_continuing_education',
+        'continuing_program',
+        'continuing_perguruan_tinggi',
+        'continuing_jurusan',
     ];
 
     protected $hidden = [
@@ -75,7 +78,6 @@ class Karyawan extends Authenticatable
         return $this->posisi === 'karyawan';
     }
 
-    // Cek apakah akun bisa login
     public function canLogin()
     {
         return !$this->is_resigned;
@@ -88,11 +90,11 @@ class Karyawan extends Authenticatable
         'tanggal_pengangkatan_tetap' => 'date',
         'tanggal_resign' => 'date',
         'is_resigned' => 'boolean',
+        'is_continuing_education' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
 
-    // Accessor untuk status dengan label
     public function getStatusLabelAttribute()
     {
         if ($this->is_resigned) {
@@ -106,7 +108,6 @@ class Karyawan extends Authenticatable
         return $labels[$this->status] ?? $this->status;
     }
 
-    // Accessor untuk status badge color
     public function getStatusBadgeAttribute()
     {
         if ($this->is_resigned) {
@@ -120,19 +121,16 @@ class Karyawan extends Authenticatable
         return $colors[$this->status] ?? 'bg-gray-500 text-white';
     }
 
-    // Accessor untuk nama bank (selalu BSI)
     public function getNamaBankAttribute($value)
     {
         return 'BSI';
     }
 
-    // Scope untuk karyawan aktif (belum resign)
     public function scopeActive($query)
     {
         return $query->where('is_resigned', false);
     }
 
-    // Scope untuk karyawan resign
     public function scopeResigned($query)
     {
         return $query->where('is_resigned', true);

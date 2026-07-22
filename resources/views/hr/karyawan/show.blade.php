@@ -201,15 +201,36 @@
                             <h3 class="text-base sm:text-lg font-semibold text-[#161758] border-b border-gray-200 pb-2 mt-4">Pendidikan</h3>
                         </div>
 
-                        <!-- KOLOM KIRI -->
+                        <!-- KOLOM KIRI: Pendidikan Lanjutan -->
                         <div class="space-y-3 sm:space-y-4">
-                            <div>
-                                <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Pendidikan Terakhir</label>
-                                <p class="text-sm sm:text-base text-[#27438D] break-words">{{ $karyawan->pendidikan_terakhir_new ?? $karyawan->pendidikan_terakhir ?? '-' }}</p>
-                            </div>
+                            @if($karyawan->is_continuing_education)
                             <div>
                                 <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Sedang Melanjutkan Pendidikan</label>
-                                <p class="text-sm sm:text-base text-[#27438D] break-words">{{ $karyawan->sedang_melanjutkan_pendidikan ?? '-' }}</p>
+                                <p class="text-sm sm:text-base text-[#27438D]">
+                                    <span class="font-semibold">{{ $karyawan->continuing_program ?? '-' }}</span>
+                                    @if($karyawan->continuing_perguruan_tinggi || $karyawan->continuing_jurusan)
+                                        <br>
+                                        <span class="text-xs">{{ $karyawan->continuing_perguruan_tinggi ?? '' }} {{ $karyawan->continuing_jurusan ? '- '.$karyawan->continuing_jurusan : '' }}</span>
+                                    @endif
+                                </p>
+                            </div>
+                            @else
+                            <div>
+                                <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Sedang Melanjutkan Pendidikan</label>
+                                <p class="text-sm sm:text-base text-[#27438D]">Tidak</p>
+                            </div>
+                            @endif
+                            <div>
+                                <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Pendidikan Terakhir</label>
+                                <p class="text-sm sm:text-base text-[#27438D] break-words">{{ $karyawan->pendidikan_terakhir ?? '-' }}</p>
+                            </div>
+                            <div>
+                                <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Perguruan Tinggi</label>
+                                <p class="text-sm sm:text-base text-[#27438D] break-words">{{ $karyawan->perguruan_tinggi ?? '-' }}</p>
+                            </div>
+                            <div>
+                                <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Jurusan / Program Studi</label>
+                                <p class="text-sm sm:text-base text-[#27438D] break-words">{{ $karyawan->jurusan ?? '-' }}</p>
                             </div>
                             <div>
                                 <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">IPK Terakhir</label>
@@ -217,16 +238,8 @@
                             </div>
                         </div>
 
-                        <!-- KOLOM KANAN -->
+                        <!-- KOLOM KANAN: (kosong atau bisa untuk hal lain) -->
                         <div class="space-y-3 sm:space-y-4">
-                            <div>
-                                <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Perguruan Tinggi</label>
-                                <p class="text-sm sm:text-base text-[#27438D] break-words">{{ $karyawan->perguruan_tinggi ?? '-' }}</p>
-                            </div>
-                            <div>
-                                <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Jurusan</label>
-                                <p class="text-sm sm:text-base text-[#27438D] break-words">{{ $karyawan->jurusan ?? '-' }}</p>
-                            </div>
                             <div>
                                 <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Tahun Lulus</label>
                                 <p class="text-sm sm:text-base text-[#27438D]">{{ $karyawan->tahun_lulus ?? '-' }}</p>

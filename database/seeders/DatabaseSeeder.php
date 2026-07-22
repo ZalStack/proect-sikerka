@@ -41,6 +41,11 @@ class DatabaseSeeder extends Seeder
             'status_pernikahan' => 'Menikah',
             'pendidikan_terakhir' => 'S2',
             'pendidikan_terakhir_new' => 'S2',
+            // Kolom baru dari migrasi continuing education
+            'is_continuing_education' => true,
+            'continuing_program' => 'S2',
+            'continuing_perguruan_tinggi' => 'Universitas Indonesia',
+            'continuing_jurusan' => 'Manajemen SDM',
             'perguruan_tinggi' => 'Universitas Indonesia',
             'jurusan' => 'Manajemen SDM',
             'tahun_lulus' => 2015,
@@ -615,6 +620,11 @@ class DatabaseSeeder extends Seeder
                 'status_pernikahan' => null,
                 'pendidikan_terakhir' => null,
                 'pendidikan_terakhir_new' => null,
+                // Kolom baru dari migrasi continuing education (default kosong untuk karyawan)
+                'is_continuing_education' => false,
+                'continuing_program' => null,
+                'continuing_perguruan_tinggi' => null,
+                'continuing_jurusan' => null,
                 'perguruan_tinggi' => null,
                 'jurusan' => null,
                 'tahun_lulus' => null,
@@ -636,9 +646,13 @@ class DatabaseSeeder extends Seeder
         $this->command->info('👥 Total ' . count($karyawanData) . ' employees seeded.');
     }
 
+    /**
+     * Generate a gmail-style email from a full name, stripping common
+     * academic titles/suffixes (Dr., M.Si., S.E., etc).
+     */
     private function generateEmail($fullName): string
     {
-        // Remove titles and suffixes (Dr., M.Si., S.E., etc)
+        // Remove titles and suffixes (Dr., M.Si., S.E.,etc)
         $name = preg_replace('/^(Dr\.|dr\.|H\.|Ir\.|Dra\.)\s*/', '', $fullName);
         $name = preg_replace('/,\s*(M\.Si\.|S\.E\.|S\.Kom\.|S\.Pd\.|S\.H\.|M\.M\.|M\.Pd\.|M\.Kom\.|M\.Si\.|M\.H\.|S\.Sos\.|M\.Sos\.|A\.Md\.)\s*$/', '', $name);
         $name = preg_replace('/\s*(M\.Si\.|S\.E\.|S\.Kom\.|S\.Pd\.|S\.H\.|M\.M\.|M\.Pd\.|M\.Kom\.|M\.Si\.|M\.H\.|S\.Sos\.|M\.Sos\.|A\.Md\.)\s*$/', '', $name);
