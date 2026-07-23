@@ -16,7 +16,7 @@
 
             <div class="bg-white rounded-xl shadow-sm p-6">
                 <h1 class="text-xl font-bold text-[#161758] mb-2">Ajukan Perjalanan Dinas</h1>
-                <p class="text-sm text-gray-500 mb-6">Isi form berikut untuk mengajukan perjalanan dinas</p>
+                <p class="text-sm text-gray-500 mb-6">Isi form berikut untuk mengajukan perjalanan dinas (otomatis disetujui)</p>
 
                 <form action="{{ route('karyawan.perjalanan-dinas.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
@@ -43,33 +43,34 @@
                         @enderror
                     </div>
 
-                    <!-- Tanggal Mulai & Selesai -->
+                    <!-- Tanggal Mulai & Selesai dengan Flatpickr -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                         <div>
                             <label for="tanggal_mulai" class="block text-sm font-medium text-gray-700 mb-1.5">Tanggal Mulai <span class="text-red-500">*</span></label>
-                            <input type="date" name="tanggal_mulai" id="tanggal_mulai"
-                                   class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent @error('tanggal_mulai') border-red-500 @enderror"
-                                   value="{{ old('tanggal_mulai') }}" required min="{{ date('Y-m-d') }}">
+                            <input type="text" name="tanggal_mulai" id="tanggal_mulai"
+                                   class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent @error('tanggal_mulai') border-red-500 @enderror datepicker"
+                                   value="{{ old('tanggal_mulai') }}" required placeholder="dd/mm/yyyy" autocomplete="off">
                             @error('tanggal_mulai')
                                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                             @enderror
+                            <p class="text-xs text-gray-400 mt-1">Minimal 7 hari dari hari ini</p>
                         </div>
                         <div>
                             <label for="tanggal_selesai" class="block text-sm font-medium text-gray-700 mb-1.5">Tanggal Selesai <span class="text-red-500">*</span></label>
-                            <input type="date" name="tanggal_selesai" id="tanggal_selesai"
-                                   class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent @error('tanggal_selesai') border-red-500 @enderror"
-                                   value="{{ old('tanggal_selesai') }}" required>
+                            <input type="text" name="tanggal_selesai" id="tanggal_selesai"
+                                   class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent @error('tanggal_selesai') border-red-500 @enderror datepicker"
+                                   value="{{ old('tanggal_selesai') }}" required placeholder="dd/mm/yyyy" autocomplete="off">
                             @error('tanggal_selesai')
                                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                             @enderror
                         </div>
                     </div>
 
-                    <!-- Upload Surat Tugas -->
+                    <!-- Upload Surat Tugas (wajib) -->
                     <div class="mb-6">
-                        <label for="surat_tugas" class="block text-sm font-medium text-gray-700 mb-1.5">Surat Tugas (PDF, maks. 2MB)</label>
+                        <label for="surat_tugas" class="block text-sm font-medium text-gray-700 mb-1.5">Surat Tugas (PDF, maks. 2MB) <span class="text-red-500">*</span></label>
                         <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#00a2e9] transition @error('surat_tugas') border-red-500 @enderror">
-                            <input type="file" name="surat_tugas" id="surat_tugas" accept=".pdf" class="hidden">
+                            <input type="file" name="surat_tugas" id="surat_tugas" accept=".pdf" class="hidden" required>
                             <label for="surat_tugas" class="cursor-pointer">
                                 <svg class="w-10 h-10 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
@@ -97,53 +98,101 @@
     </div>
 </div>
 
+<!-- Flatpickr CDN -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
+
 <script>
-// File upload handler
-document.getElementById('surat_tugas').addEventListener('change', function(e) {
-    const file = this.files[0];
-    const fileInfo = document.getElementById('fileInfo');
-    const fileName = document.getElementById('fileName');
+    // Inisialisasi flatpickr
+    flatpickr.localize(flatpickr.l10ns.id);
+    const minDate = new Date();
+    minDate.setDate(minDate.getDate() + 7); // H-7
 
-    if (file) {
-        if (file.size > 2 * 1024 * 1024) {
-            alert('Ukuran file terlalu besar. Maksimal 2 MB.');
-            this.value = '';
-            fileInfo.classList.add('hidden');
+    const startPicker = flatpickr("#tanggal_mulai", {
+        dateFormat: "d/m/Y",
+        altInput: true,
+        altFormat: "d/m/Y",
+        minDate: minDate,
+        disableMobile: true,
+        onChange: function(selectedDates, dateStr, instance) {
+            // Update minDate for end date
+            if (selectedDates.length > 0) {
+                endPicker.set('minDate', selectedDates[0]);
+            }
+        }
+    });
+
+    const endPicker = flatpickr("#tanggal_selesai", {
+        dateFormat: "d/m/Y",
+        altInput: true,
+        altFormat: "d/m/Y",
+        minDate: minDate,
+        disableMobile: true,
+    });
+
+    // Validasi form sebelum submit (pastikan tanggal terisi dengan benar)
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const startVal = document.getElementById('tanggal_mulai').value;
+        const endVal = document.getElementById('tanggal_selesai').value;
+        if (!startVal || !endVal) {
+            alert('Tanggal mulai dan selesai harus diisi.');
+            e.preventDefault();
             return;
         }
-        if (file.type !== 'application/pdf') {
-            alert('Hanya file PDF yang diperbolehkan.');
-            this.value = '';
-            fileInfo.classList.add('hidden');
+        // Parse dari format d/m/Y
+        const parseDate = (str) => {
+            const parts = str.split('/');
+            return new Date(parts[2], parts[1]-1, parts[0]);
+        };
+        const startDate = parseDate(startVal);
+        const endDate = parseDate(endVal);
+        if (startDate > endDate) {
+            alert('Tanggal selesai harus setelah atau sama dengan tanggal mulai.');
+            e.preventDefault();
             return;
         }
-        fileName.textContent = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
-        fileInfo.classList.remove('hidden');
-    } else {
-        fileInfo.classList.add('hidden');
-    }
-});
+        // Cek minimal H-7 (sudah diatur di minDate, tapi amankan)
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        const minAllowed = new Date(today);
+        minAllowed.setDate(minAllowed.getDate() + 7);
+        if (startDate < minAllowed) {
+            alert('Tanggal mulai minimal 7 hari dari hari ini.');
+            e.preventDefault();
+            return;
+        }
+    });
 
-function removeFile() {
-    document.getElementById('surat_tugas').value = '';
-    document.getElementById('fileInfo').classList.add('hidden');
-}
+    // File upload handler
+    document.getElementById('surat_tugas').addEventListener('change', function(e) {
+        const file = this.files[0];
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
 
-// Validasi tanggal selesai >= tanggal mulai
-document.getElementById('tanggal_mulai').addEventListener('change', function() {
-    const selesai = document.getElementById('tanggal_selesai');
-    if (selesai.value && selesai.value < this.value) {
-        selesai.value = this.value;
-    }
-    selesai.min = this.value;
-});
+        if (file) {
+            if (file.size > 2 * 1024 * 1024) {
+                alert('Ukuran file terlalu besar. Maksimal 2 MB.');
+                this.value = '';
+                fileInfo.classList.add('hidden');
+                return;
+            }
+            if (file.type !== 'application/pdf') {
+                alert('Hanya file PDF yang diperbolehkan.');
+                this.value = '';
+                fileInfo.classList.add('hidden');
+                return;
+            }
+            fileName.textContent = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+            fileInfo.classList.remove('hidden');
+        } else {
+            fileInfo.classList.add('hidden');
+        }
+    });
 
-document.getElementById('tanggal_selesai').addEventListener('change', function() {
-    const mulai = document.getElementById('tanggal_mulai');
-    if (this.value < mulai.value) {
-        alert('Tanggal selesai harus setelah atau sama dengan tanggal mulai.');
-        this.value = mulai.value;
+    function removeFile() {
+        document.getElementById('surat_tugas').value = '';
+        document.getElementById('fileInfo').classList.add('hidden');
     }
-});
 </script>
 @endsection

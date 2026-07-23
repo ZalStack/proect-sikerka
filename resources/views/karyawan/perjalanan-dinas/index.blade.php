@@ -74,8 +74,8 @@
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Judul</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Tanggal</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Catatan HR</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Surat Tugas</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -103,10 +103,14 @@
                                     <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {{ $statusColors[$item->status] ?? 'bg-gray-100 text-gray-800' }}">
                                         {{ ucfirst($item->status) }}
                                     </span>
-                                    @if($item->status === 'rejected' && $item->catatan_hr)
-                                        <div class="text-xs text-red-600 mt-1">
-                                            <button onclick="showCatatan('{{ addslashes($item->catatan_hr) }}')" class="underline">Lihat alasan</button>
-                                        </div>
+                                </td>
+                                <td class="px-4 py-3">
+                                    @if($item->catatan_hr)
+                                        <button onclick="showCatatan('{{ addslashes($item->catatan_hr) }}')" class="text-xs text-blue-600 underline">
+                                            Lihat catatan
+                                        </button>
+                                    @else
+                                        <span class="text-xs text-gray-400">-</span>
                                     @endif
                                 </td>
                                 <td class="px-4 py-3 hidden md:table-cell">
@@ -121,27 +125,6 @@
                                     @else
                                         <span class="text-xs text-gray-400">Tidak ada</span>
                                     @endif
-                                </td>
-                                <td class="px-4 py-3">
-                                    <div class="flex items-center space-x-2">
-                                        @if($item->status === 'pending')
-                                            <a href="{{ route('karyawan.perjalanan-dinas.edit', $item->id) }}"
-                                               class="text-blue-600 hover:text-blue-800 text-sm">
-                                                Edit
-                                            </a>
-                                            <form action="{{ route('karyawan.perjalanan-dinas.destroy', $item->id) }}"
-                                                  method="POST" class="inline"
-                                                  onsubmit="return confirm('Hapus pengajuan ini?')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="text-red-600 hover:text-red-800 text-sm">
-                                                    Hapus
-                                                </button>
-                                            </form>
-                                        @else
-                                            <span class="text-xs text-gray-400">-</span>
-                                        @endif
-                                    </div>
                                 </td>
                             </tr>
                             @empty
@@ -177,14 +160,14 @@
         <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onclick="closeCatatan()"></div>
         <div class="relative bg-white rounded-xl shadow-xl max-w-md w-full p-6">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-[#161758]">Alasan Penolakan</h3>
+                <h3 class="text-lg font-semibold text-[#161758]">Catatan HR</h3>
                 <button onclick="closeCatatan()" class="text-gray-400 hover:text-gray-600">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </button>
             </div>
-            <div class="bg-red-50 rounded-lg p-4 border-l-4 border-red-500">
+            <div class="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500">
                 <p id="catatanText" class="text-gray-700"></p>
             </div>
         </div>

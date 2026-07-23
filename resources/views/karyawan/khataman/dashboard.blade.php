@@ -156,9 +156,33 @@
 <script>
     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
-    // Fungsi update jam real-time (setiap 1 detik)
+    // --- Sinkronisasi jam ke SERVER (bukan jam device karyawan) ---
+    // serverOffsetMs = selisih antara waktu server dan waktu device saat sinkronisasi.
+    // Jam yang ditampilkan = waktu device + offset, sehingga tetap "real-time"
+    // per detik tanpa perlu request tiap detik, tapi tetap akurat sesuai server.
+    let serverOffsetMs = 0;
+    let lastSyncFailed = false;
+
+    async function syncServerTime() {
+        try {
+            const res = await fetch('{{ route("karyawan.khataman.server-time") }}', {
+                headers: { 'Accept': 'application/json' }
+            });
+            const data = await res.json();
+            if (data.success) {
+                serverOffsetMs = data.timestamp_ms - Date.now();
+                lastSyncFailed = false;
+            }
+        } catch (error) {
+            // Kalau gagal sync, tetap pakai offset terakhir yang diketahui
+            lastSyncFailed = true;
+            console.error('Gagal sinkronisasi jam server:', error);
+        }
+    }
+
+    // Fungsi update jam real-time (setiap 1 detik), berbasis waktu server
     function updateClock() {
-        const now = new Date();
+        const now = new Date(Date.now() + serverOffsetMs);
 
         // Format jam HH:MM:SS
         const hours = String(now.getHours()).padStart(2, '0');
@@ -172,7 +196,7 @@
             clockElem.textContent = timeString;
         }
 
-        // Update tanggal (opsional, bisa juga setiap hari)
+        // Update tanggal
         const dateElem = document.getElementById('serverDate');
         if (dateElem) {
             const options = {
@@ -185,10 +209,12 @@
         }
     }
 
-    // Jalankan sekali saat load
-    updateClock();
-    // Perbarui setiap 1 detik
+    // Sinkronisasi awal saat halaman dimuat, lalu jalankan jam
+    syncServerTime().then(updateClock);
+    // Perbarui tampilan jam setiap 1 detik (berbasis offset server)
     setInterval(updateClock, 1000);
+    // Sinkronisasi ulang ke server tiap 60 detik untuk menghindari drift
+    setInterval(syncServerTime, 60000);
 
     // Submit form absen
     document.getElementById('khatamanForm')?.addEventListener('submit', function(e) {

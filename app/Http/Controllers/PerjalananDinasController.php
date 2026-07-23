@@ -9,7 +9,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
 
 class PerjalananDinasController extends Controller
@@ -71,18 +70,25 @@ class PerjalananDinasController extends Controller
 
     /**
      * Store a newly created resource in storage.
+     * Otomatis approved, langsung rekap ke absensi.
      */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'judul' => 'required|string|max:200',
             'agenda' => 'required|string',
-            'tanggal_mulai' => 'required|date|after_or_equal:today',
+            'tanggal_mulai' => [
+                'required',
+                'date',
+                'after_or_equal:' . now()->addDays(7)->toDateString() // minimal H-7
+            ],
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
-            'surat_tugas' => 'nullable|file|mimes:pdf|max:2048',
+            'surat_tugas' => 'required|file|mimes:pdf|max:2048', // wajib
         ], [
+            'surat_tugas.required' => 'Surat tugas wajib diupload.',
             'surat_tugas.max' => 'Ukuran file surat tugas maksimal 2 MB.',
             'surat_tugas.mimes' => 'File surat tugas harus berformat PDF.',
+            'tanggal_mulai.after_or_equal' => 'Tanggal mulai harus minimal 7 hari dari hari ini.',
             'tanggal_selesai.after_or_equal' => 'Tanggal selesai harus setelah atau sama dengan tanggal mulai.',
         ]);
 
@@ -95,7 +101,9 @@ class PerjalananDinasController extends Controller
         $data = $request->all();
         $data['karyawan_id'] = Auth::id();
         $data['tanggal_pengajuan'] = Carbon::today();
-        $data['status'] = 'pending';
+        $data['status'] = 'approved'; // langsung approved
+        $data['approved_at'] = Carbon::now();
+        $data['approved_by'] = null; // tidak ada approval dari HR
 
         // Handle file upload
         if ($request->hasFile('surat_tugas')) {
@@ -112,10 +120,13 @@ class PerjalananDinasController extends Controller
             $data['surat_tugas'] = $path;
         }
 
-        PerjalananDinas::create($data);
+        $perjalanan = PerjalananDinas::create($data);
+
+        // Rekap ke absensi otomatis
+        $this->rekapKeAbsensi($perjalanan);
 
         return redirect()->route('karyawan.perjalanan-dinas.index')
-            ->with('success', 'Pengajuan perjalanan dinas berhasil dikirim. Menunggu persetujuan HR.');
+            ->with('success', 'Pengajuan perjalanan dinas berhasil disetujui otomatis dan telah direkap ke absensi.');
     }
 
     /**
@@ -130,96 +141,6 @@ class PerjalananDinasController extends Controller
         }
 
         return view('hr.perjalanan-dinas.show', compact('perjalananDinas'));
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id)
-    {
-        $perjalananDinas = PerjalananDinas::findOrFail($id);
-
-        if ($perjalananDinas->karyawan_id !== Auth::id() || $perjalananDinas->status !== 'pending') {
-            abort(403, 'Anda tidak dapat mengedit pengajuan ini.');
-        }
-
-        return view('karyawan.perjalanan-dinas.edit', compact('perjalananDinas'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
-    {
-        $perjalananDinas = PerjalananDinas::findOrFail($id);
-
-        if ($perjalananDinas->karyawan_id !== Auth::id() || $perjalananDinas->status !== 'pending') {
-            abort(403, 'Anda tidak dapat mengedit pengajuan ini.');
-        }
-
-        $validator = Validator::make($request->all(), [
-            'judul' => 'required|string|max:200',
-            'agenda' => 'required|string',
-            'tanggal_mulai' => 'required|date',
-            'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
-            'surat_tugas' => 'nullable|file|mimes:pdf|max:2048',
-        ], [
-            'surat_tugas.max' => 'Ukuran file surat tugas maksimal 2 MB.',
-            'surat_tugas.mimes' => 'File surat tugas harus berformat PDF.',
-            'tanggal_selesai.after_or_equal' => 'Tanggal selesai harus setelah atau sama dengan tanggal mulai.',
-        ]);
-
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
-
-        $data = $request->except(['surat_tugas']);
-
-        if ($request->hasFile('surat_tugas')) {
-            $file = $request->file('surat_tugas');
-
-            if ($file->getSize() > 2 * 1024 * 1024) {
-                return redirect()->back()
-                    ->withErrors(['surat_tugas' => 'Ukuran file surat tugas maksimal 2 MB.'])
-                    ->withInput();
-            }
-
-            if ($perjalananDinas->surat_tugas) {
-                Storage::disk('public')->delete($perjalananDinas->surat_tugas);
-            }
-
-            $filename = time() . '_' . $file->getClientOriginalName();
-            $path = $file->storeAs('surat_tugas', $filename, 'public');
-            $data['surat_tugas'] = $path;
-        }
-
-        $perjalananDinas->update($data);
-
-        return redirect()->route('karyawan.perjalanan-dinas.index')
-            ->with('success', 'Pengajuan perjalanan dinas berhasil diperbarui.');
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
-    {
-        $perjalananDinas = PerjalananDinas::findOrFail($id);
-
-        if ($perjalananDinas->karyawan_id !== Auth::id() || $perjalananDinas->status !== 'pending') {
-            abort(403, 'Anda tidak dapat menghapus pengajuan ini.');
-        }
-
-        if ($perjalananDinas->surat_tugas) {
-            Storage::disk('public')->delete($perjalananDinas->surat_tugas);
-        }
-
-        $perjalananDinas->delete();
-
-        return redirect()->route('karyawan.perjalanan-dinas.index')
-            ->with('success', 'Pengajuan perjalanan dinas berhasil dihapus.');
     }
 
     /**
@@ -248,107 +169,39 @@ class PerjalananDinasController extends Controller
     }
 
     /**
-     * Approve perjalanan dinas by HR.
-     * Setelah disetujui, otomatis rekap ke absensi untuk setiap tanggal dalam rentang.
+     * Mark as selesai (completed) by HR.
      */
-    public function approve(Request $request, $id)
+    public function markAsSelesai($id)
     {
         $perjalananDinas = PerjalananDinas::findOrFail($id);
 
-        if ($perjalananDinas->status !== 'pending') {
-            return redirect()->back()->with('error', 'Pengajuan ini sudah diproses sebelumnya.');
+        if ($perjalananDinas->status !== 'approved') {
+            return redirect()->back()->with('error', 'Hanya pengajuan yang sudah disetujui yang dapat ditandai selesai.');
         }
 
-        $validator = Validator::make($request->all(), [
-            'catatan_hr' => 'nullable|string|max:500',
-            'status' => 'required|in:approved,rejected'
-        ]);
-
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
-
-        $perjalananDinas->status = $request->status;
-        $perjalananDinas->approved_by = Auth::id();
-        $perjalananDinas->approved_at = Carbon::now();
-
-        if ($request->filled('catatan_hr')) {
-            $perjalananDinas->catatan_hr = $request->catatan_hr;
-        }
-
+        $perjalananDinas->status = 'selesai';
         $perjalananDinas->save();
 
-        // --- REKAP KE ABSENSI (hanya jika status = approved) ---
-        if ($request->status === 'approved') {
-            $this->rekapKeAbsensi($perjalananDinas);
-        }
-
-        $message = $request->status === 'approved'
-            ? 'Pengajuan perjalanan dinas berhasil disetujui dan telah direkap ke absensi.'
-            : 'Pengajuan perjalanan dinas ditolak.';
-
         return redirect()->route('hr.perjalanan-dinas.index')
-            ->with('success', $message);
+            ->with('success', 'Perjalanan dinas ditandai sebagai selesai.');
     }
 
     /**
-     * Bulk approve perjalanan dinas.
-     * Otomatis rekap ke absensi untuk setiap pengajuan yang disetujui.
+     * Download surat tugas file.
      */
-    public function bulkApprove(Request $request)
+    public function downloadSuratTugas($id)
     {
-        $validator = Validator::make($request->all(), [
-            'ids' => 'required|array',
-            'ids.*' => 'exists:perjalanan_dinas,id',
-            'status' => 'required|in:approved,rejected'
-        ]);
+        $perjalananDinas = PerjalananDinas::findOrFail($id);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data tidak valid.'
-            ], 422);
+        if (Auth::user()->posisi !== 'hr' && $perjalananDinas->karyawan_id !== Auth::id()) {
+            abort(403, 'Anda tidak memiliki akses ke file ini.');
         }
 
-        $ids = $request->ids;
-        $status = $request->status;
-
-        // Ambil data perjalanan dinas yang pending
-        $items = PerjalananDinas::whereIn('id', $ids)
-            ->where('status', 'pending')
-            ->get();
-
-        if ($items->isEmpty()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Tidak ada pengajuan yang dapat diproses.'
-            ], 400);
+        if (!$perjalananDinas->surat_tugas || !Storage::disk('public')->exists($perjalananDinas->surat_tugas)) {
+            abort(404, 'File surat tugas tidak ditemukan.');
         }
 
-        // Update status
-        $updated = 0;
-        foreach ($items as $item) {
-            $item->status = $status;
-            $item->approved_by = Auth::id();
-            $item->approved_at = Carbon::now();
-            if ($request->filled('catatan_hr')) {
-                $item->catatan_hr = $request->catatan_hr;
-            }
-            $item->save();
-
-            if ($status === 'approved') {
-                $this->rekapKeAbsensi($item);
-            }
-            $updated++;
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => "{$updated} pengajuan berhasil diproses dan direkap ke absensi.",
-            'updated' => $updated
-        ]);
+        return Storage::disk('public')->download($perjalananDinas->surat_tugas);
     }
 
     /**
@@ -395,41 +248,5 @@ class PerjalananDinasController extends Controller
                 $absensi->save();
             }
         }
-    }
-
-    /**
-     * Mark as selesai (completed) by HR.
-     */
-    public function markAsSelesai($id)
-    {
-        $perjalananDinas = PerjalananDinas::findOrFail($id);
-
-        if ($perjalananDinas->status !== 'approved') {
-            return redirect()->back()->with('error', 'Hanya pengajuan yang sudah disetujui yang dapat ditandai selesai.');
-        }
-
-        $perjalananDinas->status = 'selesai';
-        $perjalananDinas->save();
-
-        return redirect()->route('hr.perjalanan-dinas.index')
-            ->with('success', 'Perjalanan dinas ditandai sebagai selesai.');
-    }
-
-    /**
-     * Download surat tugas file.
-     */
-    public function downloadSuratTugas($id)
-    {
-        $perjalananDinas = PerjalananDinas::findOrFail($id);
-
-        if (Auth::user()->posisi !== 'hr' && $perjalananDinas->karyawan_id !== Auth::id()) {
-            abort(403, 'Anda tidak memiliki akses ke file ini.');
-        }
-
-        if (!$perjalananDinas->surat_tugas || !Storage::disk('public')->exists($perjalananDinas->surat_tugas)) {
-            abort(404, 'File surat tugas tidak ditemukan.');
-        }
-
-        return Storage::disk('public')->download($perjalananDinas->surat_tugas);
     }
 }

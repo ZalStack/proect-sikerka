@@ -89,10 +89,9 @@ Route::middleware('auth')->group(function () {
             Route::post('/cuti/approve/{id}', [CutiController::class, 'approve'])->name('cuti.approve');
             Route::post('/cuti/bulk-approve', [CutiController::class, 'bulkApprove'])->name('cuti.bulk-approve');
 
-            Route::resource('perjalanan-dinas', PerjalananDinasController::class)->except(['create', 'store', 'edit', 'update', 'destroy']);
+            Route::get('/perjalanan-dinas', [PerjalananDinasController::class, 'index'])->name('perjalanan-dinas.index');
+            Route::get('/perjalanan-dinas/{id}', [PerjalananDinasController::class, 'show'])->name('perjalanan-dinas.show');
             Route::get('/perjalanan-dinas/{id}/mark-selesai', [PerjalananDinasController::class, 'markAsSelesai'])->name('perjalanan-dinas.mark-selesai');
-            Route::post('/perjalanan-dinas/approve/{id}', [PerjalananDinasController::class, 'approve'])->name('perjalanan-dinas.approve');
-            Route::post('/perjalanan-dinas/bulk-approve', [PerjalananDinasController::class, 'bulkApprove'])->name('perjalanan-dinas.bulk-approve');
             Route::get('/perjalanan-dinas/{id}/download', [PerjalananDinasController::class, 'downloadSuratTugas'])->name('perjalanan-dinas.download');
         });
 
@@ -118,6 +117,7 @@ Route::middleware('auth')->group(function () {
 
             Route::get('/khataman', [KhatamanController::class, 'dashboard'])->name('khataman.dashboard');
             Route::post('/khataman/checkin', [KhatamanController::class, 'checkIn'])->name('khataman.checkin');
+            Route::get('/khataman/server-time', [KhatamanController::class, 'serverTime'])->name('khataman.server-time');
 
             Route::get('/sunnah', [SunnahController::class, 'dashboard'])->name('sunnah.dashboard');
             Route::post('/sunnah/save', [SunnahController::class, 'saveDaily'])->name('sunnah.save');
@@ -129,9 +129,6 @@ Route::middleware('auth')->group(function () {
             Route::get('/perjalanan-dinas', [PerjalananDinasController::class, 'dashboard'])->name('perjalanan-dinas.index');
             Route::get('/perjalanan-dinas/create', [PerjalananDinasController::class, 'create'])->name('perjalanan-dinas.create');
             Route::post('/perjalanan-dinas/store', [PerjalananDinasController::class, 'store'])->name('perjalanan-dinas.store');
-            Route::get('/perjalanan-dinas/{id}/edit', [PerjalananDinasController::class, 'edit'])->name('perjalanan-dinas.edit');
-            Route::put('/perjalanan-dinas/{id}', [PerjalananDinasController::class, 'update'])->name('perjalanan-dinas.update');
-            Route::delete('/perjalanan-dinas/{id}', [PerjalananDinasController::class, 'destroy'])->name('perjalanan-dinas.destroy');
             Route::get('/perjalanan-dinas/{id}/download', [PerjalananDinasController::class, 'downloadSuratTugas'])->name('perjalanan-dinas.download');
         });
 });

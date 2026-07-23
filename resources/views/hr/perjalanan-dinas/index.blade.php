@@ -77,9 +77,6 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    <input type="checkbox" id="select-all" class="rounded border-gray-300 text-[#00a2e9] focus:ring-[#00a2e9]">
-                                </th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Karyawan</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Judul</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Tanggal</th>
@@ -91,11 +88,6 @@
                         <tbody class="bg-white divide-y divide-gray-200">
                             @forelse($perjalananDinas as $item)
                             <tr class="hover:bg-gray-50 transition">
-                                <td class="px-4 py-3">
-                                    @if($item->status === 'pending')
-                                        <input type="checkbox" class="bulk-checkbox rounded border-gray-300 text-[#00a2e9] focus:ring-[#00a2e9]" value="{{ $item->id }}">
-                                    @endif
-                                </td>
                                 <td class="px-4 py-3">
                                     <div class="flex items-center space-x-2">
                                         <div class="w-8 h-8 rounded-full bg-[#00a2e9] flex items-center justify-center text-white text-xs font-bold">
@@ -147,12 +139,6 @@
                                            class="text-blue-600 hover:text-blue-800 text-sm">
                                             Detail
                                         </a>
-                                        @if($item->status === 'pending')
-                                            <button onclick="showApproveModal({{ $item->id }})"
-                                                    class="text-green-600 hover:text-green-800 text-sm">
-                                                Proses
-                                            </button>
-                                        @endif
                                         @if($item->status === 'approved')
                                             <a href="{{ route('hr.perjalanan-dinas.mark-selesai', $item->id) }}"
                                                class="text-blue-600 hover:text-blue-800 text-sm"
@@ -165,7 +151,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                                <td colspan="6" class="px-4 py-8 text-center text-gray-500">
                                     <svg class="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                     </svg>
@@ -178,142 +164,12 @@
                     </div>
                 </div>
 
-                <!-- Bulk Action & Pagination -->
-                <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <div class="flex items-center space-x-3">
-                        <span class="text-sm text-gray-700">Dengan yang dipilih:</span>
-                        <select id="bulk-action" class="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent bg-white">
-                            <option value="">Pilih Aksi</option>
-                            <option value="approved">Setujui</option>
-                            <option value="rejected">Tolak</option>
-                        </select>
-                        <button id="bulk-apply" class="px-4 py-1.5 bg-[#00a2e9] text-white rounded-lg hover:bg-[#0088c4] transition text-sm">
-                            Terapkan
-                        </button>
-                    </div>
-                    <div>
-                        {{ $perjalananDinas->appends(request()->query())->links() }}
-                    </div>
+                <!-- Pagination -->
+                <div class="px-4 py-3 bg-gray-50 border-t border-gray-200">
+                    {{ $perjalananDinas->appends(request()->query())->links() }}
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-<!-- Modal Approve -->
-<div id="approveModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
-    <div class="flex items-center justify-center min-h-screen px-4">
-        <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onclick="closeApproveModal()"></div>
-        <div class="relative bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-[#161758]">Proses Pengajuan</h3>
-                <button onclick="closeApproveModal()" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
-            <form id="approveForm" method="POST">
-                @csrf
-                <input type="hidden" name="status" id="approveStatus" value="approved">
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Catatan (Opsional)</label>
-                    <textarea name="catatan_hr" rows="3"
-                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent"
-                              placeholder="Tulis catatan untuk karyawan..."></textarea>
-                </div>
-                <div class="flex gap-3">
-                    <button type="submit" id="approveBtn" class="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition">
-                        Setujui
-                    </button>
-                    <button type="submit" id="rejectBtn" class="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
-                        Tolak
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-@push('scripts')
-<script>
-function showApproveModal(id) {
-    const modal = document.getElementById('approveModal');
-    const form = document.getElementById('approveForm');
-    // PERBAIKAN: Gunakan route dengan parameter ID yang benar
-    const url = "{{ route('hr.perjalanan-dinas.approve', ':id') }}".replace(':id', id);
-    form.action = url;
-    modal.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-}
-
-function closeApproveModal() {
-    document.getElementById('approveModal').classList.add('hidden');
-    document.body.style.overflow = 'auto';
-}
-
-// Set status before submit
-document.getElementById('approveBtn').addEventListener('click', function(e) {
-    document.getElementById('approveStatus').value = 'approved';
-});
-
-document.getElementById('rejectBtn').addEventListener('click', function(e) {
-    document.getElementById('approveStatus').value = 'rejected';
-});
-
-// Select All
-document.getElementById('select-all').addEventListener('change', function() {
-    document.querySelectorAll('.bulk-checkbox').forEach(cb => cb.checked = this.checked);
-});
-
-// Bulk Apply
-document.getElementById('bulk-apply').addEventListener('click', function() {
-    const selected = document.querySelectorAll('.bulk-checkbox:checked');
-    const action = document.getElementById('bulk-action').value;
-
-    if (!action) {
-        alert('Pilih aksi terlebih dahulu.');
-        return;
-    }
-
-    if (selected.length === 0) {
-        alert('Pilih minimal satu pengajuan.');
-        return;
-    }
-
-    const ids = Array.from(selected).map(cb => cb.value);
-    const catatan = prompt('Masukkan catatan (opsional):');
-
-    fetch('{{ route('hr.perjalanan-dinas.bulk-approve') }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-            ids: ids,
-            status: action,
-            catatan_hr: catatan
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(data.message);
-            location.reload();
-        } else {
-            alert('Terjadi kesalahan: ' + data.message);
-        }
-    })
-    .catch(error => {
-        alert('Terjadi kesalahan. Silakan coba lagi.');
-    });
-});
-
-// Close modal with Escape key
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeApproveModal();
-});
-</script>
-@endpush
 @endsection

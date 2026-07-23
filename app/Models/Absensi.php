@@ -102,6 +102,10 @@ class Absensi extends Model
                 'latitude' => -6.586886661039424,
                 'longitude' => 106.75890044642712,
             ],
+            'KPM LALADON 2' => [
+                'latitude' => -6.586988011637659,
+                'longitude' => 106.75881657975602,
+            ],
             'KPM SEMPLAK' => [
                 'latitude' => -6.553776866673678,
                 'longitude' => 106.76227926589081,

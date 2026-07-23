@@ -116,6 +116,21 @@ class KhatamanController extends Controller
         ]);
     }
 
+    // Kirim waktu server saat ini ke client, dipakai untuk sinkronisasi jam
+    // real-time di dashboard supaya tidak bergantung pada jam device karyawan.
+    public function serverTime()
+    {
+        $now = Carbon::now();
+
+        return response()->json([
+            'success'       => true,
+            'server_time'   => $now->format('Y-m-d H:i:s'),
+            'timestamp_ms'  => $now->valueOf(), // epoch ms, dipakai JS
+            'is_active_day' => KhatamanAbsensi::isActiveDay(),
+            'has_checked_in' => Auth::check() ? KhatamanAbsensi::hasCheckedInToday(Auth::id()) : null,
+        ]);
+    }
+
     // HR: Index
     public function index(Request $request)
     {
@@ -183,13 +198,13 @@ class KhatamanController extends Controller
         return redirect()->route('hr.khataman.index')->with('success', "Kode Khataman berhasil dibuat: <strong>{$kode}</strong>");
     }
 
-    // Helpers: Hitung jumlah hari Kamis dalam bulan
+    // Helpers: Hitung jumlah hari aktif (default: Kamis) dalam bulan
     private function countActiveDaysInMonth($month, $year)
     {
         $count = 0;
         $date = Carbon::create($year, $month, 1);
         while ($date->month == $month) {
-            if ($date->dayOfWeek == 4) { // Kamis
+            if ($date->dayOfWeekIso == KhatamanAbsensi::ACTIVE_DAY) {
                 $count++;
             }
             $date->addDay();
@@ -197,13 +212,13 @@ class KhatamanController extends Controller
         return $count;
     }
 
-    // Helper: Dapatkan daftar tanggal Kamis dalam bulan
+    // Helper: Dapatkan daftar tanggal hari aktif (default: Kamis) dalam bulan
     private function getActiveDaysInMonth($month, $year)
     {
         $days = [];
         $date = Carbon::create($year, $month, 1);
         while ($date->month == $month) {
-            if ($date->dayOfWeek == 4) { // Kamis
+            if ($date->dayOfWeekIso == KhatamanAbsensi::ACTIVE_DAY) {
                 $days[] = $date->copy();
             }
             $date->addDay();
