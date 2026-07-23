@@ -65,11 +65,11 @@
 
                     <div class="mt-6 flex flex-wrap gap-4">
                         <button type="submit"
-                                class="bg-[#27438D] text-white px-6 py-2 rounded-lg hover:bg-[#161758] transition-colors">
+                                class="w-full sm:w-auto bg-[#27438D] text-white px-6 py-2 rounded-lg hover:bg-[#161758] transition-colors">
                             Ajukan Cuti
                         </button>
                         <a href="{{ route('karyawan.cuti.dashboard') }}"
-                           class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                           class="w-full sm:w-auto text-center bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors">
                             Batal
                         </a>
                     </div>

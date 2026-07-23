@@ -2,16 +2,16 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="flex">
+<div class="flex min-h-screen">
     @include('layouts.sidebar')
-    <div class="ml-64 flex-1 p-6">
-        <div class="flex justify-between items-start mb-6">
+    <div class="flex-1 transition-all duration-300 md:ml-64 p-3 sm:p-6">
+        <div class="flex flex-wrap justify-between items-start mb-6 gap-3">
             <div>
                 <h1 class="text-2xl font-bold font-['Montserrat'] text-[#161758]">Profile Saya</h1>
                 <p class="text-[#27438D]">Detail informasi profil Anda</p>
             </div>
             <button onclick="toggleEditForm()"
-                class="bg-[#27438D] text-white px-6 py-2 rounded-lg hover:bg-[#161758] transition-colors duration-200">
+                class="w-full sm:w-auto bg-[#27438D] text-white px-6 py-2 rounded-lg hover:bg-[#161758] transition-colors duration-200">
                 <i class="fas fa-edit mr-2"></i> Edit Profile
             </button>
         </div>
@@ -351,7 +351,7 @@
                         <div>
                             <div class="mb-4">
                                 <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Sedang Melanjutkan Pendidikan?</label>
-                                <div class="flex items-center space-x-4">
+                                <div class="flex flex-wrap items-center gap-4">
                                     <label class="inline-flex items-center">
                                         <input type="radio" name="is_continuing_education" value="1" {{ old('is_continuing_education', $user->is_continuing_education) ? 'checked' : '' }}
                                             class="w-4 h-4 text-[#27438D] border-gray-300 focus:ring-[#27438D]">
@@ -508,9 +508,9 @@
                         </div>
                     </div>
 
-                    <div class="mt-6 flex space-x-4">
-                        <button type="submit" class="bg-[#27438D] text-white px-6 py-2 rounded-lg hover:bg-[#161758] transition-colors duration-200">Update Profile</button>
-                        <button type="button" onclick="toggleEditForm()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors duration-200">Batal</button>
+                    <div class="mt-6 flex flex-wrap gap-4">
+                        <button type="submit" class="w-full sm:w-auto bg-[#27438D] text-white px-6 py-2 rounded-lg hover:bg-[#161758] transition-colors duration-200">Update Profile</button>
+                        <button type="button" onclick="toggleEditForm()" class="w-full sm:w-auto bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors duration-200">Batal</button>
                     </div>
                 </form>
             </div>

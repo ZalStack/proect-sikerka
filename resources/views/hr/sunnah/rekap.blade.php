@@ -66,19 +66,19 @@
             <div class="bg-white rounded-lg shadow-md overflow-hidden">
                 <div class="overflow-x-auto -mx-4 sm:mx-0">
                     <div class="inline-block min-w-full align-middle">
-                        <table class="min-w-[900px] sm:min-w-full">
+                        <table class="min-w-[600px] sm:min-w-full">
                             <thead class="bg-[#F5F5F5]">
                                 <tr>
                                     <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Rank</th>
                                     <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Nama Karyawan</th>
-                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Kode Pegawai</th>
-                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Divisi</th>
-                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Hari Mengisi</th>
+                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden sm:table-cell">Kode Pegawai</th>
+                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden md:table-cell">Divisi</th>
+                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Hari</th>
                                     <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Total Poin</th>
-                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Rata-rata/Hari</th>
-                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Disetujui</th>
-                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Menunggu</th>
-                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Ditolak</th>
+                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden lg:table-cell">Rata-rata/Hari</th>
+                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden lg:table-cell">Disetujui</th>
+                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden lg:table-cell">Menunggu</th>
+                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden lg:table-cell">Ditolak</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -101,14 +101,14 @@
                                             {{ $row['nama_lengkap'] }}
                                         </a>
                                     </td>
-                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">{{ $row['kode_pegawai'] }}</td>
-                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">{{ $row['divisi'] }}</td>
+                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm hidden sm:table-cell">{{ $row['kode_pegawai'] }}</td>
+                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm hidden md:table-cell">{{ $row['divisi'] }}</td>
                                     <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">{{ $row['total_hari'] }}</td>
                                     <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-bold text-[#161758]">{{ $row['total_poin'] }}</td>
-                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">{{ $row['rata_rata'] }}</td>
-                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-[#2E7D3E] font-semibold">{{ $row['approved'] }}</td>
-                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-[#FCC626] font-semibold">{{ $row['pending'] }}</td>
-                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-[#ec1d1d] font-semibold">{{ $row['rejected'] }}</td>
+                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm hidden lg:table-cell">{{ $row['rata_rata'] }}</td>
+                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-[#2E7D3E] font-semibold hidden lg:table-cell">{{ $row['approved'] }}</td>
+                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-[#FCC626] font-semibold hidden lg:table-cell">{{ $row['pending'] }}</td>
+                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-[#ec1d1d] font-semibold hidden lg:table-cell">{{ $row['rejected'] }}</td>
                                 </tr>
                                 @empty
                                 <tr>

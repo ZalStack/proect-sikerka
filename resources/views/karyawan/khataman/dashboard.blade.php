@@ -98,7 +98,7 @@
                 <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">📋 Daftar Absensi Khataman Bulan Ini</h2>
                 <div class="overflow-x-auto -mx-4 sm:mx-0">
                     <div class="inline-block min-w-full align-middle">
-                        <table class="min-w-[500px] sm:min-w-full">
+                        <table class="min-w-full">
                             <thead>
                                 <tr class="bg-[#F5F5F5]">
                                     <th class="px-3 sm:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Tanggal</th>

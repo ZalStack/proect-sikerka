@@ -1,9 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="flex">
+<div class="flex min-h-screen">
     @include('layouts.sidebar')
-    <div class="flex-1 ml-0 md:ml-64 pt-14 sm:pt-16">
+    <div class="flex-1 transition-all duration-300 md:ml-64">
         <div class="p-4 sm:p-6">
             <!-- Header -->
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -46,22 +46,24 @@
                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent text-sm">
                     </div>
                     <div class="flex flex-wrap gap-2">
-                        <select name="status" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent text-sm bg-white">
+                        <select name="status" class="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent text-sm bg-white">
                             <option value="semua">Semua Status</option>
                             <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                             <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Disetujui</option>
                             <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Ditolak</option>
                             <option value="selesai" {{ request('status') == 'selesai' ? 'selected' : '' }}>Selesai</option>
                         </select>
-                        <input type="date" name="tanggal_mulai" value="{{ request('tanggal_mulai') }}"
-                               class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent text-sm">
-                        <span class="self-center text-gray-500 text-sm">s/d</span>
-                        <input type="date" name="tanggal_selesai" value="{{ request('tanggal_selesai') }}"
-                               class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent text-sm">
-                        <button type="submit" class="px-4 py-2 bg-[#00a2e9] text-white rounded-lg hover:bg-[#0088c4] transition text-sm">
+                        <div class="flex items-center gap-1 flex-wrap">
+                            <input type="date" name="tanggal_mulai" value="{{ request('tanggal_mulai') }}"
+                                   class="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent text-sm">
+                            <span class="flex-shrink-0 text-gray-500 text-sm">s/d</span>
+                            <input type="date" name="tanggal_selesai" value="{{ request('tanggal_selesai') }}"
+                                   class="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent text-sm">
+                        </div>
+                        <button type="submit" class="flex-1 sm:flex-none px-4 py-2 bg-[#00a2e9] text-white rounded-lg hover:bg-[#0088c4] transition text-sm">
                             Filter
                         </button>
-                        <a href="{{ route('hr.perjalanan-dinas.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm">
+                        <a href="{{ route('hr.perjalanan-dinas.index') }}" class="flex-1 sm:flex-none text-center px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm">
                             Reset
                         </a>
                     </div>
@@ -70,7 +72,8 @@
 
             <!-- Table -->
             <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto -mx-4 sm:mx-0">
+                    <div class="inline-block min-w-full align-middle">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
@@ -79,9 +82,9 @@
                                 </th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Karyawan</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Judul</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Tanggal</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Surat Tugas</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Surat Tugas</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                             </tr>
                         </thead>
@@ -108,7 +111,7 @@
                                     <p class="text-sm text-gray-900">{{ Str::limit($item->judul, 30) }}</p>
                                     <p class="text-xs text-gray-500">{{ Str::limit($item->agenda, 40) }}</p>
                                 </td>
-                                <td class="px-4 py-3">
+                                <td class="px-4 py-3 hidden sm:table-cell">
                                     <p class="text-sm text-gray-900">{{ $item->tanggal_mulai->format('d/m/Y') }}</p>
                                     <p class="text-xs text-gray-500">s/d {{ $item->tanggal_selesai->format('d/m/Y') }}</p>
                                 </td>
@@ -125,7 +128,7 @@
                                         {{ ucfirst($item->status) }}
                                     </span>
                                 </td>
-                                <td class="px-4 py-3">
+                                <td class="px-4 py-3 hidden md:table-cell">
                                     @if($item->surat_tugas)
                                         <a href="{{ route('hr.perjalanan-dinas.download', $item->id) }}"
                                            class="text-[#00a2e9] hover:text-[#0088c4] text-sm flex items-center space-x-1">
@@ -172,6 +175,7 @@
                             @endforelse
                         </tbody>
                     </table>
+                    </div>
                 </div>
 
                 <!-- Bulk Action & Pagination -->

@@ -1,9 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="flex">
+<div class="flex min-h-screen">
     @include('layouts.sidebar')
-    <div class="flex-1 ml-0 md:ml-64 pt-14 sm:pt-16">
+    <div class="flex-1 transition-all duration-300 md:ml-64">
         <div class="p-4 sm:p-6">
             <!-- Header -->
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -46,7 +46,7 @@
 
             <!-- Filter -->
             <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
-                <form action="{{ route('karyawan.perjalanan-dinas.index') }}" method="GET" class="flex flex-wrap gap-3">
+                <form action="{{ route('karyawan.perjalanan-dinas.index') }}" method="GET" class="flex flex-col sm:flex-row gap-3">
                     <select name="status" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent text-sm bg-white">
                         <option value="semua">Semua Status</option>
                         <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
@@ -65,15 +65,16 @@
 
             <!-- Table -->
             <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto -mx-4 sm:mx-0">
+                    <div class="inline-block min-w-full align-middle">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Judul</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Tanggal</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Surat Tugas</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Surat Tugas</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                             </tr>
                         </thead>
@@ -84,8 +85,9 @@
                                 <td class="px-4 py-3">
                                     <p class="text-sm font-medium text-gray-900">{{ Str::limit($item->judul, 35) }}</p>
                                     <p class="text-xs text-gray-500">{{ Str::limit($item->agenda, 45) }}</p>
+                                    <p class="text-xs text-gray-400 sm:hidden">{{ $item->tanggal_mulai->format('d/m/Y') }} s/d {{ $item->tanggal_selesai->format('d/m/Y') }}</p>
                                 </td>
-                                <td class="px-4 py-3">
+                                <td class="px-4 py-3 hidden sm:table-cell">
                                     <p class="text-sm text-gray-900">{{ $item->tanggal_mulai->format('d/m/Y') }}</p>
                                     <p class="text-xs text-gray-500">s/d {{ $item->tanggal_selesai->format('d/m/Y') }}</p>
                                 </td>
@@ -107,7 +109,7 @@
                                         </div>
                                     @endif
                                 </td>
-                                <td class="px-4 py-3">
+                                <td class="px-4 py-3 hidden md:table-cell">
                                     @if($item->surat_tugas)
                                         <a href="{{ route('karyawan.perjalanan-dinas.download', $item->id) }}"
                                            class="text-[#00a2e9] hover:text-[#0088c4] text-sm flex items-center space-x-1">
@@ -157,6 +159,7 @@
                             @endforelse
                         </tbody>
                     </table>
+                    </div>
                 </div>
 
                 <!-- Pagination -->

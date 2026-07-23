@@ -74,7 +74,7 @@
                             Upload Bukti Foto Kegiatan FHL <span class="text-[#ec1d1d]">*</span>
                         </label>
                         <div class="flex items-center justify-center w-full">
-                            <label class="flex flex-col items-center justify-center w-full h-36 sm:h-48 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors duration-200">
+                            <label class="flex flex-col items-center justify-center w-full min-h-[144px] sm:min-h-[192px] border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors duration-200">
                                 <div class="flex flex-col items-center justify-center pt-4 pb-5 sm:pt-5 sm:pb-6">
                                     <svg class="w-8 h-8 sm:w-10 sm:h-10 text-gray-400 mb-2 sm:mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
@@ -126,11 +126,11 @@
                 <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">📋 Daftar Absensi FHL Bulan Ini</h2>
                 <div class="overflow-x-auto -mx-4 sm:mx-0">
                     <div class="inline-block min-w-full align-middle">
-                        <table class="min-w-[500px] sm:min-w-full">
+                        <table class="min-w-full">
                             <thead>
                                 <tr class="bg-[#F5F5F5]">
                                     <th class="px-3 sm:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Tanggal</th>
-                                    <th class="px-3 sm:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Hari</th>
+                                    <th class="px-3 sm:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden sm:table-cell">Hari</th>
                                     <th class="px-3 sm:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Check-in</th>
                                     <th class="px-3 sm:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Status</th>
                                     <th class="px-3 sm:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Bukti</th>
@@ -142,8 +142,8 @@
                                         $absen = $absensi->get($friday->format('Y-m-d'));
                                     @endphp
                                     <tr class="border-b border-gray-200">
-                                        <td class="px-3 sm:px-4 py-2 text-xs sm:text-sm">{{ $friday->format('d-m-Y') }}</td>
-                                        <td class="px-3 sm:px-4 py-2 text-xs sm:text-sm">Jumat</td>
+                                        <td class="px-3 sm:px-4 py-2 text-xs sm:text-sm whitespace-nowrap">{{ $friday->format('d-m-Y') }}</td>
+                                        <td class="px-3 sm:px-4 py-2 text-xs sm:text-sm hidden sm:table-cell">Jumat</td>
                                         <td class="px-3 sm:px-4 py-2 text-xs sm:text-sm">
                                             {{ $absen && $absen->check_in ? Carbon\Carbon::parse($absen->check_in)->format('H:i:s') : '-' }}
                                         </td>

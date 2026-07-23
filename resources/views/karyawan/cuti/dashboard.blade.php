@@ -52,7 +52,7 @@
                 </div>
                 <div class="overflow-x-auto -mx-4 sm:mx-0">
                     <div class="inline-block min-w-full align-middle">
-                        <table class="min-w-[500px] sm:min-w-full">
+                        <table class="min-w-full">
                             <thead class="bg-[#F5F5F5]">
                                 <tr>
                                     <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Tanggal</th>
@@ -64,7 +64,7 @@
                             <tbody>
                                 @forelse($cuti as $item)
                                 <tr class="border-b border-gray-200 hover:bg-[#F5F5F5]">
-                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
+                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm whitespace-nowrap">
                                         {{ $item->tanggal_mulai ? $item->tanggal_mulai->format('d/m/Y') : '-' }}
                                         <span class="text-[10px] sm:text-xs text-gray-500">→</span>
                                         {{ $item->tanggal_selesai ? $item->tanggal_selesai->format('d/m/Y') : '-' }}

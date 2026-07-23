@@ -139,13 +139,13 @@
                                         </th>
                                         <th class="px-3 sm:px-4 py-2 text-left text-xs font-semibold text-[#1B1B1B]">
                                             Check-in</th>
-                                        <th class="px-3 sm:px-4 py-2 text-left text-xs font-semibold text-[#1B1B1B]">
+                                        <th class="px-3 sm:px-4 py-2 text-left text-xs font-semibold text-[#1B1B1B] hidden sm:table-cell">
                                             Check-out</th>
                                         <th class="px-3 sm:px-4 py-2 text-left text-xs font-semibold text-[#1B1B1B]">Status
                                         </th>
-                                        <th class="px-3 sm:px-4 py-2 text-left text-xs font-semibold text-[#1B1B1B]">Lokasi
+                                        <th class="px-3 sm:px-4 py-2 text-left text-xs font-semibold text-[#1B1B1B] hidden md:table-cell">Lokasi
                                         </th>
-                                        <th class="px-3 sm:px-4 py-2 text-left text-xs font-semibold text-[#1B1B1B]">Total
+                                        <th class="px-3 sm:px-4 py-2 text-left text-xs font-semibold text-[#1B1B1B] hidden lg:table-cell">Total
                                             Jam</th>
                                     </tr>
                                 </thead>
@@ -154,7 +154,7 @@
                                         <tr class="border-b border-gray-200">
                                             <td class="px-3 sm:px-4 py-2 text-xs">{{ $day['tanggal'] }}</td>
                                             <td class="px-3 sm:px-4 py-2 text-xs">{{ $day['check_in'] }}</td>
-                                            <td class="px-3 sm:px-4 py-2 text-xs">{{ $day['check_out'] }}</td>
+                                            <td class="px-3 sm:px-4 py-2 text-xs hidden sm:table-cell">{{ $day['check_out'] }}</td>
                                             <td class="px-3 sm:px-4 py-2 text-xs">
                                                 @if ($day['status'] == 'Hadir')
                                                     <span
@@ -174,7 +174,7 @@
                                                         class="px-2 py-1 rounded-full text-[10px] font-medium bg-[#ec1d1d] text-white">Alpha</span>
                                                 @endif
                                             </td>
-                                            <td class="px-3 sm:px-4 py-2 text-xs">
+                                            <td class="px-3 sm:px-4 py-2 text-xs hidden md:table-cell">
                                                 @if ($day['is_valid'])
                                                     <span class="text-[#2E7D3E]">✅ Valid</span>
                                                     @if ($day['distance'])
@@ -185,7 +185,7 @@
                                                     <span class="text-[#ec1d1d]">❌ Invalid</span>
                                                 @endif
                                             </td>
-                                            <td class="px-3 sm:px-4 py-2 text-xs">{{ $day['total_jam'] }} jam</td>
+                                            <td class="px-3 sm:px-4 py-2 text-xs hidden lg:table-cell">{{ $day['total_jam'] }} jam</td>
                                         </tr>
                                     @empty
                                         <tr>

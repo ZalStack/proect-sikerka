@@ -1,9 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="flex">
+<div class="flex min-h-screen">
     @include('layouts.sidebar')
-    <div class="flex-1 ml-0 md:ml-64 pt-14 sm:pt-16">
+    <div class="flex-1 transition-all duration-300 md:ml-64">
         <div class="p-4 sm:p-6 max-w-3xl mx-auto">
             <div class="mb-6">
                 <a href="{{ route('karyawan.perjalanan-dinas.index') }}" class="text-[#00a2e9] hover:text-[#0088c4] flex items-center space-x-1 text-sm">

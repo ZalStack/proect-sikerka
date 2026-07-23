@@ -51,7 +51,7 @@
                                             </td>
                                             <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
                                                 <div class="font-semibold text-[#161758] break-words">{{ $item->judul }}</div>
-                                                <div class="text-[10px] sm:text-xs text-gray-500 truncate max-w-[120px] sm:max-w-xs">
+                                                <div class="text-[10px] sm:text-xs text-gray-500 truncate max-w-[180px] sm:max-w-xs">
                                                     {{ Str::limit($item->isi, 50) }}
                                                 </div>
                                                 @if ($item->gambar)

@@ -1,9 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="flex">
+<div class="flex min-h-screen">
     @include('layouts.sidebar')
-    <div class="flex-1 ml-0 md:ml-64 pt-14 sm:pt-16">
+    <div class="flex-1 transition-all duration-300 md:ml-64">
         <div class="p-4 sm:p-6">
             <div class="mb-6">
                 <a href="{{ route('hr.perjalanan-dinas.index') }}" class="text-[#00a2e9] hover:text-[#0088c4] flex items-center space-x-1 text-sm">
@@ -19,7 +19,7 @@
                 <div class="p-6 border-b border-gray-200">
                     <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                         <div>
-                            <div class="flex items-center space-x-3">
+                            <div class="flex flex-wrap items-center gap-3">
                                 <h1 class="text-xl font-bold text-[#161758]">{{ $perjalananDinas->judul }}</h1>
                                 @php
                                     $statusColors = [
@@ -36,18 +36,18 @@
                             <p class="text-sm text-gray-500 mt-1">Pengajuan: {{ $perjalananDinas->created_at->format('d/m/Y H:i') }}</p>
                         </div>
                         @if($perjalananDinas->status === 'pending')
-                            <div class="flex space-x-2">
-                                <button onclick="showApproveModal({{ $perjalananDinas->id }})" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition text-sm">
+                            <div class="flex flex-wrap gap-2">
+                                <button onclick="showApproveModal({{ $perjalananDinas->id }})" class="w-full sm:w-auto px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition text-sm">
                                     Setujui
                                 </button>
-                                <button onclick="showRejectModal({{ $perjalananDinas->id }})" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition text-sm">
+                                <button onclick="showRejectModal({{ $perjalananDinas->id }})" class="w-full sm:w-auto px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition text-sm">
                                     Tolak
                                 </button>
                             </div>
                         @endif
                         @if($perjalananDinas->status === 'approved')
                             <a href="{{ route('hr.perjalanan-dinas.mark-selesai', $perjalananDinas->id) }}"
-                               class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition text-sm"
+                               class="w-full sm:w-auto text-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition text-sm"
                                onclick="return confirm('Tandai perjalanan dinas ini sebagai selesai?')">
                                 Tandai Selesai
                             </a>

@@ -305,7 +305,7 @@
                     <div>
                         <div class="mb-4">
                             <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Sedang Melanjutkan Pendidikan?</label>
-                            <div class="flex items-center space-x-4">
+                            <div class="flex flex-wrap items-center gap-4">
                                 <label class="inline-flex items-center">
                                     <input type="radio" name="is_continuing_education" value="1" {{ old('is_continuing_education', $karyawan->is_continuing_education) ? 'checked' : '' }}
                                         class="w-4 h-4 text-[#27438D] border-gray-300 focus:ring-[#27438D]">

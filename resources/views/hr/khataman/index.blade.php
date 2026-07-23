@@ -114,15 +114,15 @@
             <div class="bg-white rounded-lg shadow-md overflow-hidden">
                 <div class="overflow-x-auto -mx-4 sm:mx-0">
                     <div class="inline-block min-w-full align-middle">
-                        <table class="min-w-[700px] sm:min-w-full">
+                        <table class="min-w-full">
                             <thead class="bg-[#F5F5F5]">
                                 <tr>
                                     <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">No</th>
                                     <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Karyawan</th>
-                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Tanggal</th>
-                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Check-in</th>
+                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden sm:table-cell">Tanggal</th>
+                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden sm:table-cell">Check-in</th>
                                     <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Status</th>
-                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Kode</th>
+                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden md:table-cell">Kode</th>
                                     <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Aksi</th>
                                 </tr>
                             </thead>
@@ -131,14 +131,14 @@
                                 <tr class="border-b border-gray-200 hover:bg-[#F5F5F5]">
                                     <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">{{ $loop->iteration + ($absensis->currentPage() - 1) * $absensis->perPage() }}</td>
                                     <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">{{ $absen->karyawan->nama_lengkap }}</td>
-                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">{{ $absen->tanggal->format('d-m-Y') }}</td>
-                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">{{ $absen->check_in ? Carbon\Carbon::parse($absen->check_in)->format('H:i:s') : '-' }}</td>
+                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm hidden sm:table-cell">{{ $absen->tanggal->format('d-m-Y') }}</td>
+                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm hidden sm:table-cell">{{ $absen->check_in ? Carbon\Carbon::parse($absen->check_in)->format('H:i:s') : '-' }}</td>
                                     <td class="px-3 sm:px-4 py-2 sm:py-3">
                                         <span class="px-2 py-1 rounded-full text-[10px] sm:text-xs font-medium bg-[#2E7D3E] text-white">
                                             {{ $absen->status }}
                                         </span>
                                     </td>
-                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">{{ $absen->kode_input ?? '-' }}</td>
+                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm hidden md:table-cell">{{ $absen->kode_input ?? '-' }}</td>
                                     <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
                                         <a href="{{ route('hr.khataman.detail', $absen->id) }}"
                                            class="text-[#00a2e9] hover:text-[#27438D]">
