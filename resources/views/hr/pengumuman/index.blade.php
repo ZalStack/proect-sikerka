@@ -29,10 +29,11 @@
                     </div>
                 @endif
 
-                <div class="bg-white rounded-lg shadow-md overflow-hidden">
-                    <div class="overflow-x-auto -mx-4 sm:mx-0">
+                <div class="bg-white rounded-lg shadow-md">
+                    {{-- Desktop Table --}}
+                    <div class="hidden sm:block overflow-x-auto">
                         <div class="inline-block min-w-full align-middle">
-                            <table class="min-w-[700px] sm:min-w-full">
+                            <table class="min-w-full">
                                 <thead class="bg-[#F5F5F5]">
                                     <tr>
                                         <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">No</th>
@@ -136,6 +137,61 @@
                                 </tbody>
                             </table>
                         </div>
+                    </div>
+
+                    {{-- Mobile Cards --}}
+                    <div class="sm:hidden divide-y divide-gray-200">
+                        @forelse($pengumuman as $item)
+                        <div class="p-3 space-y-2">
+                            <div>
+                                <p class="text-sm font-semibold text-[#161758]">{{ $item->judul }}</p>
+                                <p class="text-[11px] text-gray-500 mt-0.5">{{ Str::limit($item->isi, 60) }}</p>
+                                @if ($item->gambar)
+                                    <span class="text-[10px] text-[#00a2e9]">📷 Ada gambar</span>
+                                @endif
+                            </div>
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-medium
+                                    {{ $item->target == 'semua' ? 'bg-[#00a2e9] text-white' : ($item->target == 'hr' ? 'bg-[#27438D] text-white' : 'bg-[#FCC626] text-[#1B1B1B]') }}">
+                                    {{ $item->target_label }}
+                                </span>
+                                @if ($item->is_sent_to_whatsapp)
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#2E7D3E] text-white">✅ Terkirim</span>
+                                @else
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-300 text-gray-600">❌ Belum</span>
+                                @endif
+                            </div>
+                            <div class="flex items-center justify-between text-[11px] text-gray-500">
+                                <span>{{ $item->created_at->format('d-m-Y') }}</span>
+                                <span>{{ $item->creator ? $item->creator->nama_lengkap : '-' }}</span>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1">
+                                <a href="{{ route('hr.pengumuman.show', $item->id) }}" class="text-[#00a2e9] text-xs">Detail</a>
+                                <a href="{{ route('hr.pengumuman.edit', $item->id) }}" class="text-[#FCC626] text-xs">Edit</a>
+                                @if (!$item->is_sent_to_whatsapp)
+                                    <a href="{{ route('hr.pengumuman.select-contact', $item->id) }}" class="text-[#25D366] text-xs">📤 Kirim WA</a>
+                                @else
+                                    <a href="{{ route('hr.pengumuman.select-contact', $item->id) }}" class="text-[#00a2e9] text-xs">📤 Kirim Ulang</a>
+                                @endif
+                                <form action="{{ route('hr.pengumuman.destroy', $item->id) }}" method="POST" class="inline-flex items-center"
+                                    onsubmit="return confirm('Apakah anda yakin ingin menghapus pengumuman ini?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-[#ec1d1d] text-xs">Hapus</button>
+                                </form>
+                            </div>
+                        </div>
+                        @empty
+                        <div class="p-4 py-10 text-center text-[#1B1B1B]">
+                            <div class="flex flex-col items-center">
+                                <svg class="w-10 h-10 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                </svg>
+                                <p class="text-sm font-semibold text-gray-500">Belum ada pengumuman</p>
+                                <p class="text-xs text-gray-400 mt-1">Klik tombol "Buat Pengumuman" untuk menambahkan</p>
+                            </div>
+                        </div>
+                        @endforelse
                     </div>
 
                     <!-- Pagination -->

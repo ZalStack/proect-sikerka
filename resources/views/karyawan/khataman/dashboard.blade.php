@@ -26,10 +26,11 @@
             <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
                 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div>
-                        <h2 class="text-base sm:text-lg font-semibold text-[#161758]">
-                            {{ $isActiveDay ? '📅 Hari ini adalah hari aktif (Senin-Jumat)!' : '📅 Hari ini bukan hari aktif' }}
+                        <h2 class="text-sm sm:text-lg font-semibold text-[#161758] leading-tight">
+                            <span class="sm:hidden">📅 {{ $isActiveDay ? 'Hari aktif (Senin-Jumat)' : 'Hari non-aktif' }}</span>
+                            <span class="hidden sm:inline">{{ $isActiveDay ? '📅 Hari ini adalah hari aktif (Senin-Jumat)!' : '📅 Hari ini bukan hari aktif' }}</span>
                         </h2>
-                        <p id="currentDateTime" class="text-xs sm:text-sm text-[#1B1B1B] mt-1">
+                        <p id="currentDateTime" class="text-xs sm:text-sm text-[#1B1B1B] mt-2">
                             {{ Carbon\Carbon::now()->locale('id')->isoFormat('dddd, D MMMM YYYY') }}
                         </p>
                     </div>

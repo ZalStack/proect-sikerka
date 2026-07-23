@@ -56,10 +56,11 @@
                 </form>
             </div>
 
-            <div class="bg-white rounded-lg shadow-md overflow-hidden">
-                <div class="overflow-x-auto -mx-4 sm:mx-0">
+            <div class="bg-white rounded-lg shadow-md">
+                {{-- Desktop Table --}}
+                <div class="hidden sm:block overflow-x-auto">
                     <div class="inline-block min-w-full align-middle">
-                        <table class="min-w-[800px] sm:min-w-full">
+                        <table class="min-w-full">
                             <thead class="bg-[#F5F5F5]">
                                 <tr>
                                     <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">No</th>
@@ -143,6 +144,60 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+
+                {{-- Mobile Cards --}}
+                <div class="sm:hidden divide-y divide-gray-200">
+                    @forelse($karyawans as $karyawan)
+                    <div class="p-3 space-y-2 {{ $karyawan->is_resigned ? 'bg-red-50' : '' }}">
+                        <div class="flex items-center gap-3">
+                            @if($karyawan->foto_profil)
+                                <img src="{{ Storage::url($karyawan->foto_profil) }}" alt="" class="w-10 h-10 rounded-full object-cover">
+                            @else
+                                <div class="w-10 h-10 rounded-full bg-[#00a2e9] flex items-center justify-center text-white font-bold text-sm">
+                                    {{ strtoupper(substr($karyawan->nama_lengkap, 0, 1)) }}
+                                </div>
+                            @endif
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-semibold text-[#1B1B1B] truncate">{{ $karyawan->nama_lengkap }}</p>
+                                <p class="text-[11px] text-gray-500">{{ $karyawan->kode_pegawai }} • {{ $karyawan->jabatan }}</p>
+                            </div>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-medium {{ $karyawan->status_badge }}">
+                                {{ $karyawan->status_label }}
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between text-[11px] text-gray-500">
+                            <span>{{ $karyawan->divisi ?? '-' }}</span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-medium {{ $karyawan->posisi === 'hr' ? 'bg-[#27438D] text-white' : 'bg-[#00a2e9] text-white' }}">
+                                {{ $karyawan->posisi === 'hr' ? 'HR' : 'Karyawan' }}
+                            </span>
+                        </div>
+                        @if($karyawan->is_resigned)
+                            <div class="text-[11px] text-[#ec1d1d]">
+                                Resign: {{ $karyawan->tanggal_resign ? $karyawan->tanggal_resign->format('d-m-Y') : '-' }}
+                            </div>
+                        @endif
+                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1">
+                            <a href="{{ route('hr.karyawan.show', $karyawan->id) }}" class="text-[#00a2e9] text-xs">Detail</a>
+                            <a href="{{ route('hr.karyawan.edit', $karyawan->id) }}" class="text-[#FCC626] text-xs">Edit</a>
+                            <form action="{{ route('hr.karyawan.destroy', $karyawan->id) }}" method="POST" class="inline-flex items-center" onsubmit="return confirm('Apakah anda yakin ingin menghapus karyawan ini?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="text-[#ec1d1d] text-xs">Hapus</button>
+                            </form>
+                        </div>
+                    </div>
+                    @empty
+                    <div class="p-4 py-10 text-center text-[#1B1B1B]">
+                        <div class="flex flex-col items-center">
+                            <svg class="w-10 h-10 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <p class="text-sm font-semibold text-gray-500">Belum ada data karyawan</p>
+                            <p class="text-xs text-gray-400 mt-1">Klik tombol "Tambah Karyawan" untuk menambahkan</p>
+                        </div>
+                    </div>
+                    @endforelse
                 </div>
 
                 <!-- Pagination -->

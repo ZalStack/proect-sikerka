@@ -50,50 +50,81 @@
                 <div class="p-3 sm:p-4 border-b border-gray-200">
                     <h2 class="text-base sm:text-lg font-semibold text-[#161758]">Riwayat Pengajuan Cuti</h2>
                 </div>
-                <div class="overflow-x-auto -mx-4 sm:mx-0">
+
+                @forelse($cuti as $item)
+                {{-- Mobile Card View --}}
+                <div class="sm:hidden border-b border-gray-200 p-3 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] text-gray-500">Tanggal</span>
+                        <span class="text-[11px] font-semibold text-[#1B1B1B]">
+                            {{ $item->tanggal_mulai ? $item->tanggal_mulai->format('d/m/Y') : '-' }}
+                            <span class="text-gray-400">→</span>
+                            {{ $item->tanggal_selesai ? $item->tanggal_selesai->format('d/m/Y') : '-' }}
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] text-gray-500">Durasi</span>
+                        <span class="text-[11px] font-semibold text-[#1B1B1B] whitespace-nowrap">{{ $item->durasi }} hari</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] text-gray-500">Keterangan</span>
+                        <span class="text-[11px] text-gray-500 truncate ml-2 text-right max-w-[60%]">{{ $item->keterangan ?? '-' }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] text-gray-500">Status</span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap {{ $item->status_badge }}">
+                            {{ $item->status_label }}
+                        </span>
+                    </div>
+                </div>
+                @empty
+                {{-- Empty State --}}
+                <div class="p-4 py-10 text-center text-[#1B1B1B]">
+                    <div class="flex flex-col items-center">
+                        <svg class="w-10 sm:w-16 h-10 sm:h-16 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        <p class="text-sm sm:text-lg font-semibold text-gray-500">Belum ada pengajuan cuti</p>
+                        <p class="text-xs sm:text-sm text-gray-400 mt-1">Klik tombol "Ajukan Cuti" untuk mengajukan</p>
+                    </div>
+                </div>
+                @endforelse
+
+                {{-- Desktop Table View --}}
+                @if(count($cuti) > 0)
+                <div class="hidden sm:block overflow-x-auto">
                     <div class="inline-block min-w-full align-middle">
                         <table class="min-w-full">
                             <thead class="bg-[#F5F5F5]">
                                 <tr>
-                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Tanggal</th>
-                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Durasi</th>
-                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden sm:table-cell">Keterangan</th>
-                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Status</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-[#1B1B1B]">Tanggal</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-[#1B1B1B]">Durasi</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-[#1B1B1B]">Keterangan</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-[#1B1B1B]">Status</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($cuti as $item)
+                                @foreach($cuti as $item)
                                 <tr class="border-b border-gray-200 hover:bg-[#F5F5F5]">
-                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm whitespace-nowrap">
+                                    <td class="px-4 py-3 text-xs">
                                         {{ $item->tanggal_mulai ? $item->tanggal_mulai->format('d/m/Y') : '-' }}
-                                        <span class="text-[10px] sm:text-xs text-gray-500">→</span>
+                                        <span class="text-gray-400">→</span>
                                         {{ $item->tanggal_selesai ? $item->tanggal_selesai->format('d/m/Y') : '-' }}
                                     </td>
-                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold">{{ $item->durasi }} hari</td>
-                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm hidden sm:table-cell">{{ $item->keterangan ?? '-' }}</td>
-                                    <td class="px-3 sm:px-4 py-2 sm:py-3">
-                                        <span class="px-2 py-1 rounded-full text-[10px] sm:text-xs font-medium {{ $item->status_badge }}">
+                                    <td class="px-4 py-3 text-xs font-semibold whitespace-nowrap">{{ $item->durasi }} hari</td>
+                                    <td class="px-4 py-3 text-xs">{{ $item->keterangan ?? '-' }}</td>
+                                    <td class="px-4 py-3">
+                                        <span class="px-2 py-1 rounded-full text-[10px] font-medium {{ $item->status_badge }}">
                                             {{ $item->status_label }}
                                         </span>
                                     </td>
                                 </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="4" class="px-4 py-8 text-center text-[#1B1B1B]">
-                                        <div class="flex flex-col items-center">
-                                            <svg class="w-12 sm:w-16 h-12 sm:h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                            </svg>
-                                            <p class="text-base sm:text-lg font-semibold">Belum ada pengajuan cuti</p>
-                                            <p class="text-xs sm:text-sm text-gray-500 mt-1">Klik tombol "Ajukan Cuti" untuk mengajukan</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                                @endforelse
+                                @endforeach
                             </tbody>
                         </table>
                     </div>
                 </div>
+                @endif
             </div>
         </div>
     </div>

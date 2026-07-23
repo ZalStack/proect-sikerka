@@ -72,8 +72,9 @@
             </div>
 
             <!-- Table -->
-            <div class="bg-white rounded-lg shadow-md overflow-hidden">
-                <div class="overflow-x-auto -mx-4 sm:mx-0">
+            <div class="bg-white rounded-lg shadow-md">
+                {{-- Desktop Table --}}
+                <div class="hidden sm:block overflow-x-auto">
                     <div class="inline-block min-w-full align-middle">
                         <table class="min-w-full">
                             <thead class="bg-[#F5F5F5]">
@@ -142,6 +143,50 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+
+                {{-- Mobile Cards --}}
+                <div class="sm:hidden divide-y divide-gray-200">
+                    @forelse($cuti as $item)
+                    <div class="p-3 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-semibold text-[#1B1B1B]">{{ $item->karyawan->nama_lengkap }}</span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-medium {{ $item->status_badge }}">
+                                {{ $item->status_label }}
+                            </span>
+                        </div>
+                        <div class="text-[11px] text-gray-500">
+                            {{ $item->tanggal_mulai ? $item->tanggal_mulai->format('d/m/Y') : '-' }}
+                            <span class="text-gray-400">s/d</span>
+                            {{ $item->tanggal_selesai ? $item->tanggal_selesai->format('d/m/Y') : '-' }}
+                            <span class="ml-2 font-semibold text-[#1B1B1B]">{{ $item->durasi }} hari</span>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1">
+                            <a href="{{ route('hr.cuti.show', $item->id) }}" class="text-[#00a2e9] text-xs">Detail</a>
+                            @if($item->status === 'pending')
+                                <form action="{{ route('hr.cuti.approve', $item->id) }}" method="POST" class="inline-flex items-center">
+                                    @csrf
+                                    <input type="hidden" name="status" value="approved">
+                                    <button type="submit" class="text-[#2E7D3E] text-xs">Setujui</button>
+                                </form>
+                                <form action="{{ route('hr.cuti.approve', $item->id) }}" method="POST" class="inline-flex items-center">
+                                    @csrf
+                                    <input type="hidden" name="status" value="rejected">
+                                    <button type="submit" class="text-[#ec1d1d] text-xs">Tolak</button>
+                                </form>
+                            @endif
+                        </div>
+                    </div>
+                    @empty
+                    <div class="p-4 py-10 text-center text-[#1B1B1B]">
+                        <div class="flex flex-col items-center">
+                            <svg class="w-10 h-10 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <p class="text-sm font-semibold text-gray-500">Belum ada pengajuan cuti</p>
+                        </div>
+                    </div>
+                    @endforelse
                 </div>
 
                 <!-- Pagination -->
