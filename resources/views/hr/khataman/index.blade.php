@@ -8,7 +8,7 @@
         <div class="p-3 sm:p-6">
             <div class="mb-6">
                 <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">Khataman</h1>
-                <p class="text-sm sm:text-base text-[#27438D]">Monitoring absensi kegiatan Khataman</p>
+                <p class="text-sm sm:text-base text-[#27438D]">Monitoring absensi kegiatan Khataman (Kamis)</p>
             </div>
 
             @if(session('success'))
@@ -47,10 +47,10 @@
                         </button>
                     </form>
                 </div>
-                <p class="text-xs text-gray-500 mt-2">* Kode hanya bisa dibuat pada hari Senin-Jumat.</p>
+                <p class="text-xs text-gray-500 mt-2">* Kode hanya bisa dibuat pada hari Kamis.</p>
             </div>
 
-            <!-- Filter (sama seperti sebelumnya, ganti 'total_jumat' menjadi 'total_hari_aktif') -->
+            <!-- Filter -->
             <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
                 <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">Filter Laporan</h2>
                 <form action="{{ route('hr.khataman.index') }}" method="GET" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
@@ -97,7 +97,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                     <div class="bg-[#F5F5F5] rounded-lg p-3 sm:p-4 text-center">
                         <p class="text-xl sm:text-2xl font-bold text-[#161758]">{{ $statistik['total_hari_aktif'] }}</p>
-                        <p class="text-xs sm:text-sm text-[#1B1B1B]">Total Hari Aktif</p>
+                        <p class="text-xs sm:text-sm text-[#1B1B1B]">Total Hari Kamis</p>
                     </div>
                     <div class="bg-[#2E7D3E] text-white rounded-lg p-3 sm:p-4 text-center">
                         <p class="text-xl sm:text-2xl font-bold">{{ $statistik['hadir'] }}</p>
@@ -110,7 +110,7 @@
                 </div>
             </div>
 
-            <!-- Tabel Absensi (sama seperti sebelumnya) -->
+            <!-- Tabel Absensi -->
             <div class="bg-white rounded-lg shadow-md overflow-hidden">
                 <div class="overflow-x-auto -mx-4 sm:mx-0">
                     <div class="inline-block min-w-full align-middle">

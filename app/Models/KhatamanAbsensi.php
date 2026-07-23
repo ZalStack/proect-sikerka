@@ -31,14 +31,18 @@ class KhatamanAbsensi extends Model
         return $this->belongsTo(Karyawan::class, 'karyawan_id');
     }
 
-    // Cek apakah hari ini aktif (Senin-Jumat)
+    /**
+     * Cek apakah hari ini adalah hari aktif (Kamis)
+     * Day of week: 1=Senin, 2=Selasa, 3=Rabu, 4=Kamis, 5=Jumat, 6=Sabtu, 7=Minggu
+     */
     public static function isActiveDay()
     {
-        $day = date('N'); // 1=Senin ... 5=Jumat
-        return $day >= 1 && $day <= 5;
+        return date('N') == 4; // Kamis
     }
 
-    // Cek apakah sudah absen hari ini
+    /**
+     * Cek apakah sudah absen hari ini
+     */
     public static function hasCheckedInToday($karyawanId)
     {
         return self::where('karyawan_id', $karyawanId)

@@ -36,7 +36,7 @@ class KhatamanController extends Controller
             'total_hari_aktif' => $this->countActiveDaysInMonth($month, $year),
         ];
 
-        // Daftar hari aktif (Senin-Jumat) dalam bulan ini
+        // Daftar hari aktif (Kamis) dalam bulan ini
         $activeDays = $this->getActiveDaysInMonth($month, $year);
         $isActiveDay = KhatamanAbsensi::isActiveDay();
 
@@ -66,15 +66,13 @@ class KhatamanController extends Controller
         $today = Carbon::today();
         $now = Carbon::now();
 
-        // Hanya validasi hari aktif (Senin-Jumat)
+        // Hanya validasi hari aktif (Kamis)
         if (!KhatamanAbsensi::isActiveDay()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Khataman hanya dilaksanakan pada hari Senin-Jumat!'
+                'message' => 'Khataman hanya dilaksanakan pada hari Kamis!'
             ], 400);
         }
-
-        // **Tidak ada batasan jam** – bebas kapan pun
 
         if (KhatamanAbsensi::hasCheckedInToday($user->id)) {
             return response()->json([
@@ -160,15 +158,15 @@ class KhatamanController extends Controller
         return view('hr.khataman.detail', compact('absensi'));
     }
 
-    // HR: Generate kode (bisa kapan saja, asal hari aktif)
+    // HR: Generate kode (hanya pada hari Kamis)
     public function generateKode(Request $request)
     {
         $user = Auth::user();
         $today = Carbon::today();
 
-        // Boleh generate kode hanya pada hari aktif (Senin-Jumat)
+        // Hanya boleh generate pada hari Kamis
         if (!KhatamanAbsensi::isActiveDay()) {
-            return redirect()->back()->with('error', 'Kode hanya bisa dibuat pada hari Senin-Jumat!');
+            return redirect()->back()->with('error', 'Kode hanya bisa dibuat pada hari Kamis!');
         }
 
         if (KhatamanKode::hasKodeForDate($today)) {
@@ -179,20 +177,19 @@ class KhatamanController extends Controller
         KhatamanKode::create([
             'tanggal'    => $today,
             'kode'       => $kode,
-            'created_by' => $user->id, // nullable, tidak masalah
+            'created_by' => $user->id,
         ]);
 
         return redirect()->route('hr.khataman.index')->with('success', "Kode Khataman berhasil dibuat: <strong>{$kode}</strong>");
     }
 
-    // Helpers: Hitung jumlah hari aktif (Senin-Jumat) dalam bulan
+    // Helpers: Hitung jumlah hari Kamis dalam bulan
     private function countActiveDaysInMonth($month, $year)
     {
         $count = 0;
         $date = Carbon::create($year, $month, 1);
         while ($date->month == $month) {
-            $dayOfWeek = $date->dayOfWeek; // 1=Senin ... 7=Minggu
-            if ($dayOfWeek >= 1 && $dayOfWeek <= 5) {
+            if ($date->dayOfWeek == 4) { // Kamis
                 $count++;
             }
             $date->addDay();
@@ -200,14 +197,13 @@ class KhatamanController extends Controller
         return $count;
     }
 
-    // Helper: Dapatkan daftar hari aktif (Senin-Jumat) dalam bulan
+    // Helper: Dapatkan daftar tanggal Kamis dalam bulan
     private function getActiveDaysInMonth($month, $year)
     {
         $days = [];
         $date = Carbon::create($year, $month, 1);
         while ($date->month == $month) {
-            $dayOfWeek = $date->dayOfWeek;
-            if ($dayOfWeek >= 1 && $dayOfWeek <= 5) {
+            if ($date->dayOfWeek == 4) { // Kamis
                 $days[] = $date->copy();
             }
             $date->addDay();

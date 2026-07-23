@@ -8,7 +8,7 @@
         <div class="p-4 sm:p-6">
             <div class="mb-6">
                 <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">Khataman</h1>
-                <p class="text-sm sm:text-base text-[#27438D]">Absensi kegiatan Khataman</p>
+                <p class="text-sm sm:text-base text-[#27438D]">Absensi kegiatan Khataman (Kamis)</p>
             </div>
 
             @if(session('success'))
@@ -22,19 +22,19 @@
                 </div>
             @endif
 
-            <!-- Status Hari Ini -->
+            <!-- Jam Real-Time -->
             <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
                     <div>
-                        <h2 class="text-sm sm:text-lg font-semibold text-[#161758] leading-tight">
-                            <span class="sm:hidden">📅 {{ $isActiveDay ? 'Hari aktif (Senin-Jumat)' : 'Hari non-aktif' }}</span>
-                            <span class="hidden sm:inline">{{ $isActiveDay ? '📅 Hari ini adalah hari aktif (Senin-Jumat)!' : '📅 Hari ini bukan hari aktif' }}</span>
-                        </h2>
-                        <p id="currentDateTime" class="text-xs sm:text-sm text-[#1B1B1B] mt-2">
+                        <p class="text-xs sm:text-sm text-[#1B1B1B] font-medium">⏰ Waktu Server (Real-Time)</p>
+                        <div id="serverClock" class="text-2xl sm:text-4xl font-mono font-bold text-[#161758] tracking-wider">
+                            {{ Carbon\Carbon::now()->format('H:i:s') }}
+                        </div>
+                        <p id="serverDate" class="text-xs sm:text-sm text-[#27438D] mt-1">
                             {{ Carbon\Carbon::now()->locale('id')->isoFormat('dddd, D MMMM YYYY') }}
                         </p>
                     </div>
-                    <div>
+                    <div class="text-center sm:text-right">
                         @if($todayAbsensi)
                             <span class="px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium bg-[#2E7D3E] text-white">
                                 ✅ Sudah Absen
@@ -48,11 +48,14 @@
                                 ⛔ Tidak Ada Kegiatan
                             </span>
                         @endif
+                        <p class="text-xs text-gray-500 mt-1">
+                            {{ $isActiveDay ? '📅 Hari ini Kamis (aktif)' : '📅 Hari ini bukan Kamis' }}
+                        </p>
                     </div>
                 </div>
             </div>
 
-            <!-- Form Absen (tanpa batas jam) -->
+            <!-- Form Absen (hanya jika hari Kamis dan belum absen) -->
             @if($isActiveDay && !$todayAbsensi)
             <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
                 <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">📝 Absen Khataman</h2>
@@ -81,7 +84,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                     <div class="bg-[#F5F5F5] rounded-lg p-3 sm:p-4 text-center">
                         <p class="text-xl sm:text-2xl font-bold text-[#161758]">{{ $statistik['total_hari_aktif'] }}</p>
-                        <p class="text-xs sm:text-sm text-[#1B1B1B]">Total Hari Aktif</p>
+                        <p class="text-xs sm:text-sm text-[#1B1B1B]">Total Hari Kamis</p>
                     </div>
                     <div class="bg-[#2E7D3E] text-white rounded-lg p-3 sm:p-4 text-center">
                         <p class="text-xl sm:text-2xl font-bold">{{ $statistik['hadir'] }}</p>
@@ -94,9 +97,9 @@
                 </div>
             </div>
 
-            <!-- Daftar Hari Aktif dan Absensi -->
+            <!-- Daftar Hari Kamis dan Absensi -->
             <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
-                <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">📋 Daftar Absensi Khataman Bulan Ini</h2>
+                <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">📋 Daftar Absensi Khataman Bulan Ini (Kamis)</h2>
                 <div class="overflow-x-auto -mx-4 sm:mx-0">
                     <div class="inline-block min-w-full align-middle">
                         <table class="min-w-full">
@@ -134,7 +137,7 @@
                                 @empty
                                     <tr>
                                         <td colspan="4" class="px-4 py-4 text-center text-xs sm:text-sm text-[#1B1B1B]">
-                                            Tidak ada hari aktif (Senin-Jumat) di bulan ini
+                                            Tidak ada hari Kamis di bulan ini
                                         </td>
                                     </tr>
                                 @endforelse
@@ -153,27 +156,42 @@
 <script>
     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
+    // Fungsi update jam real-time (setiap 1 detik)
     function updateClock() {
         const now = new Date();
-        const dateTimeDisplay = document.getElementById('currentDateTime');
-        if (dateTimeDisplay) {
+
+        // Format jam HH:MM:SS
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        const timeString = hours + ':' + minutes + ':' + seconds;
+
+        // Update elemen jam
+        const clockElem = document.getElementById('serverClock');
+        if (clockElem) {
+            clockElem.textContent = timeString;
+        }
+
+        // Update tanggal (opsional, bisa juga setiap hari)
+        const dateElem = document.getElementById('serverDate');
+        if (dateElem) {
             const options = {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
+                day: 'numeric'
             };
-            dateTimeDisplay.textContent = now.toLocaleDateString('id-ID', options);
+            dateElem.textContent = now.toLocaleDateString('id-ID', options);
         }
     }
 
+    // Jalankan sekali saat load
     updateClock();
+    // Perbarui setiap 1 detik
     setInterval(updateClock, 1000);
 
-    document.getElementById('khatamanForm').addEventListener('submit', function(e) {
+    // Submit form absen
+    document.getElementById('khatamanForm')?.addEventListener('submit', function(e) {
         e.preventDefault();
 
         const kode = document.getElementById('kode_absensi').value.trim();
@@ -208,7 +226,7 @@
                     title: '✅ Absen Khataman Berhasil!',
                     html: `
                         <div class="text-left">
-                            <p><strong>Waktu:</strong> ${data.data.waktu}</p>
+                            <p><strong>Waktu Check-in:</strong> ${data.data.waktu}</p>
                             <p><strong>Tanggal:</strong> ${data.data.tanggal}</p>
                             <p><strong>Status:</strong> Hadir</p>
                         </div>

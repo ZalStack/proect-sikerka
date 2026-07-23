@@ -17,9 +17,7 @@
         </div>
 
         @if (session('success'))
-            <div class="bg-[#2E7D3E] text-white p-4 rounded-lg mb-4">
-                {{ session('success') }}
-            </div>
+            <div class="bg-[#2E7D3E] text-white p-4 rounded-lg mb-4">{{ session('success') }}</div>
         @endif
 
         @if ($errors->any())
@@ -32,8 +30,9 @@
             </div>
         @endif
 
-        <!-- Detail Profile (Readonly) -->
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 mb-6">
+        <!-- ========== DETAIL PROFIL (READONLY) ========== -->
+        <!-- Bagian ini tampil pertama kali dan memiliki urutan yang SAMA dengan form edit -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 mb-6" id="profileDetail">
             <!-- Header Profil -->
             <div class="p-6 bg-gradient-to-r from-[#f8faff] to-white border-b border-gray-200">
                 <div class="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6">
@@ -70,9 +69,9 @@
                 </div>
             </div>
 
-            <!-- Detail Data (Readonly) -->
+            <!-- Detail Data (Readonly) – urutan SAMA dengan form edit -->
             <div class="p-6">
-                <!-- Kategori: Informasi Pribadi -->
+                <!-- 1. Informasi Pribadi -->
                 <div class="mb-8">
                     <h3 class="text-base sm:text-lg font-semibold text-[#161758] border-b-2 border-[#00a2e9] pb-2 mb-4 flex items-center">
                         <span class="bg-[#00a2e9] text-white rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2">1</span>
@@ -96,7 +95,7 @@
                     </div>
                 </div>
 
-                <!-- Kategori: Informasi Profesional (Tanggal Pengangkatan Tetap di sini) -->
+                <!-- 2. Informasi Profesional (termasuk Tanggal Pengangkatan Tetap) -->
                 <div class="mb-8">
                     <h3 class="text-base sm:text-lg font-semibold text-[#161758] border-b-2 border-[#27438D] pb-2 mb-4 flex items-center">
                         <span class="bg-[#27438D] text-white rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2">2</span>
@@ -115,7 +114,7 @@
                     </div>
                 </div>
 
-                <!-- Kategori: Pendidikan -->
+                <!-- 3. Pendidikan -->
                 <div class="mb-8">
                     <h3 class="text-base sm:text-lg font-semibold text-[#161758] border-b-2 border-[#FCC626] pb-2 mb-4 flex items-center">
                         <span class="bg-[#FCC626] text-[#1B1B1B] rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2">3</span>
@@ -124,53 +123,23 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                         <!-- Kolom Kiri: Pendidikan Terakhir -->
                         <div>
-                            <div class="mb-2">
-                                <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Pendidikan Terakhir</label>
-                                <p class="text-sm sm:text-base text-[#27438D] break-words">{{ $user->pendidikan_terakhir ?? '-' }}</p>
-                            </div>
-                            <div class="mb-2">
-                                <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Perguruan Tinggi</label>
-                                <p class="text-sm sm:text-base text-[#27438D] break-words">{{ $user->perguruan_tinggi ?? '-' }}</p>
-                            </div>
-                            <div class="mb-2">
-                                <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Jurusan / Program Studi</label>
-                                <p class="text-sm sm:text-base text-[#27438D] break-words">{{ $user->jurusan ?? '-' }}</p>
-                            </div>
-                            <div class="mb-2">
-                                <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">IPK Terakhir</label>
-                                <p class="text-sm sm:text-base text-[#27438D]">{{ $user->ipk_terakhir ?? '-' }}</p>
-                            </div>
-                            <div>
-                                <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Tahun Lulus</label>
-                                <p class="text-sm sm:text-base text-[#27438D]">{{ $user->tahun_lulus ?? '-' }}</p>
-                            </div>
+                            <div class="mb-2"><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Pendidikan Terakhir</label><p class="text-sm sm:text-base text-[#27438D] break-words">{{ $user->pendidikan_terakhir ?? '-' }}</p></div>
+                            <div class="mb-2"><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Perguruan Tinggi</label><p class="text-sm sm:text-base text-[#27438D] break-words">{{ $user->perguruan_tinggi ?? '-' }}</p></div>
+                            <div class="mb-2"><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Jurusan / Program Studi</label><p class="text-sm sm:text-base text-[#27438D] break-words">{{ $user->jurusan ?? '-' }}</p></div>
+                            <div class="mb-2"><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">IPK Terakhir</label><p class="text-sm sm:text-base text-[#27438D]">{{ $user->ipk_terakhir ?? '-' }}</p></div>
+                            <div><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Tahun Lulus</label><p class="text-sm sm:text-base text-[#27438D]">{{ $user->tahun_lulus ?? '-' }}</p></div>
                         </div>
-
-                        <!-- Kolom Kanan: Sedang Melanjutkan Pendidikan (selalu tampil semua field dengan '-' jika tidak) -->
+                        <!-- Kolom Kanan: Sedang Melanjutkan -->
                         <div>
-                            <div class="mb-2">
-                                <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Sedang Melanjutkan Pendidikan?</label>
-                                <p class="text-sm sm:text-base text-[#27438D] font-semibold">
-                                    {{ $user->is_continuing_education ? 'Iya' : 'Tidak' }}
-                                </p>
-                            </div>
-                            <div class="mb-2">
-                                <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Program Pendidikan</label>
-                                <p class="text-sm sm:text-base text-[#27438D]">{{ $user->is_continuing_education ? ($user->continuing_program ?? '-') : '-' }}</p>
-                            </div>
-                            <div class="mb-2">
-                                <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Perguruan Tinggi</label>
-                                <p class="text-sm sm:text-base text-[#27438D] break-words">{{ $user->is_continuing_education ? ($user->continuing_perguruan_tinggi ?? '-') : '-' }}</p>
-                            </div>
-                            <div>
-                                <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Jurusan / Program Studi</label>
-                                <p class="text-sm sm:text-base text-[#27438D] break-words">{{ $user->is_continuing_education ? ($user->continuing_jurusan ?? '-') : '-' }}</p>
-                            </div>
+                            <div class="mb-2"><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Sedang Melanjutkan Pendidikan?</label><p class="text-sm sm:text-base text-[#27438D] font-semibold">{{ $user->is_continuing_education ? 'Iya' : 'Tidak' }}</p></div>
+                            <div class="mb-2"><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Program Pendidikan</label><p class="text-sm sm:text-base text-[#27438D]">{{ $user->is_continuing_education ? ($user->continuing_program ?? '-') : '-' }}</p></div>
+                            <div class="mb-2"><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Perguruan Tinggi</label><p class="text-sm sm:text-base text-[#27438D] break-words">{{ $user->is_continuing_education ? ($user->continuing_perguruan_tinggi ?? '-') : '-' }}</p></div>
+                            <div><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Jurusan / Program Studi</label><p class="text-sm sm:text-base text-[#27438D] break-words">{{ $user->is_continuing_education ? ($user->continuing_jurusan ?? '-') : '-' }}</p></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Kategori: Kontak & Alamat (urutan diperbaiki) -->
+                <!-- 4. Kontak & Alamat -->
                 <div class="mb-8">
                     <h3 class="text-base sm:text-lg font-semibold text-[#161758] border-b-2 border-[#2E7D3E] pb-2 mb-4 flex items-center">
                         <span class="bg-[#2E7D3E] text-white rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2">4</span>
@@ -186,7 +155,7 @@
                     </div>
                 </div>
 
-                <!-- Kategori: Informasi Tambahan -->
+                <!-- 5. Informasi Tambahan -->
                 <div>
                     <h3 class="text-base sm:text-lg font-semibold text-[#161758] border-b-2 border-[#ec1d1d] pb-2 mb-4 flex items-center">
                         <span class="bg-[#ec1d1d] text-white rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2">5</span>
@@ -208,7 +177,8 @@
             </div>
         </div>
 
-        <!-- Form Edit Profile -->
+        <!-- ========== FORM EDIT PROFIL (TERSEMBUNYI) ========== -->
+        <!-- Form ini memiliki urutan field yang SAMA dengan detail di atas -->
         <div id="editProfileForm" style="display: none;">
             <div class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
                 <div class="p-6">
@@ -218,7 +188,7 @@
                         @method('PUT')
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- Informasi Pribadi -->
+                            <!-- 1. Informasi Pribadi -->
                             <div class="md:col-span-2">
                                 <h3 class="text-base sm:text-lg font-semibold text-[#161758] border-b-2 border-[#00a2e9] pb-2 mb-4 flex items-center">
                                     <span class="bg-[#00a2e9] text-white rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2">1</span>
@@ -342,7 +312,7 @@
                                 </div>
                             </div>
 
-                            <!-- Informasi Profesional -->
+                            <!-- 2. Informasi Profesional -->
                             <div class="md:col-span-2">
                                 <h3 class="text-base sm:text-lg font-semibold text-[#161758] border-b-2 border-[#27438D] pb-2 mb-4 mt-4 flex items-center">
                                     <span class="bg-[#27438D] text-white rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2">2</span>
@@ -393,7 +363,7 @@
                                 </div>
                             </div>
 
-                            <!-- Pendidikan -->
+                            <!-- 3. Pendidikan -->
                             <div class="md:col-span-2">
                                 <h3 class="text-base sm:text-lg font-semibold text-[#161758] border-b-2 border-[#FCC626] pb-2 mb-4 mt-4 flex items-center">
                                     <span class="bg-[#FCC626] text-[#1B1B1B] rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2">3</span>
@@ -439,7 +409,7 @@
                                 </div>
                             </div>
 
-                            <!-- KOLOM KANAN: Sedang Melanjutkan Pendidikan (selalu tampil) -->
+                            <!-- KOLOM KANAN: Sedang Melanjutkan -->
                             <div>
                                 <div class="mb-4">
                                     <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Sedang Melanjutkan Pendidikan?</label>
@@ -487,7 +457,7 @@
                                 </div>
                             </div>
 
-                            <!-- Kontak & Alamat (urutan diperbaiki) -->
+                            <!-- 4. Kontak & Alamat -->
                             <div class="md:col-span-2">
                                 <h3 class="text-base sm:text-lg font-semibold text-[#161758] border-b-2 border-[#2E7D3E] pb-2 mb-4 mt-4 flex items-center">
                                     <span class="bg-[#2E7D3E] text-white rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2">4</span>
@@ -539,7 +509,7 @@
                                 </div>
                             </div>
 
-                            <!-- Informasi Tambahan -->
+                            <!-- 5. Informasi Tambahan -->
                             <div class="md:col-span-2">
                                 <h3 class="text-base sm:text-lg font-semibold text-[#161758] border-b-2 border-[#ec1d1d] pb-2 mb-4 mt-4 flex items-center">
                                     <span class="bg-[#ec1d1d] text-white rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2">5</span>
@@ -584,7 +554,7 @@
             </div>
         </div>
 
-        <!-- Ubah Password -->
+        <!-- ========== UBAH PASSWORD ========== -->
         <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6 mt-6">
             <h2 class="text-lg font-semibold text-[#161758] mb-4">Ubah Password</h2>
             <form action="{{ route('profile.update-password') }}" method="POST">
@@ -623,11 +593,18 @@
 <script>
     function toggleEditForm() {
         const form = document.getElementById('editProfileForm');
+        const detail = document.getElementById('profileDetail');
         if (form.style.display === 'none') {
             form.style.display = 'block';
-            form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Scroll ke form dengan smooth dan posisi di tengah layar agar lebih nyaman
+            form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Opsional: beri highlight pada form
+            form.classList.add('ring-2', 'ring-[#00a2e9]', 'ring-offset-2');
         } else {
             form.style.display = 'none';
+            form.classList.remove('ring-2', 'ring-[#00a2e9]', 'ring-offset-2');
+            // Kembali scroll ke detail (jika diinginkan) – tapi Anda minta tidak scroll ke atas, jadi kita komentari
+            // detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     }
 
@@ -636,9 +613,10 @@
         input.type = (input.type === 'password') ? 'text' : 'password';
     }
 
-    // Tidak ada toggle untuk continuing_fields karena selalu ditampilkan
+    // Untuk field pendidikan lanjutan – tetap ditampilkan semua (sesuai keinginan)
     document.addEventListener('DOMContentLoaded', function() {
-        // Jika diperlukan, bisa tambahkan logika untuk divisi_input
+        // Tidak ada toggle untuk continuing_fields karena selalu ditampilkan
+        // Jika ingin toggle berdasarkan radio, bisa ditambahkan, tapi di sini kita biarkan selalu tampil
     });
 </script>
 @endsection
