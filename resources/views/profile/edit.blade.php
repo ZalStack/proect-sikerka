@@ -172,7 +172,7 @@
                         Informasi Tambahan
                     </h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                        <div><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Tanggal Pengangkatan Tetap</label><p class="text-sm sm:text-base text-[#27438D]">{{ $user->tanggal_pengangkatan_tetap ? $user->tanggal_pengangkatan_tetap->format('d-m-Y') : '-' }}</p></div>
+                        <div><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Tanggal Pengangkatan Karyawan Tetap</label><p class="text-sm sm:text-base text-[#27438D]">{{ $user->tanggal_pengangkatan_tetap ? $user->tanggal_pengangkatan_tetap->format('d-m-Y') : '-' }}</p></div>
                         <div><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Nomor Rekening</label><p class="text-sm sm:text-base text-[#27438D] break-words">{{ $user->nomor_rekening ?? '-' }}</p></div>
                         <div><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Nama Bank</label><p class="text-sm sm:text-base text-[#27438D] break-words">{{ $user->nama_bank ?? 'BSI' }}</p></div>
                         <div>
