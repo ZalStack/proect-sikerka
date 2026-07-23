@@ -9,6 +9,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\CutiController;
 use App\Http\Controllers\FhlController;
+use App\Http\Controllers\KhatamanController;
 use App\Http\Controllers\PengumumanController;
 use App\Http\Controllers\PerjalananDinasController;
 use App\Http\Controllers\SunnahController;
@@ -73,6 +74,10 @@ Route::middleware('auth')->group(function () {
             Route::post('/fhl/generate-kode', [FhlController::class, 'generateKode'])->name('fhl.generate-kode');
             Route::get('/fhl/detail/{id}', [FhlController::class, 'detail'])->name('fhl.detail');
 
+            Route::get('/khataman', [KhatamanController::class, 'index'])->name('khataman.index');
+            Route::post('/khataman/generate-kode', [KhatamanController::class, 'generateKode'])->name('khataman.generate-kode');
+            Route::get('/khataman/detail/{id}', [KhatamanController::class, 'detail'])->name('khataman.detail');
+
             Route::get('/sunnah', [SunnahController::class, 'index'])->name('sunnah.index');
             Route::get('/sunnah/rekap', [SunnahController::class, 'rekapBulanan'])->name('sunnah.rekap');
             Route::get('/sunnah/detail/{id}', [SunnahController::class, 'detail'])->name('sunnah.detail');
@@ -99,13 +104,20 @@ Route::middleware('auth')->group(function () {
             Route::get('/dashboard', [KaryawanDashboardController::class, 'index'])->name('dashboard');
             Route::get('/absensi', [AbsensiController::class, 'dashboard'])->name('absensi');
 
-            Route::post('/absensi/checkin', [AbsensiController::class, 'checkIn'])->name('absensi.checkin')->middleware('throttle:10,1');
-            Route::post('/absensi/checkout', [AbsensiController::class, 'checkOut'])->name('absensi.checkout')->middleware('throttle:10,1');
+            Route::post('/absensi/checkin', [AbsensiController::class, 'checkIn'])
+                ->name('absensi.checkin')
+                ->middleware('throttle:10,1');
+            Route::post('/absensi/checkout', [AbsensiController::class, 'checkOut'])
+                ->name('absensi.checkout')
+                ->middleware('throttle:10,1');
             Route::get('/absensi/status', [AbsensiController::class, 'status'])->name('absensi.status');
             Route::get('/absensi/server-time', [AbsensiController::class, 'serverTime'])->name('absensi.server-time');
 
             Route::get('/fhl', [FhlController::class, 'dashboard'])->name('fhl.dashboard');
             Route::post('/fhl/checkin', [FhlController::class, 'checkIn'])->name('fhl.checkin');
+
+            Route::get('/khataman', [KhatamanController::class, 'dashboard'])->name('khataman.dashboard');
+            Route::post('/khataman/checkin', [KhatamanController::class, 'checkIn'])->name('khataman.checkin');
 
             Route::get('/sunnah', [SunnahController::class, 'dashboard'])->name('sunnah.dashboard');
             Route::post('/sunnah/save', [SunnahController::class, 'saveDaily'])->name('sunnah.save');
