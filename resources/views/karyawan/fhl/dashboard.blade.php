@@ -1,4 +1,4 @@
-{{-- views/karyawan/fhl/dashboard.blade.php --}}
+{{-- resources/views/karyawan/fhl/dashboard.blade.php --}}
 @extends('layouts.app')
 
 @section('content')
@@ -58,6 +58,17 @@
                 <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">📸 Absen FHL</h2>
                 <form id="fhlForm" enctype="multipart/form-data" class="space-y-4">
                     @csrf
+                    <!-- Input Kode Kegiatan -->
+                    <div>
+                        <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-2">
+                            Kode Kegiatan <span class="text-[#ec1d1d]">*</span>
+                        </label>
+                        <input type="text" name="kode_absensi" id="kode_absensi"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9] text-sm"
+                               placeholder="Masukkan kode yang diumumkan MC/HR" required>
+                    </div>
+
+                    <!-- Upload Foto -->
                     <div>
                         <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-2">
                             Upload Bukti Foto Kegiatan FHL <span class="text-[#ec1d1d]">*</span>
@@ -82,6 +93,7 @@
                         </div>
                         <p id="fileError" class="mt-1 text-xs sm:text-sm text-[#ec1d1d] hidden"></p>
                     </div>
+
                     <button type="submit" id="submitBtn"
                             class="w-full sm:w-auto bg-[#2E7D3E] text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg hover:bg-[#009a4b] transition-colors duration-200 font-semibold text-sm sm:text-base">
                         📤 Kirim Absen FHL
@@ -177,115 +189,127 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
-function updateClock() {
-    const now = new Date();
-    const dateTimeDisplay = document.getElementById('currentDateTime');
-    if (dateTimeDisplay) {
-        const options = {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-        };
-        dateTimeDisplay.textContent = now.toLocaleDateString('id-ID', options);
+    function updateClock() {
+        const now = new Date();
+        const dateTimeDisplay = document.getElementById('currentDateTime');
+        if (dateTimeDisplay) {
+            const options = {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            };
+            dateTimeDisplay.textContent = now.toLocaleDateString('id-ID', options);
+        }
     }
-}
 
-updateClock();
-setInterval(updateClock, 1000);
+    updateClock();
+    setInterval(updateClock, 1000);
 
-document.getElementById('foto_bukti').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    const previewContainer = document.getElementById('previewContainer');
-    const previewImage = document.getElementById('previewImage');
-    const fileError = document.getElementById('fileError');
+    document.getElementById('foto_bukti').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        const previewContainer = document.getElementById('previewContainer');
+        const previewImage = document.getElementById('previewImage');
+        const fileError = document.getElementById('fileError');
 
-    if (file) {
-        if (file.size > 2 * 1024 * 1024) {
-            fileError.textContent = 'Ukuran file maksimal 2MB!';
-            fileError.classList.remove('hidden');
-            this.value = '';
-            previewContainer.classList.add('hidden');
+        if (file) {
+            if (file.size > 2 * 1024 * 1024) {
+                fileError.textContent = 'Ukuran file maksimal 2MB!';
+                fileError.classList.remove('hidden');
+                this.value = '';
+                previewContainer.classList.add('hidden');
+                return;
+            }
+
+            fileError.classList.add('hidden');
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;
+                previewContainer.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    function removeImage() {
+        document.getElementById('foto_bukti').value = '';
+        document.getElementById('previewContainer').classList.add('hidden');
+        document.getElementById('fileError').classList.add('hidden');
+    }
+
+    document.getElementById('fhlForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        // Validasi kode tidak kosong
+        const kode = document.getElementById('kode_absensi').value.trim();
+        if (!kode) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Kode wajib diisi!',
+                text: 'Silakan masukkan kode kegiatan yang diumumkan.',
+                confirmButtonColor: '#FCC626'
+            });
             return;
         }
 
-        fileError.classList.add('hidden');
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            previewImage.src = e.target.result;
-            previewContainer.classList.remove('hidden');
-        };
-        reader.readAsDataURL(file);
-    }
-});
+        const formData = new FormData(this);
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.textContent = '⏳ Memproses...';
 
-function removeImage() {
-    document.getElementById('foto_bukti').value = '';
-    document.getElementById('previewContainer').classList.add('hidden');
-    document.getElementById('fileError').classList.add('hidden');
-}
-
-document.getElementById('fhlForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-
-    const formData = new FormData(this);
-    const btn = document.getElementById('submitBtn');
-    btn.disabled = true;
-    btn.textContent = '⏳ Memproses...';
-
-    fetch('{{ route("karyawan.fhl.checkin") }}', {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': csrfToken,
-            'Accept': 'application/json'
-        },
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            Swal.fire({
-                icon: 'success',
-                title: '✅ Absen FHL Berhasil!',
-                html: `
-                    <div class="text-left">
-                        <p><strong>Waktu:</strong> ${data.data.waktu}</p>
-                        <p><strong>Tanggal:</strong> ${data.data.tanggal}</p>
-                        <p><strong>Status:</strong> Hadir</p>
-                    </div>
-                `,
-                timer: 3000,
-                showConfirmButton: true,
-                confirmButtonColor: '#2E7D3E'
-            }).then(() => {
-                location.reload();
-            });
-        } else {
+        fetch('{{ route("karyawan.fhl.checkin") }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '✅ Absen FHL Berhasil!',
+                    html: `
+                        <div class="text-left">
+                            <p><strong>Waktu:</strong> ${data.data.waktu}</p>
+                            <p><strong>Tanggal:</strong> ${data.data.tanggal}</p>
+                            <p><strong>Status:</strong> Hadir</p>
+                        </div>
+                    `,
+                    timer: 3000,
+                    showConfirmButton: true,
+                    confirmButtonColor: '#2E7D3E'
+                }).then(() => {
+                    location.reload();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Absen Gagal!',
+                    text: data.message,
+                    confirmButtonColor: '#ec1d1d'
+                });
+                btn.disabled = false;
+                btn.textContent = '📤 Kirim Absen FHL';
+            }
+        })
+        .catch(error => {
             Swal.fire({
                 icon: 'error',
-                title: 'Absen Gagal!',
-                text: data.message,
+                title: 'Error!',
+                text: 'Terjadi kesalahan pada server',
                 confirmButtonColor: '#ec1d1d'
             });
             btn.disabled = false;
             btn.textContent = '📤 Kirim Absen FHL';
-        }
-    })
-    .catch(error => {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error!',
-            text: 'Terjadi kesalahan pada server',
-            confirmButtonColor: '#ec1d1d'
         });
-        btn.disabled = false;
-        btn.textContent = '📤 Kirim Absen FHL';
     });
-});
 </script>
 @endsection

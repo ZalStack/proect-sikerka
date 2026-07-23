@@ -1,8 +1,10 @@
 <?php
+// app/Http/Controllers/FhlController.php
 
 namespace App\Http\Controllers;
 
 use App\Models\FhlAbsensi;
+use App\Models\FhlKode;
 use App\Models\Karyawan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -45,8 +47,7 @@ class FhlController extends Controller
         // Cek apakah hari ini Jumat
         $isFriday = FhlAbsensi::isFriday();
 
-        // Kirim data absensi ke view, di-index berdasarkan tanggal (Y-m-d)
-        // agar pencocokan tanggal di view akurat dan tidak error
+        // Kirim data absensi ke view, di-index berdasarkan tanggal
         $absensi = $absensiBulanIni->keyBy(function ($item) {
             return $item->tanggal->format('Y-m-d');
         });
@@ -62,16 +63,19 @@ class FhlController extends Controller
         ));
     }
 
-    // Check-in FHL
+    // Check-in FHL (dengan validasi kode dan jam)
     public function checkIn(Request $request)
     {
         $request->validate([
-            'foto_bukti' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            'foto_bukti'   => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            'kode_absensi' => 'required|string|max:20',
         ]);
 
         $user = Auth::user();
+        $today = Carbon::today();
+        $now = Carbon::now();
 
-        // Cek apakah hari ini Jumat
+        // 1. Cek hari Jumat
         if (!FhlAbsensi::isFriday()) {
             return response()->json([
                 'success' => false,
@@ -79,9 +83,17 @@ class FhlController extends Controller
             ], 400);
         }
 
-        $today = Carbon::today();
+        // 2. Cek batas waktu (07:00 - 08:00)
+        $start = $today->copy()->setTime(7, 0, 0);
+        $end   = $today->copy()->setTime(8, 0, 0);
+        if (!$now->between($start, $end)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Check-in FHL hanya dapat dilakukan antara pukul 07:00 - 08:00!'
+            ], 400);
+        }
 
-        // Cek apakah sudah absen hari ini
+        // 3. Cek apakah sudah absen hari ini
         if (FhlAbsensi::hasCheckedInToday($user->id)) {
             return response()->json([
                 'success' => false,
@@ -89,30 +101,46 @@ class FhlController extends Controller
             ], 400);
         }
 
-        // Waktu REAL-TIME menggunakan Carbon::now()
-        $now = Carbon::now();
+        // 4. Validasi kode kegiatan
+        $kodeBenar = FhlKode::getKodeForDate($today);
+        if (!$kodeBenar) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kode kegiatan belum dibuat oleh HR untuk hari ini.'
+            ], 400);
+        }
 
-        // Upload foto
+        $kodeInput = $request->input('kode_absensi');
+        if (strtoupper($kodeInput) !== strtoupper($kodeBenar)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kode kegiatan yang Anda masukkan salah!'
+            ], 400);
+        }
+
+        // 5. Upload foto
         $file = $request->file('foto_bukti');
         $filename = 'fhl_' . time() . '_' . Str::slug($user->nama_lengkap) . '.' . $file->getClientOriginalExtension();
         $path = $file->storeAs('fhl_bukti', $filename, 'public');
 
+        // 6. Simpan absensi
         $absensi = FhlAbsensi::create([
             'karyawan_id' => $user->id,
-            'tanggal' => $today,
-            'check_in' => $now,
-            'foto_bukti' => $path,
-            'status' => 'Hadir',
-            'ip_address' => $request->ip(),
+            'tanggal'     => $today,
+            'check_in'    => $now,
+            'foto_bukti'  => $path,
+            'kode_input'  => $kodeInput,
+            'status'      => 'Hadir',
+            'ip_address'  => $request->ip(),
         ]);
 
         return response()->json([
             'success' => true,
             'message' => '✅ Absen FHL berhasil!',
             'data' => [
-                'waktu' => $now->format('H:i:s'),
+                'waktu'   => $now->format('H:i:s'),
                 'tanggal' => $now->format('d-m-Y'),
-                'foto' => Storage::url($path),
+                'foto'    => Storage::url($path),
             ]
         ]);
     }
@@ -161,6 +189,35 @@ class FhlController extends Controller
     {
         $absensi = FhlAbsensi::with('karyawan')->findOrFail($id);
         return view('hr.fhl.detail', compact('absensi'));
+    }
+
+    // HR: Generate kode kegiatan untuk hari ini
+    public function generateKode(Request $request)
+    {
+        $user = Auth::user();
+        $today = Carbon::today();
+
+        // Cek apakah hari ini Jumat
+        if (!FhlAbsensi::isFriday()) {
+            return redirect()->back()->with('error', 'Kode hanya bisa dibuat pada hari Jumat!');
+        }
+
+        // Cek apakah sudah ada kode untuk hari ini
+        if (FhlKode::hasKodeForDate($today)) {
+            return redirect()->back()->with('error', 'Kode untuk hari ini sudah dibuat.');
+        }
+
+        // Generate kode acak
+        $kode = FhlKode::generateRandomKode();
+
+        // Simpan
+        FhlKode::create([
+            'tanggal'    => $today,
+            'kode'       => $kode,
+            'created_by' => $user->id,
+        ]);
+
+        return redirect()->route('hr.fhl.index')->with('success', "Kode kegiatan FHL berhasil dibuat: <strong>{$kode}</strong>");
     }
 
     // Helper: Hitung jumlah Jumat dalam bulan

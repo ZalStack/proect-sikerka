@@ -70,6 +70,7 @@ Route::middleware('auth')->group(function () {
             Route::post('/pengumuman/{id}/resend-whatsapp', [PengumumanController::class, 'resendWhatsApp'])->name('pengumuman.resend-whatsapp');
 
             Route::get('/fhl', [FhlController::class, 'index'])->name('fhl.index');
+            Route::post('/fhl/generate-kode', [FhlController::class, 'generateKode'])->name('fhl.generate-kode');
             Route::get('/fhl/detail/{id}', [FhlController::class, 'detail'])->name('fhl.detail');
 
             Route::get('/sunnah', [SunnahController::class, 'index'])->name('sunnah.index');

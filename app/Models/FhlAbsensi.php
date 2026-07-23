@@ -1,4 +1,5 @@
 <?php
+// app/Models/FhlAbsensi.php
 
 namespace App\Models;
 
@@ -16,6 +17,7 @@ class FhlAbsensi extends Model
         'tanggal',
         'check_in',
         'foto_bukti',
+        'kode_input',
         'status',
         'keterangan',
         'ip_address',

@@ -41,7 +41,7 @@
                         </div>
                         <div class="flex items-center gap-2">
                             <span id="locationDot" class="w-3 h-3 rounded-full bg-yellow-400 animate-pulse"></span>
-                            <button onclick="getLocation()"
+                            <button onclick="getLocation(true)"
                                 class="bg-[#27438D] text-white px-3 py-1.5 rounded-lg hover:bg-[#161758] transition-colors duration-200 text-xs">
                                 🔄 Refresh Lokasi
                             </button>
@@ -211,10 +211,20 @@
         // ==========================================================
         const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
         const MAX_RADIUS = 50; // meter
+        const MAX_GPS_ACCURACY = 75; // meter, harus sinkron dengan Absensi::MAX_GPS_ACCURACY di backend
+
+        // Selama proses mencari sinyal GPS, cek lebih sering (lebih responsif)
+        const LOCATION_SEARCH_INTERVAL = 3000; // 3 detik
+        // Setelah lokasi valid & akurat didapat, kunci hasilnya selama 1 menit
+        // supaya UI tidak balik ke "mencari lokasi" terus-menerus
+        const LOCATION_LOCK_DURATION = 60000; // 1 menit
+        // Jika error (izin ditolak / GPS mati / timeout), coba lagi lebih cepat
+        const LOCATION_RETRY_INTERVAL = 3000; // 3 detik
 
         let currentLocation = null;
         let isLocationValid = false;
         let isLocationChecking = false;
+        let locationLockedUntil = 0; // timestamp (ms) sampai kapan lokasi masih dianggap terkunci/valid
 
         // Server time offset
         let serverTimeOffsetMs = 0;
@@ -272,7 +282,14 @@
         // ==========================================================
         // GEOLOKASI - AUTO DETECT
         // ==========================================================
-        function getLocation() {
+        function getLocation(force = false) {
+            // Kalau lokasi masih "terkunci" (baru saja dapat sinyal akurat) dan
+            // bukan permintaan paksa (refresh manual / retry setelah gagal absen),
+            // jangan cari ulang dulu supaya UI tidak flicker balik ke "mencari lokasi".
+            if (!force && Date.now() < locationLockedUntil) {
+                return;
+            }
+
             if (isLocationChecking) return;
             isLocationChecking = true;
 
@@ -315,6 +332,15 @@
                     // Validasi lokasi
                     validateLocation(currentLocation);
 
+                    // Kalau akurasi GPS sudah cukup baik, kunci hasil ini selama 1 menit
+                    // supaya tidak mencari-cari sinyal lagi padahal sudah dapat.
+                    if (currentLocation.accuracy && currentLocation.accuracy <= MAX_GPS_ACCURACY) {
+                        locationLockedUntil = Date.now() + LOCATION_LOCK_DURATION;
+                    } else {
+                        // Akurasi masih kurang baik, jangan dikunci, biar dicoba lagi lebih cepat
+                        locationLockedUntil = 0;
+                    }
+
                     setTimeout(() => {
                         progress.style.width = '0%';
                     }, 1000);
@@ -341,18 +367,19 @@
                     progress.style.width = '100%';
                     isLocationValid = false;
                     isLocationChecking = false;
+                    locationLockedUntil = 0; // jangan dikunci kalau gagal
                     updateButtons();
 
                     setTimeout(() => {
                         progress.style.width = '0%';
                     }, 1000);
 
-                    // Retry after 5 seconds
-                    setTimeout(getLocation, 5000);
+                    // Coba lagi lebih cepat (sebelumnya 5 detik)
+                    setTimeout(() => getLocation(true), LOCATION_RETRY_INTERVAL);
                 }, {
                     enableHighAccuracy: true,
-                    timeout: 15000,
-                    maximumAge: 3000
+                    timeout: 10000,
+                    maximumAge: 5000
                 }
             );
         }
@@ -502,10 +529,10 @@
                         if (data.code === 'INVALID_LOCATION') {
                             errorMsg = 'Lokasi tidak valid! Jarak terdekat: ' + (data.distance || 0) + 'm dari ' + (data
                                 .nearest_location || 'kantor');
-                            getLocation();
+                            getLocation(true);
                         } else if (data.code === 'POOR_GPS_ACCURACY') {
                             errorMsg = data.message || 'Sinyal GPS kurang akurat. Coba pindah ke area terbuka.';
-                            getLocation();
+                            getLocation(true);
                         }
 
                         Swal.fire({
@@ -631,8 +658,11 @@
             setTimeout(getLocation, 500);
         });
 
-        // Auto refresh location every 10 seconds
-        setInterval(getLocation, 10000);
+        // Cek lokasi berkala setiap 3 detik (dipercepat dari 10 detik).
+        // Kalau lokasi sudah terkunci (valid & akurat, dalam 1 menit terakhir),
+        // getLocation() akan langsung return tanpa melakukan pencarian ulang,
+        // jadi UI tidak flicker balik ke "mencari lokasi".
+        setInterval(() => getLocation(), LOCATION_SEARCH_INTERVAL);
 
         // Refresh status every 15 seconds
         setInterval(loadStatus, 15000);
