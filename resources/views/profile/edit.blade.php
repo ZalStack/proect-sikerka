@@ -160,7 +160,7 @@
                         <div><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">No WA</label><p class="text-sm sm:text-base text-[#27438D] break-words">{{ $user->no_wa ?? '-' }}</p></div>
                         <div><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Nama Kontak Darurat</label><p class="text-sm sm:text-base text-[#27438D] break-words">{{ $user->nama_kontak_darurat ?? '-' }}</p></div>
                         <div><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Telepon Kontak Darurat</label><p class="text-sm sm:text-base text-[#27438D] break-words">{{ $user->telepon_kontak_darurat ?? '-' }}</p></div>
-                        <div class="md:col-span-2"><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Alamat</label><p class="text-sm sm:text-base text-[#27438D] break-words">{{ $user->alamat ?? '-' }}</p></div>
+                        <div class="md:col-span-2"><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Alamat Sesuai KTP</label><p class="text-sm sm:text-base text-[#27438D] break-words">{{ $user->alamat ?? '-' }}</p></div>
                         <div class="md:col-span-2"><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Alamat Domisili</label><p class="text-sm sm:text-base text-[#27438D] break-words">{{ $user->alamat_domisili ?? '-' }}</p></div>
                     </div>
                 </div>

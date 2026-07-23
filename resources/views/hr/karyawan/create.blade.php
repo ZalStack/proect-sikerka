@@ -421,7 +421,7 @@
                     <!-- KOLOM KANAN -->
                     <div>
                         <div class="mb-4">
-                            <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Alamat</label>
+                            <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Alamat Sesuai KTP</label>
                             <textarea name="alamat" rows="3"
                                 class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">{{ old('alamat') }}</textarea>
                             @error('alamat')
