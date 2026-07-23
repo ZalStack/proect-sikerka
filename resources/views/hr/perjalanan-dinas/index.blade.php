@@ -13,30 +13,6 @@
                 </div>
             </div>
 
-            <!-- Stats Cards -->
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4 mb-6">
-                <div class="bg-white rounded-xl shadow-sm p-3 sm:p-4 border-l-4 border-[#161758]">
-                    <p class="text-xs text-gray-500">Total</p>
-                    <p class="text-xl sm:text-2xl font-bold text-[#161758]">{{ $stats['total'] }}</p>
-                </div>
-                <div class="bg-white rounded-xl shadow-sm p-3 sm:p-4 border-l-4 border-yellow-500">
-                    <p class="text-xs text-gray-500">Pending</p>
-                    <p class="text-xl sm:text-2xl font-bold text-yellow-500">{{ $stats['pending'] }}</p>
-                </div>
-                <div class="bg-white rounded-xl shadow-sm p-3 sm:p-4 border-l-4 border-green-500">
-                    <p class="text-xs text-gray-500">Disetujui</p>
-                    <p class="text-xl sm:text-2xl font-bold text-green-500">{{ $stats['approved'] }}</p>
-                </div>
-                <div class="bg-white rounded-xl shadow-sm p-3 sm:p-4 border-l-4 border-red-500">
-                    <p class="text-xs text-gray-500">Ditolak</p>
-                    <p class="text-xl sm:text-2xl font-bold text-red-500">{{ $stats['rejected'] }}</p>
-                </div>
-                <div class="bg-white rounded-xl shadow-sm p-3 sm:p-4 border-l-4 border-blue-500">
-                    <p class="text-xs text-gray-500">Selesai</p>
-                    <p class="text-xl sm:text-2xl font-bold text-blue-500">{{ $stats['selesai'] }}</p>
-                </div>
-            </div>
-
             <!-- Filter & Search -->
             <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
                 <form action="{{ route('hr.perjalanan-dinas.index') }}" method="GET" class="flex flex-col sm:flex-row gap-3">
@@ -90,9 +66,6 @@
                             <tr class="hover:bg-gray-50 transition">
                                 <td class="px-4 py-3">
                                     <div class="flex items-center space-x-2">
-                                        <div class="w-8 h-8 rounded-full bg-[#00a2e9] flex items-center justify-center text-white text-xs font-bold">
-                                            {{ strtoupper(substr($item->karyawan->nama_lengkap ?? 'U', 0, 1)) }}
-                                        </div>
                                         <div>
                                             <p class="text-sm font-medium text-gray-900">{{ $item->karyawan->nama_lengkap ?? '-' }}</p>
                                             <p class="text-xs text-gray-500">{{ $item->karyawan->kode_pegawai ?? '-' }}</p>
