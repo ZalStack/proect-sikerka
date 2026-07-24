@@ -206,24 +206,10 @@
                                 </div>
 
                                 <div class="mb-4">
-                                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Nama Lengkap <span class="text-[#ec1d1d]">*</span></label>
-                                    <input type="text" name="nama_lengkap" value="{{ old('nama_lengkap', $user->nama_lengkap) }}" required
-                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
-                                    @error('nama_lengkap') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
-                                </div>
-
-                                <div class="mb-4">
                                     <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Tempat Lahir</label>
                                     <input type="text" name="tempat_lahir" value="{{ old('tempat_lahir', $user->tempat_lahir) }}"
                                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                                     @error('tempat_lahir') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
-                                </div>
-
-                                <div class="mb-4">
-                                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Tanggal Lahir</label>
-                                    <input type="date" name="tanggal_lahir" value="{{ old('tanggal_lahir', $user->tanggal_lahir ? $user->tanggal_lahir->format('Y-m-d') : '') }}"
-                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
-                                    @error('tanggal_lahir') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                                 </div>
 
                                 <div class="mb-4">
@@ -237,24 +223,10 @@
                                 </div>
 
                                 <div class="mb-4">
-                                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Nama Ibu Kandung</label>
-                                    <input type="text" name="nama_ibu_kandung" value="{{ old('nama_ibu_kandung', $user->nama_ibu_kandung) }}"
-                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
-                                    @error('nama_ibu_kandung') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
-                                </div>
-
-                                <div class="mb-4">
                                     <label class="block text-sm font-medium text-[#1B1B1B] mb-1">NIK</label>
                                     <input type="text" name="nik" value="{{ old('nik', $user->nik) }}"
                                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                                     @error('nik') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
-                                </div>
-
-                                <div class="mb-4">
-                                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">No KK</label>
-                                    <input type="text" name="no_kk" value="{{ old('no_kk', $user->no_kk) }}"
-                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
-                                    @error('no_kk') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                                 </div>
 
                                 <div class="mb-4">
@@ -263,33 +235,12 @@
                                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                                     @error('agama') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                                 </div>
-                            </div>
-
-                            <!-- KOLOM KANAN -->
-                            <div>
-                                <div class="mb-4">
-                                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Status Pernikahan</label>
-                                    <select name="status_pernikahan" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
-                                        <option value="">Pilih</option>
-                                        <option value="Belum Menikah" {{ old('status_pernikahan', $user->status_pernikahan) === 'Belum Menikah' ? 'selected' : '' }}>Belum Menikah</option>
-                                        <option value="Menikah" {{ old('status_pernikahan', $user->status_pernikahan) === 'Menikah' ? 'selected' : '' }}>Menikah</option>
-                                        <option value="Cerai" {{ old('status_pernikahan', $user->status_pernikahan) === 'Cerai' ? 'selected' : '' }}>Cerai</option>
-                                    </select>
-                                    @error('status_pernikahan') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
-                                </div>
 
                                 <div class="mb-4">
                                     <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Jumlah Anak</label>
                                     <input type="number" name="jumlah_anak" value="{{ old('jumlah_anak', $user->jumlah_anak ?? 0) }}" min="0"
                                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                                     @error('jumlah_anak') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
-                                </div>
-
-                                <div class="mb-4">
-                                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Email <span class="text-[#ec1d1d]">*</span></label>
-                                    <input type="email" name="email" value="{{ old('email', $user->email) }}" required
-                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
-                                    @error('email') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                                 </div>
 
                                 <div class="mb-4">
@@ -302,6 +253,55 @@
                                         <option value="O" {{ old('golongan_darah', $user->golongan_darah) === 'O' ? 'selected' : '' }}>O</option>
                                     </select>
                                     @error('golongan_darah') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
+                                </div>
+                            </div>
+
+                            <!-- KOLOM KANAN -->
+                            <div>
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Nama Lengkap <span class="text-[#ec1d1d]">*</span></label>
+                                    <input type="text" name="nama_lengkap" value="{{ old('nama_lengkap', $user->nama_lengkap) }}" required
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                                    @error('nama_lengkap') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Tanggal Lahir</label>
+                                    <input type="date" name="tanggal_lahir" value="{{ old('tanggal_lahir', $user->tanggal_lahir ? $user->tanggal_lahir->format('Y-m-d') : '') }}"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                                    @error('tanggal_lahir') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Nama Ibu Kandung</label>
+                                    <input type="text" name="nama_ibu_kandung" value="{{ old('nama_ibu_kandung', $user->nama_ibu_kandung) }}"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                                    @error('nama_ibu_kandung') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">No KK</label>
+                                    <input type="text" name="no_kk" value="{{ old('no_kk', $user->no_kk) }}"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                                    @error('no_kk') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Status Pernikahan</label>
+                                    <select name="status_pernikahan" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                                        <option value="">Pilih</option>
+                                        <option value="Belum Menikah" {{ old('status_pernikahan', $user->status_pernikahan) === 'Belum Menikah' ? 'selected' : '' }}>Belum Menikah</option>
+                                        <option value="Menikah" {{ old('status_pernikahan', $user->status_pernikahan) === 'Menikah' ? 'selected' : '' }}>Menikah</option>
+                                        <option value="Cerai" {{ old('status_pernikahan', $user->status_pernikahan) === 'Cerai' ? 'selected' : '' }}>Cerai</option>
+                                    </select>
+                                    @error('status_pernikahan') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Email <span class="text-[#ec1d1d]">*</span></label>
+                                    <input type="email" name="email" value="{{ old('email', $user->email) }}" required
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                                    @error('email') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                                 </div>
 
                                 <div class="mb-4">
@@ -329,11 +329,10 @@
                                 </div>
 
                                 <div class="mb-4">
-                                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Divisi <span class="text-[#ec1d1d]">*</span></label>
-                                    <input type="text" name="divisi" id="divisi_input" value="{{ old('divisi', $user->divisi) }}" required
+                                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Tanggal Bergabung <span class="text-[#ec1d1d]">*</span></label>
+                                    <input type="date" name="tanggal_bergabung" value="{{ old('tanggal_bergabung', $user->tanggal_bergabung ? $user->tanggal_bergabung->format('Y-m-d') : '') }}" required
                                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
-                                    <p class="text-xs text-[#27438D] mt-1">* Jika diisi "HRD", posisi akan otomatis menjadi HR</p>
-                                    @error('divisi') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
+                                    @error('tanggal_bergabung') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                                 </div>
 
                                 <div class="mb-4">
@@ -346,6 +345,14 @@
 
                             <div>
                                 <div class="mb-4">
+                                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Divisi <span class="text-[#ec1d1d]">*</span></label>
+                                    <input type="text" name="divisi" id="divisi_input" value="{{ old('divisi', $user->divisi) }}" required
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                                    <p class="text-xs text-[#27438D] mt-1">* Jika diisi "HRD", posisi akan otomatis menjadi HR</p>
+                                    @error('divisi') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
+                                </div>
+
+                                <div class="mb-4">
                                     <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Status <span class="text-[#ec1d1d]">*</span></label>
                                     <select name="status" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                                         <option value="Karyawan Tetap" {{ old('status', $user->status) === 'Karyawan Tetap' ? 'selected' : '' }}>Karyawan Tetap</option>
@@ -353,13 +360,6 @@
                                         <option value="Internship" {{ old('status', $user->status) === 'Internship' ? 'selected' : '' }}>Magang</option>
                                     </select>
                                     @error('status') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
-                                </div>
-
-                                <div class="mb-4">
-                                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Tanggal Bergabung <span class="text-[#ec1d1d]">*</span></label>
-                                    <input type="date" name="tanggal_bergabung" value="{{ old('tanggal_bergabung', $user->tanggal_bergabung ? $user->tanggal_bergabung->format('Y-m-d') : '') }}" required
-                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
-                                    @error('tanggal_bergabung') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                                 </div>
                             </div>
 
@@ -474,17 +474,19 @@
                                 </div>
 
                                 <div class="mb-4">
-                                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">No WA</label>
-                                    <input type="text" name="no_wa" value="{{ old('no_wa', $user->no_wa) }}"
-                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
-                                    @error('no_wa') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
-                                </div>
-
-                                <div class="mb-4">
                                     <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Telepon Kontak Darurat</label>
                                     <input type="text" name="telepon_kontak_darurat" value="{{ old('telepon_kontak_darurat', $user->telepon_kontak_darurat) }}"
                                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                                     @error('telepon_kontak_darurat') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">No WA</label>
+                                    <input type="text" name="no_wa" value="{{ old('no_wa', $user->no_wa) }}"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                                    @error('no_wa') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                                 </div>
 
                                 <div class="mb-4">
@@ -495,13 +497,15 @@
                                 </div>
                             </div>
 
-                            <div>
+                            <div class="md:col-span-2">
                                 <div class="mb-4">
                                     <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Alamat (KTP)</label>
                                     <textarea name="alamat" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">{{ old('alamat', $user->alamat) }}</textarea>
                                     @error('alamat') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                                 </div>
+                            </div>
 
+                            <div class="md:col-span-2">
                                 <div class="mb-4">
                                     <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Alamat Domisili</label>
                                     <textarea name="alamat_domisili" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">{{ old('alamat_domisili', $user->alamat_domisili) }}</textarea>
@@ -524,15 +528,6 @@
                                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                                     @error('nomor_rekening') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                                 </div>
-                            </div>
-
-                            <div>
-                                <div class="mb-4">
-                                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Nama Bank</label>
-                                    <input type="text" value="BSI" disabled class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100">
-                                    <input type="hidden" name="nama_bank" value="BSI">
-                                    <p class="text-xs text-[#27438D] mt-1">* Nama bank default BSI</p>
-                                </div>
 
                                 <div class="mb-4">
                                     <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Foto Profil</label>
@@ -541,6 +536,15 @@
                                         <div class="mt-2"><img src="{{ Storage::url($user->foto_profil) }}" alt="Foto Profil" class="w-20 h-20 rounded-full object-cover border"></div>
                                     @endif
                                     @error('foto_profil') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Nama Bank</label>
+                                    <input type="text" value="BSI" disabled class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100">
+                                    <input type="hidden" name="nama_bank" value="BSI">
+                                    <p class="text-xs text-[#27438D] mt-1">* Nama bank default BSI</p>
                                 </div>
                             </div>
                         </div>

@@ -184,22 +184,17 @@
     function updateClock() {
         const now = new Date(Date.now() + serverOffsetMs);
 
-        // Format jam HH:MM:SS
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        const seconds = String(now.getSeconds()).padStart(2, '0');
-        const timeString = hours + ':' + minutes + ':' + seconds;
-
-        // Update elemen jam
+        // Update elemen jam (paksa zona WIB)
         const clockElem = document.getElementById('serverClock');
         if (clockElem) {
-            clockElem.textContent = timeString;
+            clockElem.textContent = now.toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour12: false });
         }
 
-        // Update tanggal
+        // Update tanggal (paksa zona WIB)
         const dateElem = document.getElementById('serverDate');
         if (dateElem) {
             const options = {
+                timeZone: 'Asia/Jakarta',
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
