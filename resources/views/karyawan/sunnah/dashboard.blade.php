@@ -112,6 +112,25 @@
                             {{ min(($todayData->total_poin ?? 0), 100) }}%
                         </span>
                     </div>
+
+                    {{-- Milestone dots: 40%, 75%, 90%, 100% --}}
+                    @foreach([40, 75, 90, 100] as $point)
+                        <div class="absolute top-1/2 -translate-y-1/2 z-10"
+                             style="left: {{ $point }}%; transform: translate(-50%, -50%);">
+                            <div id="milestone-dot-{{ $point }}"
+                                 class="w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 border-white bg-gray-300 transition-all duration-500 shadow-md"></div>
+                        </div>
+                    @endforeach
+                </div>
+
+                {{-- Label persentase di bawah progress bar --}}
+                <div class="relative w-full h-4 mt-1">
+                    @foreach([40, 75, 90, 100] as $point)
+                        <span class="absolute text-[9px] sm:text-[11px] font-semibold text-gray-400"
+                              style="left: {{ $point }}%; transform: translateX(-50%);">
+                            {{ $point }}%
+                        </span>
+                    @endforeach
                 </div>
             </div>
 
@@ -199,6 +218,20 @@
 <!-- Confetti Container -->
 <div id="confetti-container" class="fixed top-0 left-0 w-full h-full pointer-events-none z-50"></div>
 
+<!-- Milestone Popup (teks animasi) -->
+<div id="milestone-popup-overlay" class="fixed inset-0 z-[60] flex items-center justify-center pointer-events-none">
+    <div id="milestone-popup-card" class="milestone-popup-hidden text-center px-6 sm:px-10 py-6 sm:py-8 rounded-2xl shadow-2xl max-w-[90%] sm:max-w-md">
+        <div id="milestone-popup-icon" class="text-4xl sm:text-6xl mb-2 sm:mb-3"></div>
+        <div id="milestone-popup-title" class="text-lg sm:text-2xl font-extrabold font-['Montserrat'] mb-1 sm:mb-2"></div>
+        <div id="milestone-popup-text" class="text-sm sm:text-lg font-semibold leading-snug"></div>
+        <div class="mt-3 sm:mt-4 flex justify-center gap-2">
+            <span class="milestone-popup-sparkle">✨</span>
+            <span class="milestone-popup-sparkle" style="animation-delay:.15s">✨</span>
+            <span class="milestone-popup-sparkle" style="animation-delay:.3s">✨</span>
+        </div>
+    </div>
+</div>
+
 <style>
 @keyframes gradientShift {
     0% { background-position: 0% 50%; }
@@ -239,6 +272,51 @@
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+/* ===== Milestone Popup Animation ===== */
+@keyframes milestonePopIn {
+    0%   { transform: scale(0.3) translateY(40px) rotate(-8deg); opacity: 0; }
+    55%  { transform: scale(1.08) translateY(-6px) rotate(2deg); opacity: 1; }
+    75%  { transform: scale(0.96) translateY(0) rotate(-1deg); }
+    100% { transform: scale(1) translateY(0) rotate(0deg); opacity: 1; }
+}
+@keyframes milestonePopOut {
+    0%   { transform: scale(1) translateY(0); opacity: 1; }
+    100% { transform: scale(0.7) translateY(-30px); opacity: 0; }
+}
+@keyframes milestoneGlow {
+    0%, 100% { box-shadow: 0 0 20px 4px var(--milestone-glow, rgba(46,125,62,.5)); }
+    50%      { box-shadow: 0 0 40px 12px var(--milestone-glow, rgba(46,125,62,.75)); }
+}
+@keyframes sparkleFloat {
+    0%   { transform: translateY(0) scale(0.6); opacity: 0; }
+    30%  { opacity: 1; }
+    100% { transform: translateY(-18px) scale(1.2); opacity: 0; }
+}
+.milestone-popup-hidden {
+    opacity: 0;
+    transform: scale(0.3);
+    pointer-events: none;
+}
+.milestone-popup-show {
+    animation: milestonePopIn .6s cubic-bezier(.34,1.56,.64,1) forwards,
+               milestoneGlow 1.4s ease-in-out infinite;
+    pointer-events: auto;
+}
+.milestone-popup-out {
+    animation: milestonePopOut .4s ease-in forwards;
+}
+.milestone-popup-sparkle {
+    display: inline-block;
+    animation: sparkleFloat 1.2s ease-in-out infinite;
+}
+#milestone-popup-overlay {
+    background: rgba(0,0,0,0);
+    transition: background .3s ease;
+}
+#milestone-popup-overlay.milestone-dim {
+    background: rgba(22,23,88,0.35);
+}
 </style>
 
 <script>
@@ -247,12 +325,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const isLocked = @json($isLocked);
     const selectedDateIso = "{{ $selectedDate->format('Y-m-d') }}";
     const serverTodayIso = "{{ $today->format('Y-m-d') }}";
-    // Konfigurasi suara milestone (file & durasi asli file, dalam detik)
+    // Konfigurasi suara + teks + tampilan milestone (durasi = panjang asli file mp3, dalam detik)
     const milestoneSounds = {
-        40: { file: 'point-40.mp3', duration: 5 },
-        75: { file: 'point-75.mp3', duration: 3 },
-        90: { file: 'point-90.mp3', duration: 4 },
-        100: { file: 'point-100.mp3', duration: 7 },
+        40:  { file: 'point-40.mp3',  duration: 5, icon: '🔥',  title: '40% Tercapai!',  text: 'Ayo Semangat Lagi Ibadahnya', color: '#FCC626', glow: 'rgba(252,198,38,.6)' },
+        75:  { file: 'point-75.mp3',  duration: 3, icon: '🎉',  title: '75% Tercapai!',  text: 'Alhamdulillah yaa....', color: '#2E7D3E', glow: 'rgba(46,125,62,.6)' },
+        90:  { file: 'point-90.mp3',  duration: 4, icon: '🌟',  title: '90% Tercapai!',  text: 'Masyaallah Semangat Yaaa Ibadahnya', color: '#00a2e9', glow: 'rgba(0,162,233,.6)' },
+        100: { file: 'point-100.mp3', duration: 7, icon: '🏆',  title: '100% Tercapai!', text: 'Wahhh Kamu Hebat, Sekarang Pertahankan Suprarasional Setiap Hari', color: '#161758', glow: 'rgba(22,23,88,.65)' },
     };
     let currentEntryPoin = {{ $todayData->total_poin ?? 0 }};
     let hasEntry = {{ $todayData ? 'true' : 'false' }};
@@ -286,6 +364,43 @@ document.addEventListener('DOMContentLoaded', function() {
         processAudioQueue();
     }
 
+    let popupHideTimer = null;
+
+    function showMilestonePopup(milestoneData, durationMs) {
+        const overlay = document.getElementById('milestone-popup-overlay');
+        const card = document.getElementById('milestone-popup-card');
+        const icon = document.getElementById('milestone-popup-icon');
+        const title = document.getElementById('milestone-popup-title');
+        const text = document.getElementById('milestone-popup-text');
+
+        if (popupHideTimer) clearTimeout(popupHideTimer);
+
+        icon.textContent = milestoneData.icon;
+        title.textContent = milestoneData.title;
+        title.style.color = milestoneData.color;
+        text.textContent = milestoneData.text;
+        text.style.color = '#1B1B1B';
+        card.style.setProperty('--milestone-glow', milestoneData.glow);
+        card.style.background = `linear-gradient(135deg, #ffffff 0%, ${milestoneData.color}15 100%)`;
+        card.style.border = `3px solid ${milestoneData.color}`;
+
+        overlay.classList.add('milestone-dim');
+        card.classList.remove('milestone-popup-hidden', 'milestone-popup-out');
+        // force reflow supaya animasi bisa diulang meski class sama
+        void card.offsetWidth;
+        card.classList.add('milestone-popup-show');
+
+        popupHideTimer = setTimeout(() => {
+            card.classList.remove('milestone-popup-show');
+            card.classList.add('milestone-popup-out');
+            overlay.classList.remove('milestone-dim');
+            setTimeout(() => {
+                card.classList.add('milestone-popup-hidden');
+                card.classList.remove('milestone-popup-out');
+            }, 400);
+        }, durationMs);
+    }
+
     function processAudioQueue() {
         if (isPlayingAudio || audioQueue.length === 0) return;
         isPlayingAudio = true;
@@ -304,16 +419,22 @@ document.addEventListener('DOMContentLoaded', function() {
         audio.currentTime = 0;
         const playPromise = audio.play();
 
-        if (direction === 'up' && milestoneKey === 100) {
-            triggerConfetti();
-            document.getElementById('progress-bar').classList.add('animate-pulse');
-            setTimeout(() => {
-                document.getElementById('progress-bar').classList.remove('animate-pulse');
-            }, 3000);
-        }
-
         // Durasi sesuai panjang file mp3 aslinya (40=5s, 75=3s, 90=4s, 100=7s)
         const duration = milestoneData.duration * 1000 + 300;
+
+        if (direction === 'up') {
+            showMilestonePopup(milestoneData, duration);
+
+            if (milestoneKey === 100) {
+                triggerConfetti();
+                document.getElementById('progress-bar').classList.add('animate-pulse');
+                setTimeout(() => {
+                    document.getElementById('progress-bar').classList.remove('animate-pulse');
+                }, 3000);
+            } else {
+                triggerConfetti(40); // percikan confetti lebih ringan untuk milestone 40/75/90
+            }
+        }
 
         const finishPlayback = () => {
             isPlayingAudio = false;
@@ -360,11 +481,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function triggerConfetti() {
+    function triggerConfetti(count = 200) {
         const container = document.getElementById('confetti-container');
         const colors = ['#FCC626', '#2E7D3E', '#00a2e9', '#FF6B35', '#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#a29bfe', '#fd79a8'];
 
-        for (let i = 0; i < 200; i++) {
+        for (let i = 0; i < count; i++) {
             const confetti = document.createElement('div');
             const size = Math.random() * 12 + 4;
             const leftPos = Math.random() * 100;
