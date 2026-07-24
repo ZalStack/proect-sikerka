@@ -106,7 +106,8 @@
                                 </td>
                                 <td class="px-4 py-3">
                                     @if($item->catatan_hr)
-                                        <button onclick="showCatatan('{{ addslashes($item->catatan_hr) }}')" class="text-xs text-blue-600 underline">
+                                        <button onclick="showCatatan({{ json_encode($item->catatan_hr) }})"
+                                                class="text-xs text-blue-600 underline hover:text-blue-800">
                                             Lihat catatan
                                         </button>
                                     @else

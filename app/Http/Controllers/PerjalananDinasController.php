@@ -37,11 +37,9 @@ class PerjalananDinasController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('judul', 'like', "%{$search}%")
-                    ->orWhereHas('karyawan', function ($sub) use ($search) {
-                        $sub->where('nama_lengkap', 'like', "%{$search}%")
-                            ->orWhere('kode_pegawai', 'like', "%{$search}%");
-                    });
+                $q->where('judul', 'like', "%{$search}%")->orWhereHas('karyawan', function ($sub) use ($search) {
+                    $sub->where('nama_lengkap', 'like', "%{$search}%")->orWhere('kode_pegawai', 'like', "%{$search}%");
+                });
             });
         }
 
@@ -74,28 +72,30 @@ class PerjalananDinasController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'judul' => 'required|string|max:200',
-            'agenda' => 'required|string',
-            'tanggal_mulai' => [
-                'required',
-                'date',
-                'after_or_equal:' . now()->addDays(7)->toDateString() // minimal H-7
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'judul' => 'required|string|max:200',
+                'agenda' => 'required|string',
+                'tanggal_mulai' => [
+                    'required',
+                    'date',
+                    'after_or_equal:' . now()->addDays(7)->toDateString(), // minimal H-7
+                ],
+                'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
+                'surat_tugas' => 'required|file|mimes:pdf|max:2048', // wajib
             ],
-            'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
-            'surat_tugas' => 'required|file|mimes:pdf|max:2048', // wajib
-        ], [
-            'surat_tugas.required' => 'Surat tugas wajib diupload.',
-            'surat_tugas.max' => 'Ukuran file surat tugas maksimal 2 MB.',
-            'surat_tugas.mimes' => 'File surat tugas harus berformat PDF.',
-            'tanggal_mulai.after_or_equal' => 'Tanggal mulai harus minimal 7 hari dari hari ini.',
-            'tanggal_selesai.after_or_equal' => 'Tanggal selesai harus setelah atau sama dengan tanggal mulai.',
-        ]);
+            [
+                'surat_tugas.required' => 'Surat tugas wajib diupload.',
+                'surat_tugas.max' => 'Ukuran file surat tugas maksimal 2 MB.',
+                'surat_tugas.mimes' => 'File surat tugas harus berformat PDF.',
+                'tanggal_mulai.after_or_equal' => 'Tanggal mulai harus minimal 7 hari dari hari ini.',
+                'tanggal_selesai.after_or_equal' => 'Tanggal selesai harus setelah atau sama dengan tanggal mulai.',
+            ],
+        );
 
         if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
+            return redirect()->back()->withErrors($validator)->withInput();
         }
 
         $data = $request->all();
@@ -110,7 +110,8 @@ class PerjalananDinasController extends Controller
             $file = $request->file('surat_tugas');
 
             if ($file->getSize() > 2 * 1024 * 1024) {
-                return redirect()->back()
+                return redirect()
+                    ->back()
                     ->withErrors(['surat_tugas' => 'Ukuran file surat tugas maksimal 2 MB.'])
                     ->withInput();
             }
@@ -125,8 +126,7 @@ class PerjalananDinasController extends Controller
         // Rekap ke absensi otomatis
         $this->rekapKeAbsensi($perjalanan);
 
-        return redirect()->route('karyawan.perjalanan-dinas.index')
-            ->with('success', 'Pengajuan perjalanan dinas berhasil disetujui otomatis dan telah direkap ke absensi.');
+        return redirect()->route('karyawan.perjalanan-dinas.index')->with('success', 'Pengajuan perjalanan dinas berhasil disetujui otomatis dan telah direkap ke absensi.');
     }
 
     /**
@@ -182,8 +182,7 @@ class PerjalananDinasController extends Controller
         $perjalananDinas->status = 'selesai';
         $perjalananDinas->save();
 
-        return redirect()->route('hr.perjalanan-dinas.index')
-            ->with('success', 'Perjalanan dinas ditandai sebagai selesai.');
+        return redirect()->route('hr.perjalanan-dinas.index')->with('success', 'Perjalanan dinas ditandai sebagai selesai.');
     }
 
     /**
@@ -205,6 +204,23 @@ class PerjalananDinasController extends Controller
     }
 
     /**
+     * Update catatan HR untuk perjalanan dinas.
+     */
+    public function updateCatatan(Request $request, $id)
+    {
+        $perjalananDinas = PerjalananDinas::findOrFail($id);
+
+        $request->validate([
+            'catatan_hr' => 'nullable|string|max:1000',
+        ]);
+
+        $perjalananDinas->catatan_hr = $request->catatan_hr;
+        $perjalananDinas->save();
+
+        return redirect()->route('hr.perjalanan-dinas.show', $perjalananDinas->id)->with('success', 'Catatan HR berhasil diperbarui.');
+    }
+
+    /**
      * Rekap perjalanan dinas ke tabel absensi untuk setiap hari dalam rentang tanggal.
      */
     private function rekapKeAbsensi(PerjalananDinas $perjalananDinas)
@@ -217,9 +233,7 @@ class PerjalananDinasController extends Controller
         for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
             $tanggal = $date->format('Y-m-d');
 
-            $absensi = Absensi::where('karyawan_id', $karyawanId)
-                ->whereDate('tanggal', $tanggal)
-                ->first();
+            $absensi = Absensi::where('karyawan_id', $karyawanId)->whereDate('tanggal', $tanggal)->first();
 
             if (!$absensi) {
                 Absensi::create([
