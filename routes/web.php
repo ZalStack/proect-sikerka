@@ -10,6 +10,7 @@ use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\CutiController;
 use App\Http\Controllers\FhlController;
 use App\Http\Controllers\KhatamanController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PengumumanController;
 use App\Http\Controllers\PerjalananDinasController;
 use App\Http\Controllers\SunnahController;
