@@ -110,7 +110,7 @@
                         @if($user->end_date)
                         <div><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Tanggal Berakhir</label><p class="text-sm sm:text-base text-[#27438D]">{{ $user->end_date->format('d-m-Y') }}</p></div>
                         @endif
-                        <div><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Tanggal Pengangkatan Tetap</label><p class="text-sm sm:text-base text-[#27438D]">{{ $user->tanggal_pengangkatan_tetap ? $user->tanggal_pengangkatan_tetap->format('d-m-Y') : '-' }}</p></div>
+                        <div><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Tanggal Pengangkatan Karyawan Tetap</label><p class="text-sm sm:text-base text-[#27438D]">{{ $user->tanggal_pengangkatan_tetap ? $user->tanggal_pengangkatan_tetap->format('d-m-Y') : '-' }}</p></div>
                     </div>
                 </div>
 
@@ -336,7 +336,7 @@
                                 </div>
 
                                 <div class="mb-4">
-                                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Tanggal Pengangkatan Tetap</label>
+                                    <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Tanggal Pengangkatan Karyawan Tetap</label>
                                     <input type="date" name="tanggal_pengangkatan_tetap" value="{{ old('tanggal_pengangkatan_tetap', $user->tanggal_pengangkatan_tetap ? $user->tanggal_pengangkatan_tetap->format('Y-m-d') : '') }}"
                                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                                     @error('tanggal_pengangkatan_tetap') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror

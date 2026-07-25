@@ -120,7 +120,7 @@
                         @if($karyawan->end_date)
                         <div><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Tanggal Berakhir</label><p class="text-sm sm:text-base text-[#27438D]">{{ $karyawan->end_date->format('d-m-Y') }}</p></div>
                         @endif
-                        <div><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Tanggal Pengangkatan Tetap</label><p class="text-sm sm:text-base text-[#27438D]">{{ $karyawan->tanggal_pengangkatan_tetap ? $karyawan->tanggal_pengangkatan_tetap->format('d-m-Y') : '-' }}</p></div>
+                        <div><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Tanggal Pengangkatan Karyawan Tetap</label><p class="text-sm sm:text-base text-[#27438D]">{{ $karyawan->tanggal_pengangkatan_tetap ? $karyawan->tanggal_pengangkatan_tetap->format('d-m-Y') : '-' }}</p></div>
                     </div>
                 </div>
 

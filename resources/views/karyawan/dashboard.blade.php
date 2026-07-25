@@ -125,51 +125,6 @@
                 @endforeach
             </div>
 
-            <!-- Charts Row -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Absensi Chart -->
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-lg transition-shadow duration-300">
-                    <div class="p-5 border-b border-slate-100">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <h3 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                                    Kehadiran 7 Hari Terakhir
-                                </h3>
-                                <p class="text-xs text-slate-400 mt-0.5">Status kehadiran harian</p>
-                            </div>
-                            <span class="px-2 py-1 bg-emerald-50 text-emerald-600 text-xs font-medium rounded-full">Harian</span>
-                        </div>
-                    </div>
-                    <div class="p-5">
-                        <div style="height: 200px;">
-                            <canvas id="absensiChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Sunnah Chart -->
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-lg transition-shadow duration-300">
-                    <div class="p-5 border-b border-slate-100">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <h3 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                    <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
-                                    Poin 7SPS Harian
-                                </h3>
-                                <p class="text-xs text-slate-400 mt-0.5">Perkembangan poin 7 hari</p>
-                            </div>
-                            <span class="px-2 py-1 bg-indigo-50 text-indigo-600 text-xs font-medium rounded-full">⭐</span>
-                        </div>
-                    </div>
-                    <div class="p-5">
-                        <div style="height: 200px;">
-                            <canvas id="sunnahChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Detail Cards -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- Personal Info -->
