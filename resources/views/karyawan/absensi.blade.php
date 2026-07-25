@@ -51,6 +51,35 @@
                         <div id="locationProgress" class="bg-[#27438D] h-1.5 rounded-full transition-all duration-500"
                             style="width: 0%"></div>
                     </div>
+                    <div id="gpsSuspicionWarning"
+                        class="hidden mt-3 bg-[#FCC626]/20 border border-[#FCC626] text-[#1B1B1B] rounded-lg p-3 text-xs sm:text-sm">
+                    </div>
+                </div>
+
+                <!-- Tombol Absensi -->
+                <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
+                    <h2 class="text-lg font-semibold text-[#161758] mb-4">Absensi Hari Ini</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <button id="btnCheckIn" onclick="handleCheckIn()"
+                            class="bg-[#2E7D3E] text-white px-6 py-4 rounded-lg hover:bg-[#009a4b] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-lg font-semibold">🟢
+                            Check-in</button>
+                        <button id="btnCheckOut" onclick="handleCheckOut()"
+                            class="bg-[#ec1d1d] text-white px-6 py-4 rounded-lg hover:bg-red-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-lg font-semibold"
+                            disabled>🔴 Check-out</button>
+                    </div>
+                    <div class="mt-4 text-sm text-[#1B1B1B] bg-[#F5F5F5] p-3 rounded-lg">
+                        <p class="font-semibold">ℹ️ Informasi:</p>
+                        <ul class="list-disc list-inside mt-1 space-y-1 text-xs sm:text-sm">
+                            <li>Absensi dilakukan dengan <strong>deteksi lokasi GPS</strong></li>
+                            <li>Lokasi Anda harus berada dalam <strong>radius 50 meter</strong> dari kantor KPM</li>
+                            <li>Sinyal GPS harus cukup akurat (akurasi lebih baik dari 75 meter). Jika di dalam
+                                ruangan/gedung, coba dekat jendela atau area terbuka</li>
+                            <li>Check-in hanya 1 kali per hari, Check-out setelah Check-in</li>
+                            <li>Jam yang digunakan adalah <strong>jam server</strong> (realtime), bukan jam HP Anda</li>
+                            <li>Sistem mendeteksi <strong>fake GPS/lokasi palsu</strong>. Absensi dengan indikasi lokasi
+                                palsu akan ditolak atau ditandai untuk ditinjau HR</li>
+                        </ul>
+                    </div>
                 </div>
 
                 <!-- Status Absensi Hari Ini -->
@@ -87,29 +116,7 @@
                     </div>
                 </div>
 
-                <!-- Tombol Absensi -->
-                <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
-                    <h2 class="text-lg font-semibold text-[#161758] mb-4">Absensi Hari Ini</h2>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <button id="btnCheckIn" onclick="handleCheckIn()"
-                            class="bg-[#2E7D3E] text-white px-6 py-4 rounded-lg hover:bg-[#009a4b] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-lg font-semibold">🟢
-                            Check-in</button>
-                        <button id="btnCheckOut" onclick="handleCheckOut()"
-                            class="bg-[#ec1d1d] text-white px-6 py-4 rounded-lg hover:bg-red-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-lg font-semibold"
-                            disabled>🔴 Check-out</button>
-                    </div>
-                    <div class="mt-4 text-sm text-[#1B1B1B] bg-[#F5F5F5] p-3 rounded-lg">
-                        <p class="font-semibold">ℹ️ Informasi:</p>
-                        <ul class="list-disc list-inside mt-1 space-y-1 text-xs sm:text-sm">
-                            <li>Absensi dilakukan dengan <strong>deteksi lokasi GPS</strong></li>
-                            <li>Lokasi Anda harus berada dalam <strong>radius 50 meter</strong> dari kantor KPM</li>
-                            <li>Sinyal GPS harus cukup akurat (akurasi lebih baik dari 75 meter). Jika di dalam
-                                ruangan/gedung, coba dekat jendela atau area terbuka</li>
-                            <li>Check-in hanya 1 kali per hari, Check-out setelah Check-in</li>
-                            <li>Jam yang digunakan adalah <strong>jam server</strong> (realtime), bukan jam HP Anda</li>
-                        </ul>
-                    </div>
-                </div>
+
 
                 <!-- Lokasi Kantor -->
                 @if (!empty($officeLocations))
@@ -226,6 +233,93 @@
         let isLocationChecking = false;
         let locationLockedUntil = 0; // timestamp (ms) sampai kapan lokasi masih dianggap terkunci/valid
 
+        // ==========================================================
+        // ANTI FAKE GPS (deteksi di sisi browser)
+        // ==========================================================
+        // Riwayat beberapa sample lokasi terakhir, dipakai untuk mendeteksi:
+        // - lokasi yang "melompat" dengan kecepatan tidak wajar
+        // - lokasi yang tidak punya variasi sama sekali (indikasi fake GPS statis)
+        const locationSampleHistory = [];
+        const MAX_SAMPLE_HISTORY = 5;
+        const MAX_REALISTIC_SPEED_KMH = 200; // di atas ini dianggap tidak wajar untuk perpindahan lokasi absensi
+
+        let clientSuspicionFlags = new Set();
+
+        function markSuspicion(flag) {
+            clientSuspicionFlags.add(flag);
+        }
+
+        function clearTransientSuspicion() {
+            // "lokasi_melompat_tidak_wajar" & "lokasi_tanpa_variasi" dihitung ulang tiap sample baru,
+            // supaya tidak menumpuk dari sample lama yang mungkin sudah tidak relevan.
+            clientSuspicionFlags.delete('lokasi_melompat_tidak_wajar');
+            clientSuspicionFlags.delete('lokasi_tanpa_variasi');
+        }
+
+        // 1) Deteksi automasi browser (bot/tools semacam Selenium/Puppeteer sering
+        //    dipakai bareng ekstensi fake GPS)
+        function detectAutomation() {
+            try {
+                if (navigator.webdriver === true) {
+                    markSuspicion('automasi_browser_terdeteksi');
+                }
+            } catch (e) {}
+        }
+
+        // 2) Deteksi apakah fungsi Geolocation API asli sudah "dibungkus"/dimodifikasi
+        //    (banyak ekstensi fake-GPS bekerja dengan cara override fungsi ini).
+        //    Fungsi native browser selalu punya toString() berbentuk "function xxx() { [native code] }".
+        function detectGeolocationTampering() {
+            try {
+                const fnStr = navigator.geolocation.getCurrentPosition.toString();
+                if (fnStr.indexOf('[native code]') === -1) {
+                    markSuspicion('geolocation_api_dimodifikasi');
+                }
+            } catch (e) {
+                // Kalau sampai error saat introspeksi, anggap juga sebagai sinyal mencurigakan
+                markSuspicion('geolocation_api_dimodifikasi');
+            }
+        }
+
+        // 3) Analisa histori sample lokasi: cek kecepatan perpindahan yang tidak wajar
+        //    (lokasi "melompat") dan cek apakah lokasi sama sekali tidak ada variasi
+        //    (GPS asli selalu punya sedikit drift, walau berdiri diam di tempat yang sama).
+        function analyzeLocationSamples(newSample) {
+            clearTransientSuspicion();
+
+            locationSampleHistory.push(newSample);
+            if (locationSampleHistory.length > MAX_SAMPLE_HISTORY) {
+                locationSampleHistory.shift();
+            }
+
+            if (locationSampleHistory.length >= 2) {
+                const prev = locationSampleHistory[locationSampleHistory.length - 2];
+                const curr = newSample;
+                const distanceMeters = haversineDistance(prev.latitude, prev.longitude, curr.latitude, curr.longitude);
+                const elapsedHours = Math.max((curr.timestamp - prev.timestamp) / 1000 / 3600, 1 / 3600);
+                const speedKmh = (distanceMeters / 1000) / elapsedHours;
+
+                if (speedKmh > MAX_REALISTIC_SPEED_KMH) {
+                    markSuspicion('lokasi_melompat_tidak_wajar');
+                }
+            }
+
+            if (locationSampleHistory.length >= MAX_SAMPLE_HISTORY) {
+                const allIdentical = locationSampleHistory.every(s =>
+                    s.latitude === locationSampleHistory[0].latitude &&
+                    s.longitude === locationSampleHistory[0].longitude &&
+                    s.accuracy === locationSampleHistory[0].accuracy
+                );
+                if (allIdentical) {
+                    markSuspicion('lokasi_tanpa_variasi');
+                }
+            }
+        }
+
+        // Jalankan pengecekan yang sifatnya statis sekali saat halaman dimuat
+        detectAutomation();
+        detectGeolocationTampering();
+
         // Server time offset
         let serverTimeOffsetMs = 0;
         let clockSynced = false;
@@ -322,8 +416,13 @@
                     currentLocation = {
                         latitude: position.coords.latitude,
                         longitude: position.coords.longitude,
-                        accuracy: position.coords.accuracy
+                        accuracy: position.coords.accuracy,
+                        timestamp: position.timestamp || Date.now()
                     };
+
+                    // Anti fake-GPS: analisa sample lokasi ini dibanding sample sebelumnya
+                    analyzeLocationSamples(currentLocation);
+                    renderSuspicionWarning();
 
                     detailText.textContent =
                         `📍 ${currentLocation.latitude.toFixed(6)}, ${currentLocation.longitude.toFixed(6)} | Akurasi: ${(currentLocation.accuracy || 0).toFixed(1)}m`;
@@ -435,6 +534,31 @@
             updateButtons();
         }
 
+        // Tampilkan peringatan visual di halaman kalau ada indikasi fake GPS.
+        // Ini hanya notifikasi ke karyawan (dan sinyal yang dikirim ke server) —
+        // keputusan tolak/tandai tetap dilakukan & divalidasi ulang di server.
+        function renderSuspicionWarning() {
+            const box = document.getElementById('gpsSuspicionWarning');
+            if (!box) return;
+
+            if (clientSuspicionFlags.size === 0) {
+                box.classList.add('hidden');
+                box.textContent = '';
+                return;
+            }
+
+            const labels = {
+                automasi_browser_terdeteksi: 'Terdeteksi browser otomatis',
+                geolocation_api_dimodifikasi: 'Terdeteksi modifikasi pada API lokasi (kemungkinan fake GPS)',
+                lokasi_melompat_tidak_wajar: 'Lokasi berpindah tidak wajar',
+                lokasi_tanpa_variasi: 'Sinyal GPS tidak wajar (tidak ada variasi)'
+            };
+
+            const messages = Array.from(clientSuspicionFlags).map(f => labels[f] || f);
+            box.textContent = '⚠️ ' + messages.join(', ') + '. Pastikan Anda menggunakan lokasi GPS asli perangkat, bukan aplikasi fake GPS.';
+            box.classList.remove('hidden');
+        }
+
         function haversineDistance(lat1, lon1, lat2, lon2) {
             const R = 6371000;
             const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -488,7 +612,8 @@
                     body: JSON.stringify({
                         latitude: currentLocation.latitude,
                         longitude: currentLocation.longitude,
-                        accuracy: currentLocation.accuracy || 0
+                        accuracy: currentLocation.accuracy || 0,
+                        client_flags: Array.from(clientSuspicionFlags)
                     })
                 })
                 .then(response => response.json().then(data => ({
@@ -533,6 +658,11 @@
                         } else if (data.code === 'POOR_GPS_ACCURACY') {
                             errorMsg = data.message || 'Sinyal GPS kurang akurat. Coba pindah ke area terbuka.';
                             getLocation(true);
+                        } else if (data.code === 'FAKE_GPS_DETECTED') {
+                            errorMsg = data.message || 'Terindikasi penggunaan lokasi palsu (fake GPS).';
+                            if (data.reasons && data.reasons.length) {
+                                errorMsg += '\n\nAlasan: ' + data.reasons.join(', ');
+                            }
                         }
 
                         Swal.fire({

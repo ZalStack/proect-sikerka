@@ -12,6 +12,26 @@
             </div>
 
             <div class="bg-white rounded-lg shadow-md p-3 sm:p-6">
+                @if($absensi->status === 'Perjalanan Dinas' && isset($perjalananDinas) && $perjalananDinas)
+                <div class="mb-6 bg-purple-50 border border-purple-300 rounded-lg p-3 sm:p-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="text-xs sm:text-sm font-semibold text-purple-800">✈️ Bagian dari Perjalanan Dinas</p>
+                            <p class="text-sm sm:text-base text-purple-900 font-medium break-words mt-1">{{ $perjalananDinas->judul }}</p>
+                            <p class="text-xs sm:text-sm text-purple-700 mt-1">
+                                Periode: {{ $perjalananDinas->tanggal_mulai->format('d/m/Y') }}
+                                s/d {{ $perjalananDinas->tanggal_selesai->format('d/m/Y') }}
+                                ({{ $perjalananDinas->tanggal_mulai->diffInDays($perjalananDinas->tanggal_selesai) + 1 }} hari)
+                            </p>
+                        </div>
+                        <a href="{{ route('hr.perjalanan-dinas.show', $perjalananDinas->id) }}"
+                           class="w-full sm:w-auto text-center flex-shrink-0 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors duration-200 text-xs sm:text-sm">
+                            Lihat Detail Pengajuan
+                        </a>
+                    </div>
+                </div>
+                @endif
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     <div>
                         <h3 class="text-base sm:text-lg font-semibold text-[#161758] border-b border-gray-200 pb-2 mb-4">Informasi Karyawan</h3>

@@ -48,6 +48,64 @@ class Absensi extends Model
         return $this->belongsTo(Karyawan::class, 'karyawan_id');
     }
 
+    /**
+     * Gabungkan baris-baris absensi "Perjalanan Dinas" yang berturut-turut (per karyawan,
+     * per keterangan) menjadi SATU baris tampilan berbentuk periode (tanggal_mulai s/d
+     * tanggal_selesai), sementara baris absensi harian biasa tetap tampil apa adanya.
+     *
+     * Ini HANYA mengubah tampilan/urutan koleksi, TIDAK mengubah data di database.
+     * Setiap baris hasil gabungan akan punya atribut tambahan:
+     *   - tanggal_mulai_display, tanggal_selesai_display (Carbon)
+     *   - is_periode (bool)  -> true kalau baris ini gabungan lebih dari 1 hari
+     *   - jumlah_hari        -> jumlah hari yang tergabung
+     *
+     * @param  \Illuminate\Support\Collection $absensis  Koleksi model Absensi (boleh dari banyak karyawan)
+     * @return \Illuminate\Support\Collection
+     */
+    public static function mergeConsecutivePerjalananDinas($absensis)
+    {
+        $displayRows = collect();
+
+        foreach ($absensis->groupBy('karyawan_id') as $items) {
+            $items = $items->sortBy(fn ($item) => $item->tanggal->timestamp)->values();
+            $buffer = null;
+
+            foreach ($items as $item) {
+                $isPD = $item->status === 'Perjalanan Dinas';
+
+                if ($isPD && $buffer && $buffer->keterangan === $item->keterangan && $item->tanggal->isSameDay($buffer->tanggal_selesai_display->copy()->addDay())) {
+                    // Perpanjang periode yang sedang berjalan
+                    $buffer->tanggal_selesai_display = $item->tanggal;
+                    $buffer->jumlah_hari += 1;
+                    $buffer->is_periode = true;
+                    $buffer->total_jam_kerja += (int) $item->total_jam_kerja;
+                    continue;
+                }
+
+                if ($buffer) {
+                    $displayRows->push($buffer);
+                }
+
+                $item->tanggal_mulai_display = $item->tanggal->copy();
+                $item->tanggal_selesai_display = $item->tanggal->copy();
+                $item->jumlah_hari = 1;
+                $item->is_periode = false;
+
+                $buffer = $isPD ? $item : null;
+
+                if (!$isPD) {
+                    $displayRows->push($item);
+                }
+            }
+
+            if ($buffer) {
+                $displayRows->push($buffer);
+            }
+        }
+
+        return $displayRows->sortByDesc(fn ($item) => $item->tanggal_selesai_display->timestamp)->values();
+    }
+
     public function scopeFilterByDate($query, $startDate, $endDate)
     {
         if ($startDate && $endDate) {
@@ -133,6 +191,112 @@ class Absensi extends Model
      * Batas akurasi GPS maksimum (meter)
      */
     const MAX_GPS_ACCURACY = 75;
+
+    /**
+     * ==========================================================
+     * ANTI FAKE GPS / ANTI KECURANGAN ABSENSI
+     * ==========================================================
+     */
+
+    // Berapa kali koordinat/akurasi yang IDENTIK PERSIS boleh berulang
+    // sebelum dianggap mencurigakan (indikasi lokasi di-hardcode / fake GPS statis)
+    const SUSPICIOUS_REPEAT_THRESHOLD = 3;
+
+    // Jendela waktu (hari) untuk mengecek pengulangan koordinat/akurasi
+    const SUSPICIOUS_REPEAT_WINDOW_DAYS = 45;
+
+    // Kecepatan perpindahan lokasi yang dianggap tidak wajar (indikasi GPS "melompat")
+    const MAX_REALISTIC_SPEED_KMH = 200;
+
+    /**
+     * Flag dari client (browser) yang dianggap BUKTI KUAT fake GPS / manipulasi.
+     * Kalau salah satu flag ini muncul, absensi langsung ditolak (bukan cuma ditandai).
+     */
+    const HIGH_CONFIDENCE_FLAGS = ['automasi_browser_terdeteksi', 'geolocation_api_dimodifikasi', 'lokasi_melompat_tidak_wajar'];
+
+    /**
+     * Deteksi pola mencurigakan pada percobaan absensi (check-in/out) seorang karyawan.
+     * Menggabungkan sinyal dari client (browser) + pola historis di database.
+     *
+     * @param  int    $karyawanId
+     * @param  float  $lat
+     * @param  float  $lng
+     * @param  float|null $accuracy
+     * @param  array  $clientFlags  Flag kecurigaan yang dikirim dari JS (lihat karyawan/absensi.blade.php)
+     * @return array{is_suspicious: bool, is_high_confidence: bool, reasons: array}
+     */
+    public static function detectSuspiciousAttempt(int $karyawanId, float $lat, float $lng, ?float $accuracy, array $clientFlags = []): array
+    {
+        $reasons = [];
+
+        // 1) Sinyal langsung dari browser (webdriver/automasi, Geolocation API dimodifikasi,
+        //    beberapa sample lokasi berturut-turut identik 100% / tidak ada jitter sama sekali,
+        //    atau lokasi "melompat" jauh dalam waktu singkat)
+        foreach ($clientFlags as $flag) {
+            $flag = is_string($flag) ? trim($flag) : '';
+            if ($flag !== '') {
+                $reasons[] = $flag;
+            }
+        }
+
+        // 2) Koordinat identik persis berulang kali. GPS asli selalu punya sedikit
+        //    variasi (drift) walau di titik yang sama; fake GPS statis biasanya
+        //    mengirim titik yang PERSIS sama terus-menerus.
+        $latRounded = round($lat, 6);
+        $lngRounded = round($lng, 6);
+
+        $coordinateRepeatCount = self::where('karyawan_id', $karyawanId)
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->whereRaw('ROUND(latitude, 6) = ?', [$latRounded])
+            ->whereRaw('ROUND(longitude, 6) = ?', [$lngRounded])
+            ->where('tanggal', '>=', now()->subDays(self::SUSPICIOUS_REPEAT_WINDOW_DAYS)->toDateString())
+            ->count();
+
+        if ($coordinateRepeatCount >= self::SUSPICIOUS_REPEAT_THRESHOLD) {
+            $reasons[] = 'koordinat_identik_berulang';
+        }
+
+        // 3) Akurasi GPS identik persis berulang kali. Akurasi GPS asli berfluktuasi
+        //    tergantung cuaca/sinyal/posisi satelit; kalau selalu sama persis, itu
+        //    indikasi nilai yang di-hardcode oleh aplikasi fake GPS.
+        if ($accuracy !== null) {
+            $accuracyRepeatCount = self::where('karyawan_id', $karyawanId)
+                ->where('location_accuracy', $accuracy)
+                ->where('tanggal', '>=', now()->subDays(self::SUSPICIOUS_REPEAT_WINDOW_DAYS)->toDateString())
+                ->count();
+
+            if ($accuracyRepeatCount >= self::SUSPICIOUS_REPEAT_THRESHOLD) {
+                $reasons[] = 'akurasi_identik_berulang';
+            }
+        }
+
+        $reasons = array_values(array_unique($reasons));
+
+        $isHighConfidence = count(array_intersect($reasons, self::HIGH_CONFIDENCE_FLAGS)) > 0;
+
+        return [
+            'is_suspicious' => count($reasons) > 0,
+            'is_high_confidence' => $isHighConfidence,
+            'reasons' => $reasons,
+        ];
+    }
+
+    /**
+     * Terjemahkan kode alasan kecurigaan menjadi teks yang mudah dibaca HR.
+     */
+    public static function suspiciousReasonLabel(string $reason): string
+    {
+        return match ($reason) {
+            'automasi_browser_terdeteksi' => 'Browser otomatis/robot terdeteksi',
+            'geolocation_api_dimodifikasi' => 'Geolocation API browser dimodifikasi (indikasi fake GPS)',
+            'lokasi_melompat_tidak_wajar' => 'Lokasi berpindah tidak wajar (indikasi GPS palsu)',
+            'lokasi_tanpa_variasi' => 'Sinyal GPS tidak wajar (tidak ada variasi sama sekali)',
+            'koordinat_identik_berulang' => 'Koordinat persis sama berulang kali (indikasi lokasi statis/palsu)',
+            'akurasi_identik_berulang' => 'Akurasi GPS persis sama berulang kali (indikasi nilai di-hardcode)',
+            default => $reason,
+        };
+    }
 
     /**
      * Cek validitas lokasi

@@ -46,6 +46,61 @@ class AbsensiController extends Controller
     }
 
     /**
+     * ==========================================================
+     * ANTI FAKE GPS
+     * ==========================================================
+     * Menggabungkan sinyal dari client (browser) dan pola historis di
+     * database untuk mendeteksi kemungkinan penggunaan fake GPS / lokasi palsu.
+     */
+    private function checkFakeGpsAttempt(int $karyawanId, float $lat, float $lng, float $accuracy, array $clientFlags, Request $request): array
+    {
+        $suspicion = Absensi::detectSuspiciousAttempt($karyawanId, $lat, $lng, $accuracy, $clientFlags);
+
+        if ($suspicion['is_suspicious']) {
+            Log::warning('Percobaan absensi mencurigakan (indikasi fake GPS)', [
+                'karyawan_id' => $karyawanId,
+                'reasons' => $suspicion['reasons'],
+                'high_confidence' => $suspicion['is_high_confidence'],
+                'lat' => $lat,
+                'lng' => $lng,
+                'accuracy' => $accuracy,
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+        }
+
+        return $suspicion;
+    }
+
+    /**
+     * Response standar saat absensi ditolak karena terindikasi fake GPS (high confidence).
+     */
+    private function rejectFakeGps(array $suspicion)
+    {
+        return response()->json(
+            [
+                'success' => false,
+                'message' => 'Absensi ditolak! Sistem mendeteksi indikasi penggunaan lokasi palsu (fake GPS) pada perangkat Anda. Nonaktifkan aplikasi/mode fake GPS lalu coba lagi menggunakan lokasi GPS asli.',
+                'code' => 'FAKE_GPS_DETECTED',
+                'reasons' => array_map(fn ($r) => Absensi::suspiciousReasonLabel($r), $suspicion['reasons']),
+            ],
+            403,
+        );
+    }
+
+    /**
+     * Ubah kumpulan kode alasan kecurigaan menjadi satu string yang mudah dibaca HR.
+     */
+    private function formatSuspiciousReason(array $suspicion): ?string
+    {
+        if (empty($suspicion['reasons'])) {
+            return null;
+        }
+
+        return implode('; ', array_map(fn ($r) => Absensi::suspiciousReasonLabel($r), $suspicion['reasons']));
+    }
+
+    /**
      * Check-in
      */
     public function checkIn(Request $request)
@@ -54,11 +109,22 @@ class AbsensiController extends Controller
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
             'accuracy' => 'required|numeric|min:0.1|max:5000',
+            'client_flags' => 'nullable|array',
+            'client_flags.*' => 'nullable|string|max:100',
         ]);
 
         $user = Auth::user();
         $today = Carbon::today($this->officeTimezone);
         $now = Carbon::now($this->officeTimezone);
+
+        // ==========================================================
+        // ANTI FAKE GPS: cek sinyal kecurangan SEBELUM validasi lokasi
+        // ==========================================================
+        $suspicion = $this->checkFakeGpsAttempt($user->id, (float) $request->latitude, (float) $request->longitude, (float) $request->accuracy, (array) $request->input('client_flags', []), $request);
+
+        if ($suspicion['is_high_confidence']) {
+            return $this->rejectFakeGps($suspicion);
+        }
 
         $locationCheck = $this->isValidLocation((float) $request->latitude, (float) $request->longitude, $this->maxRadius, (float) $request->accuracy);
 
@@ -126,8 +192,8 @@ class AbsensiController extends Controller
                 'is_valid_location' => $locationCheck['valid'],
                 'ip_address' => $request->ip(),
                 'user_agent' => substr((string) $request->userAgent(), 0, 255),
-                'is_suspicious' => false,
-                'suspicious_reason' => null,
+                'is_suspicious' => $suspicion['is_suspicious'],
+                'suspicious_reason' => $this->formatSuspiciousReason($suspicion),
             ],
         );
 
@@ -158,11 +224,22 @@ class AbsensiController extends Controller
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
             'accuracy' => 'required|numeric|min:0.1|max:5000',
+            'client_flags' => 'nullable|array',
+            'client_flags.*' => 'nullable|string|max:100',
         ]);
 
         $user = Auth::user();
         $today = Carbon::today($this->officeTimezone);
         $now = Carbon::now($this->officeTimezone);
+
+        // ==========================================================
+        // ANTI FAKE GPS: cek sinyal kecurangan SEBELUM validasi lokasi
+        // ==========================================================
+        $suspicion = $this->checkFakeGpsAttempt($user->id, (float) $request->latitude, (float) $request->longitude, (float) $request->accuracy, (array) $request->input('client_flags', []), $request);
+
+        if ($suspicion['is_high_confidence']) {
+            return $this->rejectFakeGps($suspicion);
+        }
 
         $locationCheck = $this->isValidLocation((float) $request->latitude, (float) $request->longitude, $this->maxRadius, (float) $request->accuracy);
 
@@ -227,6 +304,16 @@ class AbsensiController extends Controller
         $absensi->is_valid_location = $locationCheck['valid'];
         $absensi->ip_address = $request->ip();
         $absensi->user_agent = substr((string) $request->userAgent(), 0, 255);
+
+        // Kalau check-out terindikasi mencurigakan, tandai (tanpa menghapus tanda
+        // mencurigakan yang mungkin sudah ada dari saat check-in)
+        if ($suspicion['is_suspicious']) {
+            $absensi->is_suspicious = true;
+            $existingReason = $absensi->suspicious_reason;
+            $newReason = $this->formatSuspiciousReason($suspicion);
+            $absensi->suspicious_reason = $existingReason && !str_contains($existingReason, $newReason) ? $existingReason . '; ' . $newReason : $existingReason ?? $newReason;
+        }
+
         $absensi->save();
 
         return response()->json([
@@ -319,7 +406,20 @@ class AbsensiController extends Controller
             $query->where('karyawan_id', $request->karyawan_id);
         }
 
-        $absensis = $query->orderBy('tanggal', 'desc')->paginate(15);
+        // Ambil semua data yang cocok dengan filter, lalu gabungkan baris "Perjalanan Dinas"
+        // yang berturut-turut menjadi satu baris periode (tanpa mengubah data di database),
+        // baru dipaginasi manual supaya nomor halaman tetap konsisten.
+        $allMatching = $query->orderBy('tanggal', 'asc')->get();
+        $displayRows = Absensi::mergeConsecutivePerjalananDinas($allMatching);
+
+        $page = (int) $request->get('page', 1);
+        $perPage = 15;
+
+        $absensis = new \Illuminate\Pagination\LengthAwarePaginator($displayRows->forPage($page, $perPage)->values(), $displayRows->count(), $perPage, $page, [
+            'path' => $request->url(),
+            'query' => $request->query(),
+        ]);
+
         $karyawans = Karyawan::all();
 
         $chartData = $this->getChartData($request);
@@ -479,7 +579,18 @@ class AbsensiController extends Controller
             }
         }
 
-        return view('hr.absensi.detail', compact('absensi', 'distances'));
+        // Kalau statusnya "Perjalanan Dinas", cari data perjalanan dinas terkait
+        // supaya HR bisa lihat konteks periode & surat tugasnya.
+        $perjalananDinas = null;
+        if ($absensi->status === 'Perjalanan Dinas') {
+            $perjalananDinas = \App\Models\PerjalananDinas::where('karyawan_id', $absensi->karyawan_id)
+                ->whereDate('tanggal_mulai', '<=', $absensi->tanggal)
+                ->whereDate('tanggal_selesai', '>=', $absensi->tanggal)
+                ->latest('id')
+                ->first();
+        }
+
+        return view('hr.absensi.detail', compact('absensi', 'distances', 'perjalananDinas'));
     }
 
     public function updateStatus(Request $request, $id)
