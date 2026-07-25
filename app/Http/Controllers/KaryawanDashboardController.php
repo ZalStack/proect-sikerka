@@ -7,22 +7,23 @@ use App\Models\Cuti;
 use App\Models\FhlAbsensi;
 use App\Models\PerjalananDinas;
 use App\Models\SunnahDaily;
+use App\Models\KhatamanAbsensi;
+use App\Models\Pengumuman;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class KaryawanDashboardController extends Controller
 {
-   public function index()
+    public function index()
     {
         $user = Auth::user();
 
-        // Absensi Today
+        // ==================== ABSENSI ====================
         $absensiHariIni = Absensi::where('karyawan_id', $user->id)
             ->whereDate('tanggal', Carbon::today())
             ->first();
 
-        // Absensi This Month
         $absensiBulanIni = Absensi::where('karyawan_id', $user->id)
             ->whereMonth('tanggal', Carbon::now()->month)
             ->whereYear('tanggal', Carbon::now()->year)
@@ -33,7 +34,7 @@ class KaryawanDashboardController extends Controller
             ->whereYear('tanggal', Carbon::now()->year)
             ->sum('total_jam_kerja');
 
-        // Cuti Statistics
+        // ==================== CUTI ====================
         $totalCuti = Cuti::where('karyawan_id', $user->id)->count();
         $cutiPending = Cuti::where('karyawan_id', $user->id)
             ->where('status', 'pending')
@@ -41,12 +42,15 @@ class KaryawanDashboardController extends Controller
         $cutiApproved = Cuti::where('karyawan_id', $user->id)
             ->where('status', 'approved')
             ->count();
+        $cutiRejected = Cuti::where('karyawan_id', $user->id)
+            ->where('status', 'rejected')
+            ->count();
 
         $sisaCuti = Cuti::where('karyawan_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->value('sisa_cuti') ?? 12;
 
-        // FHL Absensi
+        // ==================== FHL (Jumat Berkah) ====================
         $fhlHariIni = FhlAbsensi::where('karyawan_id', $user->id)
             ->whereDate('tanggal', Carbon::today())
             ->first();
@@ -56,7 +60,17 @@ class KaryawanDashboardController extends Controller
             ->whereYear('tanggal', Carbon::now()->year)
             ->count();
 
-        // Sunnah Statistics
+        // ==================== KHATAMAN ====================
+        $khatamanHariIni = KhatamanAbsensi::where('karyawan_id', $user->id)
+            ->whereDate('tanggal', Carbon::today())
+            ->first();
+
+        $khatamanBulanIni = KhatamanAbsensi::where('karyawan_id', $user->id)
+            ->whereMonth('tanggal', Carbon::now()->month)
+            ->whereYear('tanggal', Carbon::now()->year)
+            ->count();
+
+        // ==================== SUNNAH (7SPS) ====================
         $sunnahHariIni = SunnahDaily::where('karyawan_id', $user->id)
             ->whereDate('tanggal', Carbon::today())
             ->first();
@@ -72,11 +86,31 @@ class KaryawanDashboardController extends Controller
             ->whereYear('tanggal', Carbon::now()->year)
             ->count();
 
-        // Charts Data
+        // ==================== PERJALANAN DINAS ====================
+        $perjalananDinasTotal = PerjalananDinas::where('karyawan_id', $user->id)->count();
+        $perjalananDinasPending = PerjalananDinas::where('karyawan_id', $user->id)
+            ->where('status', 'pending')
+            ->count();
+        $perjalananDinasApproved = PerjalananDinas::where('karyawan_id', $user->id)
+            ->where('status', 'approved')
+            ->count();
+        $perjalananDinasRejected = PerjalananDinas::where('karyawan_id', $user->id)
+            ->where('status', 'rejected')
+            ->count();
+
+        // ==================== PENGUMUMAN ====================
+        $pengumumanTerbaru = Pengumuman::whereIn('target', ['semua', 'karyawan'])
+            ->with('creator')
+            ->latest('created_at')
+            ->take(3)
+            ->get();
+
+        // ==================== CHART DATA ====================
         $absensiChart = $this->getAbsensiChartData($user->id);
         $sunnahChart = $this->getSunnahChartData($user->id);
+        $cutiChart = $this->getCutiChartData($user->id);
 
-        // Recent Activities
+        // ==================== AKTIVITAS TERBARU ====================
         $absensiTerbaru = Absensi::where('karyawan_id', $user->id)
             ->latest('tanggal')
             ->take(5)
@@ -87,7 +121,6 @@ class KaryawanDashboardController extends Controller
             ->take(5)
             ->get();
 
-        // Perjalanan Dinas Terbaru
         $perjalananDinasTerbaru = PerjalananDinas::where('karyawan_id', $user->id)
             ->latest('created_at')
             ->take(6)
@@ -101,19 +134,30 @@ class KaryawanDashboardController extends Controller
             'totalCuti',
             'cutiPending',
             'cutiApproved',
+            'cutiRejected',
             'sisaCuti',
             'fhlHariIni',
             'fhlBulanIni',
+            'khatamanHariIni',
+            'khatamanBulanIni',
             'sunnahHariIni',
             'sunnahBulanIni',
             'sunnahTotalDays',
+            'perjalananDinasTotal',
+            'perjalananDinasPending',
+            'perjalananDinasApproved',
+            'perjalananDinasRejected',
+            'pengumumanTerbaru',
             'absensiChart',
             'sunnahChart',
+            'cutiChart',
             'absensiTerbaru',
             'cutiTerbaru',
             'perjalananDinasTerbaru'
         ));
     }
+
+    // ==================== CHART HELPER ====================
 
     private function getAbsensiChartData($karyawanId)
     {
@@ -142,14 +186,45 @@ class KaryawanDashboardController extends Controller
         for ($i = 6; $i >= 0; $i--) {
             $date = Carbon::today()->subDays($i);
             $labels[] = $date->format('D');
-            $data[] = SunnahDaily::where('karyawan_id', $karyawanId)
+            $poin = SunnahDaily::where('karyawan_id', $karyawanId)
                 ->whereDate('tanggal', $date)
-                ->value('total_poin') ?? 0;
+                ->value('total_poin');
+            $data[] = $poin ?? 0;
         }
 
         return [
             'labels' => $labels,
             'data' => $data
+        ];
+    }
+
+    private function getCutiChartData($karyawanId)
+    {
+        $labels = [];
+        $pending = [];
+        $approved = [];
+
+        for ($i = 5; $i >= 0; $i--) {
+            $month = Carbon::now()->subMonths($i);
+            $labels[] = $month->format('M Y');
+
+            $pending[] = Cuti::where('karyawan_id', $karyawanId)
+                ->where('status', 'pending')
+                ->whereMonth('tanggal_pengajuan', $month->month)
+                ->whereYear('tanggal_pengajuan', $month->year)
+                ->count();
+
+            $approved[] = Cuti::where('karyawan_id', $karyawanId)
+                ->where('status', 'approved')
+                ->whereMonth('tanggal_pengajuan', $month->month)
+                ->whereYear('tanggal_pengajuan', $month->year)
+                ->count();
+        }
+
+        return [
+            'labels' => $labels,
+            'pending' => $pending,
+            'approved' => $approved,
         ];
     }
 }

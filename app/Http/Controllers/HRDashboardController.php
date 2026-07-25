@@ -8,6 +8,8 @@ use App\Models\Cuti;
 use App\Models\FhlAbsensi;
 use App\Models\PerjalananDinas;
 use App\Models\SunnahDaily;
+use App\Models\KhatamanAbsensi;
+use App\Models\Pengumuman;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -16,53 +18,119 @@ class HRDashboardController extends Controller
 {
     public function index()
     {
-        // Basic Statistics
+        // ==================== STATISTIK DASAR ====================
         $totalKaryawan = Karyawan::count();
         $totalHr = Karyawan::where('posisi', 'hr')->count();
         $totalKaryawanAktif = Karyawan::active()->count();
         $totalKaryawanResigned = Karyawan::resigned()->count();
 
-        // Absensi Statistics
+        // ==================== ABSENSI ====================
         $absensiHariIni = Absensi::whereDate('tanggal', Carbon::today())->count();
         $absensiTerlambat = Absensi::whereDate('tanggal', Carbon::today())->where('status', 'Terlambat')->count();
+        $absensiBulanIni = Absensi::whereMonth('tanggal', Carbon::now()->month)
+            ->whereYear('tanggal', Carbon::now()->year)
+            ->count();
 
-        // Cuti Statistics
+        // ==================== CUTI ====================
         $cutiPending = Cuti::where('status', 'pending')->count();
         $cutiApproved = Cuti::where('status', 'approved')
             ->whereMonth('tanggal_mulai', Carbon::now()->month)
             ->count();
+        $cutiRejected = Cuti::where('status', 'rejected')
+            ->whereMonth('tanggal_pengajuan', Carbon::now()->month)
+            ->count();
+        $totalCutiBulanIni = Cuti::whereMonth('tanggal_pengajuan', Carbon::now()->month)
+            ->whereYear('tanggal_pengajuan', Carbon::now()->year)
+            ->count();
 
-        // FHL Absensi
+        // ==================== FHL (Jumat Berkah) ====================
         $fhlHariIni = FhlAbsensi::whereDate('tanggal', Carbon::today())->count();
+        $fhlBulanIni = FhlAbsensi::whereMonth('tanggal', Carbon::now()->month)
+            ->whereYear('tanggal', Carbon::now()->year)
+            ->count();
 
-        // Sunnah Statistics
+        // ==================== SUNNAH (7SPS) ====================
         $sunnahPending = SunnahDaily::where('status_approval', 'pending')->count();
         $sunnahBulanIni = SunnahDaily::whereMonth('tanggal', Carbon::now()->month)
             ->whereYear('tanggal', Carbon::now()->year)
             ->count();
+        $sunnahApprovedBulanIni = SunnahDaily::whereMonth('tanggal', Carbon::now()->month)
+            ->whereYear('tanggal', Carbon::now()->year)
+            ->where('status_approval', 'approved')
+            ->sum('total_poin');
 
-        // Chart Data - Absensi 7 Hari Terakhir
+        // ==================== KHATAMAN ====================
+        $khatamanHariIni = KhatamanAbsensi::whereDate('tanggal', Carbon::today())->count();
+        $khatamanBulanIni = KhatamanAbsensi::whereMonth('tanggal', Carbon::now()->month)
+            ->whereYear('tanggal', Carbon::now()->year)
+            ->count();
+
+        // ==================== PERJALANAN DINAS ====================
+        $perjalananDinasPending = PerjalananDinas::where('status', 'pending')->count();
+        $perjalananDinasApproved = PerjalananDinas::where('status', 'approved')->count();
+        $perjalananDinasRejected = PerjalananDinas::where('status', 'rejected')->count();
+        $perjalananDinasBulanIni = PerjalananDinas::whereMonth('tanggal_pengajuan', Carbon::now()->month)
+            ->whereYear('tanggal_pengajuan', Carbon::now()->year)
+            ->count();
+
+        // ==================== PENGUMUMAN ====================
+        $pengumumanTerbaru = Pengumuman::with('creator')
+            ->latest('created_at')
+            ->take(5)
+            ->get();
+
+        // ==================== CHART DATA ====================
         $absensiChart = $this->getAbsensiChartData();
-
-        // Chart Data - Status Karyawan
         $statusKaryawanChart = $this->getStatusKaryawanChartData();
-
-        // Chart Data - Cuti Bulanan
         $cutiChart = $this->getCutiChartData();
+        $perjalananDinasChart = $this->getPerjalananDinasChartData();
 
-        // Top Performers Sunnah
+        // ==================== TOP PERFORMERS ====================
         $topSunnah = $this->getTopSunnahPerformers();
 
-        // Recent Activities
+        // ==================== AKTIVITAS TERBARU ====================
         $karyawanTerbaru = Karyawan::latest()->take(5)->get();
         $absensiTerbaru = Absensi::with('karyawan')->latest('check_in')->take(5)->get();
         $cutiTerbaru = Cuti::with('karyawan')->latest('tanggal_pengajuan')->take(5)->get();
-
-        // Perjalanan Dinas Terbaru
         $perjalananDinasTerbaru = PerjalananDinas::with('karyawan')->latest('created_at')->take(6)->get();
 
-        return view('hr.dashboard', compact('totalKaryawan', 'totalHr', 'totalKaryawanAktif', 'totalKaryawanResigned', 'absensiHariIni', 'absensiTerlambat', 'cutiPending', 'cutiApproved', 'fhlHariIni', 'sunnahPending', 'sunnahBulanIni', 'absensiChart', 'statusKaryawanChart', 'cutiChart', 'topSunnah', 'karyawanTerbaru', 'absensiTerbaru', 'cutiTerbaru', 'perjalananDinasTerbaru'));
+        return view('hr.dashboard', compact(
+            'totalKaryawan',
+            'totalHr',
+            'totalKaryawanAktif',
+            'totalKaryawanResigned',
+            'absensiHariIni',
+            'absensiTerlambat',
+            'absensiBulanIni',
+            'cutiPending',
+            'cutiApproved',
+            'cutiRejected',
+            'totalCutiBulanIni',
+            'fhlHariIni',
+            'fhlBulanIni',
+            'sunnahPending',
+            'sunnahBulanIni',
+            'sunnahApprovedBulanIni',
+            'khatamanHariIni',
+            'khatamanBulanIni',
+            'perjalananDinasPending',
+            'perjalananDinasApproved',
+            'perjalananDinasRejected',
+            'perjalananDinasBulanIni',
+            'pengumumanTerbaru',
+            'absensiChart',
+            'statusKaryawanChart',
+            'cutiChart',
+            'perjalananDinasChart',
+            'topSunnah',
+            'karyawanTerbaru',
+            'absensiTerbaru',
+            'cutiTerbaru',
+            'perjalananDinasTerbaru'
+        ));
     }
+
+    // ==================== CHART HELPER ====================
 
     private function getAbsensiChartData()
     {
@@ -75,10 +143,7 @@ class HRDashboardController extends Controller
             $data[] = Absensi::whereDate('tanggal', $date)->count();
         }
 
-        return [
-            'labels' => $labels,
-            'data' => $data,
-        ];
+        return ['labels' => $labels, 'data' => $data];
     }
 
     private function getStatusKaryawanChartData()
@@ -91,7 +156,6 @@ class HRDashboardController extends Controller
             $data[] = Karyawan::where('status', $status)->count();
         }
 
-        // Add resigned
         $data[] = Karyawan::resigned()->count();
         $colors[] = '#ec1d1d';
         $statuses[] = 'Resign';
@@ -114,11 +178,20 @@ class HRDashboardController extends Controller
             $month = Carbon::now()->subMonths($i);
             $labels[] = $month->format('M Y');
 
-            $approved[] = Cuti::where('status', 'approved')->whereMonth('tanggal_mulai', $month->month)->whereYear('tanggal_mulai', $month->year)->count();
+            $approved[] = Cuti::where('status', 'approved')
+                ->whereMonth('tanggal_mulai', $month->month)
+                ->whereYear('tanggal_mulai', $month->year)
+                ->count();
 
-            $pending[] = Cuti::where('status', 'pending')->whereMonth('tanggal_pengajuan', $month->month)->whereYear('tanggal_pengajuan', $month->year)->count();
+            $pending[] = Cuti::where('status', 'pending')
+                ->whereMonth('tanggal_pengajuan', $month->month)
+                ->whereYear('tanggal_pengajuan', $month->year)
+                ->count();
 
-            $rejected[] = Cuti::where('status', 'rejected')->whereMonth('tanggal_pengajuan', $month->month)->whereYear('tanggal_pengajuan', $month->year)->count();
+            $rejected[] = Cuti::where('status', 'rejected')
+                ->whereMonth('tanggal_pengajuan', $month->month)
+                ->whereYear('tanggal_pengajuan', $month->year)
+                ->count();
         }
 
         return [
@@ -126,6 +199,34 @@ class HRDashboardController extends Controller
             'approved' => $approved,
             'pending' => $pending,
             'rejected' => $rejected,
+        ];
+    }
+
+    private function getPerjalananDinasChartData()
+    {
+        $labels = [];
+        $pending = [];
+        $approved = [];
+
+        for ($i = 5; $i >= 0; $i--) {
+            $month = Carbon::now()->subMonths($i);
+            $labels[] = $month->format('M Y');
+
+            $pending[] = PerjalananDinas::where('status', 'pending')
+                ->whereMonth('tanggal_pengajuan', $month->month)
+                ->whereYear('tanggal_pengajuan', $month->year)
+                ->count();
+
+            $approved[] = PerjalananDinas::where('status', 'approved')
+                ->whereMonth('tanggal_pengajuan', $month->month)
+                ->whereYear('tanggal_pengajuan', $month->year)
+                ->count();
+        }
+
+        return [
+            'labels' => $labels,
+            'pending' => $pending,
+            'approved' => $approved,
         ];
     }
 
