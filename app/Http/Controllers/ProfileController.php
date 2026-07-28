@@ -4,14 +4,26 @@
 namespace App\Http\Controllers;
 
 use App\Models\Karyawan;
+use App\Models\SunnahDaily;
+use App\Models\FhlAbsensi;
+use App\Models\KhatamanAbsensi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 
 class ProfileController extends Controller
 {
+    public function show()
+    {
+        $user = Auth::user();
+        return view('profile.show', compact('user'));
+    }
+
     public function edit()
     {
         $user = Auth::user();
@@ -50,12 +62,10 @@ class ProfileController extends Controller
             'nomor_rekening' => 'nullable|string|max:50',
             'ipk_terakhir' => 'nullable|numeric|min:0|max:4',
             'alamat_domisili' => 'nullable|string',
-            // Semua field profesional boleh diupdate semua role
             'jabatan' => 'required|string|max:100',
             'status' => 'required|in:Karyawan Tetap,Contract,Internship',
             'tanggal_bergabung' => 'required|date',
-            'divisi' => 'required|string|max:50', // input text
-            // Pendidikan lanjutan
+            'divisi' => 'required|string|max:50',
             'is_continuing_education' => 'nullable|boolean',
             'continuing_program' => 'required_if:is_continuing_education,1|nullable|in:D3,D4/S1,S2,S3',
             'continuing_perguruan_tinggi' => 'required_if:is_continuing_education,1|nullable|string|max:100',
@@ -70,7 +80,6 @@ class ProfileController extends Controller
         $data['nama_bank'] = 'BSI';
         $data['is_continuing_education'] = $request->has('is_continuing_education') ? true : false;
 
-        // Update posisi berdasarkan divisi
         $data['posisi'] = $this->determinePosisi($request->divisi);
 
         if ($request->hasFile('foto_profil')) {
@@ -86,7 +95,7 @@ class ProfileController extends Controller
         $user->update($data);
         $user->refresh();
 
-        return redirect()->back()->with('success', 'Profile berhasil diupdate');
+        return redirect()->route('profile.show')->with('success', 'Profile berhasil diupdate');
     }
 
     public function updatePassword(Request $request)
@@ -106,11 +115,163 @@ class ProfileController extends Controller
             'kata_sandi' => Hash::make($request->password)
         ]);
 
-        return redirect()->back()->with('success', 'Password berhasil diupdate');
+        return redirect()->route('profile.show')->with('success', 'Password berhasil diupdate');
     }
 
     private function determinePosisi($divisi)
     {
         return trim($divisi) === 'HRD' ? 'hr' : 'karyawan';
+    }
+
+    /**
+     * Menampilkan halaman achievement
+     */
+    public function achievement(Request $request)
+    {
+        $user = Auth::user();
+        $month = (int) $request->input('month', date('m'));
+        $year = (int) $request->input('year', date('Y'));
+
+        if ($user->isHr()) {
+            // HR: tampilkan semua karyawan aktif dengan peringkat
+            $karyawans = Karyawan::where('is_resigned', false)->get();
+            $data = $karyawans->map(function ($karyawan) use ($month, $year) {
+                return $this->getKaryawanAchievement($karyawan, $month, $year);
+            })->sortByDesc('total_score')->values();
+
+            // Pagination manual (10 per halaman)
+            $perPage = 10;
+            $currentPage = Paginator::resolveCurrentPage('page');
+            $currentItems = $data->slice(($currentPage - 1) * $perPage, $perPage)->all();
+
+            $paginatedData = new LengthAwarePaginator(
+                $currentItems,
+                $data->count(),
+                $perPage,
+                $currentPage,
+                [
+                    'path' => Paginator::resolveCurrentPath(),
+                    'pageName' => 'page',
+                    'query' => $request->only(['month', 'year']) // penting! agar filter tetap terjaga
+                ]
+            );
+
+            return view('profile.achievement', compact('paginatedData', 'user', 'month', 'year'));
+        } else {
+            // Karyawan biasa: hanya data sendiri
+            $data = collect([$this->getKaryawanAchievement($user, $month, $year)]);
+            return view('profile.achievement', compact('data', 'user', 'month', 'year'));
+        }
+    }
+
+    /**
+     * Ambil data achievement untuk satu karyawan
+     */
+    private function getKaryawanAchievement($karyawan, $month, $year)
+    {
+        // ---- SUNNAH ----
+        $sunnah = SunnahDaily::where('karyawan_id', $karyawan->id)
+            ->whereMonth('tanggal', $month)
+            ->whereYear('tanggal', $year)
+            ->where('status_approval', 'approved')
+            ->get();
+        $sunnahTotalPoin = $sunnah->sum('total_poin');
+        $sunnahCount = $sunnah->count();
+        $sunnahAvg = $sunnahCount > 0 ? round($sunnahTotalPoin / $sunnahCount, 1) : 0;
+
+        // ---- FHL ----
+        $fhlHadir = FhlAbsensi::where('karyawan_id', $karyawan->id)
+            ->whereMonth('tanggal', $month)
+            ->whereYear('tanggal', $year)
+            ->where('status', 'hadir')
+            ->count();
+        $totalFridays = $this->countDayInMonth($month, $year, 5); // 5 = Jumat
+        $fhlPercentage = $totalFridays > 0 ? round(($fhlHadir / $totalFridays) * 100, 1) : 0;
+
+        // ---- KHATAMAN ----
+        $khatamanHadir = KhatamanAbsensi::where('karyawan_id', $karyawan->id)
+            ->whereMonth('tanggal', $month)
+            ->whereYear('tanggal', $year)
+            ->where('status', 'hadir')
+            ->count();
+        $totalThursdays = $this->countDayInMonth($month, $year, 4); // 4 = Kamis
+        $khatamanPercentage = $totalThursdays > 0 ? round(($khatamanHadir / $totalThursdays) * 100, 1) : 0;
+
+        // ---- SCORE GABUNGAN ----
+        $score = ($sunnahAvg * 0.5) + ($fhlPercentage * 0.25) + ($khatamanPercentage * 0.25);
+
+        return [
+            'karyawan' => $karyawan,
+            'sunnah' => [
+                'total_poin' => $sunnahTotalPoin,
+                'avg' => $sunnahAvg,
+                'count' => $sunnahCount,
+            ],
+            'fhl' => [
+                'hadir' => $fhlHadir,
+                'total' => $totalFridays,
+                'percentage' => $fhlPercentage,
+            ],
+            'khataman' => [
+                'hadir' => $khatamanHadir,
+                'total' => $totalThursdays,
+                'percentage' => $khatamanPercentage,
+            ],
+            'total_score' => $score,
+            'badges' => $this->getAchievementBadges($sunnahAvg, $fhlPercentage, $khatamanPercentage),
+        ];
+    }
+
+    /**
+     * Hitung jumlah hari tertentu dalam bulan
+     */
+    private function countDayInMonth($month, $year, $dayOfWeek)
+    {
+        $date = Carbon::create($year, $month, 1);
+        $count = 0;
+        while ($date->month == $month) {
+            if ($date->dayOfWeekIso == $dayOfWeek) {
+                $count++;
+            }
+            $date->addDay();
+        }
+        return $count;
+    }
+
+    /**
+     * Tentukan badge berdasarkan kriteria
+     */
+    private function getAchievementBadges($sunnahAvg, $fhlPercent, $khatamanPercent)
+    {
+        $badges = [];
+
+        // Sunnah
+        if ($sunnahAvg >= 100) {
+            $badges[] = ['name' => 'Sunnah Master', 'icon' => '🏆', 'level' => 'gold'];
+        } elseif ($sunnahAvg >= 70) {
+            $badges[] = ['name' => 'Sunnah Pro', 'icon' => '🥇', 'level' => 'silver'];
+        } elseif ($sunnahAvg >= 40) {
+            $badges[] = ['name' => 'Sunnah Learner', 'icon' => '🥈', 'level' => 'bronze'];
+        }
+
+        // FHL
+        if ($fhlPercent >= 80) {
+            $badges[] = ['name' => 'FHL Loyal', 'icon' => '🕌', 'level' => 'gold'];
+        } elseif ($fhlPercent >= 60) {
+            $badges[] = ['name' => 'FHL Regular', 'icon' => '🕌', 'level' => 'silver'];
+        } elseif ($fhlPercent >= 40) {
+            $badges[] = ['name' => 'FHL Beginner', 'icon' => '🕌', 'level' => 'bronze'];
+        }
+
+        // Khataman
+        if ($khatamanPercent >= 80) {
+            $badges[] = ['name' => 'Khataman Loyal', 'icon' => '📖', 'level' => 'gold'];
+        } elseif ($khatamanPercent >= 60) {
+            $badges[] = ['name' => 'Khataman Regular', 'icon' => '📖', 'level' => 'silver'];
+        } elseif ($khatamanPercent >= 40) {
+            $badges[] = ['name' => 'Khataman Beginner', 'icon' => '📖', 'level' => 'bronze'];
+        }
+
+        return $badges;
     }
 }

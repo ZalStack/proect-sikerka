@@ -203,7 +203,7 @@
                     </a>
 
                     <!-- Absensi Karyawan -->
-                    <a href="{{ route('karyawan.absensi') }}" {{-- onclick="event.preventDefault(); alert('Menu Absensi saat ini masih dalam tahap pengembangan dan akan segera tersedia.');" --}}
+                    <a href="{{ route('karyawan.absensi') }}"
                         class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition-colors duration-200 text-xs sm:text-sm text-[#F5F5F5] hover:bg-[#27438D] hover:text-white">
                         <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
                             viewBox="0 0 24 24">
@@ -305,9 +305,9 @@
                     </a>
                 @endif
 
-                <!-- Profile (sama untuk semua) -->
-                <a href="{{ route('profile.edit') }}"
-                    class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition-colors duration-200 text-xs sm:text-sm {{ $currentRoute === 'profile.edit' ? 'bg-[#27438D] text-white' : 'text-[#F5F5F5] hover:bg-[#27438D] hover:text-white' }}">
+                <!-- Profile (sama untuk semua) - Sekarang mengarah ke profile.show -->
+                <a href="{{ route('profile.show') }}"
+                    class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition-colors duration-200 text-xs sm:text-sm {{ ($currentRoute === 'profile.show' || $currentRoute === 'profile.edit') ? 'bg-[#27438D] text-white' : 'text-[#F5F5F5] hover:bg-[#27438D] hover:text-white' }}">
                     <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
                         viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -352,7 +352,7 @@
                 document.body.classList.remove('overflow-hidden');
             } else {
                 sidebar.classList.remove('md:translate-x-0');
-                if (!sidebar.classList.contains('-translate-x-full')) {}
+                // if (!sidebar.classList.contains('-translate-x-full')) {}
             }
         });
 

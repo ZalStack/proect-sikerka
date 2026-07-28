@@ -44,7 +44,7 @@
                     </button>
 
                     <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-44 sm:w-48 bg-white rounded-md shadow-lg py-1 z-50">
-                        <a href="{{ route('profile.edit') }}" class="block px-3 sm:px-4 py-2 text-xs sm:text-sm text-[#1B1B1B] hover:bg-[#F5F5F5]">
+                        <a href="{{ route('profile.show') }}" class="block px-3 sm:px-4 py-2 text-xs sm:text-sm text-[#1B1B1B] hover:bg-[#F5F5F5]">
                             <div class="flex items-center space-x-2">
                                 <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#00a2e9] flex items-center justify-center text-white text-[10px] sm:text-xs overflow-hidden">
                                     @if($userPhoto)

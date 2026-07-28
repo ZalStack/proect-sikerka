@@ -47,10 +47,12 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
-    // Profile Routes
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/profile/change-password', [ProfileController::class, 'showChangePassword'])->name('profile.change-password');
     Route::put('/profile/update-password', [ProfileController::class, 'updatePassword'])->name('profile.update-password');
+    Route::get('/profile/achievement', [ProfileController::class, 'achievement'])->name('profile.achievement');
 
     Route::middleware('hr')
         ->prefix('hr')
