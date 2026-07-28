@@ -98,6 +98,11 @@ class ProfileController extends Controller
         return redirect()->route('profile.show')->with('success', 'Profile berhasil diupdate');
     }
 
+    public function showChangePassword()
+    {
+        return view('profile.change-password');
+    }
+
     public function updatePassword(Request $request)
     {
         $request->validate([
