@@ -184,6 +184,14 @@ class Absensi extends Model
                 'latitude' => -6.297271839927471,
                 'longitude' => 106.84699770957265,
             ],
+            'SMP AL AZHAR SYIFA BUDI CIBINONG' => [
+                'latitude' => -6.5046491241629525,
+                'longitude' => 106.8071259,
+            ],
+            'YAPI AL AZHAR RAWAMANGUN' => [
+                'latitude' => -6.19530173446925,
+                'longitude' => 106.88405384978994,
+            ],
         ];
     }
 
