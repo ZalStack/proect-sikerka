@@ -17,7 +17,7 @@ class KaryawanController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('nama_lengkap', 'LIKE', "%{$search}%")
                     ->orWhere('kode_pegawai', 'LIKE', "%{$search}%")
                     ->orWhere('email', 'LIKE', "%{$search}%")
@@ -94,7 +94,7 @@ class KaryawanController extends Controller
         $data['nama_bank'] = 'BSI';
         $data['is_resigned'] = false;
         $data['tanggal_resign'] = null;
-        $data['is_continuing_education'] = $request->has('is_continuing_education') ? true : false;
+        $data['is_continuing_education'] = $request->input('is_continuing_education') == 1;
 
         if ($request->hasFile('foto_profil')) {
             $file = $request->file('foto_profil');
@@ -172,9 +172,9 @@ class KaryawanController extends Controller
         // Tentukan posisi berdasarkan divisi
         $data['posisi'] = $this->determinePosisi($request->divisi);
         $data['nama_bank'] = 'BSI';
-        $data['is_continuing_education'] = $request->has('is_continuing_education') ? true : false;
+        $data['is_continuing_education'] = $request->input('is_continuing_education') == 1;
 
-        // Handle resign
+        // Handle resign (checkbox)
         $data['is_resigned'] = $request->has('is_resigned') ? true : false;
         if (!$data['is_resigned']) {
             $data['tanggal_resign'] = null;

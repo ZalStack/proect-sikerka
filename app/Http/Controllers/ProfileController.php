@@ -78,7 +78,8 @@ class ProfileController extends Controller
 
         $data['jumlah_anak'] = $data['jumlah_anak'] ?? 0;
         $data['nama_bank'] = 'BSI';
-        $data['is_continuing_education'] = $request->has('is_continuing_education') ? true : false;
+        // PERBAIKAN: cek nilai radio, bukan keberadaan field
+        $data['is_continuing_education'] = $request->input('is_continuing_education') == 1;
 
         $data['posisi'] = $this->determinePosisi($request->divisi);
 

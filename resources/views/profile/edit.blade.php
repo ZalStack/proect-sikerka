@@ -258,16 +258,19 @@
                         </div>
 
                         <div>
+                            <!-- Radio Button Sedang Melanjutkan Pendidikan -->
                             <div class="mb-4">
                                 <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Sedang Melanjutkan Pendidikan?</label>
                                 <div class="flex flex-wrap items-center gap-4">
                                     <label class="inline-flex items-center">
-                                        <input type="radio" name="is_continuing_education" value="1" {{ old('is_continuing_education', $user->is_continuing_education) ? 'checked' : '' }}
+                                        <input type="radio" name="is_continuing_education" value="1"
+                                            {{ old('is_continuing_education', $user->is_continuing_education) == 1 ? 'checked' : '' }}
                                             class="w-4 h-4 text-[#27438D] border-gray-300 focus:ring-[#27438D]">
                                         <span class="ml-2 text-sm">Iya</span>
                                     </label>
                                     <label class="inline-flex items-center">
-                                        <input type="radio" name="is_continuing_education" value="0" {{ old('is_continuing_education', $user->is_continuing_education) === false ? 'checked' : '' }}
+                                        <input type="radio" name="is_continuing_education" value="0"
+                                            {{ old('is_continuing_education', $user->is_continuing_education) == 0 ? 'checked' : '' }}
                                             class="w-4 h-4 text-[#27438D] border-gray-300 focus:ring-[#27438D]">
                                         <span class="ml-2 text-sm">Tidak</span>
                                     </label>
@@ -275,7 +278,8 @@
                                 @error('is_continuing_education') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                             </div>
 
-                            <div id="continuing_fields">
+                            <!-- Field pendidikan lanjutan (toggle) -->
+                            <div id="continuing_fields" style="{{ old('is_continuing_education', $user->is_continuing_education) == 1 ? '' : 'display: none;' }}">
                                 <div class="mb-4">
                                     <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Program Pendidikan</label>
                                     <select name="continuing_program" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
@@ -396,13 +400,48 @@
                         </div>
                     </div>
 
+                    <!-- TOMBOL AKSI: Update, Batal, dan Ubah Password -->
                     <div class="mt-6 flex flex-wrap gap-4">
                         <button type="submit" class="w-full sm:w-auto bg-[#27438D] text-white px-6 py-2 rounded-lg hover:bg-[#161758] transition-colors duration-200">Update Profile</button>
                         <a href="{{ route('profile.show') }}" class="w-full sm:w-auto bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors duration-200 text-center">Batal</a>
+                        <a href="{{ route('profile.change-password') }}" class="w-full sm:w-auto bg-[#FCC626] text-[#1B1B1B] px-6 py-2 rounded-lg hover:bg-[#e6b222] transition-colors duration-200 text-center">
+                            <i class="fas fa-key mr-2"></i> Ubah Password
+                        </a>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle field pendidikan lanjutan berdasarkan pilihan radio
+        const radios = document.querySelectorAll('input[name="is_continuing_education"]');
+        const continuingFields = document.getElementById('continuing_fields');
+
+        function toggleContinuingFields() {
+            let checked = false;
+            radios.forEach(radio => {
+                if (radio.checked && radio.value === '1') {
+                    checked = true;
+                }
+            });
+            continuingFields.style.display = checked ? 'block' : 'none';
+        }
+
+        radios.forEach(radio => {
+            radio.addEventListener('change', toggleContinuingFields);
+        });
+        toggleContinuingFields(); // inisialisasi awal
+
+        // (Opsional) Divisi -> posisi otomatis jika diperlukan
+        const divisiInput = document.getElementById('divisi_input');
+        if (divisiInput) {
+            divisiInput.addEventListener('input', function() {
+                // hanya untuk tampilan, tidak perlu hidden karena posisi sudah ditentukan di controller
+            });
+        }
+    });
+</script>
 @endsection

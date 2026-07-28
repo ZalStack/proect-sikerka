@@ -11,33 +11,17 @@
                     <p class="text-[#27438D]">Detail informasi profil Anda</p>
                 </div>
 
-                {{-- ===== DROPDOWN AKSI ===== --}}
-                <div class="relative inline-block text-left">
-                    <button id="dropdownMenuButton" type="button"
-                        class="inline-flex justify-center items-center w-full sm:w-auto bg-[#27438D] text-white px-4 py-2 rounded-lg hover:bg-[#161758] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#27438D]"
-                        aria-haspopup="true" aria-expanded="false">
-                        <i class="fas fa-ellipsis-v mr-2"></i> Aksi
-                    </button>
-
-                    <div id="dropdownMenu"
-                        class="origin-top-right absolute right-0 mt-2 w-48 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none hidden z-50">
-                        <div class="py-1">
-                            <a href="{{ route('profile.achievement') }}"
-                                class="flex items-center px-4 py-2 text-sm text-[#1B1B1B] hover:bg-gray-100 transition-colors duration-150">
-                                <i class="fas fa-trophy mr-3 text-[#FCC626]"></i> Achievement
-                            </a>
-                            <a href="{{ route('profile.change-password') }}"
-                                class="flex items-center px-4 py-2 text-sm text-[#1B1B1B] hover:bg-gray-100 transition-colors duration-150">
-                                <i class="fas fa-key mr-3 text-[#27438D]"></i> Ubah Password
-                            </a>
-                            <a href="{{ route('profile.edit') }}"
-                                class="flex items-center px-4 py-2 text-sm text-[#1B1B1B] hover:bg-gray-100 transition-colors duration-150">
-                                <i class="fas fa-edit mr-3 text-[#00a2e9]"></i> Edit Profile
-                            </a>
-                        </div>
-                    </div>
+                {{-- ===== TOMBOL AKSI (tanpa dropdown) ===== --}}
+                <div class="flex flex-wrap gap-2">
+                    <a href="{{ route('profile.edit') }}"
+                        class="bg-[#00a2e9] text-white px-4 py-2 rounded-lg hover:bg-[#27438D] transition-colors duration-200">
+                        <i class="fas fa-edit mr-2"></i> Edit Profile
+                    </a>
+                    <a href="{{ route('profile.achievement') }}"
+                        class="bg-[#FCC626] text-[#1B1B1B] px-4 py-2 rounded-lg hover:bg-[#e6b222] transition-colors duration-200">
+                        <i class="fas fa-trophy mr-2"></i> Achievement
+                    </a>
                 </div>
-                {{-- ===== END DROPDOWN ===== --}}
             </div>
 
             {{-- Notifikasi --}}
@@ -334,41 +318,3 @@
         </div>
     </div>
 @endsection
-
-{{-- SCRIPT UNTUK DROPDOWN (DILETAKKAN DI AKHIR, PASTI DIJALANKAN) --}}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const dropdownButton = document.getElementById('dropdownMenuButton');
-        const dropdownMenu = document.getElementById('dropdownMenu');
-
-        // Cek apakah elemen ditemukan
-        if (!dropdownButton || !dropdownMenu) {
-            console.error('Dropdown elements not found!');
-            return;
-        }
-
-        // Toggle dropdown saat tombol diklik
-        dropdownButton.addEventListener('click', function(event) {
-            event.stopPropagation();
-            dropdownMenu.classList.toggle('hidden');
-            const isOpen = !dropdownMenu.classList.contains('hidden');
-            dropdownButton.setAttribute('aria-expanded', isOpen);
-        });
-
-        // Tutup dropdown saat klik di luar
-        document.addEventListener('click', function(event) {
-            if (!dropdownButton.contains(event.target) && !dropdownMenu.contains(event.target)) {
-                dropdownMenu.classList.add('hidden');
-                dropdownButton.setAttribute('aria-expanded', 'false');
-            }
-        });
-
-        // Tutup dropdown dengan tombol Escape
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape' && !dropdownMenu.classList.contains('hidden')) {
-                dropdownMenu.classList.add('hidden');
-                dropdownButton.setAttribute('aria-expanded', 'false');
-            }
-        });
-    });
-</script>
