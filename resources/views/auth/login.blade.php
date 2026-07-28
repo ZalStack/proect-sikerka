@@ -2,7 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'SIKEKAR') }} - Login</title>
 
@@ -107,12 +107,40 @@
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.3);
         }
+        /* Prevent iOS Safari from auto-zooming when focusing inputs on small screens */
+        @media (max-width: 639px) {
+            input, select, textarea { font-size: 16px !important; }
+        }
+        /* Respect users who prefer reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+        /* Gentle shake to draw attention to validation errors */
+        @keyframes shake-x {
+            10%, 90% { transform: translateX(-1px); }
+            20%, 80% { transform: translateX(2px); }
+            30%, 50%, 70% { transform: translateX(-4px); }
+            40%, 60% { transform: translateX(4px); }
+        }
+        .animate-shake { animation: shake-x 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+        /* Button loading spinner */
+        .btn-spinner {
+            width: 1.15rem; height: 1.15rem; border-radius: 9999px;
+            border: 2.5px solid rgba(255,255,255,0.35); border-top-color: #fff;
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="font-sans antialiased min-h-screen flex bg-slate-950 overflow-x-hidden">
+<body class="font-sans antialiased min-h-screen min-h-[100dvh] flex bg-slate-950 overflow-x-hidden">
 
     <!-- ==================== MAIN GRID ==================== -->
-    <div class="w-full min-h-screen flex flex-col lg:flex-row">
+    <div class="w-full min-h-screen min-h-[100dvh] flex flex-col lg:flex-row">
 
         <!-- ==================== LEFT PANEL - ARTISTIC VISUAL ==================== -->
         <div class="hidden lg:flex lg:w-1/2 xl:w-[48%] relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 items-center justify-center p-12 xl:p-20">
@@ -157,19 +185,19 @@
                     <span class="block text-white/90 text-2xl xl:text-3xl mt-2 font-semibold">KPM</span>
                 </h1>
 
-                <p class="text-blue-200/70 text-sm xl:text-base font-medium tracking-widest uppercase mb-8 animate-fade-in delay-200">
+                <p class="text-blue-200/70 text-sm xl:text-base font-medium tracking-widest uppercase mb-8 animate-fade-in delay-200 [animation-delay:200ms]">
                     Sistem Informasi Kinerja Karyawan
                 </p>
 
                 <!-- Divider with gradient -->
-                <div class="flex items-center gap-3 mb-10 animate-fade-in delay-300">
+                <div class="flex items-center gap-3 mb-10 animate-fade-in delay-300 [animation-delay:300ms]">
                     <div class="h-px flex-1 bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent"></div>
                     <div class="w-3 h-3 rounded-full bg-cyan-400 shadow-lg shadow-cyan-400/50"></div>
                     <div class="h-px flex-1 bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent"></div>
                 </div>
 
                 <!-- Feature list with icons -->
-                <div class="space-y-6 text-left animate-slide-right delay-400">
+                <div class="space-y-6 text-left animate-slide-right delay-400 [animation-delay:400ms]">
                     <div class="flex items-center gap-5 group">
                         <div class="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0 group-hover:bg-cyan-500/20 transition-all duration-300 border border-white/5 group-hover:border-cyan-400/30">
                             <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -206,7 +234,7 @@
                 </div>
 
                 <!-- Bottom quote -->
-                <div class="mt-12 pt-8 border-t border-white/10 animate-fade-in delay-500">
+                <div class="mt-12 pt-8 border-t border-white/10 animate-fade-in delay-500 [animation-delay:500ms]">
                     <p class="text-blue-200/60 text-sm italic flex items-start gap-2">
                         <svg class="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10H14.017zM0 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151C7.546 6.068 5.983 8.789 5.983 11H9.983v10H0z"/>
@@ -244,7 +272,7 @@
 
             <!-- Card Container -->
             <div class="w-full max-w-md xl:max-w-lg relative z-10 animate-slide-up">
-                <div class="glass-card rounded-3xl shadow-2xl shadow-slate-900/10 p-6 sm:p-8 md:p-10 border border-white/40">
+                <div class="glass-card rounded-3xl shadow-2xl shadow-slate-900/10 p-6 sm:p-8 md:p-10 border border-white/40 {{ ($errors->any() || session('error')) ? 'animate-shake' : '' }}">
 
                     <!-- Header -->
                     <div class="mb-8">
@@ -286,11 +314,11 @@
                     @endif
 
                     <!-- Form -->
-                    <form method="POST" action="{{ route('login') }}" class="space-y-5">
+                    <form id="login-form" method="POST" action="{{ route('login') }}" class="space-y-5">
                         @csrf
 
                         <!-- Email -->
-                        <div class="animate-slide-up delay-100">
+                        <div class="animate-slide-up delay-100 [animation-delay:100ms]">
                             <label for="email" class="block text-sm font-semibold text-slate-700 mb-2 ml-1">
                                 Alamat Email
                             </label>
@@ -310,7 +338,7 @@
                         </div>
 
                         <!-- Password -->
-                        <div class="animate-slide-up delay-200">
+                        <div class="animate-slide-up delay-200 [animation-delay:200ms]">
                             <label for="password" class="block text-sm font-semibold text-slate-700 mb-2 ml-1">
                                 Kata Sandi
                             </label>
@@ -338,7 +366,7 @@
                         </div>
 
                         <!-- Remember & Forgot -->
-                        <div class="flex items-center justify-between pt-2 animate-slide-up delay-300">
+                        <div class="flex items-center justify-between pt-2 animate-slide-up delay-300 [animation-delay:300ms]">
                             <label class="flex items-center cursor-pointer group select-none">
                                 <input type="checkbox" name="remember" class="w-4 h-4 rounded-lg border-2 border-gray-300 text-cyan-600 focus:ring-2 focus:ring-cyan-500/30 focus:ring-offset-0 transition-all duration-200 cursor-pointer checked:bg-cyan-600 checked:border-cyan-600">
                                 <span class="ml-2.5 text-sm text-gray-600 font-medium group-hover:text-slate-800 transition-colors">Ingat saya</span>
@@ -347,10 +375,10 @@
                         </div>
 
                         <!-- Submit Button -->
-                        <div class="pt-2 animate-slide-up delay-400">
-                            <button type="submit"
-                                class="w-full relative bg-gradient-to-r from-slate-800 via-blue-900 to-cyan-700 text-white py-3.5 px-6 rounded-2xl font-semibold text-base flex items-center justify-center group overflow-hidden shadow-xl shadow-slate-800/20 hover:shadow-cyan-500/25 transform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300">
-                                <span class="relative z-10 flex items-center gap-2">
+                        <div class="pt-2 animate-slide-up delay-400 [animation-delay:400ms]">
+                            <button type="submit" id="login-submit-btn"
+                                class="w-full relative bg-gradient-to-r from-slate-800 via-blue-900 to-cyan-700 text-white py-3.5 px-6 rounded-2xl font-semibold text-base flex items-center justify-center group overflow-hidden shadow-xl shadow-slate-800/20 hover:shadow-cyan-500/25 transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-xl">
+                                <span class="relative z-10 flex items-center gap-2" id="login-submit-label">
                                     Masuk
                                     <svg class="w-5 h-5 transform group-hover:translate-x-2 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
@@ -361,7 +389,7 @@
                         </div>
 
                         <!-- Security footer -->
-                        <div class="flex items-center justify-center gap-4 pt-3 animate-fade-in delay-500">
+                        <div class="flex items-center justify-center gap-4 pt-3 animate-fade-in delay-500 [animation-delay:500ms]">
                             <div class="flex items-center gap-1.5 text-xs text-gray-400">
                                 <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
                                 <span class="font-medium">Terenkripsi</span>
@@ -376,7 +404,7 @@
                 </div>
 
                 <!-- Footer copyright -->
-                <p class="text-center mt-6 text-xs text-gray-400 font-medium animate-fade-in delay-500">
+                <p class="text-center mt-6 text-xs text-gray-400 font-medium animate-fade-in delay-500 [animation-delay:500ms]">
                     &copy; {{ date('Y') }} <span class="text-slate-700 font-bold">SIKEKAR</span> <span class="text-cyan-600 font-bold">KPM</span>. Hak cipta dilindungi.
                 </p>
             </div>
@@ -426,6 +454,17 @@
                 icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>`;
             }
         }
+    </script>
+
+    <!-- Submit Loading State -->
+    <script>
+        document.getElementById('login-form').addEventListener('submit', function () {
+            const btn = document.getElementById('login-submit-btn');
+            const label = document.getElementById('login-submit-label');
+            if (btn.disabled) return; // avoid double submit
+            btn.disabled = true;
+            label.innerHTML = '<span class="btn-spinner"></span><span>Memproses...</span>';
+        });
     </script>
 </body>
 </html>

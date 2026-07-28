@@ -2,7 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'SIKEKAR') }} - Reset Password</title>
 
@@ -105,11 +105,39 @@
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.3);
         }
+        /* Prevent iOS Safari from auto-zooming when focusing inputs on small screens */
+        @media (max-width: 639px) {
+            input, select, textarea { font-size: 16px !important; }
+        }
+        /* Respect users who prefer reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+        /* Gentle shake to draw attention to validation errors */
+        @keyframes shake-x {
+            10%, 90% { transform: translateX(-1px); }
+            20%, 80% { transform: translateX(2px); }
+            30%, 50%, 70% { transform: translateX(-4px); }
+            40%, 60% { transform: translateX(4px); }
+        }
+        .animate-shake { animation: shake-x 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+        /* Button loading spinner */
+        .btn-spinner {
+            width: 1.15rem; height: 1.15rem; border-radius: 9999px;
+            border: 2.5px solid rgba(255,255,255,0.35); border-top-color: #fff;
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="font-sans antialiased min-h-screen flex bg-slate-950 overflow-x-hidden">
+<body class="font-sans antialiased min-h-screen min-h-[100dvh] flex bg-slate-950 overflow-x-hidden">
 
-    <div class="w-full min-h-screen flex flex-col lg:flex-row">
+    <div class="w-full min-h-screen min-h-[100dvh] flex flex-col lg:flex-row">
 
         <!-- ==================== LEFT PANEL (BRANDING) ==================== -->
         <div class="hidden lg:flex lg:w-1/2 xl:w-[48%] relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 items-center justify-center p-12 xl:p-20">
@@ -139,13 +167,13 @@
                     <span class="bg-gradient-to-r from-cyan-300 via-blue-300 to-purple-300 bg-clip-text text-transparent animate-gradient-shift bg-200%">SIKEKAR</span>
                     <span class="block text-white/90 text-2xl xl:text-3xl mt-2 font-semibold">KPM</span>
                 </h1>
-                <p class="text-blue-200/70 text-sm xl:text-base font-medium tracking-widest uppercase mb-8 animate-fade-in delay-200">Sistem Informasi Kinerja Karyawan</p>
-                <div class="flex items-center gap-3 mb-10 animate-fade-in delay-300">
+                <p class="text-blue-200/70 text-sm xl:text-base font-medium tracking-widest uppercase mb-8 animate-fade-in delay-200 [animation-delay:200ms]">Sistem Informasi Kinerja Karyawan</p>
+                <div class="flex items-center gap-3 mb-10 animate-fade-in delay-300 [animation-delay:300ms]">
                     <div class="h-px flex-1 bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent"></div>
                     <div class="w-3 h-3 rounded-full bg-cyan-400 shadow-lg shadow-cyan-400/50"></div>
                     <div class="h-px flex-1 bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent"></div>
                 </div>
-                <div class="space-y-6 text-left animate-slide-right delay-400">
+                <div class="space-y-6 text-left animate-slide-right delay-400 [animation-delay:400ms]">
                     <div class="flex items-center gap-5 group">
                         <div class="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0 group-hover:bg-cyan-500/20 transition-all duration-300 border border-white/5 group-hover:border-cyan-400/30">
                             <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
@@ -165,7 +193,7 @@
                         <div><h4 class="text-white font-semibold text-base">Dashboard Analitik</h4><p class="text-blue-200/50 text-sm mt-0.5">Pantau kinerja dengan visualisasi data</p></div>
                     </div>
                 </div>
-                <div class="mt-12 pt-8 border-t border-white/10 animate-fade-in delay-500">
+                <div class="mt-12 pt-8 border-t border-white/10 animate-fade-in delay-500 [animation-delay:500ms]">
                     <p class="text-blue-200/60 text-sm italic flex items-start gap-2">
                         <svg class="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10H14.017zM0 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151C7.546 6.068 5.983 8.789 5.983 11H9.983v10H0z"/></svg>
                         <span>"Mengubah data menjadi kinerja unggul untuk Indonesia maju."</span>
@@ -193,7 +221,7 @@
             </div>
 
             <div class="w-full max-w-md xl:max-w-lg relative z-10 animate-slide-up">
-                <div class="glass-card rounded-3xl shadow-2xl shadow-slate-900/10 p-6 sm:p-8 md:p-10 border border-white/40">
+                <div class="glass-card rounded-3xl shadow-2xl shadow-slate-900/10 p-6 sm:p-8 md:p-10 border border-white/40 {{ ($errors->any() || session('error')) ? 'animate-shake' : '' }}">
 
                     <!-- Header -->
                     <div class="mb-8">
@@ -225,12 +253,12 @@
                     </div>
                     @endif
 
-                    <form method="POST" action="{{ route('password.reset') }}" class="space-y-5">
+                    <form id="reset-form" method="POST" action="{{ route('password.reset') }}" class="space-y-5">
                         @csrf
                         <input type="hidden" name="email" value="{{ $email }}">
 
                         <!-- Password Baru -->
-                        <div class="animate-slide-up delay-100">
+                        <div class="animate-slide-up delay-100 [animation-delay:100ms]">
                             <label for="password" class="block text-sm font-semibold text-slate-700 mb-2 ml-1">Password Baru</label>
                             <div class="relative group">
                                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -251,14 +279,14 @@
                         </div>
 
                         <!-- Konfirmasi Password -->
-                        <div class="animate-slide-up delay-200">
+                        <div class="animate-slide-up delay-200 [animation-delay:200ms]">
                             <label for="password_confirmation" class="block text-sm font-semibold text-slate-700 mb-2 ml-1">Konfirmasi Password</label>
                             <input id="password_confirmation" type="password" name="password_confirmation" required placeholder="Ulangi password baru"
                                 class="w-full px-4 py-3.5 glass-input rounded-2xl focus:outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/20 transition-all duration-300 text-slate-800 placeholder-gray-400 text-sm font-medium">
                         </div>
 
                         <!-- Strength Indicator -->
-                        <div class="animate-slide-up delay-300">
+                        <div class="animate-slide-up delay-300 [animation-delay:300ms]">
                             <div class="flex items-center justify-between mb-1">
                                 <span class="text-xs font-medium text-gray-500">Kekuatan Password</span>
                                 <span id="strength-text" class="text-xs font-semibold text-red-500">Lemah</span>
@@ -269,10 +297,10 @@
                         </div>
 
                         <!-- Submit -->
-                        <div class="pt-2 animate-slide-up delay-400">
-                            <button type="submit"
-                                class="w-full relative bg-gradient-to-r from-emerald-700 to-emerald-600 text-white py-3.5 px-6 rounded-2xl font-semibold text-base flex items-center justify-center group overflow-hidden shadow-xl shadow-emerald-800/20 hover:shadow-emerald-500/25 transform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300">
-                                <span class="relative z-10 flex items-center gap-2">
+                        <div class="pt-2 animate-slide-up delay-400 [animation-delay:400ms]">
+                            <button type="submit" id="reset-submit-btn"
+                                class="w-full relative bg-gradient-to-r from-emerald-700 to-emerald-600 text-white py-3.5 px-6 rounded-2xl font-semibold text-base flex items-center justify-center group overflow-hidden shadow-xl shadow-emerald-800/20 hover:shadow-emerald-500/25 transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-xl">
+                                <span class="relative z-10 flex items-center gap-2" id="reset-submit-label">
                                     Reset Password
                                     <svg class="w-5 h-5 transform group-hover:translate-x-1.5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
                                 </span>
@@ -281,7 +309,7 @@
                         </div>
 
                         <!-- Kembali ke Login -->
-                        <div class="text-center pt-2 animate-fade-in delay-500">
+                        <div class="text-center pt-2 animate-fade-in delay-500 [animation-delay:500ms]">
                             <a href="{{ route('login') }}" class="text-sm font-semibold text-cyan-700 hover:text-slate-800 transition-colors duration-200 inline-flex items-center gap-1">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                                 Kembali ke Login
@@ -289,7 +317,7 @@
                         </div>
                     </form>
                 </div>
-                <p class="text-center mt-6 text-xs text-gray-400 font-medium animate-fade-in delay-500">&copy; {{ date('Y') }} <span class="text-slate-700 font-bold">SIKEKAR</span> <span class="text-cyan-600 font-bold">KPM</span>. Hak cipta dilindungi.</p>
+                <p class="text-center mt-6 text-xs text-gray-400 font-medium animate-fade-in delay-500 [animation-delay:500ms]">&copy; {{ date('Y') }} <span class="text-slate-700 font-bold">SIKEKAR</span> <span class="text-cyan-600 font-bold">KPM</span>. Hak cipta dilindungi.</p>
             </div>
         </div>
     </div>
@@ -333,6 +361,17 @@
                 text.textContent = 'Kuat';
                 text.style.color = '#22c55e';
             }
+        });
+    </script>
+
+    <!-- Submit Loading State -->
+    <script>
+        document.getElementById('reset-form').addEventListener('submit', function () {
+            const btn = document.getElementById('reset-submit-btn');
+            const label = document.getElementById('reset-submit-label');
+            if (btn.disabled) return; // avoid double submit
+            btn.disabled = true;
+            label.innerHTML = '<span class="btn-spinner"></span><span>Menyimpan...</span>';
         });
     </script>
 </body>
