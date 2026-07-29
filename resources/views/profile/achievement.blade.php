@@ -50,6 +50,28 @@
                         🏆 Peringkat Achievement Bulan
                         {{ Carbon\Carbon::create()->month((int) $month)->translatedFormat('F') }} {{ $year }}
                     </h2>
+
+                    @if (!empty($englishSummary['total_quizzes']))
+                        <div class="bg-[#f8faff] border border-gray-100 rounded-lg p-4 mb-4 flex flex-wrap gap-4 justify-between items-center">
+                            <div>
+                                <p class="text-sm text-gray-500">🇬🇧 English Today &mdash; ringkasan seluruh quiz</p>
+                            </div>
+                            <div class="flex gap-6 text-sm">
+                                <div class="text-center">
+                                    <div class="font-bold text-[#161758]">{{ $englishSummary['total_quizzes'] }}</div>
+                                    <div class="text-gray-500">Quiz</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="font-bold text-[#161758]">{{ $englishSummary['total_participants'] }}</div>
+                                    <div class="text-gray-500">Peserta</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="font-bold text-[#161758]">{{ number_format($englishSummary['average_score'], 1) }}</div>
+                                    <div class="text-gray-500">Rata-rata</div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm text-left border-collapse">
                             <thead class="bg-[#f8faff] text-[#27438D] uppercase text-xs">
@@ -60,6 +82,7 @@
                                     <th class="px-4 py-3 border-b text-center">Sunnah (Poin)</th>
                                     <th class="px-4 py-3 border-b text-center">FHL (%)</th>
                                     <th class="px-4 py-3 border-b text-center">Khataman (%)</th>
+                                    <th class="px-4 py-3 border-b text-center">English Today</th>
                                     <th class="px-4 py-3 border-b text-center">Total Score</th>
                                     <th class="px-4 py-3 border-b text-center">Badge</th>
                                 </tr>
@@ -88,6 +111,17 @@
                                         <td class="px-4 py-3 text-center">{{ $item['sunnah']['total_poin'] }}</td>
                                         <td class="px-4 py-3 text-center">{{ $item['fhl']['percentage'] }}%</td>
                                         <td class="px-4 py-3 text-center">{{ $item['khataman']['percentage'] }}%</td>
+                                        <td class="px-4 py-3 text-center">
+                                            @if ($item['english_today'])
+                                                <span class="font-semibold text-[#161758]">{{ $item['english_today']['average_score'] }}</span>
+                                                <span class="block text-xs text-gray-400">{{ $item['english_today']['total_quizzes_taken'] }} quiz</span>
+                                                @if ($item['english_today']['badge'])
+                                                    <span class="block text-xs mt-0.5">{{ $item['english_today']['badge']['icon'] }} {{ $item['english_today']['badge']['name'] }}</span>
+                                                @endif
+                                            @else
+                                                <span class="text-gray-400">Belum ikut</span>
+                                            @endif
+                                        </td>
                                         <td class="px-4 py-3 text-center font-bold text-[#161758]">
                                             {{ number_format($item['total_score'], 1) }}
                                         </td>
@@ -108,7 +142,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8" class="px-4 py-6 text-center text-gray-400">Belum ada data untuk bulan ini</td>
+                                        <td colspan="9" class="px-4 py-6 text-center text-gray-400">Belum ada data untuk bulan ini</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -201,7 +235,7 @@
         @else
             <!-- ========== TAMPILAN KARYAWAN: KARTU ========== -->
             @php $item = $data->first(); @endphp
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <!-- Kartu Sunnah -->
                 <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
                     <div class="flex items-center justify-between mb-4">
@@ -282,14 +316,64 @@
                         @endforeach
                     </div>
                 </div>
+
+                <!-- Kartu English Today -->
+                <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-[#161758]">🇬🇧 English Today</h3>
+                        @if ($item['english_today'])
+                            <span class="text-2xl font-bold text-[#00a2e9]">{{ $item['english_today']['average_score'] }}</span>
+                        @endif
+                    </div>
+
+                    @if ($item['english_today'])
+                        <div class="mb-2 flex justify-between text-sm">
+                            <span>Rata-rata dari {{ $item['english_today']['total_quizzes_taken'] }} quiz</span>
+                            <span class="font-bold">Terbaik: {{ $item['english_today']['best_score'] }}</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5 mb-3">
+                            <div class="bg-[#00a2e9] h-2.5 rounded-full" style="width: {{ min($item['english_today']['average_score'], 100) }}%"></div>
+                        </div>
+
+                        <div class="mt-3 flex flex-wrap gap-1 mb-3">
+                            @if ($item['english_today']['badge'])
+                                @php $badge = $item['english_today']['badge']; @endphp
+                                <span class="px-3 py-1 rounded-full text-xs font-medium
+                                    @if ($badge['level'] == 'gold') bg-yellow-200 text-yellow-800
+                                    @elseif ($badge['level'] == 'silver') bg-gray-200 text-gray-800
+                                    @else bg-amber-200 text-amber-800 @endif">
+                                    {{ $badge['icon'] }} {{ $badge['name'] }}
+                                </span>
+                            @endif
+                        </div>
+
+                        <!-- Rincian per quiz -->
+                        <div class="border-t border-gray-100 pt-3 space-y-2 max-h-40 overflow-y-auto">
+                            @foreach ($item['english_today']['attempts'] as $attempt)
+                                <div class="flex justify-between items-center text-xs">
+                                    <span class="text-gray-600 truncate pr-2">{{ $attempt['quiz_title'] }}</span>
+                                    <span class="font-semibold text-[#161758] whitespace-nowrap">{{ $attempt['score'] }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-sm text-gray-400">Belum mengikuti quiz English Today.</p>
+                    @endif
+                </div>
             </div>
 
             <!-- Daftar semua badge yang diperoleh -->
-            @if (count($item['badges']) > 0)
+            @php
+                $allBadges = $item['badges'];
+                if (!empty($item['english_today']['badge'])) {
+                    $allBadges[] = $item['english_today']['badge'];
+                }
+            @endphp
+            @if (count($allBadges) > 0)
                 <div class="bg-white rounded-xl shadow-lg p-6 mt-6 border border-gray-100">
                     <h3 class="text-lg font-semibold text-[#161758] mb-3">🏅 Semua Lencana</h3>
                     <div class="flex flex-wrap gap-3">
-                        @foreach ($item['badges'] as $badge)
+                        @foreach ($allBadges as $badge)
                             <div class="flex items-center space-x-2 bg-[#f8faff] px-4 py-2 rounded-full border border-gray-200">
                                 <span class="text-xl">{{ $badge['icon'] }}</span>
                                 <span class="font-medium">{{ $badge['name'] }}</span>

@@ -7,6 +7,7 @@ use App\Models\Karyawan;
 use App\Models\SunnahDaily;
 use App\Models\FhlAbsensi;
 use App\Models\KhatamanAbsensi;
+use App\Services\EnglishTodayService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -132,17 +133,25 @@ class ProfileController extends Controller
     /**
      * Menampilkan halaman achievement
      */
-    public function achievement(Request $request)
+    public function achievement(Request $request, EnglishTodayService $englishToday)
     {
         $user = Auth::user();
         $month = (int) $request->input('month', date('m'));
         $year = (int) $request->input('year', date('Y'));
 
+        // Ambil skor dari SEMUA quiz English Today yang ada (bukan quiz tertentu saja),
+        // jadi kalau nanti ada quiz baru (quiz 3, 4, dst) otomatis ikut kehitung
+        // tanpa perlu ubah kode.
+        $englishScores = $englishToday->getScoresByEmail();
+        $englishSummary = $englishToday->getOverallSummary();
+
         if ($user->isHr()) {
             // HR: tampilkan semua karyawan aktif dengan peringkat
             $karyawans = Karyawan::where('is_resigned', false)->get();
-            $data = $karyawans->map(function ($karyawan) use ($month, $year) {
-                return $this->getKaryawanAchievement($karyawan, $month, $year);
+            $data = $karyawans->map(function ($karyawan) use ($month, $year, $englishScores) {
+                $achievement = $this->getKaryawanAchievement($karyawan, $month, $year);
+                $achievement['english_today'] = $this->matchEnglishTodayScore($karyawan, $englishScores);
+                return $achievement;
             })->sortByDesc('total_score')->values();
 
             // Pagination manual (10 per halaman)
@@ -162,12 +171,52 @@ class ProfileController extends Controller
                 ]
             );
 
-            return view('profile.achievement', compact('paginatedData', 'user', 'month', 'year'));
+            return view('profile.achievement', compact('paginatedData', 'user', 'month', 'year', 'englishSummary'));
         } else {
             // Karyawan biasa: hanya data sendiri
-            $data = collect([$this->getKaryawanAchievement($user, $month, $year)]);
-            return view('profile.achievement', compact('data', 'user', 'month', 'year'));
+            $achievement = $this->getKaryawanAchievement($user, $month, $year);
+            $achievement['english_today'] = $this->matchEnglishTodayScore($user, $englishScores);
+            $data = collect([$achievement]);
+            return view('profile.achievement', compact('data', 'user', 'month', 'year', 'englishSummary'));
         }
+    }
+
+    /**
+     * Cocokkan data karyawan lokal dengan hasil quiz English Today berdasarkan email.
+     * Return null kalau karyawan belum pernah mengerjakan quiz apapun.
+     */
+    private function matchEnglishTodayScore($karyawan, array $englishScores)
+    {
+        $email = strtolower(trim($karyawan->email ?? ''));
+        if (!$email) {
+            return null;
+        }
+
+        $result = $englishScores[$email] ?? null;
+
+        if ($result) {
+            // Badge dihitung dari rata-rata skor lintas semua quiz yang sudah diikuti
+            $result['badge'] = $this->getEnglishTodayBadge($result['average_score']);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Tentukan badge English Today berdasarkan skor (0-100).
+     * Silakan sesuaikan ambang batasnya sesuai kebutuhan.
+     */
+    private function getEnglishTodayBadge($score)
+    {
+        if ($score >= 90) {
+            return ['name' => 'English Master', 'icon' => '🌟', 'level' => 'gold'];
+        } elseif ($score >= 70) {
+            return ['name' => 'English Pro', 'icon' => '🗣️', 'level' => 'silver'];
+        } elseif ($score >= 50) {
+            return ['name' => 'English Learner', 'icon' => '📚', 'level' => 'bronze'];
+        }
+
+        return null;
     }
 
     /**

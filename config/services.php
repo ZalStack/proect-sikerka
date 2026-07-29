@@ -1,7 +1,6 @@
 <?php
 
 return [
-
     /*
     |--------------------------------------------------------------------------
     | Third Party Services
@@ -22,6 +21,10 @@ return [
         'key' => env('RESEND_API_KEY'),
     ],
 
+    'english_today' => [
+        'base_url' => env('ENGLISH_TODAY_API_URL', 'https://englishtoday.read1kpmseikhlasnya.com/api'),
+    ],
+
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
@@ -34,5 +37,4 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
-
 ];
