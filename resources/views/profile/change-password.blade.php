@@ -38,40 +38,49 @@
                 @method('PUT')
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {{-- Password Saat Ini --}}
                     <div class="mb-4 relative">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Password Saat Ini <span class="text-[#ec1d1d]">*</span></label>
-                        <input type="password" name="current_password" id="current_password" required
-                            class="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
-                        <button type="button" onclick="togglePassword('current_password')"
-                            class="absolute right-2 top-8 text-gray-500 hover:text-gray-700">
-                            <i class="fas fa-eye"></i>
-                        </button>
+                        <div class="relative">
+                            <input type="password" name="current_password" id="current_password" required
+                                class="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                            <button type="button" onclick="togglePassword('current_password', this)"
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
                         @error('current_password')
                             <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p>
                         @enderror
                     </div>
 
+                    {{-- Password Baru --}}
                     <div class="mb-4 relative">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Password Baru <span class="text-[#ec1d1d]">*</span></label>
-                        <input type="password" name="password" id="password" required
-                            class="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
-                        <button type="button" onclick="togglePassword('password')"
-                            class="absolute right-2 top-8 text-gray-500 hover:text-gray-700">
-                            <i class="fas fa-eye"></i>
-                        </button>
+                        <div class="relative">
+                            <input type="password" name="password" id="password" required
+                                class="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                            <button type="button" onclick="togglePassword('password', this)"
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
                         @error('password')
                             <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p>
                         @enderror
                     </div>
 
+                    {{-- Konfirmasi Password Baru --}}
                     <div class="mb-4 relative md:col-span-2">
                         <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Konfirmasi Password Baru <span class="text-[#ec1d1d]">*</span></label>
-                        <input type="password" name="password_confirmation" id="password_confirmation" required
-                            class="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
-                        <button type="button" onclick="togglePassword('password_confirmation')"
-                            class="absolute right-2 top-8 text-gray-500 hover:text-gray-700">
-                            <i class="fas fa-eye"></i>
-                        </button>
+                        <div class="relative">
+                            <input type="password" name="password_confirmation" id="password_confirmation" required
+                                class="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                            <button type="button" onclick="togglePassword('password_confirmation', this)"
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
                         @error('password_confirmation')
                             <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p>
                         @enderror
@@ -94,9 +103,18 @@
 </div>
 
 <script>
-    function togglePassword(fieldId) {
+    function togglePassword(fieldId, btn) {
         const input = document.getElementById(fieldId);
-        input.type = (input.type === 'password') ? 'text' : 'password';
+        const icon = btn.querySelector('i');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
     }
 </script>
 @endsection
