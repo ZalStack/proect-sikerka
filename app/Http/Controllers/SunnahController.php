@@ -6,6 +6,7 @@ use App\Models\SunnahDaily;
 use App\Models\Karyawan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Carbon\Carbon;
 
 class SunnahController extends Controller
@@ -235,18 +236,30 @@ class SunnahController extends Controller
             });
         }
 
-        $sunnahData = (clone $query)->orderBy('tanggal', 'desc')->get();
+        // Ambil seluruh data (tanpa limit) untuk statistik & ranking divisi,
+        // supaya angka-angka ini tetap merepresentasikan seluruh hasil filter,
+        // bukan hanya data pada halaman yang sedang ditampilkan.
+        $allSunnahData = (clone $query)->orderBy('tanggal', 'desc')->get();
 
         $statistik = [
-            'total' => $sunnahData->count(),
-            'pending' => $sunnahData->where('status_approval', 'pending')->count(),
-            'approved' => $sunnahData->where('status_approval', 'approved')->count(),
-            'rejected' => $sunnahData->where('status_approval', 'rejected')->count(),
-            'total_poin' => $sunnahData->sum('total_poin'),
+            'total' => $allSunnahData->count(),
+            'pending' => $allSunnahData->where('status_approval', 'pending')->count(),
+            'approved' => $allSunnahData->where('status_approval', 'approved')->count(),
+            'rejected' => $allSunnahData->where('status_approval', 'rejected')->count(),
+            'total_poin' => $allSunnahData->sum('total_poin'),
         ];
 
-        // Pengelompokan berdasarkan divisi karyawan
-        $groupedData = $sunnahData
+        // Ranking "Divisi Paling Suprasional": total poin anggota / jumlah anggota divisi
+        $divisiRanking = SunnahDaily::rekapPerDivisi($month, $year, $periode);
+
+        // Data yang ditampilkan di tabel dipaginasi 10 data per halaman (next/previous)
+        $sunnahData = (clone $query)
+            ->orderBy('tanggal', 'desc')
+            ->paginate(10)
+            ->withQueryString();
+
+        // Pengelompokan berdasarkan divisi karyawan (hanya untuk data di halaman berjalan)
+        $groupedData = collect($sunnahData->items())
             ->groupBy(function ($item) {
                 return $item->karyawan->divisi ?? 'Tanpa Divisi';
             })
@@ -271,7 +284,9 @@ class SunnahController extends Controller
             'year',
             'periode',
             'periodeOptions',
-            'divisiList'
+            'divisiList',
+            'divisiRanking',
+            'sunnahData'
         ));
     }
 
@@ -281,9 +296,26 @@ class SunnahController extends Controller
         $month = $request->input('month', date('m'));
         $year = $request->input('year', date('Y'));
 
-        $rekap = SunnahDaily::rekapPerKaryawan($month, $year);
-        $totalPoinKeseluruhan = $rekap->sum('total_poin');
-        $totalKaryawanAktif = $rekap->where('total_hari', '>', 0)->count();
+        // Ambil seluruh rekap (sudah terurut dari poin tertinggi) untuk hitung total & ranking yang benar
+        $rekapAll = SunnahDaily::rekapPerKaryawan($month, $year);
+        $totalPoinKeseluruhan = $rekapAll->sum('total_poin');
+        $totalKaryawanAktif = $rekapAll->where('total_hari', '>', 0)->count();
+
+        // Paginasi manual 10 data per halaman (next/previous), tanpa mengubah urutan ranking
+        $perPage = 10;
+        $currentPage = LengthAwarePaginator::resolveCurrentPage() ?: 1;
+        $items = $rekapAll->forPage($currentPage, $perPage)->values();
+
+        $rekap = new LengthAwarePaginator(
+            $items,
+            $rekapAll->count(),
+            $perPage,
+            $currentPage,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
 
         return view('hr.sunnah.rekap', compact(
             'rekap',
@@ -323,26 +355,33 @@ class SunnahController extends Controller
     }
 
     // HR Approve/Reject (bulk / massal)
+    // Bisa mengubah status ke arah manapun (pending/approved/rejected), termasuk
+    // membatalkan data yang sebelumnya sudah "Disetujui" kembali ke "Menunggu"/"Ditolak".
     public function bulkApprove(Request $request)
     {
         $request->validate([
             'ids' => 'required|array|min:1',
             'ids.*' => 'integer|exists:sunnah_daily,id',
-            'target_status' => 'required|in:approved,rejected',
+            'target_status' => 'required|in:approved,rejected,pending',
             'catatan_hr' => 'nullable|string',
         ]);
 
         $ids = $request->input('ids');
 
-        // Hanya update yang statusnya belum approved
+        // Update seluruh data terpilih tanpa memandang status_approval saat ini,
+        // sehingga perubahan bisa dua arah (mis. approved -> pending, pending -> approved, dst).
         $jumlah = SunnahDaily::whereIn('id', $ids)
-            ->where('status_approval', '!=', 'approved')
             ->update([
                 'status_approval' => $request->input('target_status'),
                 'catatan_hr' => $request->input('catatan_hr'),
             ]);
 
-        $statusLabel = $request->input('target_status') === 'approved' ? 'Disetujui' : 'Ditolak';
+        $statusLabelMap = [
+            'approved' => 'Disetujui',
+            'rejected' => 'Ditolak',
+            'pending' => 'Menunggu',
+        ];
+        $statusLabel = $statusLabelMap[$request->input('target_status')];
 
         return redirect()->route('hr.sunnah.index', $request->only([
                 'month', 'year', 'periode', 'karyawan_id', 'status', 'divisi',

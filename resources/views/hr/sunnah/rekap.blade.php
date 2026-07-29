@@ -49,7 +49,7 @@
             <!-- Ringkasan -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
                 <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 text-center">
-                    <p class="text-lg sm:text-2xl font-bold text-[#161758]">{{ $rekap->count() }}</p>
+                    <p class="text-lg sm:text-2xl font-bold text-[#161758]">{{ $rekap->total() }}</p>
                     <p class="text-[10px] sm:text-sm text-[#1B1B1B]">Total Karyawan</p>
                 </div>
                 <div class="bg-[#00a2e9] text-white rounded-lg shadow-md p-3 sm:p-4 text-center">
@@ -83,16 +83,17 @@
                             </thead>
                             <tbody>
                                 @forelse($rekap as $index => $row)
+                                @php $rank = $rekap->firstItem() + $index; @endphp
                                 <tr class="border-b border-gray-200 hover:bg-[#F5F5F5]">
                                     <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold">
-                                        @if($index === 0 && $row['total_poin'] > 0)
+                                        @if($rank === 1 && $row['total_poin'] > 0)
                                             🥇
-                                        @elseif($index === 1 && $row['total_poin'] > 0)
+                                        @elseif($rank === 2 && $row['total_poin'] > 0)
                                             🥈
-                                        @elseif($index === 2 && $row['total_poin'] > 0)
+                                        @elseif($rank === 3 && $row['total_poin'] > 0)
                                             🥉
                                         @else
-                                            {{ $index + 1 }}
+                                            {{ $rank }}
                                         @endif
                                     </td>
                                     <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
@@ -127,6 +128,12 @@
                     </div>
                 </div>
             </div>
+
+            @if($rekap->total() > 0)
+                <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 mt-4">
+                    {{ $rekap->onEachSide(1)->links() }}
+                </div>
+            @endif
         </div>
     </div>
 </div>

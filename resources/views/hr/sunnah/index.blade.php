@@ -115,6 +115,54 @@
                 </div>
             </div>
 
+            <!-- Divisi Paling Suprasional -->
+            <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+                <div class="bg-[#161758] text-white px-3 sm:px-4 py-2 sm:py-3">
+                    <h3 class="font-semibold text-sm sm:text-base">🏆 Divisi Paling Suprasional</h3>
+                    <p class="text-[10px] sm:text-xs text-white/80">Rata-rata poin per anggota = total poin seluruh anggota ÷ jumlah anggota divisi, sesuai filter periode/bulan di atas</p>
+                </div>
+                <div class="overflow-x-auto -mx-4 sm:mx-0">
+                    <div class="inline-block min-w-full align-middle">
+                        <table class="min-w-[500px] sm:min-w-full">
+                            <thead class="bg-[#F5F5F5]">
+                                <tr>
+                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Rank</th>
+                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Divisi</th>
+                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Jumlah Anggota</th>
+                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Total Poin Divisi</th>
+                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Rata-rata Poin/Anggota</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($divisiRanking as $index => $row)
+                                <tr class="border-b border-gray-200 hover:bg-[#F5F5F5]">
+                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold">
+                                        @if($index === 0 && $row['rata_rata_poin'] > 0)
+                                            🥇
+                                        @elseif($index === 1 && $row['rata_rata_poin'] > 0)
+                                            🥈
+                                        @elseif($index === 2 && $row['rata_rata_poin'] > 0)
+                                            🥉
+                                        @else
+                                            {{ $index + 1 }}
+                                        @endif
+                                    </td>
+                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-[#161758]">{{ $row['divisi'] }}</td>
+                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">{{ $row['jumlah_anggota'] }}</td>
+                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">{{ $row['total_poin'] }}</td>
+                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-bold text-[#2E7D3E]">{{ $row['rata_rata_poin'] }}</td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="5" class="px-4 py-6 text-center text-[#1B1B1B] text-sm">Belum ada data divisi.</td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <!-- Form Bulk Approve -->
             <form id="bulk-approve-form" action="{{ route('hr.sunnah.bulk-approve') }}" method="POST">
                 @csrf
@@ -142,6 +190,11 @@
                                 class="flex-1 sm:flex-none bg-[#ec1d1d] text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:opacity-90 transition-opacity duration-200 disabled:opacity-40"
                                 id="btn-bulk-reject" disabled>
                             ❌ Tolak Terpilih
+                        </button>
+                        <button type="button" onclick="submitBulk('pending')"
+                                class="flex-1 sm:flex-none bg-[#FCC626] text-[#1B1B1B] px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:opacity-90 transition-opacity duration-200 disabled:opacity-40"
+                                id="btn-bulk-pending" disabled>
+                            ⏳ Kembalikan ke Menunggu
                         </button>
                     </div>
                 </div>
@@ -175,8 +228,7 @@
                                             <td class="px-3 sm:px-4 py-2 sm:py-3">
                                                 <input type="checkbox"
                                                        class="row-check divisi-{{ \Illuminate\Support\Str::slug($divisi) }} w-3 h-3 sm:w-4 sm:h-4"
-                                                       value="{{ $item->id }}"
-                                                       {{ $item->status_approval === 'approved' ? 'disabled' : '' }}>
+                                                       value="{{ $item->id }}">
                                             </td>
                                             <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">{{ $item->karyawan->nama_lengkap }}</td>
                                             <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">{{ $item->tanggal->format('d-m-Y') }}</td>
@@ -208,6 +260,12 @@
                         <p class="text-base sm:text-lg font-semibold">Belum ada data 7SPS untuk filter ini</p>
                     </div>
                 @endforelse
+
+                @if($sunnahData->total() > 0)
+                    <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 mt-2">
+                        {{ $sunnahData->onEachSide(1)->links() }}
+                    </div>
+                @endif
             </form>
         </div>
     </div>
@@ -232,6 +290,7 @@ const bulkIdsContainer = document.getElementById('bulk-ids-container');
 const bulkSelectedCount = document.getElementById('bulk-selected-count');
 const btnBulkApprove = document.getElementById('btn-bulk-approve');
 const btnBulkReject = document.getElementById('btn-bulk-reject');
+const btnBulkPending = document.getElementById('btn-bulk-pending');
 
 function getCheckedRows() {
     return Array.from(document.querySelectorAll('.row-check:checked'));
@@ -242,6 +301,7 @@ function refreshBulkToolbar() {
     bulkSelectedCount.textContent = checked.length;
     btnBulkApprove.disabled = checked.length === 0;
     btnBulkReject.disabled = checked.length === 0;
+    btnBulkPending.disabled = checked.length === 0;
 }
 
 document.addEventListener('change', function (event) {
@@ -262,9 +322,10 @@ function submitBulk(status) {
     const checked = getCheckedRows();
     if (checked.length === 0) return;
 
-    const confirmText = status === 'approved'
-        ? `Setujui ${checked.length} data terpilih?`
-        : `Tolak ${checked.length} data terpilih?`;
+    let confirmText = `Ubah status ${checked.length} data terpilih?`;
+    if (status === 'approved') confirmText = `Setujui ${checked.length} data terpilih?`;
+    if (status === 'rejected') confirmText = `Tolak ${checked.length} data terpilih?`;
+    if (status === 'pending') confirmText = `Kembalikan ${checked.length} data terpilih ke status Menunggu? (Termasuk yang sudah Disetujui)`;
     if (!confirm(confirmText)) return;
 
     // Bersihkan input ids sebelumnya

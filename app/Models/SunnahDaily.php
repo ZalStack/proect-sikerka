@@ -237,6 +237,50 @@ class SunnahDaily extends Model
     }
 
     /**
+     * Rekap "Divisi Paling Suprasional": rata-rata poin per anggota divisi.
+     * Rumus: total poin seluruh anggota divisi / jumlah anggota divisi.
+     * Mendukung filter periode cepat (3_hari/1_minggu/1_bulan) ATAU bulan & tahun.
+     */
+    public static function rekapPerDivisi($month = null, $year = null, $periode = null)
+    {
+        $query = self::query();
+
+        if ($periode && array_key_exists($periode, self::getPeriodeOptions())) {
+            $query->filterByPeriode($periode);
+        } elseif ($month && $year) {
+            $query->whereMonth('tanggal', $month)->whereYear('tanggal', $year);
+        }
+
+        // Total poin per karyawan pada rentang yang difilter
+        $poinPerKaryawan = $query->selectRaw('karyawan_id, SUM(total_poin) as total_poin')
+            ->groupBy('karyawan_id')
+            ->pluck('total_poin', 'karyawan_id');
+
+        $karyawans = Karyawan::whereNotNull('divisi')
+            ->where('divisi', '!=', '')
+            ->get();
+
+        return $karyawans
+            ->groupBy('divisi')
+            ->map(function ($anggota, $divisi) use ($poinPerKaryawan) {
+                $jumlahAnggota = $anggota->count();
+                $totalPoinDivisi = $anggota->sum(function ($k) use ($poinPerKaryawan) {
+                    return $poinPerKaryawan->get($k->id, 0);
+                });
+
+                return [
+                    'divisi' => $divisi,
+                    'jumlah_anggota' => $jumlahAnggota,
+                    'total_poin' => $totalPoinDivisi,
+                    // Poin dari divisi paling suprasional = total poin dibagi jumlah anggota divisi
+                    'rata_rata_poin' => $jumlahAnggota > 0 ? round($totalPoinDivisi / $jumlahAnggota, 1) : 0,
+                ];
+            })
+            ->sortByDesc('rata_rata_poin')
+            ->values();
+    }
+
+    /**
      * Rekap total poin 7SPS per karyawan untuk bulan & tahun tertentu.
      */
     public static function rekapPerKaryawan($month, $year)
