@@ -13,7 +13,7 @@ class KaryawanController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Karyawan::orderBy('kode_pegawai', 'asc');
+        $query = Karyawan::orderBy('kode_pegawai', 'asc')->where('posisi', 'karyawan'); // Hanya tampilkan karyawan biasa
 
         if ($request->filled('search')) {
             $search = $request->search;
