@@ -14,10 +14,7 @@ class EnglishTodayService
     public function __construct()
     {
         // Set ENGLISH_TODAY_API_URL di .env kalau mau override
-        $this->baseUrl = rtrim(
-            config('services.english_today.base_url', 'https://englishtoday.read1kpmseikhlasnya.com/api'),
-            '/'
-        );
+        $this->baseUrl = rtrim(config('services.english_today.base_url', 'https://englishtoday.read1kpmseikhlasnya.com/api'), '/');
     }
 
     /**
@@ -81,12 +78,7 @@ class EnglishTodayService
      */
     public function getAllQuizIds(): array
     {
-        return collect($this->getAllQuizzes())
-            ->pluck('id')
-            ->filter()
-            ->map(fn ($id) => (int) $id)
-            ->values()
-            ->all();
+        return collect($this->getAllQuizzes())->pluck('id')->filter()->map(fn($id) => (int) $id)->values()->all();
     }
 
     /**
@@ -166,12 +158,12 @@ class EnglishTodayService
                 }
 
                 $scores[$email]['attempts'][] = [
-                    'quiz_id'       => $quizId,
-                    'quiz_title'    => $quizTitle,
-                    'score'         => $attempt['score'] ?? 0,
+                    'quiz_id' => $quizId,
+                    'quiz_title' => $quizTitle,
+                    'score' => $attempt['score'] ?? 0,
                     'total_correct' => $attempt['total_correct'] ?? 0,
-                    'total_wrong'   => $attempt['total_wrong'] ?? 0,
-                    'completed_at'  => $attempt['completed_at'] ?? null,
+                    'total_wrong' => $attempt['total_wrong'] ?? 0,
+                    'completed_at' => $attempt['completed_at'] ?? null,
                 ];
             }
         }
@@ -190,9 +182,7 @@ class EnglishTodayService
             $entry['latest_attempt'] = $attempts[0] ?? null;
             $entry['total_quizzes_taken'] = count($attempts);
             $entry['best_score'] = count($scoreValues) ? max($scoreValues) : 0;
-            $entry['average_score'] = count($scoreValues)
-                ? round(array_sum($scoreValues) / count($scoreValues), 1)
-                : 0;
+            $entry['average_score'] = count($scoreValues) ? round(array_sum($scoreValues) / count($scoreValues), 1) : 0;
         }
         unset($entry);
 
@@ -206,7 +196,7 @@ class EnglishTodayService
     public function getOverallSummary(): array
     {
         $quizzes = $this->getAllQuizzes();
-        $quizIds = collect($quizzes)->pluck('id')->filter()->map(fn ($id) => (int) $id)->values()->all();
+        $quizIds = collect($quizzes)->pluck('id')->filter()->map(fn($id) => (int) $id)->values()->all();
         $scoresByEmail = $this->getScoresByEmail($quizIds);
 
         $allAttemptScores = [];
@@ -215,8 +205,18 @@ class EnglishTodayService
                 $allAttemptScores[] = $attempt['score'];
             }
         }
+
+        $totalParticipants = count($scoresByEmail);
+        $totalScores = count($allAttemptScores);
+        $averageScore = $totalScores > 0 ? round(array_sum($allAttemptScores) / $totalScores, 1) : 0;
+
+        return [
+            'total_quizzes' => count($quizzes),
+            'total_participants' => $totalParticipants,
+            'average_score' => $averageScore,
+            'total_attempts' => $totalScores,
+        ];
     }
-    
     /**
      * Ambil daftar semua video challenge (beserta submissions_count per challenge).
      * GET /hr/video-challenges
@@ -318,18 +318,18 @@ class EnglishTodayService
                 }
 
                 $submissionsByEmail[$email][] = [
-                    'challenge_id'    => (int) $challengeId,
+                    'challenge_id' => (int) $challengeId,
                     'challenge_title' => $challengeTitle,
-                    'link'            => $submission['link'] ?? null,
-                    'notes'           => $submission['notes'] ?? null,
-                    'submitted_at'    => $submission['created_at'] ?? null,
+                    'link' => $submission['link'] ?? null,
+                    'notes' => $submission['notes'] ?? null,
+                    'submitted_at' => $submission['created_at'] ?? null,
                 ];
             }
         }
 
         // Urutkan submission tiap orang, terbaru duluan
         foreach ($submissionsByEmail as &$list) {
-            usort($list, fn ($a, $b) => strcmp($b['submitted_at'] ?? '', $a['submitted_at'] ?? ''));
+            usort($list, fn($a, $b) => strcmp($b['submitted_at'] ?? '', $a['submitted_at'] ?? ''));
         }
         unset($list);
 
@@ -344,7 +344,7 @@ class EnglishTodayService
         $challenges = $this->getVideoChallenges();
 
         return [
-            'total_challenges'  => count($challenges),
+            'total_challenges' => count($challenges),
             'active_challenges' => collect($challenges)->where('is_active', true)->count(),
             'total_submissions' => collect($challenges)->sum('submissions_count'),
         ];
