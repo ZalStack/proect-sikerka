@@ -80,7 +80,7 @@ class PerjalananDinasController extends Controller
                 'tanggal_mulai' => [
                     'required',
                     'date',
-                    'after_or_equal:' . now()->addDays(7)->toDateString(), // minimal H-7
+                    'after_or_equal:' . now()->addDay()->toDateString(), // minimal H-1 (besok)
                 ],
                 'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
                 'surat_tugas' => 'required|file|mimes:pdf|max:2048', // wajib
@@ -89,7 +89,7 @@ class PerjalananDinasController extends Controller
                 'surat_tugas.required' => 'Surat tugas wajib diupload.',
                 'surat_tugas.max' => 'Ukuran file surat tugas maksimal 2 MB.',
                 'surat_tugas.mimes' => 'File surat tugas harus berformat PDF.',
-                'tanggal_mulai.after_or_equal' => 'Tanggal mulai harus minimal 7 hari dari hari ini.',
+                'tanggal_mulai.after_or_equal' => 'Tanggal mulai harus minimal 1 hari dari hari ini.',
                 'tanggal_selesai.after_or_equal' => 'Tanggal selesai harus setelah atau sama dengan tanggal mulai.',
             ],
         );

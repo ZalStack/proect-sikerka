@@ -53,7 +53,7 @@
                             @error('tanggal_mulai')
                                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                             @enderror
-                            <p class="text-xs text-gray-400 mt-1">Minimal 7 hari dari hari ini</p>
+                            <p class="text-xs text-gray-400 mt-1">Minimal 1 hari dari hari ini</p>
                         </div>
                         <div>
                             <label for="tanggal_selesai" class="block text-sm font-medium text-gray-700 mb-1.5">Tanggal Selesai <span class="text-red-500">*</span></label>
@@ -114,7 +114,7 @@
     flatpickr.localize(flatpickr.l10ns.id);
 
     const minDate = new Date();
-    minDate.setDate(minDate.getDate() + 7); // H-7
+    minDate.setDate(minDate.getDate() + 1); // H-1 (besok)
 
     // Mulai
     const startPicker = flatpickr("#tanggal_mulai", {
@@ -154,14 +154,14 @@
             e.preventDefault();
             return;
         }
-        // Cek minimal H-7 (sudah diatur di minDate, tapi amankan)
+        // Cek minimal H-1
         const today = new Date();
         today.setHours(0,0,0,0);
         const minAllowed = new Date(today);
-        minAllowed.setDate(minAllowed.getDate() + 7);
+        minAllowed.setDate(minAllowed.getDate() + 1); // besok
         const startDate = new Date(startVal);
         if (startDate < minAllowed) {
-            alert('Tanggal mulai minimal 7 hari dari hari ini.');
+            alert('Tanggal mulai minimal 1 hari dari hari ini.');
             e.preventDefault();
             return;
         }
