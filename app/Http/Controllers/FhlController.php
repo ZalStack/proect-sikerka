@@ -63,7 +63,7 @@ class FhlController extends Controller
         ));
     }
 
-    // Check-in FHL (dengan validasi kode dan jam)
+    // Check-in FHL (dengan validasi kode, tanpa batasan jam)
     public function checkIn(Request $request)
     {
         $request->validate([
@@ -83,17 +83,7 @@ class FhlController extends Controller
             ], 400);
         }
 
-        // 2. Cek batas waktu (07:00 - 08:00)
-        $start = $today->copy()->setTime(7, 0, 0);
-        $end   = $today->copy()->setTime(8, 0, 0);
-        if (!$now->between($start, $end)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Check-in FHL hanya dapat dilakukan antara pukul 07:00 - 08:00!'
-            ], 400);
-        }
-
-        // 3. Cek apakah sudah absen hari ini
+        // 2. Cek apakah sudah absen hari ini
         if (FhlAbsensi::hasCheckedInToday($user->id)) {
             return response()->json([
                 'success' => false,
@@ -101,7 +91,7 @@ class FhlController extends Controller
             ], 400);
         }
 
-        // 4. Validasi kode kegiatan
+        // 3. Validasi kode kegiatan
         $kodeBenar = FhlKode::getKodeForDate($today);
         if (!$kodeBenar) {
             return response()->json([
@@ -118,12 +108,12 @@ class FhlController extends Controller
             ], 400);
         }
 
-        // 5. Upload foto
+        // 4. Upload foto
         $file = $request->file('foto_bukti');
         $filename = 'fhl_' . time() . '_' . Str::slug($user->nama_lengkap) . '.' . $file->getClientOriginalExtension();
         $path = $file->storeAs('fhl_bukti', $filename, 'public');
 
-        // 6. Simpan absensi
+        // 5. Simpan absensi
         $absensi = FhlAbsensi::create([
             'karyawan_id' => $user->id,
             'tanggal'     => $today,
@@ -191,9 +181,18 @@ class FhlController extends Controller
         return view('hr.fhl.detail', compact('absensi'));
     }
 
-    // HR: Generate kode kegiatan untuk hari ini
+    // HR: Buat kode kegiatan untuk hari ini (input manual oleh HR)
     public function generateKode(Request $request)
     {
+        $request->validate([
+            'kode' => 'required|string|min:3|max:20|alpha_num',
+        ], [
+            'kode.required'  => 'Kode kegiatan wajib diisi!',
+            'kode.min'       => 'Kode kegiatan minimal 3 karakter!',
+            'kode.max'       => 'Kode kegiatan maksimal 20 karakter!',
+            'kode.alpha_num' => 'Kode kegiatan hanya boleh huruf dan angka (tanpa spasi/simbol)!',
+        ]);
+
         $user = Auth::user();
         $today = Carbon::today();
 
@@ -207,8 +206,7 @@ class FhlController extends Controller
             return redirect()->back()->with('error', 'Kode untuk hari ini sudah dibuat.');
         }
 
-        // Generate kode acak
-        $kode = FhlKode::generateRandomKode();
+        $kode = strtoupper($request->input('kode'));
 
         // Simpan
         FhlKode::create([

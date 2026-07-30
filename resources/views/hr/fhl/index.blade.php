@@ -24,32 +24,37 @@
                 </div>
             @endif
 
-            <!-- Generate Kode Kegiatan -->
+            <!-- Kode Kegiatan -->
             <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
                 <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">🔐 Kode Kegiatan FHL</h2>
-                <div class="flex flex-wrap items-center gap-4">
-                    <div>
-                        @php
-                            $today = \Carbon\Carbon::today();
-                            $kodeHariIni = \App\Models\FhlKode::getKodeForDate($today);
-                        @endphp
-                        @if($kodeHariIni)
-                            <span class="px-4 py-2 bg-[#2E7D3E] text-white rounded-lg font-bold text-lg">
-                                {{ $kodeHariIni }}
-                            </span>
-                            <span class="text-sm text-[#1B1B1B] ml-2">(Kode untuk hari ini)</span>
-                        @else
-                            <span class="text-sm text-gray-500">Belum ada kode untuk hari ini.</span>
-                        @endif
+                @php
+                    $today = \Carbon\Carbon::today();
+                    $kodeHariIni = \App\Models\FhlKode::getKodeForDate($today);
+                @endphp
+                @if($kodeHariIni)
+                    <div class="flex flex-wrap items-center gap-2 mb-2">
+                        <span class="px-4 py-2 bg-[#2E7D3E] text-white rounded-lg font-bold text-lg">
+                            {{ $kodeHariIni }}
+                        </span>
+                        <span class="text-sm text-[#1B1B1B]">(Kode untuk hari ini)</span>
                     </div>
-                    <form action="{{ route('hr.fhl.generate-kode') }}" method="POST" class="inline">
+                @else
+                    <form action="{{ route('hr.fhl.generate-kode') }}" method="POST" class="flex flex-col sm:flex-row sm:items-start gap-3">
                         @csrf
-                        <button type="submit" class="bg-[#27438D] text-white px-4 py-2 rounded-lg hover:bg-[#161758] transition-colors duration-200 text-sm">
-                            🆕 Generate Kode Baru
+                        <div class="w-full sm:w-64">
+                            <input type="text" name="kode" maxlength="20"
+                                   class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg uppercase focus:outline-none focus:ring-2 focus:ring-[#00a2e9] @error('kode') border-[#ec1d1d] @enderror"
+                                   placeholder="Masukkan kode kegiatan" value="{{ old('kode') }}">
+                            @error('kode')
+                                <p class="text-xs text-[#ec1d1d] mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <button type="submit" class="bg-[#27438D] text-white px-4 py-2 rounded-lg hover:bg-[#161758] transition-colors duration-200 text-sm whitespace-nowrap">
+                            💾 Simpan Kode
                         </button>
                     </form>
-                </div>
-                <p class="text-xs text-gray-500 mt-2">* Kode hanya bisa digenerate pada hari Jumat dan otomatis berlaku untuk hari itu.</p>
+                @endif
+                <p class="text-xs text-gray-500 mt-2">* Kode dibuat manual oleh HR, hanya bisa dibuat pada hari Jumat, dan berlaku untuk hari itu saja.</p>
             </div>
 
             <!-- Filter -->

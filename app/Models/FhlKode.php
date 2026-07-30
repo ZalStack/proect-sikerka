@@ -28,14 +28,6 @@ class FhlKode extends Model
     }
 
     /**
-     * Generate kode acak (6 karakter alfanumerik)
-     */
-    public static function generateRandomKode(): string
-    {
-        return strtoupper(substr(md5(uniqid()), 0, 6));
-    }
-
-    /**
      * Cek apakah ada kode untuk tanggal tertentu
      */
     public static function hasKodeForDate($tanggal): bool
