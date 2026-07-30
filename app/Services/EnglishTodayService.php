@@ -215,14 +215,138 @@ class EnglishTodayService
                 $allAttemptScores[] = $attempt['score'];
             }
         }
+    }
+    
+    /**
+     * Ambil daftar semua video challenge (beserta submissions_count per challenge).
+     * GET /hr/video-challenges
+     */
+    public function getVideoChallenges(): array
+    {
+        return Cache::remember('english_today_video_challenges', now()->addMinutes(10), function () {
+            try {
+                $response = Http::timeout(10)->get("{$this->baseUrl}/hr/video-challenges");
+
+                if ($response->failed()) {
+                    Log::warning('EnglishToday: gagal fetch video challenges', ['status' => $response->status()]);
+                    return [];
+                }
+
+                $data = $response->json('data', []);
+
+                if (isset($data['data']) && is_array($data['data'])) {
+                    return $data['data'];
+                }
+
+                return is_array($data) ? $data : [];
+            } catch (\Throwable $e) {
+                Log::warning('EnglishToday: exception fetch video challenges - ' . $e->getMessage());
+                return [];
+            }
+        });
+    }
+
+    /**
+     * Ambil detail satu video challenge, termasuk daftar submissions (siapa saja
+     * yang sudah kirim link video + notes-nya).
+     * GET /hr/video-challenges/{id}
+     */
+    public function getVideoChallengeDetail(int $challengeId): ?array
+    {
+        return Cache::remember("english_today_video_challenge_{$challengeId}", now()->addMinutes(10), function () use ($challengeId) {
+            try {
+                $response = Http::timeout(15)->get("{$this->baseUrl}/hr/video-challenges/{$challengeId}");
+
+                if ($response->failed()) {
+                    Log::warning('EnglishToday: gagal fetch detail video challenge', [
+                        'challenge_id' => $challengeId,
+                        'status' => $response->status(),
+                    ]);
+                    return null;
+                }
+
+                return $response->json('data');
+            } catch (\Throwable $e) {
+                Log::warning('EnglishToday: exception fetch detail video challenge - ' . $e->getMessage());
+                return null;
+            }
+        });
+    }
+
+    /**
+     * Mapping submission video challenge per email. Otomatis mengikuti challenge
+     * baru yang dibuat (challenge 2, 3, dst) — tidak di-hardcode ke satu challenge saja.
+     *
+     * Return format per email (array of submissions, bisa lebih dari satu kalau
+     * karyawan submit ke beberapa challenge berbeda):
+     * [
+     *   'ridwan.hasan@gmail.com' => [
+     *       [
+     *           'challenge_id'    => 1,
+     *           'challenge_title' => 'Speak Up Challenge',
+     *           'link'            => 'https://...',
+     *           'notes'           => '...',
+     *           'submitted_at'    => '2026-07-29T...Z',
+     *       ],
+     *       ...
+     *   ],
+     *   ...
+     * ]
+     */
+    public function getVideoSubmissionsByEmail(): array
+    {
+        $challenges = $this->getVideoChallenges();
+        $submissionsByEmail = [];
+
+        foreach ($challenges as $challenge) {
+            $challengeId = $challenge['id'] ?? null;
+            if (!$challengeId) {
+                continue;
+            }
+
+            $detail = $this->getVideoChallengeDetail((int) $challengeId);
+            if (!$detail || empty($detail['submissions'])) {
+                continue;
+            }
+
+            $challengeTitle = $detail['title'] ?? "Challenge #{$challengeId}";
+
+            foreach ($detail['submissions'] as $submission) {
+                $email = strtolower(trim($submission['user']['email'] ?? ''));
+                if (!$email) {
+                    continue;
+                }
+
+                $submissionsByEmail[$email][] = [
+                    'challenge_id'    => (int) $challengeId,
+                    'challenge_title' => $challengeTitle,
+                    'link'            => $submission['link'] ?? null,
+                    'notes'           => $submission['notes'] ?? null,
+                    'submitted_at'    => $submission['created_at'] ?? null,
+                ];
+            }
+        }
+
+        // Urutkan submission tiap orang, terbaru duluan
+        foreach ($submissionsByEmail as &$list) {
+            usort($list, fn ($a, $b) => strcmp($b['submitted_at'] ?? '', $a['submitted_at'] ?? ''));
+        }
+        unset($list);
+
+        return $submissionsByEmail;
+    }
+
+    /**
+     * Ringkasan lintas semua video challenge (dipakai untuk banner HR).
+     */
+    public function getVideoChallengeSummary(): array
+    {
+        $challenges = $this->getVideoChallenges();
 
         return [
-            'total_quizzes'      => count($quizzes),
-            'total_participants' => count($scoresByEmail),
-            'total_attempts'     => count($allAttemptScores),
-            'average_score'      => count($allAttemptScores)
-                ? round(array_sum($allAttemptScores) / count($allAttemptScores), 1)
-                : 0,
+            'total_challenges'  => count($challenges),
+            'active_challenges' => collect($challenges)->where('is_active', true)->count(),
+            'total_submissions' => collect($challenges)->sum('submissions_count'),
         ];
     }
 }

@@ -72,6 +72,28 @@
                             </div>
                         </div>
                     @endif
+
+                    @if (!empty($videoSummary['total_challenges']))
+                        <div class="bg-[#f8faff] border border-gray-100 rounded-lg p-4 mb-4 flex flex-wrap gap-4 justify-between items-center">
+                            <div>
+                                <p class="text-sm text-gray-500">🎬 Video Challenge &mdash; ringkasan seluruh challenge</p>
+                            </div>
+                            <div class="flex gap-6 text-sm">
+                                <div class="text-center">
+                                    <div class="font-bold text-[#161758]">{{ $videoSummary['total_challenges'] }}</div>
+                                    <div class="text-gray-500">Challenge</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="font-bold text-[#161758]">{{ $videoSummary['active_challenges'] }}</div>
+                                    <div class="text-gray-500">Aktif</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="font-bold text-[#161758]">{{ $videoSummary['total_submissions'] }}</div>
+                                    <div class="text-gray-500">Submission</div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm text-left border-collapse">
                             <thead class="bg-[#f8faff] text-[#27438D] uppercase text-xs">
@@ -83,6 +105,7 @@
                                     <th class="px-4 py-3 border-b text-center">FHL (%)</th>
                                     <th class="px-4 py-3 border-b text-center">Khataman (%)</th>
                                     <th class="px-4 py-3 border-b text-center">English Today</th>
+                                    <th class="px-4 py-3 border-b text-center">Video Challenge</th>
                                     <th class="px-4 py-3 border-b text-center">Total Score</th>
                                     <th class="px-4 py-3 border-b text-center">Badge</th>
                                 </tr>
@@ -122,6 +145,14 @@
                                                 <span class="text-gray-400">Belum ikut</span>
                                             @endif
                                         </td>
+                                        <td class="px-4 py-3 text-center">
+                                            @if (count($item['video_challenges']) > 0)
+                                                <span class="font-semibold text-[#161758]">{{ count($item['video_challenges']) }}</span>
+                                                <span class="block text-xs text-gray-400">submission</span>
+                                            @else
+                                                <span class="text-gray-400">Belum submit</span>
+                                            @endif
+                                        </td>
                                         <td class="px-4 py-3 text-center font-bold text-[#161758]">
                                             {{ number_format($item['total_score'], 1) }}
                                         </td>
@@ -142,7 +173,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="9" class="px-4 py-6 text-center text-gray-400">Belum ada data untuk bulan ini</td>
+                                        <td colspan="10" class="px-4 py-6 text-center text-gray-400">Belum ada data untuk bulan ini</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -360,6 +391,37 @@
                         <p class="text-sm text-gray-400">Belum mengikuti quiz English Today.</p>
                     @endif
                 </div>
+            </div>
+
+            <!-- Kartu Video Challenge -->
+            <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100 mt-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-[#161758]">🎬 Video Challenge</h3>
+                    <span class="text-2xl font-bold text-[#00a2e9]">{{ count($item['video_challenges']) }}</span>
+                </div>
+
+                @if (count($item['video_challenges']) > 0)
+                    <div class="space-y-3">
+                        @foreach ($item['video_challenges'] as $submission)
+                            <div class="flex flex-wrap items-center justify-between gap-2 border border-gray-100 rounded-lg p-3">
+                                <div class="min-w-0">
+                                    <p class="font-medium text-[#161758] truncate">{{ $submission['challenge_title'] }}</p>
+                                    @if ($submission['notes'])
+                                        <p class="text-xs text-gray-500 truncate">{{ $submission['notes'] }}</p>
+                                    @endif
+                                </div>
+                                @if ($submission['link'])
+                                    <a href="{{ $submission['link'] }}" target="_blank" rel="noopener"
+                                        class="text-sm bg-[#00a2e9] text-white px-3 py-1.5 rounded-lg hover:bg-[#0089c7] transition-colors duration-200 whitespace-nowrap">
+                                        <i class="fas fa-play mr-1"></i> Lihat Video
+                                    </a>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="text-sm text-gray-400">Belum submit video challenge apapun.</p>
+                @endif
             </div>
 
             <!-- Daftar semua badge yang diperoleh -->

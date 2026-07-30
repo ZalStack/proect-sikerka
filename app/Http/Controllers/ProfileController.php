@@ -145,12 +145,16 @@ class ProfileController extends Controller
         $englishScores = $englishToday->getScoresByEmail();
         $englishSummary = $englishToday->getOverallSummary();
 
+        $videoSubmissions = $englishToday->getVideoSubmissionsByEmail();
+        $videoSummary = $englishToday->getVideoChallengeSummary();
+
         if ($user->isHr()) {
             // HR: tampilkan semua karyawan aktif dengan peringkat
             $karyawans = Karyawan::where('is_resigned', false)->get();
-            $data = $karyawans->map(function ($karyawan) use ($month, $year, $englishScores) {
+            $data = $karyawans->map(function ($karyawan) use ($month, $year, $englishScores, $videoSubmissions) {
                 $achievement = $this->getKaryawanAchievement($karyawan, $month, $year);
                 $achievement['english_today'] = $this->matchEnglishTodayScore($karyawan, $englishScores);
+                $achievement['video_challenges'] = $this->matchVideoSubmissions($karyawan, $videoSubmissions);
                 return $achievement;
             })->sortByDesc('total_score')->values();
 
@@ -171,13 +175,14 @@ class ProfileController extends Controller
                 ]
             );
 
-            return view('profile.achievement', compact('paginatedData', 'user', 'month', 'year', 'englishSummary'));
+            return view('profile.achievement', compact('paginatedData', 'user', 'month', 'year', 'englishSummary', 'videoSummary'));
         } else {
             // Karyawan biasa: hanya data sendiri
             $achievement = $this->getKaryawanAchievement($user, $month, $year);
             $achievement['english_today'] = $this->matchEnglishTodayScore($user, $englishScores);
+            $achievement['video_challenges'] = $this->matchVideoSubmissions($user, $videoSubmissions);
             $data = collect([$achievement]);
-            return view('profile.achievement', compact('data', 'user', 'month', 'year', 'englishSummary'));
+            return view('profile.achievement', compact('data', 'user', 'month', 'year', 'englishSummary', 'videoSummary'));
         }
     }
 
@@ -200,6 +205,20 @@ class ProfileController extends Controller
         }
 
         return $result;
+    }
+
+    /**
+     * Cocokkan data karyawan lokal dengan submission video challenge berdasarkan email.
+     * Return array kosong kalau karyawan belum pernah submit video challenge apapun.
+     */
+    private function matchVideoSubmissions($karyawan, array $videoSubmissions): array
+    {
+        $email = strtolower(trim($karyawan->email ?? ''));
+        if (!$email) {
+            return [];
+        }
+
+        return $videoSubmissions[$email] ?? [];
     }
 
     /**
