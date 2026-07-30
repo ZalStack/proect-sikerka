@@ -20,15 +20,9 @@ class KhatamanController extends Controller
         $month = Carbon::now()->month;
         $year = Carbon::now()->year;
 
-        $todayAbsensi = KhatamanAbsensi::where('karyawan_id', $user->id)
-            ->whereDate('tanggal', $today)
-            ->first();
+        $todayAbsensi = KhatamanAbsensi::where('karyawan_id', $user->id)->whereDate('tanggal', $today)->first();
 
-        $absensiBulanIni = KhatamanAbsensi::where('karyawan_id', $user->id)
-            ->whereMonth('tanggal', $month)
-            ->whereYear('tanggal', $year)
-            ->orderBy('tanggal', 'desc')
-            ->get();
+        $absensiBulanIni = KhatamanAbsensi::where('karyawan_id', $user->id)->whereMonth('tanggal', $month)->whereYear('tanggal', $year)->orderBy('tanggal', 'desc')->get();
 
         $statistik = [
             'total' => $absensiBulanIni->count(),
@@ -44,15 +38,7 @@ class KhatamanController extends Controller
             return $item->tanggal->format('Y-m-d');
         });
 
-        return view('karyawan.khataman.dashboard', compact(
-            'todayAbsensi',
-            'absensi',
-            'statistik',
-            'activeDays',
-            'isActiveDay',
-            'month',
-            'year'
-        ));
+        return view('karyawan.khataman.dashboard', compact('todayAbsensi', 'absensi', 'statistik', 'activeDays', 'isActiveDay', 'month', 'year'));
     }
 
     // Check-in (tanpa batas jam, hanya validasi kode)
@@ -68,51 +54,63 @@ class KhatamanController extends Controller
 
         // Hanya validasi hari aktif (Kamis)
         if (!KhatamanAbsensi::isActiveDay()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Khataman hanya dilaksanakan pada hari Kamis!'
-            ], 400);
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Khataman hanya dilaksanakan pada hari Kamis!',
+                ],
+                400,
+            );
         }
 
         if (KhatamanAbsensi::hasCheckedInToday($user->id)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Anda sudah melakukan absen Khataman hari ini!'
-            ], 400);
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Anda sudah melakukan absen Khataman hari ini!',
+                ],
+                400,
+            );
         }
 
         $kodeBenar = KhatamanKode::getKodeForDate($today);
         if (!$kodeBenar) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Kode kegiatan belum dibuat oleh HR untuk hari ini.'
-            ], 400);
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Kode kegiatan belum dibuat oleh HR untuk hari ini.',
+                ],
+                400,
+            );
         }
 
         $kodeInput = $request->input('kode_absensi');
         if (strtoupper($kodeInput) !== strtoupper($kodeBenar)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Kode kegiatan yang Anda masukkan salah!'
-            ], 400);
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Kode kegiatan yang Anda masukkan salah!',
+                ],
+                400,
+            );
         }
 
         $absensi = KhatamanAbsensi::create([
             'karyawan_id' => $user->id,
-            'tanggal'     => $today,
-            'check_in'    => $now,
-            'kode_input'  => $kodeInput,
-            'status'      => 'Hadir',
-            'ip_address'  => $request->ip(),
+            'tanggal' => $today,
+            'check_in' => $now,
+            'kode_input' => $kodeInput,
+            'status' => 'Hadir',
+            'ip_address' => $request->ip(),
         ]);
 
         return response()->json([
             'success' => true,
             'message' => '✅ Absen Khataman berhasil!',
             'data' => [
-                'waktu'   => $now->format('H:i:s'),
+                'waktu' => $now->format('H:i:s'),
                 'tanggal' => $now->format('d-m-Y'),
-            ]
+            ],
         ]);
     }
 
@@ -123,9 +121,9 @@ class KhatamanController extends Controller
         $now = Carbon::now();
 
         return response()->json([
-            'success'       => true,
-            'server_time'   => $now->format('Y-m-d H:i:s'),
-            'timestamp_ms'  => $now->valueOf(), // epoch ms, dipakai JS
+            'success' => true,
+            'server_time' => $now->format('Y-m-d H:i:s'),
+            'timestamp_ms' => $now->valueOf(), // epoch ms, dipakai JS
             'is_active_day' => KhatamanAbsensi::isActiveDay(),
             'has_checked_in' => Auth::check() ? KhatamanAbsensi::hasCheckedInToday(Auth::id()) : null,
         ]);
@@ -137,15 +135,13 @@ class KhatamanController extends Controller
         $query = KhatamanAbsensi::with('karyawan');
 
         if ($request->filled('month') && $request->filled('year')) {
-            $query->whereMonth('tanggal', $request->month)
-                  ->whereYear('tanggal', $request->year);
+            $query->whereMonth('tanggal', $request->month)->whereYear('tanggal', $request->year);
         } else {
             $request->merge([
                 'month' => date('m'),
-                'year' => date('Y')
+                'year' => date('Y'),
             ]);
-            $query->whereMonth('tanggal', date('m'))
-                  ->whereYear('tanggal', date('Y'));
+            $query->whereMonth('tanggal', date('m'))->whereYear('tanggal', date('Y'));
         }
 
         if ($request->filled('karyawan_id')) {
@@ -173,7 +169,6 @@ class KhatamanController extends Controller
         return view('hr.khataman.detail', compact('absensi'));
     }
 
-    // HR: Generate kode (hanya pada hari Kamis)
     public function generateKode(Request $request)
     {
         $user = Auth::user();
@@ -188,14 +183,22 @@ class KhatamanController extends Controller
             return redirect()->back()->with('error', 'Kode untuk hari ini sudah dibuat.');
         }
 
-        $kode = KhatamanKode::generateRandomKode();
+        // Validasi input kode
+        $request->validate([
+            'kode' => 'required|string|max:20',
+        ]);
+
+        $kode = strtoupper(trim($request->kode)); // opsional uppercase
+
         KhatamanKode::create([
-            'tanggal'    => $today,
-            'kode'       => $kode,
+            'tanggal' => $today,
+            'kode' => $kode,
             'created_by' => $user->id,
         ]);
 
-        return redirect()->route('hr.khataman.index')->with('success', "Kode Khataman berhasil dibuat: <strong>{$kode}</strong>");
+        return redirect()
+            ->route('hr.khataman.index')
+            ->with('success', "Kode Khataman berhasil dibuat: <strong>{$kode}</strong>");
     }
 
     // Helpers: Hitung jumlah hari aktif (default: Kamis) dalam bulan

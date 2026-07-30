@@ -22,11 +22,6 @@ class KhatamanKode extends Model
         'tanggal' => 'date',
     ];
 
-    public static function generateRandomKode(): string
-    {
-        return strtoupper(substr(md5(uniqid()), 0, 6));
-    }
-
     public static function hasKodeForDate($tanggal): bool
     {
         return self::whereDate('tanggal', $tanggal)->exists();
