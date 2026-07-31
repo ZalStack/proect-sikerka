@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class AbsensiController extends Controller
 {
@@ -404,6 +405,7 @@ class AbsensiController extends Controller
         // Filter bulan/tahun
         if ($request->filled('month') && $request->filled('year')) {
             $query->whereMonth('tanggal', $request->month)->whereYear('tanggal', $request->year);
+
             $hasFilter = true;
         }
 
@@ -414,38 +416,38 @@ class AbsensiController extends Controller
         }
 
         // Filter status
-        if ($request->filled('status') && $request->status !== 'semua') {
+        if ($request->filled('status') && $request->status != 'semua') {
             $query->where('status', $request->status);
             $hasFilter = true;
         }
 
-        // --- Pagination ---
-        $perPage = 15;
-        $page = (int) $request->get('page', 1);
+        /*
+    |--------------------------------------------------------------------------
+    | Pagination
+    |--------------------------------------------------------------------------
+    */
+
+        $perPage = 10;
+        $page = LengthAwarePaginator::resolveCurrentPage();
 
         if (!$hasFilter) {
-            // Tidak ada filter → tampilkan kosong
             $displayRows = collect();
             $total = 0;
         } else {
-            // Ambil semua data yang sesuai filter (urutkan tanggal)
-            $allMatching = $query->orderBy('tanggal', 'asc')->get();
-            // Gabungkan data Perjalanan Dinas yang berturut-turut
+            $allMatching = $query->orderBy('tanggal', 'desc')->get();
+
             $displayRows = Absensi::mergeConsecutivePerjalananDinas($allMatching);
+
             $total = $displayRows->count();
         }
 
-        // Potong sesuai halaman
-        $paginatedItems = $displayRows->forPage($page, $perPage)->values();
+        $results = $displayRows->slice(($page - 1) * $perPage, $perPage)->values();
 
-        // Buat instance LengthAwarePaginator dengan membawa semua query string
-        $absensis = new \Illuminate\Pagination\LengthAwarePaginator($paginatedItems, $total, $perPage, $page, [
-            'path' => $request->url(),
-            'query' => $request->query(), // otomatis bawa semua filter
-            'pageName' => 'page',
+        $absensis = new LengthAwarePaginator($results, $total, $perPage, $page, [
+            'path' => request()->url(),
+            'query' => request()->query(),
         ]);
 
-        // Data chart (hanya jika ada filter)
         if ($hasFilter) {
             $chartData = $this->getChartData($request);
         } else {
