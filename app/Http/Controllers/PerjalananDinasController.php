@@ -37,15 +37,13 @@ class PerjalananDinasController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('judul', 'like', "%{$search}%")
-                  ->orWhereHas('karyawan', function ($sub) use ($search) {
-                      $sub->where('nama_lengkap', 'like', "%{$search}%")
-                          ->orWhere('kode_pegawai', 'like', "%{$search}%");
-                  });
+                $q->where('judul', 'like', "%{$search}%")->orWhereHas('karyawan', function ($sub) use ($search) {
+                    $sub->where('nama_lengkap', 'like', "%{$search}%")->orWhere('kode_pegawai', 'like', "%{$search}%");
+                });
             });
         }
 
-        $perjalananDinas = $query->orderBy('created_at', 'desc')->paginate(15);
+        $perjalananDinas = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
 
         $stats = [
             'total' => PerjalananDinas::count(),
@@ -72,23 +70,23 @@ class PerjalananDinasController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'judul' => 'required|string|max:200',
-            'agenda' => 'required|string',
-            'tanggal_mulai' => [
-                'required',
-                'date',
-                'after_or_equal:' . now()->addDay()->toDateString(),
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'judul' => 'required|string|max:200',
+                'agenda' => 'required|string',
+                'tanggal_mulai' => ['required', 'date', 'after_or_equal:' . now()->addDay()->toDateString()],
+                'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
+                'surat_tugas' => 'required|file|mimes:pdf|max:2048',
             ],
-            'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
-            'surat_tugas' => 'required|file|mimes:pdf|max:2048',
-        ], [
-            'surat_tugas.required' => 'Surat tugas wajib diupload.',
-            'surat_tugas.max' => 'Ukuran file surat tugas maksimal 2 MB.',
-            'surat_tugas.mimes' => 'File surat tugas harus berformat PDF.',
-            'tanggal_mulai.after_or_equal' => 'Tanggal mulai minimal 1 hari dari hari ini.',
-            'tanggal_selesai.after_or_equal' => 'Tanggal selesai harus setelah atau sama dengan tanggal mulai.',
-        ]);
+            [
+                'surat_tugas.required' => 'Surat tugas wajib diupload.',
+                'surat_tugas.max' => 'Ukuran file surat tugas maksimal 2 MB.',
+                'surat_tugas.mimes' => 'File surat tugas harus berformat PDF.',
+                'tanggal_mulai.after_or_equal' => 'Tanggal mulai minimal 1 hari dari hari ini.',
+                'tanggal_selesai.after_or_equal' => 'Tanggal selesai harus setelah atau sama dengan tanggal mulai.',
+            ],
+        );
 
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
@@ -104,7 +102,10 @@ class PerjalananDinasController extends Controller
         if ($request->hasFile('surat_tugas')) {
             $file = $request->file('surat_tugas');
             if ($file->getSize() > 2 * 1024 * 1024) {
-                return redirect()->back()->withErrors(['surat_tugas' => 'Ukuran file maksimal 2 MB.'])->withInput();
+                return redirect()
+                    ->back()
+                    ->withErrors(['surat_tugas' => 'Ukuran file maksimal 2 MB.'])
+                    ->withInput();
             }
             $filename = time() . '_' . $file->getClientOriginalName();
             $path = $file->storeAs('surat_tugas', $filename, 'public');
@@ -113,8 +114,7 @@ class PerjalananDinasController extends Controller
 
         PerjalananDinas::create($data);
 
-        return redirect()->route('karyawan.perjalanan-dinas.index')
-            ->with('success', 'Pengajuan perjalanan dinas berhasil dikirim dan menunggu persetujuan HRD.');
+        return redirect()->route('karyawan.perjalanan-dinas.index')->with('success', 'Pengajuan perjalanan dinas berhasil dikirim dan menunggu persetujuan HRD.');
     }
 
     /**
@@ -122,9 +122,7 @@ class PerjalananDinasController extends Controller
      */
     public function edit($id)
     {
-        $perjalananDinas = PerjalananDinas::where('karyawan_id', Auth::id())
-            ->where('status', 'pending')
-            ->findOrFail($id);
+        $perjalananDinas = PerjalananDinas::where('karyawan_id', Auth::id())->where('status', 'pending')->findOrFail($id);
 
         return view('karyawan.perjalanan-dinas.edit', compact('perjalananDinas'));
     }
@@ -134,9 +132,7 @@ class PerjalananDinasController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $perjalananDinas = PerjalananDinas::where('karyawan_id', Auth::id())
-            ->where('status', 'pending')
-            ->findOrFail($id);
+        $perjalananDinas = PerjalananDinas::where('karyawan_id', Auth::id())->where('status', 'pending')->findOrFail($id);
 
         $validator = Validator::make($request->all(), [
             'judul' => 'required|string|max:200',
@@ -159,7 +155,10 @@ class PerjalananDinasController extends Controller
             }
             $file = $request->file('surat_tugas');
             if ($file->getSize() > 2 * 1024 * 1024) {
-                return redirect()->back()->withErrors(['surat_tugas' => 'Ukuran file maksimal 2 MB.'])->withInput();
+                return redirect()
+                    ->back()
+                    ->withErrors(['surat_tugas' => 'Ukuran file maksimal 2 MB.'])
+                    ->withInput();
             }
             $filename = time() . '_' . $file->getClientOriginalName();
             $path = $file->storeAs('surat_tugas', $filename, 'public');
@@ -168,8 +167,7 @@ class PerjalananDinasController extends Controller
 
         $perjalananDinas->update($data);
 
-        return redirect()->route('karyawan.perjalanan-dinas.index')
-            ->with('success', 'Pengajuan perjalanan dinas berhasil diperbarui.');
+        return redirect()->route('karyawan.perjalanan-dinas.index')->with('success', 'Pengajuan perjalanan dinas berhasil diperbarui.');
     }
 
     /**
@@ -193,8 +191,7 @@ class PerjalananDinasController extends Controller
         // Rekap ke absensi
         $this->rekapKeAbsensi($perjalananDinas);
 
-        return redirect()->route('hr.perjalanan-dinas.index')
-            ->with('success', 'Pengajuan perjalanan dinas berhasil disetujui dan telah direkap ke absensi.');
+        return redirect()->route('hr.perjalanan-dinas.index')->with('success', 'Pengajuan perjalanan dinas berhasil disetujui dan telah direkap ke absensi.');
     }
 
     /**
@@ -218,8 +215,7 @@ class PerjalananDinasController extends Controller
         $perjalananDinas->approved_by = null;
         $perjalananDinas->save();
 
-        return redirect()->route('hr.perjalanan-dinas.index')
-            ->with('success', 'Pengajuan perjalanan dinas ditolak.');
+        return redirect()->route('hr.perjalanan-dinas.index')->with('success', 'Pengajuan perjalanan dinas ditolak.');
     }
 
     /**
@@ -241,8 +237,7 @@ class PerjalananDinasController extends Controller
 
         $perjalananDinas->delete();
 
-        return redirect()->route('hr.perjalanan-dinas.index')
-            ->with('success', 'Data perjalanan dinas berhasil dihapus.');
+        return redirect()->route('hr.perjalanan-dinas.index')->with('success', 'Data perjalanan dinas berhasil dihapus.');
     }
 
     /**
@@ -259,8 +254,7 @@ class PerjalananDinasController extends Controller
         $perjalananDinas->status = 'selesai';
         $perjalananDinas->save();
 
-        return redirect()->route('hr.perjalanan-dinas.index')
-            ->with('success', 'Perjalanan dinas ditandai sebagai selesai.');
+        return redirect()->route('hr.perjalanan-dinas.index')->with('success', 'Perjalanan dinas ditandai sebagai selesai.');
     }
 
     /**
@@ -340,8 +334,7 @@ class PerjalananDinasController extends Controller
         $perjalananDinas->catatan_hr = $request->catatan_hr;
         $perjalananDinas->save();
 
-        return redirect()->route('hr.perjalanan-dinas.show', $perjalananDinas->id)
-            ->with('success', 'Catatan HR berhasil diperbarui.');
+        return redirect()->route('hr.perjalanan-dinas.show', $perjalananDinas->id)->with('success', 'Catatan HR berhasil diperbarui.');
     }
 
     /**
@@ -357,9 +350,7 @@ class PerjalananDinasController extends Controller
         for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
             $tanggal = $date->format('Y-m-d');
 
-            $absensi = Absensi::where('karyawan_id', $karyawanId)
-                ->whereDate('tanggal', $tanggal)
-                ->first();
+            $absensi = Absensi::where('karyawan_id', $karyawanId)->whereDate('tanggal', $tanggal)->first();
 
             if (!$absensi) {
                 Absensi::create([

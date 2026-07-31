@@ -2,110 +2,93 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="flex min-h-screen">
+    <div class="flex min-h-screen bg-gray-50">
         @include('layouts.sidebar')
         <div class="flex-1 transition-all duration-300 md:ml-64">
-            <div class="p-3 sm:p-6">
+            <div class="p-4 sm:p-6 lg:p-8">
                 <!-- Header -->
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
                     <div>
-                        <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">Manajemen Absensi</h1>
-                        <p class="text-sm text-[#27438D] mt-1">Rekap kehadiran seluruh karyawan</p>
+                        <h1 class="text-2xl sm:text-3xl font-bold text-[#161758] tracking-tight">Manajemen Absensi</h1>
+                        <p class="text-sm text-gray-500 mt-1">Rekap kehadiran seluruh karyawan</p>
                     </div>
                     <a href="{{ route('hr.absensi.export', request()->query()) }}"
-                        class="w-full sm:w-auto text-center px-4 py-2 bg-[#2E7D3E] text-white rounded-lg hover:bg-[#256b34] transition text-sm flex items-center justify-center gap-2">
+                       class="inline-flex items-center justify-center px-5 py-2.5 bg-[#2E7D3E] text-white rounded-xl hover:bg-[#256b34] transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                         </svg>
                         <span>Export CSV</span>
                     </a>
                 </div>
 
                 <!-- Stats Cards -->
-                @if (isset($chartData))
-                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-3 mb-6">
-                        <div class="bg-white rounded-xl shadow-sm p-3 border-l-4 border-[#161758]">
-                            <p class="text-[10px] sm:text-xs text-gray-500">Total</p>
-                            <p class="text-lg sm:text-xl font-bold text-[#161758]">{{ $chartData['total'] }}</p>
-                        </div>
-                        <div class="bg-white rounded-xl shadow-sm p-3 border-l-4 border-[#2E7D3E]">
-                            <p class="text-[10px] sm:text-xs text-gray-500">Hadir</p>
-                            <p class="text-lg sm:text-xl font-bold text-[#2E7D3E]">{{ $chartData['hadir'] }}</p>
-                        </div>
-                        <div class="bg-white rounded-xl shadow-sm p-3 border-l-4 border-[#FCC626]">
-                            <p class="text-[10px] sm:text-xs text-gray-500">Izin</p>
-                            <p class="text-lg sm:text-xl font-bold text-[#b58a00]">{{ $chartData['izin'] }}</p>
-                        </div>
-                        <div class="bg-white rounded-xl shadow-sm p-3 border-l-4 border-[#00a2e9]">
-                            <p class="text-[10px] sm:text-xs text-gray-500">Sakit</p>
-                            <p class="text-lg sm:text-xl font-bold text-[#00a2e9]">{{ $chartData['sakit'] }}</p>
-                        </div>
-                        <div class="bg-white rounded-xl shadow-sm p-3 border-l-4 border-[#ec1d1d]">
-                            <p class="text-[10px] sm:text-xs text-gray-500">Alpha</p>
-                            <p class="text-lg sm:text-xl font-bold text-[#ec1d1d]">{{ $chartData['alpha'] }}</p>
-                        </div>
-                        <div class="bg-white rounded-xl shadow-sm p-3 border-l-4 border-purple-600">
-                            <p class="text-[10px] sm:text-xs text-gray-500">Dinas</p>
-                            <p class="text-lg sm:text-xl font-bold text-purple-600">{{ $chartData['perjalanan_dinas'] }}</p>
-                        </div>
-                        <div class="bg-white rounded-xl shadow-sm p-3 border-l-4 border-gray-400 col-span-2 sm:col-span-1">
-                            <p class="text-[10px] sm:text-xs text-gray-500">Lokasi Invalid</p>
-                            <p class="text-lg sm:text-xl font-bold text-gray-600">{{ $chartData['invalid_location'] }}</p>
-                        </div>
+                @if(isset($chartData))
+                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4 mb-8">
+                        @php
+                            $cards = [
+                                ['label' => 'Total', 'value' => $chartData['total'], 'color' => 'border-[#161758]', 'text' => 'text-[#161758]'],
+                                ['label' => 'Hadir', 'value' => $chartData['hadir'], 'color' => 'border-[#2E7D3E]', 'text' => 'text-[#2E7D3E]'],
+                                ['label' => 'Izin', 'value' => $chartData['izin'], 'color' => 'border-[#FCC626]', 'text' => 'text-[#b58a00]'],
+                                ['label' => 'Sakit', 'value' => $chartData['sakit'], 'color' => 'border-[#00a2e9]', 'text' => 'text-[#00a2e9]'],
+                                ['label' => 'Alpha', 'value' => $chartData['alpha'], 'color' => 'border-[#ec1d1d]', 'text' => 'text-[#ec1d1d]'],
+                                ['label' => 'Dinas', 'value' => $chartData['perjalanan_dinas'], 'color' => 'border-purple-600', 'text' => 'text-purple-600'],
+                                ['label' => 'Lokasi Invalid', 'value' => $chartData['invalid_location'], 'color' => 'border-gray-400', 'text' => 'text-gray-600'],
+                            ];
+                        @endphp
+                        @foreach($cards as $card)
+                            <div class="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow p-4 border-l-4 {{ $card['color'] }}">
+                                <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">{{ $card['label'] }}</p>
+                                <p class="text-xl font-bold {{ $card['text'] }} mt-1">{{ $card['value'] }}</p>
+                            </div>
+                        @endforeach
                     </div>
                 @endif
 
                 <!-- Filter -->
-                <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
+                <div class="bg-white rounded-2xl shadow-sm p-5 sm:p-6 mb-8">
                     <form action="{{ route('hr.absensi.index') }}" method="GET"
-                        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+                          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
                         <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Karyawan</label>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Karyawan</label>
                             <select name="karyawan_id"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent">
+                                    class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent transition">
                                 <option value="">Semua Karyawan</option>
-                                @foreach ($karyawans as $k)
-                                    <option value="{{ $k->id }}"
-                                        {{ request('karyawan_id') == $k->id ? 'selected' : '' }}>
+                                @foreach($karyawans as $k)
+                                    <option value="{{ $k->id }}" {{ request('karyawan_id') == $k->id ? 'selected' : '' }}>
                                         {{ $k->nama_lengkap }}
                                     </option>
                                 @endforeach
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Status</label>
                             <select name="status"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent bg-white">
-                                <option value="semua"
-                                    {{ !request('status') || request('status') == 'semua' ? 'selected' : '' }}>Semua Status
-                                </option>
+                                    class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent transition">
+                                <option value="semua" {{ !request('status') || request('status') == 'semua' ? 'selected' : '' }}>Semua Status</option>
                                 <option value="Hadir" {{ request('status') == 'Hadir' ? 'selected' : '' }}>Hadir</option>
                                 <option value="Izin" {{ request('status') == 'Izin' ? 'selected' : '' }}>Izin</option>
                                 <option value="Sakit" {{ request('status') == 'Sakit' ? 'selected' : '' }}>Sakit</option>
                                 <option value="Alpha" {{ request('status') == 'Alpha' ? 'selected' : '' }}>Alpha</option>
-                                <option value="Perjalanan Dinas"
-                                    {{ request('status') == 'Perjalanan Dinas' ? 'selected' : '' }}>Perjalanan Dinas
-                                </option>
+                                <option value="Perjalanan Dinas" {{ request('status') == 'Perjalanan Dinas' ? 'selected' : '' }}>Perjalanan Dinas</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Dari Tanggal</label>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Dari Tanggal</label>
                             <input type="date" name="start_date" value="{{ request('start_date') }}"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent">
+                                   class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent transition">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Sampai Tanggal</label>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Sampai Tanggal</label>
                             <input type="date" name="end_date" value="{{ request('end_date') }}"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent">
+                                   class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent transition">
                         </div>
                         <div class="flex items-end gap-2 sm:col-span-2 lg:col-span-2">
                             <button type="submit"
-                                class="flex-1 px-4 py-2 bg-[#00a2e9] text-white rounded-lg hover:bg-[#0088c4] transition text-sm">
+                                    class="flex-1 px-4 py-2.5 bg-[#00a2e9] text-white rounded-xl hover:bg-[#0088c4] transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md">
                                 Filter
                             </button>
                             <a href="{{ route('hr.absensi.index') }}"
-                                class="flex-1 text-center px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm">
+                               class="flex-1 text-center px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200 text-sm font-medium">
                                 Reset
                             </a>
                         </div>
@@ -113,76 +96,62 @@
                 </div>
 
                 <!-- Table -->
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                    <div class="overflow-x-auto -mx-3 sm:mx-0">
-                        <div class="inline-block min-w-full align-middle">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th
-                                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Karyawan</th>
-                                        <th
-                                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Tanggal / Periode</th>
-                                        <th
-                                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
-                                            Check-in / out</th>
-                                        <th
-                                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Status</th>
-                                        <th
-                                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
-                                            Lokasi</th>
-                                        <th
-                                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
-                                            Jam Kerja</th>
-                                        <th
-                                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    @forelse($absensis as $item)
-                                        <tr
-                                            class="hover:bg-gray-50 transition {{ $item->is_suspicious ? 'bg-red-50/50' : '' }}">
-                                            <td class="px-4 py-3">
-                                                <p class="text-sm font-medium text-gray-900">
-                                                    {{ $item->karyawan->nama_lengkap ?? '-' }}</p>
-                                                <p class="text-xs text-gray-500">{{ $item->karyawan->kode_pegawai ?? '-' }}
-                                                </p>
-                                            </td>
-                                            <td class="px-4 py-3">
-                                                @if ($item->is_periode)
-                                                    <p class="text-sm text-gray-900 font-medium">
+                <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-100">
+                            <thead class="bg-gray-50/80">
+                                <tr>
+                                    <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Karyawan</th>
+                                    <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tanggal / Periode</th>
+                                    <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden sm:table-cell">Check-in / out</th>
+                                    <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Lokasi</th>
+                                    <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Jam Kerja</th>
+                                    <th scope="col" class="px-4 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-100">
+                                @forelse($absensis as $item)
+                                    <tr class="hover:bg-gray-50/70 transition-colors {{ $item->is_suspicious ? 'bg-red-50/30' : '' }}">
+                                        <td class="px-4 py-3.5">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-900">{{ $item->karyawan->nama_lengkap ?? '-' }}</p>
+                                                <p class="text-xs text-gray-500">{{ $item->karyawan->kode_pegawai ?? '-' }}</p>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3.5">
+                                            @if($item->is_periode)
+                                                <div>
+                                                    <p class="text-sm font-medium text-gray-900">
                                                         {{ $item->tanggal_mulai_display->format('d/m/Y') }}
-                                                        <span class="text-gray-400">s/d</span>
+                                                        <span class="text-gray-400">—</span>
                                                         {{ $item->tanggal_selesai_display->format('d/m/Y') }}
                                                     </p>
-                                                    <span
-                                                        class="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-100 text-purple-700">
+                                                    <span class="inline-flex items-center mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-purple-100 text-purple-700">
                                                         Periode • {{ $item->jumlah_hari }} hari
                                                     </span>
-                                                @else
-                                                    <p class="text-sm text-gray-900">
-                                                        {{ $item->tanggal_mulai_display->format('d/m/Y') }}</p>
-                                                @endif
-                                                <p class="text-xs text-gray-400 sm:hidden mt-1">
-                                                    {{ $item->check_in ? \Carbon\Carbon::parse($item->check_in)->format('H:i') : '-' }}
-                                                    /
-                                                    {{ $item->check_out ? \Carbon\Carbon::parse($item->check_out)->format('H:i') : '-' }}
-                                                </p>
-                                            </td>
-                                            <td class="px-4 py-3 hidden sm:table-cell">
-                                                <p class="text-sm text-gray-900">
-                                                    {{ $item->check_in ? \Carbon\Carbon::parse($item->check_in)->format('H:i') : '-' }}
-                                                    <span class="text-gray-400">/</span>
-                                                    {{ $item->check_out ? \Carbon\Carbon::parse($item->check_out)->format('H:i') : '-' }}
-                                                </p>
-                                            </td>
-                                            <td class="px-4 py-3">
+                                                </div>
+                                            @else
+                                                <p class="text-sm font-medium text-gray-900">{{ $item->tanggal_mulai_display->format('d/m/Y') }}</p>
+                                            @endif
+                                            <!-- Mobile: tampilkan jam check-in/out -->
+                                            <div class="text-xs text-gray-400 sm:hidden mt-1">
+                                                {{ $item->check_in ? \Carbon\Carbon::parse($item->check_in)->format('H:i') : '-' }}
+                                                /
+                                                {{ $item->check_out ? \Carbon\Carbon::parse($item->check_out)->format('H:i') : '-' }}
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3.5 hidden sm:table-cell">
+                                            <p class="text-sm text-gray-700">
+                                                {{ $item->check_in ? \Carbon\Carbon::parse($item->check_in)->format('H:i') : '-' }}
+                                                <span class="text-gray-300">/</span>
+                                                {{ $item->check_out ? \Carbon\Carbon::parse($item->check_out)->format('H:i') : '-' }}
+                                            </p>
+                                        </td>
+                                        <td class="px-4 py-3.5">
+                                            <div>
                                                 @php
-                                                    $statusClass = match ($item->status) {
+                                                    $statusClass = match($item->status) {
                                                         'Hadir' => 'bg-[#2E7D3E] text-white',
                                                         'Izin' => 'bg-[#FCC626] text-[#1B1B1B]',
                                                         'Sakit' => 'bg-[#00a2e9] text-white',
@@ -191,117 +160,125 @@
                                                         default => 'bg-gray-200 text-gray-800',
                                                     };
                                                 @endphp
-                                                <span
-                                                    class="px-2 py-1 rounded-full text-[11px] font-medium {{ $statusClass }}">
+                                                <span class="inline-block px-2.5 py-1 rounded-full text-xs font-semibold {{ $statusClass }}">
                                                     {{ $item->status }}
                                                 </span>
-                                                @if ($item->is_suspicious)
-                                                    <span class="block mt-1 text-[10px] font-semibold text-[#ec1d1d]"
-                                                        title="{{ $item->suspicious_reason }}">
+                                                @if($item->is_suspicious)
+                                                    <span class="block mt-1 text-[10px] font-medium text-[#ec1d1d]" title="{{ $item->suspicious_reason }}">
                                                         ⚠️ Mencurigakan
                                                     </span>
                                                 @endif
-                                            </td>
-                                            <td class="px-4 py-3 hidden md:table-cell">
-                                                @if ($item->status === 'Perjalanan Dinas')
-                                                    <span class="text-xs text-gray-400">-</span>
-                                                @elseif($item->is_valid_location)
-                                                    <span class="text-xs text-[#2E7D3E] font-medium">✅ Valid</span>
-                                                @else
-                                                    <span class="text-xs text-[#ec1d1d] font-medium">❌ Invalid</span>
-                                                @endif
-                                            </td>
-                                            <td class="px-4 py-3 hidden lg:table-cell">
-                                                <span class="text-sm text-gray-900">{{ $item->total_jam_kerja }}
-                                                    jam</span>
-                                            </td>
-                                            <td class="px-4 py-3">
-                                                <a href="{{ route('hr.absensi.detail', $item->id) }}"
-                                                    class="text-blue-600 hover:text-blue-800 text-sm whitespace-nowrap">
-                                                    Detail
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="7" class="px-4 py-8 text-center text-gray-500">
-                                                <p>Belum ada data absensi untuk filter ini.</p>
-                                            </td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3.5 hidden md:table-cell">
+                                            @if($item->status === 'Perjalanan Dinas')
+                                                <span class="text-xs text-gray-400">—</span>
+                                            @elseif($item->is_valid_location)
+                                                <span class="inline-flex items-center gap-1 text-xs font-medium text-[#2E7D3E]">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                                    </svg>
+                                                    Valid
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center gap-1 text-xs font-medium text-[#ec1d1d]">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                                    </svg>
+                                                    Invalid
+                                                </span>
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-3.5 hidden lg:table-cell">
+                                            <span class="text-sm font-medium text-gray-700">{{ $item->total_jam_kerja }} jam</span>
+                                        </td>
+                                        <td class="px-4 py-3.5 text-right">
+                                            <a href="{{ route('hr.absensi.detail', $item->id) }}"
+                                               class="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                </svg>
+                                                Detail
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="7" class="px-4 py-12 text-center">
+                                            <div class="flex flex-col items-center justify-center text-gray-400">
+                                                <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                                </svg>
+                                                <p class="text-sm font-medium">Belum ada data absensi untuk filter ini.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
                     </div>
 
                     <!-- Pagination -->
-                    @if ($absensis->hasPages())
-                        <div class="px-4 py-4 bg-white border-t">
-
+                    @if($absensis->hasPages())
+                        <div class="px-4 py-4 bg-gray-50/50 border-t border-gray-100">
                             <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-
                                 <div class="text-sm text-gray-600">
                                     Menampilkan
-                                    <span class="font-semibold">{{ $absensis->firstItem() }}</span>
-                                    -
-                                    <span class="font-semibold">{{ $absensis->lastItem() }}</span>
+                                    <span class="font-semibold text-gray-800">{{ $absensis->firstItem() }}</span>
+                                    –
+                                    <span class="font-semibold text-gray-800">{{ $absensis->lastItem() }}</span>
                                     dari
-                                    <span class="font-semibold">{{ $absensis->total() }}</span>
+                                    <span class="font-semibold text-gray-800">{{ $absensis->total() }}</span>
                                     data
                                 </div>
-
-                                <div class="flex items-center gap-2">
-
+                                <div class="flex items-center gap-1.5 flex-wrap justify-center">
                                     {{-- Previous --}}
-                                    @if ($absensis->onFirstPage())
-                                        <span class="px-4 py-2 rounded-lg bg-gray-200 text-gray-400 cursor-not-allowed">
-                                            ← Previous
+                                    @if($absensis->onFirstPage())
+                                        <span class="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-400 cursor-not-allowed text-sm font-medium">
+                                            ← Sebelumnya
                                         </span>
                                     @else
                                         <a href="{{ $absensis->previousPageUrl() }}"
-                                            class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition">
-                                            ← Previous
+                                           class="px-3 py-1.5 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-medium transition-colors shadow-sm hover:shadow">
+                                            ← Sebelumnya
                                         </a>
                                     @endif
 
-                                    {{-- Nomor Halaman --}}
-                                    @foreach ($absensis->getUrlRange(1, $absensis->lastPage()) as $page => $url)
-                                        @if ($page == $absensis->currentPage())
-                                            <span class="px-4 py-2 rounded-lg bg-[#161758] text-white">
+                                    {{-- Halaman --}}
+                                    @foreach($absensis->getUrlRange(1, $absensis->lastPage()) as $page => $url)
+                                        @if($page == $absensis->currentPage())
+                                            <span class="px-3.5 py-1.5 rounded-lg bg-[#161758] text-white text-sm font-semibold shadow-sm">
                                                 {{ $page }}
                                             </span>
                                         @else
                                             <a href="{{ $url }}"
-                                                class="px-4 py-2 rounded-lg border hover:bg-gray-100">
+                                               class="px-3.5 py-1.5 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-medium transition-colors shadow-sm hover:shadow">
                                                 {{ $page }}
                                             </a>
                                         @endif
                                     @endforeach
 
                                     {{-- Next --}}
-                                    @if ($absensis->hasMorePages())
+                                    @if($absensis->hasMorePages())
                                         <a href="{{ $absensis->nextPageUrl() }}"
-                                            class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition">
-                                            Next →
+                                           class="px-3 py-1.5 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-medium transition-colors shadow-sm hover:shadow">
+                                            Selanjutnya →
                                         </a>
                                     @else
-                                        <span class="px-4 py-2 rounded-lg bg-gray-200 text-gray-400 cursor-not-allowed">
-                                            Next →
+                                        <span class="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-400 cursor-not-allowed text-sm font-medium">
+                                            Selanjutnya →
                                         </span>
                                     @endif
-
                                 </div>
-
                             </div>
-
                         </div>
                     @endif
                 </div>
 
-                <p class="text-xs text-gray-400 mt-4">
-                    * Baris berlabel <span class="font-semibold text-purple-600">Periode</span> merupakan gabungan tampilan
-                    dari beberapa hari Perjalanan Dinas yang berturut-turut untuk karyawan yang sama. Data harian aslinya
-                    tetap tersimpan lengkap di database untuk keperluan rekap/audit.
+                <!-- Keterangan -->
+                <p class="text-xs text-gray-400 mt-6 leading-relaxed">
+                    * Baris berlabel <span class="font-semibold text-purple-600">Periode</span> merupakan gabungan tampilan dari beberapa hari Perjalanan Dinas yang berturut-turut untuk karyawan yang sama. Data harian aslinya tetap tersimpan lengkap di database untuk keperluan rekap/audit.
                 </p>
             </div>
         </div>
