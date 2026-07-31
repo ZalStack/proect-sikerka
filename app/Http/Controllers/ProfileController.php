@@ -150,10 +150,10 @@ class ProfileController extends Controller
         $videoSummary = $englishToday->getVideoChallengeSummary();
 
         // Pamer Suku: leaderboard volume terbaru + daftar kepala suku (global & PKA)
-        // dicocokkan lewat kode_pegawai, bukan email.
+        // dicocokkan lewat kode_pegawai, bukan email. Data rekap penuh & agregat
+        // lintas semua volume baru diambil di bawah, khusus untuk role HR (lebih berat).
         $pamerSukuLeaderboard = $pamerSuku->getLeaderboardByKodePegawai();
         $kepalaSukuMap = $pamerSuku->getKepalaSukuByKodePegawai();
-        $pamerSukuSummary = $pamerSuku->getOverallSummary();
 
         if ($user->isHr()) {
             // HR: tampilkan semua karyawan aktif dengan peringkat
@@ -183,7 +183,27 @@ class ProfileController extends Controller
                 ]
             );
 
-            return view('profile.achievement', compact('paginatedData', 'user', 'month', 'year', 'englishSummary', 'videoSummary', 'pamerSukuSummary'));
+            // Rekap Pamer Suku khusus HR: ringkasan, rata-rata waktu pengerjaan
+            // keseluruhan (semua volume), riwayat kepala suku, dan leaderboard per volume.
+            $pamerSukuSummary = $pamerSuku->getOverallSummary();
+            $pamerSukuAggregated = $pamerSuku->getAggregatedLeaderboardByKodePegawai();
+            $pamerSukuAllLeaderboards = $pamerSuku->getAllLeaderboards();
+            $pamerSukuKepalaSukuGlobal = $pamerSuku->getKepalaSuku('global');
+            $pamerSukuKepalaSukuPka = $pamerSuku->getKepalaSuku('pka');
+
+            return view('profile.achievement', compact(
+                'paginatedData',
+                'user',
+                'month',
+                'year',
+                'englishSummary',
+                'videoSummary',
+                'pamerSukuSummary',
+                'pamerSukuAggregated',
+                'pamerSukuAllLeaderboards',
+                'pamerSukuKepalaSukuGlobal',
+                'pamerSukuKepalaSukuPka'
+            ));
         } else {
             // Karyawan biasa: hanya data sendiri
             $achievement = $this->getKaryawanAchievement($user, $month, $year);
@@ -191,7 +211,7 @@ class ProfileController extends Controller
             $achievement['video_challenges'] = $this->matchVideoSubmissions($user, $videoSubmissions);
             $achievement['pamer_suku'] = $this->matchPamerSuku($user, $pamerSukuLeaderboard, $kepalaSukuMap);
             $data = collect([$achievement]);
-            return view('profile.achievement', compact('data', 'user', 'month', 'year', 'englishSummary', 'videoSummary', 'pamerSukuSummary'));
+            return view('profile.achievement', compact('data', 'user', 'month', 'year', 'englishSummary', 'videoSummary'));
         }
     }
 

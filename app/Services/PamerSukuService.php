@@ -272,6 +272,118 @@ class PamerSukuService
      * Ringkasan keseluruhan Pamer Suku lintas semua volume (dipakai untuk banner
      * ringkasan di halaman achievement HR).
      */
+    /**
+     * Ambil leaderboard (global & PKA) untuk SEMUA volume yang ada, dipetakan
+     * per volume. Dipakai untuk rekap lengkap per volume di halaman HR.
+     * Diurutkan dari volume terbaru ke terlama.
+     *
+     * Return:
+     * [
+     *   [
+     *       'volume_id' => 1, 'volume_number' => 1,
+     *       'global' => [ ['rank' => 1, 'kode_pegawai' => '...', 'player_name' => '...', 'total_time' => ..., ...], ... ],
+     *       'pka'    => [ ... ],
+     *   ],
+     *   ...
+     * ]
+     */
+    public function getAllLeaderboards(): array
+    {
+        return Cache::remember('pamer_suku_all_leaderboards', now()->addMinutes(15), function () {
+            $volumes = collect($this->getVolumes())->sortByDesc('volume_number')->values();
+
+            return $volumes->map(function ($volume) {
+                $global = $this->getLeaderboardGlobal($volume['id']);
+                $pka = $this->getLeaderboardPka($volume['id']);
+
+                return [
+                    'volume_id' => $volume['id'],
+                    'volume_number' => $volume['volume_number'],
+                    'global' => array_merge($global['top_3'] ?? [], $global['top_4_to_10'] ?? []),
+                    'pka' => array_merge($pka['top_3'] ?? [], $pka['top_4_to_10'] ?? []),
+                ];
+            })->values()->all();
+        });
+    }
+
+    /**
+     * Rekap keseluruhan: rata-rata waktu pengerjaan tiap peserta digabung dari
+     * SEMUA volume yang ada (bukan cuma volume terbaru), dipetakan per
+     * kode_pegawai, per board (global & pka). Diurutkan dari rata-rata waktu
+     * tercepat. Dipakai untuk tabel rekap keseluruhan Pamer Suku di halaman HR.
+     *
+     * Return:
+     * [
+     *   'global' => [
+     *       '3102021' => [
+     *           'player_name' => 'Nanda Lindawati', 'division' => 'LPS',
+     *           'total_volumes_followed' => 3,
+     *           'average_time' => 12.4,
+     *           'best_time' => 8, 'best_rank' => 1,
+     *       ],
+     *       ...
+     *   ],
+     *   'pka' => [ ... ],
+     * ]
+     */
+    public function getAggregatedLeaderboardByKodePegawai(): array
+    {
+        return Cache::remember('pamer_suku_aggregated_leaderboard', now()->addMinutes(15), function () {
+            $allLeaderboards = $this->getAllLeaderboards();
+
+            $aggregated = ['global' => [], 'pka' => []];
+
+            foreach ($allLeaderboards as $volume) {
+                foreach (['global', 'pka'] as $board) {
+                    foreach ($volume[$board] as $entry) {
+                        $kode = $entry['kode_pegawai'] ?? null;
+                        if (!$kode) {
+                            continue;
+                        }
+
+                        if (!isset($aggregated[$board][$kode])) {
+                            $aggregated[$board][$kode] = [
+                                'player_name' => $entry['player_name'] ?? $entry['display_name'] ?? null,
+                                'division' => $entry['division'] ?? null,
+                                'times' => [],
+                                'best_time' => null,
+                                'best_rank' => null,
+                            ];
+                        }
+
+                        $time = $entry['total_time'] ?? null;
+                        if ($time !== null) {
+                            $aggregated[$board][$kode]['times'][] = $time;
+
+                            if ($aggregated[$board][$kode]['best_time'] === null || $time < $aggregated[$board][$kode]['best_time']) {
+                                $aggregated[$board][$kode]['best_time'] = $time;
+                                $aggregated[$board][$kode]['best_rank'] = $entry['rank'] ?? null;
+                            }
+                        }
+                    }
+                }
+            }
+
+            foreach ($aggregated as $board => &$entries) {
+                foreach ($entries as $kode => &$entry) {
+                    $times = $entry['times'];
+                    $entry['total_volumes_followed'] = count($times);
+                    $entry['average_time'] = count($times) ? round(array_sum($times) / count($times), 1) : null;
+                    unset($entry['times']);
+                }
+                unset($entry);
+
+                // Urutkan dari rata-rata waktu pengerjaan tercepat
+                $entries = collect($entries)
+                    ->sortBy('average_time')
+                    ->all();
+            }
+            unset($entries);
+
+            return $aggregated;
+        });
+    }
+
     public function getOverallSummary(): array
     {
         $volumes = $this->getVolumes();

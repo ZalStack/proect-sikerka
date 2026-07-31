@@ -314,6 +314,155 @@
                     </div>
                 </div>
             </div>
+
+            <!-- ========== PAMER SUKU: REKAP KESELURUHAN (HR) ========== -->
+            <div class="mt-6 space-y-6">
+                <!-- Rata-rata waktu pengerjaan keseluruhan -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+                    <div class="p-6">
+                        <h2 class="text-xl font-bold text-[#161758] mb-1">⏱️ Rata-rata Waktu Pengerjaan Keseluruhan</h2>
+                        <p class="text-sm text-gray-500 mb-4">Digabung dari semua volume Pamer Suku yang ada, diurutkan dari yang tercepat.</p>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            @foreach (['global' => 'Leaderboard Global', 'pka' => 'Leaderboard PKA'] as $boardKey => $boardLabel)
+                                <div>
+                                    <h3 class="text-sm font-semibold text-[#27438D] uppercase mb-2">{{ $boardLabel }}</h3>
+                                    <div class="overflow-x-auto">
+                                        <table class="w-full text-sm text-left border-collapse">
+                                            <thead class="bg-[#f8faff] text-[#27438D] uppercase text-xs">
+                                                <tr>
+                                                    <th class="px-3 py-2 border-b">#</th>
+                                                    <th class="px-3 py-2 border-b">Nama</th>
+                                                    <th class="px-3 py-2 border-b">Divisi</th>
+                                                    <th class="px-3 py-2 border-b text-center">Volume Diikuti</th>
+                                                    <th class="px-3 py-2 border-b text-center">Rata-rata Waktu</th>
+                                                    <th class="px-3 py-2 border-b text-center">Waktu Tercepat</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @forelse (($pamerSukuAggregated[$boardKey] ?? []) as $kode => $agg)
+                                                    <tr class="border-b hover:bg-gray-50">
+                                                        <td class="px-3 py-2 font-bold text-center">{{ $loop->iteration }}</td>
+                                                        <td class="px-3 py-2 font-semibold">{{ $agg['player_name'] ?? $kode }}</td>
+                                                        <td class="px-3 py-2">{{ $agg['division'] ?? '-' }}</td>
+                                                        <td class="px-3 py-2 text-center">{{ $agg['total_volumes_followed'] }}</td>
+                                                        <td class="px-3 py-2 text-center font-semibold text-[#161758]">{{ $agg['average_time'] ?? '-' }}</td>
+                                                        <td class="px-3 py-2 text-center">
+                                                            {{ $agg['best_time'] ?? '-' }}
+                                                            @if ($agg['best_rank'])
+                                                                <span class="text-xs text-gray-400">(#{{ $agg['best_rank'] }})</span>
+                                                            @endif
+                                                        </td>
+                                                    </tr>
+                                                @empty
+                                                    <tr>
+                                                        <td colspan="6" class="px-3 py-4 text-center text-gray-400">Belum ada data</td>
+                                                    </tr>
+                                                @endforelse
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Riwayat Kepala Suku -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+                    <div class="p-6">
+                        <h2 class="text-xl font-bold text-[#161758] mb-4">👑 Riwayat Kepala Suku</h2>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            @foreach (['global' => ['Global', $pamerSukuKepalaSukuGlobal ?? []], 'pka' => ['PKA', $pamerSukuKepalaSukuPka ?? []]] as $boardKey => $boardData)
+                                @php [$boardLabel, $kepalaSukuList] = $boardData; @endphp
+                                <div>
+                                    <h3 class="text-sm font-semibold text-[#27438D] uppercase mb-2">{{ $boardLabel }}</h3>
+                                    <div class="space-y-2">
+                                        @forelse ($kepalaSukuList as $entry)
+                                            <div class="flex items-center gap-3 border border-gray-100 rounded-lg p-3">
+                                                @if (!empty($entry['flyer_path']))
+                                                    <img src="{{ $entry['flyer_path'] }}" alt="Flyer {{ $entry['period'] }}"
+                                                        class="w-12 h-12 object-cover rounded-lg flex-shrink-0">
+                                                @else
+                                                    <div class="w-12 h-12 rounded-lg bg-[#f8faff] flex items-center justify-center text-xl flex-shrink-0">👑</div>
+                                                @endif
+                                                <div class="min-w-0">
+                                                    <p class="font-medium text-[#161758]">{{ $entry['period'] ?? '-' }}</p>
+                                                    <p class="text-xs text-gray-500 truncate">
+                                                        {{ $entry['player_name'] ?? 'Belum sinkron nama peserta' }}
+                                                        @if (!empty($entry['division']))
+                                                            &middot; {{ $entry['division'] }}
+                                                        @endif
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        @empty
+                                            <p class="text-sm text-gray-400">Belum ada data kepala suku.</p>
+                                        @endforelse
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leaderboard per Volume -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+                    <div class="p-6">
+                        <h2 class="text-xl font-bold text-[#161758] mb-1">📋 Leaderboard per Volume</h2>
+                        <p class="text-sm text-gray-500 mb-4">Klik volume untuk melihat detail top 10 Global &amp; PKA.</p>
+
+                        <div class="space-y-2">
+                            @forelse (($pamerSukuAllLeaderboards ?? []) as $volume)
+                                <details class="border border-gray-100 rounded-lg group">
+                                    <summary class="cursor-pointer select-none px-4 py-3 font-semibold text-[#161758] hover:bg-[#f8faff] rounded-lg flex items-center justify-between">
+                                        <span>Volume #{{ $volume['volume_number'] }}</span>
+                                        <span class="text-xs text-gray-400">
+                                            {{ count($volume['global']) }} peserta global &middot; {{ count($volume['pka']) }} peserta PKA
+                                        </span>
+                                    </summary>
+                                    <div class="px-4 pb-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        @foreach (['global' => 'Global', 'pka' => 'PKA'] as $boardKey => $boardLabel)
+                                            <div>
+                                                <h4 class="text-xs font-semibold text-[#27438D] uppercase mb-2">{{ $boardLabel }}</h4>
+                                                <div class="overflow-x-auto">
+                                                    <table class="w-full text-sm text-left border-collapse">
+                                                        <thead class="bg-[#f8faff] text-[#27438D] uppercase text-xs">
+                                                            <tr>
+                                                                <th class="px-3 py-2 border-b">#</th>
+                                                                <th class="px-3 py-2 border-b">Nama</th>
+                                                                <th class="px-3 py-2 border-b">Divisi</th>
+                                                                <th class="px-3 py-2 border-b text-center">Waktu</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @forelse ($volume[$boardKey] as $entry)
+                                                                <tr class="border-b hover:bg-gray-50">
+                                                                    <td class="px-3 py-2 font-bold text-center">{{ $entry['rank'] }}</td>
+                                                                    <td class="px-3 py-2 font-semibold">{{ $entry['player_name'] ?? $entry['display_name'] ?? '-' }}</td>
+                                                                    <td class="px-3 py-2">{{ $entry['division'] ?? '-' }}</td>
+                                                                    <td class="px-3 py-2 text-center">{{ $entry['completion_time'] ?? '-' }}</td>
+                                                                </tr>
+                                                            @empty
+                                                                <tr>
+                                                                    <td colspan="4" class="px-3 py-3 text-center text-gray-400">Belum ada peserta</td>
+                                                                </tr>
+                                                            @endforelse
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </details>
+                            @empty
+                                <p class="text-sm text-gray-400">Belum ada volume Pamer Suku.</p>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+            </div>
         @else
             <!-- ========== TAMPILAN KARYAWAN: KARTU ========== -->
             @php $item = $data->first(); @endphp
@@ -499,45 +648,17 @@
                 @endif
             </div>
 
-            <!-- Kartu Pamer Suku -->
-            <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100 mt-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold text-[#161758]">🏹 Pamer Suku</h3>
-                    @if ($item['pamer_suku']['volume_number'])
-                        <span class="text-xs text-gray-400">Volume #{{ $item['pamer_suku']['volume_number'] }}</span>
-                    @endif
-                </div>
-
-                @if ($item['pamer_suku']['leaderboard'])
-                    @php
-                        $psGlobal = $item['pamer_suku']['leaderboard']['global'] ?? null;
-                        $psPka = $item['pamer_suku']['leaderboard']['pka'] ?? null;
-                    @endphp
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        @if ($psGlobal)
-                            <div class="border border-gray-100 rounded-lg p-3">
-                                <p class="text-xs text-gray-500 mb-1">Leaderboard Global</p>
-                                <p class="text-2xl font-bold text-[#161758]">#{{ $psGlobal['rank'] }}</p>
-                                <p class="text-xs text-gray-500 mt-1">Waktu: {{ $psGlobal['completion_time'] ?? '-' }}</p>
-                            </div>
-                        @endif
-                        @if ($psPka)
-                            <div class="border border-gray-100 rounded-lg p-3">
-                                <p class="text-xs text-gray-500 mb-1">Leaderboard PKA</p>
-                                <p class="text-2xl font-bold text-[#161758]">#{{ $psPka['rank'] }}</p>
-                                <p class="text-xs text-gray-500 mt-1">Waktu: {{ $psPka['completion_time'] ?? '-' }}</p>
-                            </div>
-                        @endif
-                        @if (!$psGlobal && !$psPka)
-                            <p class="text-sm text-gray-400 sm:col-span-2">Belum masuk top 10 pada volume terbaru.</p>
+            <!-- Kartu Pamer Suku (hanya tampil kalau karyawan pernah jadi Kepala Suku) -->
+            @if ($item['pamer_suku']['is_kepala_suku'])
+                <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100 mt-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-[#161758]">🏹 Pamer Suku</h3>
+                        @if ($item['pamer_suku']['volume_number'])
+                            <span class="text-xs text-gray-400">Volume terbaru #{{ $item['pamer_suku']['volume_number'] }}</span>
                         @endif
                     </div>
-                @else
-                    <p class="text-sm text-gray-400">Belum masuk top 10 leaderboard pada volume terbaru.</p>
-                @endif
 
-                @if ($item['pamer_suku']['is_kepala_suku'])
-                    <div class="mt-4 pt-4 border-t border-gray-100 flex flex-wrap gap-1">
+                    <div class="flex flex-wrap gap-1 mb-4">
                         @foreach (($item['pamer_suku']['kepala_suku']['global'] ?? []) as $period)
                             <span class="px-3 py-1 rounded-full text-xs font-medium bg-yellow-200 text-yellow-800">
                                 👑 Kepala Suku Global &mdash; {{ $period['period'] }}
@@ -549,8 +670,33 @@
                             </span>
                         @endforeach
                     </div>
-                @endif
-            </div>
+
+                    @if ($item['pamer_suku']['leaderboard'])
+                        @php
+                            $psGlobal = $item['pamer_suku']['leaderboard']['global'] ?? null;
+                            $psPka = $item['pamer_suku']['leaderboard']['pka'] ?? null;
+                        @endphp
+                        @if ($psGlobal || $psPka)
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                @if ($psGlobal)
+                                    <div class="border border-gray-100 rounded-lg p-3">
+                                        <p class="text-xs text-gray-500 mb-1">Leaderboard Global (volume terbaru)</p>
+                                        <p class="text-2xl font-bold text-[#161758]">#{{ $psGlobal['rank'] }}</p>
+                                        <p class="text-xs text-gray-500 mt-1">Waktu: {{ $psGlobal['completion_time'] ?? '-' }}</p>
+                                    </div>
+                                @endif
+                                @if ($psPka)
+                                    <div class="border border-gray-100 rounded-lg p-3">
+                                        <p class="text-xs text-gray-500 mb-1">Leaderboard PKA (volume terbaru)</p>
+                                        <p class="text-2xl font-bold text-[#161758]">#{{ $psPka['rank'] }}</p>
+                                        <p class="text-xs text-gray-500 mt-1">Waktu: {{ $psPka['completion_time'] ?? '-' }}</p>
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
+                    @endif
+                </div>
+            @endif
 
             <!-- Daftar semua badge yang diperoleh -->
             @php
