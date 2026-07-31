@@ -18,30 +18,33 @@
             <div class="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4 mb-8">
                 @php
                     $cards = [
-                        ['label' => 'Total', 'value' => $stats['total'], 'color' => 'border-[#161758]', 'text' => 'text-[#161758]'],
-                        ['label' => 'Menunggu', 'value' => $stats['pending'], 'color' => 'border-yellow-500', 'text' => 'text-yellow-500'],
-                        ['label' => 'Disetujui', 'value' => $stats['approved'], 'color' => 'border-green-500', 'text' => 'text-green-500'],
-                        ['label' => 'Ditolak', 'value' => $stats['rejected'], 'color' => 'border-red-500', 'text' => 'text-red-500'],
-                        ['label' => 'Selesai', 'value' => $stats['selesai'], 'color' => 'border-blue-500', 'text' => 'text-blue-500'],
+                        ['label' => 'Total', 'value' => $stats['total'], 'color' => 'border-[#161758]', 'text' => 'text-[#161758]', 'icon' => '📋'],
+                        ['label' => 'Menunggu', 'value' => $stats['pending'], 'color' => 'border-yellow-500', 'text' => 'text-yellow-600', 'icon' => '⏳'],
+                        ['label' => 'Disetujui', 'value' => $stats['approved'], 'color' => 'border-green-500', 'text' => 'text-green-600', 'icon' => '✅'],
+                        ['label' => 'Ditolak', 'value' => $stats['rejected'], 'color' => 'border-red-500', 'text' => 'text-red-600', 'icon' => '❌'],
+                        ['label' => 'Selesai', 'value' => $stats['selesai'], 'color' => 'border-blue-500', 'text' => 'text-blue-600', 'icon' => '🏁'],
                     ];
                 @endphp
                 @foreach($cards as $card)
-                    <div class="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow p-4 border-l-4 {{ $card['color'] }}">
-                        <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">{{ $card['label'] }}</p>
-                        <p class="text-xl font-bold {{ $card['text'] }} mt-1">{{ $card['value'] }}</p>
+                    <div class="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow p-4 border-l-4 {{ $card['color'] }} flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">{{ $card['label'] }}</p>
+                            <p class="text-2xl font-bold {{ $card['text'] }} mt-1">{{ $card['value'] }}</p>
+                        </div>
+                        <span class="text-2xl opacity-50">{{ $card['icon'] }}</span>
                     </div>
                 @endforeach
             </div>
 
             <!-- Filter -->
-            <div class="bg-white rounded-2xl shadow-sm p-5 sm:p-6 mb-8">
+            <div class="bg-white rounded-2xl shadow-sm p-5 sm:p-6 mb-8 border border-gray-100">
                 <form action="{{ route('hr.perjalanan-dinas.index') }}" method="GET"
                       class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
                     <div class="lg:col-span-2">
                         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Cari</label>
                         <input type="text" name="search" value="{{ request('search') }}"
                                placeholder="Judul, nama, atau kode pegawai..."
-                               class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent transition">
+                               class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent transition placeholder-gray-400">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Status</label>
@@ -66,11 +69,12 @@
                     </div>
                     <div class="flex items-end gap-2 sm:col-span-2 lg:col-span-6">
                         <button type="submit"
-                                class="px-5 py-2.5 bg-[#00a2e9] text-white rounded-xl hover:bg-[#0088c4] transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md">
+                                class="px-6 py-2.5 bg-[#00a2e9] text-white rounded-xl hover:bg-[#0088c4] transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
                             Filter
                         </button>
                         <a href="{{ route('hr.perjalanan-dinas.index') }}"
-                           class="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200 text-sm font-medium">
+                           class="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200 text-sm font-medium">
                             Reset
                         </a>
                     </div>
@@ -78,7 +82,7 @@
             </div>
 
             <!-- Table -->
-            <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-100">
                         <thead class="bg-gray-50/80">
@@ -119,14 +123,15 @@
                                     <td class="px-4 py-3.5">
                                         @php
                                             $statusConfig = [
-                                                'pending' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-800', 'label' => 'Menunggu'],
-                                                'approved' => ['bg' => 'bg-green-100', 'text' => 'text-green-800', 'label' => 'Disetujui'],
-                                                'rejected' => ['bg' => 'bg-red-100', 'text' => 'text-red-800', 'label' => 'Ditolak'],
-                                                'selesai' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-800', 'label' => 'Selesai'],
+                                                'pending' => ['bg' => 'bg-yellow-50', 'text' => 'text-yellow-700', 'dot' => 'bg-yellow-500', 'label' => 'Menunggu'],
+                                                'approved' => ['bg' => 'bg-green-50', 'text' => 'text-green-700', 'dot' => 'bg-green-500', 'label' => 'Disetujui'],
+                                                'rejected' => ['bg' => 'bg-red-50', 'text' => 'text-red-700', 'dot' => 'bg-red-500', 'label' => 'Ditolak'],
+                                                'selesai' => ['bg' => 'bg-blue-50', 'text' => 'text-blue-700', 'dot' => 'bg-blue-500', 'label' => 'Selesai'],
                                             ];
-                                            $config = $statusConfig[$item->status] ?? ['bg' => 'bg-gray-100', 'text' => 'text-gray-800', 'label' => ucfirst($item->status)];
+                                            $config = $statusConfig[$item->status] ?? ['bg' => 'bg-gray-50', 'text' => 'text-gray-700', 'dot' => 'bg-gray-500', 'label' => ucfirst($item->status)];
                                         @endphp
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold {{ $config['bg'] }} {{ $config['text'] }}">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold {{ $config['bg'] }} {{ $config['text'] }}">
+                                            <span class="w-1.5 h-1.5 rounded-full {{ $config['dot'] }}"></span>
                                             {{ $config['label'] }}
                                         </span>
                                     </td>
@@ -139,7 +144,7 @@
                                     </td>
                                     <td class="px-4 py-3.5 hidden md:table-cell">
                                         @if($item->surat_tugas)
-                                            <a href="{{ route('hr.perjalanan-dinas.download', $item->id) }}" class="text-[#00a2e9] hover:text-[#0088c4] text-sm font-medium inline-flex items-center gap-1">
+                                            <a href="{{ route('hr.perjalanan-dinas.download', $item->id) }}" class="inline-flex items-center gap-1 text-[#00a2e9] hover:text-[#0088c4] text-sm font-medium transition-colors">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                                                 Download
                                             </a>
@@ -148,9 +153,9 @@
                                         @endif
                                     </td>
                                     <td class="px-4 py-3.5 text-right">
-                                        <div class="flex items-center justify-end gap-1.5 flex-wrap">
+                                        <div class="flex items-center justify-end gap-0.5 flex-wrap">
                                             <!-- Detail -->
-                                            <a href="{{ route('hr.perjalanan-dinas.show', $item->id) }}" title="Detail" class="text-blue-600 hover:text-blue-800 transition-colors p-1">
+                                            <a href="{{ route('hr.perjalanan-dinas.show', $item->id) }}" title="Detail" class="text-blue-600 hover:text-blue-800 transition-colors p-1.5 rounded-lg hover:bg-blue-50">
                                                 <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                             </a>
 
@@ -158,18 +163,18 @@
                                                 <!-- Approve -->
                                                 <form action="{{ route('hr.perjalanan-dinas.approve', $item->id) }}" method="POST" class="inline">
                                                     @csrf
-                                                    <button type="submit" title="Setujui" class="text-green-600 hover:text-green-800 transition-colors p-1" onclick="return confirm('Setujui pengajuan ini?')">
+                                                    <button type="submit" title="Setujui" class="text-green-600 hover:text-green-800 transition-colors p-1.5 rounded-lg hover:bg-green-50" onclick="return confirm('Setujui pengajuan ini?')">
                                                         <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                                                     </button>
                                                 </form>
                                                 <!-- Reject (modal) -->
-                                                <button type="button" title="Tolak" onclick="openRejectModal({{ $item->id }})" class="text-red-600 hover:text-red-800 transition-colors p-1">
+                                                <button type="button" title="Tolak" onclick="openRejectModal({{ $item->id }})" class="text-red-600 hover:text-red-800 transition-colors p-1.5 rounded-lg hover:bg-red-50">
                                                     <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                                 </button>
                                                 <!-- Delete -->
                                                 <form action="{{ route('hr.perjalanan-dinas.destroy', $item->id) }}" method="POST" class="inline">
                                                     @csrf @method('DELETE')
-                                                    <button type="submit" title="Hapus" class="text-gray-400 hover:text-gray-600 transition-colors p-1" onclick="return confirm('Hapus data ini?')">
+                                                    <button type="submit" title="Hapus" class="text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-lg hover:bg-gray-100" onclick="return confirm('Hapus data ini?')">
                                                         <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                                     </button>
                                                 </form>
@@ -179,7 +184,7 @@
                                                 <!-- Mark Selesai -->
                                                 <form action="{{ route('hr.perjalanan-dinas.mark-selesai', $item->id) }}" method="POST" class="inline">
                                                     @csrf
-                                                    <button type="submit" title="Tandai Selesai" class="text-blue-600 hover:text-blue-800 transition-colors p-1" onclick="return confirm('Tandai perjalanan dinas ini sebagai selesai?')">
+                                                    <button type="submit" title="Tandai Selesai" class="text-blue-600 hover:text-blue-800 transition-colors p-1.5 rounded-lg hover:bg-blue-50" onclick="return confirm('Tandai perjalanan dinas ini sebagai selesai?')">
                                                         <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                                     </button>
                                                 </form>
@@ -189,7 +194,7 @@
                                                 <!-- Delete -->
                                                 <form action="{{ route('hr.perjalanan-dinas.destroy', $item->id) }}" method="POST" class="inline">
                                                     @csrf @method('DELETE')
-                                                    <button type="submit" title="Hapus" class="text-gray-400 hover:text-gray-600 transition-colors p-1" onclick="return confirm('Hapus data ini?')">
+                                                    <button type="submit" title="Hapus" class="text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-lg hover:bg-gray-100" onclick="return confirm('Hapus data ini?')">
                                                         <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                                     </button>
                                                 </form>
@@ -201,10 +206,10 @@
                                 <tr>
                                     <td colspan="7" class="px-4 py-12 text-center">
                                         <div class="flex flex-col items-center justify-center text-gray-400">
-                                            <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg class="w-14 h-14 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
                                             </svg>
-                                            <p class="text-sm font-medium">Belum ada data perjalanan dinas untuk filter ini.</p>
+                                            <p class="text-sm font-medium text-gray-500">Belum ada data perjalanan dinas untuk filter ini.</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -262,12 +267,12 @@
 
     <!-- Modal Reject -->
     <div id="rejectModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flex items-center justify-center min-h-screen px-4">
-            <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onclick="closeRejectModal()"></div>
-            <div class="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-6 transform transition-all">
+        <div class="flex items-center justify-center min-h-screen px-4 py-8">
+            <div class="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="closeRejectModal()"></div>
+            <div class="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all duration-300 scale-95 opacity-0" id="modalContent">
                 <div class="flex items-center justify-between mb-4">
                     <h3 id="modal-title" class="text-lg font-bold text-[#161758]">Tolak Pengajuan</h3>
-                    <button onclick="closeRejectModal()" class="text-gray-400 hover:text-gray-600 transition-colors p-1">
+                    <button onclick="closeRejectModal()" class="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
@@ -277,11 +282,12 @@
                     @csrf
                     <div class="mb-4">
                         <label for="catatan_hr" class="block text-sm font-medium text-gray-700 mb-1">Catatan Penolakan <span class="text-red-500">*</span></label>
-                        <textarea name="catatan_hr" id="catatan_hr" rows="3"
-                                  class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent transition"
+                        <textarea name="catatan_hr" id="catatan_hr" rows="4"
+                                  class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent transition resize-none"
                                   required placeholder="Berikan alasan penolakan..."></textarea>
                     </div>
-                    <button type="submit" class="w-full bg-red-500 text-white px-4 py-2.5 rounded-xl hover:bg-red-600 transition-all duration-200 font-medium shadow-sm hover:shadow-md">
+                    <button type="submit" class="w-full bg-red-500 text-white px-4 py-2.5 rounded-xl hover:bg-red-600 transition-all duration-200 font-medium shadow-sm hover:shadow-md flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         Tolak Pengajuan
                     </button>
                 </form>
@@ -295,17 +301,33 @@
             actionUrl = actionUrl.replace(':id', id);
             document.getElementById('rejectForm').action = actionUrl;
             document.getElementById('catatan_hr').value = '';
-            document.getElementById('rejectModal').classList.remove('hidden');
+            const modal = document.getElementById('rejectModal');
+            const content = document.getElementById('modalContent');
+            modal.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
+            // Animasi masuk
+            setTimeout(() => {
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+            }, 10);
         }
 
         function closeRejectModal() {
-            document.getElementById('rejectModal').classList.add('hidden');
-            document.body.style.overflow = 'auto';
+            const modal = document.getElementById('rejectModal');
+            const content = document.getElementById('modalContent');
+            content.classList.remove('scale-100', 'opacity-100');
+            content.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }, 200);
         }
 
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') closeRejectModal();
         });
+
+        // Tutup modal saat klik di luar (sudah di handle oleh onclick pada backdrop)
     </script>
+</div>
 @endsection
