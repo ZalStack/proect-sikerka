@@ -2,189 +2,294 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="flex min-h-screen">
-    @include('layouts.sidebar')
-    <div class="flex-1 transition-all duration-300 md:ml-64 pt-6">
-        <div class="p-3 sm:p-6">
-            <!-- Header -->
-            <div class="mb-6">
-                <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">FHL - Friday Healthy Lifestyle</h1>
-                <p class="text-sm sm:text-base text-[#27438D]">Monitoring absensi kegiatan FHL</p>
-            </div>
-
-            <!-- Notifikasi -->
-            @if(session('success'))
-                <div class="bg-[#2E7D3E] text-white p-3 rounded-lg mb-4 text-sm">
-                    {!! session('success') !!}
+    <div class="flex min-h-screen">
+        @include('layouts.sidebar')
+        <div class="flex-1 transition-all duration-300 md:ml-64 pt-6">
+            <div class="p-3 sm:p-6">
+                <!-- Header -->
+                <div class="mb-6">
+                    <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">FHL - Friday Healthy
+                        Lifestyle</h1>
+                    <p class="text-sm sm:text-base text-[#27438D]">Monitoring absensi kegiatan FHL</p>
                 </div>
-            @endif
-            @if(session('error'))
-                <div class="bg-[#ec1d1d] text-white p-3 rounded-lg mb-4 text-sm">
-                    {{ session('error') }}
-                </div>
-            @endif
 
-            <!-- Kode Kegiatan -->
-            <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
-                <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">🔐 Kode Kegiatan FHL</h2>
-                @php
-                    $today = \Carbon\Carbon::today();
-                    $kodeHariIni = \App\Models\FhlKode::getKodeForDate($today);
-                @endphp
-                @if($kodeHariIni)
-                    <div class="flex flex-wrap items-center gap-2 mb-2">
-                        <span class="px-4 py-2 bg-[#2E7D3E] text-white rounded-lg font-bold text-lg">
-                            {{ $kodeHariIni }}
-                        </span>
-                        <span class="text-sm text-[#1B1B1B]">(Kode untuk hari ini)</span>
+                <!-- Notifikasi -->
+                @if (session('success'))
+                    <div class="bg-[#2E7D3E] text-white p-3 rounded-lg mb-4 text-sm">
+                        {!! session('success') !!}
                     </div>
-                @else
-                    <form action="{{ route('hr.fhl.generate-kode') }}" method="POST" class="flex flex-col sm:flex-row sm:items-start gap-3">
-                        @csrf
-                        <div class="w-full sm:w-64">
-                            <input type="text" name="kode" maxlength="20"
-                                   class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg uppercase focus:outline-none focus:ring-2 focus:ring-[#00a2e9] @error('kode') border-[#ec1d1d] @enderror"
-                                   placeholder="Masukkan kode kegiatan" value="{{ old('kode') }}">
-                            @error('kode')
-                                <p class="text-xs text-[#ec1d1d] mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-                        <button type="submit" class="bg-[#27438D] text-white px-4 py-2 rounded-lg hover:bg-[#161758] transition-colors duration-200 text-sm whitespace-nowrap">
-                            💾 Simpan Kode
-                        </button>
-                    </form>
                 @endif
-                <p class="text-xs text-gray-500 mt-2">* Kode dibuat manual oleh HR, hanya bisa dibuat pada hari Jumat, dan berlaku untuk hari itu saja.</p>
-            </div>
+                @if (session('error'))
+                    <div class="bg-[#ec1d1d] text-white p-3 rounded-lg mb-4 text-sm">
+                        {{ session('error') }}
+                    </div>
+                @endif
 
-            <!-- Filter -->
-            <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
-                <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">Filter Laporan</h2>
-                <form action="{{ route('hr.fhl.index') }}" method="GET" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                    <div>
-                        <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Bulan</label>
-                        <select name="month" class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
-                            @for($m = 1; $m <= 12; $m++)
-                                <option value="{{ $m }}" {{ request('month', date('m')) == $m ? 'selected' : '' }}>
-                                    {{ DateTime::createFromFormat('!m', $m)->format('F') }}
-                                </option>
-                            @endfor
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Tahun</label>
-                        <select name="year" class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
-                            @for($y = date('Y'); $y >= date('Y')-5; $y--)
-                                <option value="{{ $y }}" {{ request('year', date('Y')) == $y ? 'selected' : '' }}>{{ $y }}</option>
-                            @endfor
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Karyawan</label>
-                        <select name="karyawan_id" class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
-                            <option value="">Semua Karyawan</option>
-                            @foreach($karyawans as $karyawan)
-                                <option value="{{ $karyawan->id }}" {{ request('karyawan_id') == $karyawan->id ? 'selected' : '' }}>
-                                    {{ $karyawan->nama_lengkap }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="flex items-end">
-                        <button type="submit" class="w-full bg-[#27438D] text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-[#161758] transition-colors duration-200 text-sm sm:text-base">
-                            Filter
-                        </button>
-                    </div>
-                </form>
-            </div>
+                <!-- Kode Kegiatan -->
+                <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
+                    <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">🔐 Kode Kegiatan FHL</h2>
+                    @php
+                        $today = \Carbon\Carbon::today();
+                        $kodeHariIni = \App\Models\FhlKode::getKodeForDate($today);
+                    @endphp
+                    @if ($kodeHariIni)
+                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                            <span class="px-4 py-2 bg-[#2E7D3E] text-white rounded-lg font-bold text-lg">
+                                {{ $kodeHariIni }}
+                            </span>
+                            <span class="text-sm text-[#1B1B1B]">(Kode untuk hari ini)</span>
+                        </div>
+                    @else
+                        <form action="{{ route('hr.fhl.generate-kode') }}" method="POST"
+                            class="flex flex-col sm:flex-row sm:items-start gap-3">
+                            @csrf
+                            <div class="w-full sm:w-64">
+                                <input type="text" name="kode" maxlength="20"
+                                    class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg uppercase focus:outline-none focus:ring-2 focus:ring-[#00a2e9] @error('kode') border-[#ec1d1d] @enderror"
+                                    placeholder="Masukkan kode kegiatan" value="{{ old('kode') }}">
+                                @error('kode')
+                                    <p class="text-xs text-[#ec1d1d] mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            <button type="submit"
+                                class="bg-[#27438D] text-white px-4 py-2 rounded-lg hover:bg-[#161758] transition-colors duration-200 text-sm whitespace-nowrap">
+                                💾 Simpan Kode
+                            </button>
+                        </form>
+                    @endif
+                    <p class="text-xs text-gray-500 mt-2">* Kode dibuat manual oleh HR, hanya bisa dibuat pada hari Jumat,
+                        dan berlaku untuk hari itu saja.</p>
+                </div>
 
-            <!-- Statistik -->
-            <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
-                <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">Statistik FHL</h2>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                    <div class="bg-[#F5F5F5] rounded-lg p-3 sm:p-4 text-center">
-                        <p class="text-xl sm:text-2xl font-bold text-[#161758]">{{ $statistik['total_jumat'] }}</p>
-                        <p class="text-xs sm:text-sm text-[#1B1B1B]">Total Jumat</p>
-                    </div>
-                    <div class="bg-[#2E7D3E] text-white rounded-lg p-3 sm:p-4 text-center">
-                        <p class="text-xl sm:text-2xl font-bold">{{ $statistik['hadir'] }}</p>
-                        <p class="text-xs sm:text-sm">Total Hadir</p>
-                    </div>
-                    <div class="bg-[#F5F5F5] rounded-lg p-3 sm:p-4 text-center">
-                        <p class="text-xl sm:text-2xl font-bold text-[#161758]">{{ $statistik['total_jumat'] - $statistik['hadir'] }}</p>
-                        <p class="text-xs sm:text-sm text-[#1B1B1B]">Belum Hadir</p>
+                <!-- Filter -->
+                <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
+                    <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">Filter Laporan</h2>
+                    <form action="{{ route('hr.fhl.index') }}" method="GET"
+                        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                        <div>
+                            <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Bulan</label>
+                            <select name="month"
+                                class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                                @for ($m = 1; $m <= 12; $m++)
+                                    <option value="{{ $m }}"
+                                        {{ request('month', date('m')) == $m ? 'selected' : '' }}>
+                                        {{ DateTime::createFromFormat('!m', $m)->format('F') }}
+                                    </option>
+                                @endfor
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Tahun</label>
+                            <select name="year"
+                                class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                                @for ($y = date('Y'); $y >= date('Y') - 5; $y--)
+                                    <option value="{{ $y }}"
+                                        {{ request('year', date('Y')) == $y ? 'selected' : '' }}>{{ $y }}
+                                    </option>
+                                @endfor
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Karyawan</label>
+                            <select name="karyawan_id"
+                                class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                                <option value="">Semua Karyawan</option>
+                                @foreach ($karyawans as $karyawan)
+                                    <option value="{{ $karyawan->id }}"
+                                        {{ request('karyawan_id') == $karyawan->id ? 'selected' : '' }}>
+                                        {{ $karyawan->nama_lengkap }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <button type="submit"
+                                class="w-full bg-[#27438D] text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-[#161758] transition-colors duration-200 text-sm sm:text-base">
+                                Filter
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Statistik -->
+                <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
+                    <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">Statistik FHL</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                        <div class="bg-[#F5F5F5] rounded-lg p-3 sm:p-4 text-center">
+                            <p class="text-xl sm:text-2xl font-bold text-[#161758]">{{ $statistik['total_jumat'] }}</p>
+                            <p class="text-xs sm:text-sm text-[#1B1B1B]">Total Jumat</p>
+                        </div>
+                        <div class="bg-[#2E7D3E] text-white rounded-lg p-3 sm:p-4 text-center">
+                            <p class="text-xl sm:text-2xl font-bold">{{ $statistik['hadir'] }}</p>
+                            <p class="text-xs sm:text-sm">Total Hadir</p>
+                        </div>
+                        <div class="bg-[#F5F5F5] rounded-lg p-3 sm:p-4 text-center">
+                            <p class="text-xl sm:text-2xl font-bold text-[#161758]">
+                                {{ $statistik['total_jumat'] - $statistik['hadir'] }}</p>
+                            <p class="text-xs sm:text-sm text-[#1B1B1B]">Belum Hadir</p>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Tabel Absensi -->
-            <div class="bg-white rounded-lg shadow-md overflow-hidden">
-                <div class="overflow-x-auto -mx-4 sm:mx-0">
-                    <div class="inline-block min-w-full align-middle">
-                        <table class="min-w-full">
-                            <thead class="bg-[#F5F5F5]">
-                                <tr>
-                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">No</th>
-                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Karyawan</th>
-                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden sm:table-cell">Tanggal</th>
-                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden sm:table-cell">Check-in</th>
-                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Status</th>
-                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden md:table-cell">Kode</th>
-                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden md:table-cell">Bukti</th>
-                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($absensis as $absen)
-                                <tr class="border-b border-gray-200 hover:bg-[#F5F5F5]">
-                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">{{ $loop->iteration + ($absensis->currentPage() - 1) * $absensis->perPage() }}</td>
-                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">{{ $absen->karyawan->nama_lengkap }}</td>
-                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm hidden sm:table-cell">{{ $absen->tanggal->format('d-m-Y') }}</td>
-                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm hidden sm:table-cell">{{ $absen->check_in ? Carbon\Carbon::parse($absen->check_in)->format('H:i:s') : '-' }}</td>
-                                    <td class="px-3 sm:px-4 py-2 sm:py-3">
-                                        <span class="px-2 py-1 rounded-full text-[10px] sm:text-xs font-medium bg-[#2E7D3E] text-white">
-                                            {{ $absen->status }}
-                                        </span>
-                                    </td>
-                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm hidden md:table-cell">{{ $absen->kode_input ?? '-' }}</td>
-                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm hidden md:table-cell">
-                                        @if($absen->foto_bukti)
-                                            <a href="{{ Storage::url($absen->foto_bukti) }}" target="_blank"
-                                               class="text-[#00a2e9] hover:text-[#27438D]">
-                                                📷 Lihat
+                <!-- Tabel Absensi -->
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="overflow-x-auto -mx-4 sm:mx-0">
+                        <div class="inline-block min-w-full align-middle">
+                            <table class="min-w-full">
+                                <thead class="bg-[#F5F5F5]">
+                                    <tr>
+                                        <th
+                                            class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">
+                                            No</th>
+                                        <th
+                                            class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">
+                                            Karyawan</th>
+                                        <th
+                                            class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden sm:table-cell">
+                                            Tanggal</th>
+                                        <th
+                                            class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden sm:table-cell">
+                                            Check-in</th>
+                                        <th
+                                            class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">
+                                            Status</th>
+                                        <th
+                                            class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden md:table-cell">
+                                            Kode</th>
+                                        <th
+                                            class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden md:table-cell">
+                                            Bukti</th>
+                                        <th
+                                            class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">
+                                            Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($absensis as $absen)
+                                        <tr class="border-b border-gray-200 hover:bg-[#F5F5F5]">
+                                            <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
+                                                {{ $loop->iteration + ($absensis->currentPage() - 1) * $absensis->perPage() }}
+                                            </td>
+                                            <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
+                                                {{ $absen->karyawan->nama_lengkap }}</td>
+                                            <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm hidden sm:table-cell">
+                                                {{ $absen->tanggal->format('d-m-Y') }}</td>
+                                            <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm hidden sm:table-cell">
+                                                {{ $absen->check_in ? Carbon\Carbon::parse($absen->check_in)->format('H:i:s') : '-' }}
+                                            </td>
+                                            <td class="px-3 sm:px-4 py-2 sm:py-3">
+                                                <span
+                                                    class="px-2 py-1 rounded-full text-[10px] sm:text-xs font-medium bg-[#2E7D3E] text-white">
+                                                    {{ $absen->status }}
+                                                </span>
+                                            </td>
+                                            <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm hidden md:table-cell">
+                                                {{ $absen->kode_input ?? '-' }}</td>
+                                            <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm hidden md:table-cell">
+                                                @if ($absen->foto_bukti)
+                                                    <a href="{{ Storage::url($absen->foto_bukti) }}" target="_blank"
+                                                        class="text-[#00a2e9] hover:text-[#27438D]">
+                                                        📷 Lihat
+                                                    </a>
+                                                @else
+                                                    -
+                                                @endif
+                                            </td>
+                                            <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
+                                                <a href="{{ route('hr.fhl.detail', $absen->id) }}"
+                                                    class="text-[#00a2e9] hover:text-[#27438D]">
+                                                    Detail
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="8" class="px-4 py-8 text-center text-[#1B1B1B]">
+                                                <div class="flex flex-col items-center">
+                                                    <svg class="w-12 sm:w-16 h-12 sm:h-16 text-gray-400 mb-4" fill="none"
+                                                        stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                                        </path>
+                                                    </svg>
+                                                    <p class="text-base sm:text-lg font-semibold">Belum ada data absensi FHL
+                                                    </p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="p-3 sm:p-4">
+                        @if ($absensis->hasPages())
+                            <div class="px-4 py-4 border-t border-gray-200 bg-white">
+
+                                <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+
+                                    <div class="text-sm text-gray-600">
+                                        Menampilkan
+                                        <span class="font-semibold">{{ $absensis->firstItem() }}</span>
+                                        -
+                                        <span class="font-semibold">{{ $absensis->lastItem() }}</span>
+                                        dari
+                                        <span class="font-semibold">{{ $absensis->total() }}</span>
+                                        data
+                                    </div>
+
+                                    <div class="flex items-center gap-2 flex-wrap">
+
+                                        {{-- Previous --}}
+                                        @if ($absensis->onFirstPage())
+                                            <span
+                                                class="px-4 py-2 rounded-lg bg-gray-200 text-gray-400 cursor-not-allowed">
+                                                ← Previous
+                                            </span>
+                                        @else
+                                            <a href="{{ $absensis->previousPageUrl() }}"
+                                                class="px-4 py-2 rounded-lg bg-[#161758] text-white hover:bg-[#0f1045] transition">
+                                                ← Previous
+                                            </a>
+                                        @endif
+
+                                        {{-- Nomor Halaman --}}
+                                        @foreach ($absensis->getUrlRange(1, $absensis->lastPage()) as $page => $url)
+                                            @if ($page == $absensis->currentPage())
+                                                <span class="px-4 py-2 rounded-lg bg-[#00a2e9] text-white">
+                                                    {{ $page }}
+                                                </span>
+                                            @else
+                                                <a href="{{ $url }}"
+                                                    class="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 transition">
+                                                    {{ $page }}
+                                                </a>
+                                            @endif
+                                        @endforeach
+
+                                        {{-- Next --}}
+                                        @if ($absensis->hasMorePages())
+                                            <a href="{{ $absensis->nextPageUrl() }}"
+                                                class="px-4 py-2 rounded-lg bg-[#161758] text-white hover:bg-[#0f1045] transition">
+                                                Next →
                                             </a>
                                         @else
-                                            -
+                                            <span
+                                                class="px-4 py-2 rounded-lg bg-gray-200 text-gray-400 cursor-not-allowed">
+                                                Next →
+                                            </span>
                                         @endif
-                                    </td>
-                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
-                                        <a href="{{ route('hr.fhl.detail', $absen->id) }}"
-                                           class="text-[#00a2e9] hover:text-[#27438D]">
-                                            Detail
-                                        </a>
-                                    </td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="8" class="px-4 py-8 text-center text-[#1B1B1B]">
-                                        <div class="flex flex-col items-center">
-                                            <svg class="w-12 sm:w-16 h-12 sm:h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                            </svg>
-                                            <p class="text-base sm:text-lg font-semibold">Belum ada data absensi FHL</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+                        @endif
                     </div>
-                </div>
-                <div class="p-3 sm:p-4">
-                    {{ $absensis->links() }}
                 </div>
             </div>
         </div>
     </div>
-</div>
 @endsection

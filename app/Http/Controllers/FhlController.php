@@ -23,16 +23,10 @@ class FhlController extends Controller
         $year = Carbon::now()->year;
 
         // Cek absensi hari ini
-        $todayAbsensi = FhlAbsensi::where('karyawan_id', $user->id)
-            ->whereDate('tanggal', $today)
-            ->first();
+        $todayAbsensi = FhlAbsensi::where('karyawan_id', $user->id)->whereDate('tanggal', $today)->first();
 
         // Data absensi bulan ini
-        $absensiBulanIni = FhlAbsensi::where('karyawan_id', $user->id)
-            ->whereMonth('tanggal', $month)
-            ->whereYear('tanggal', $year)
-            ->orderBy('tanggal', 'desc')
-            ->get();
+        $absensiBulanIni = FhlAbsensi::where('karyawan_id', $user->id)->whereMonth('tanggal', $month)->whereYear('tanggal', $year)->orderBy('tanggal', 'desc')->get();
 
         // Statistik
         $statistik = [
@@ -52,22 +46,14 @@ class FhlController extends Controller
             return $item->tanggal->format('Y-m-d');
         });
 
-        return view('karyawan.fhl.dashboard', compact(
-            'todayAbsensi',
-            'absensi',
-            'statistik',
-            'fridays',
-            'isFriday',
-            'month',
-            'year'
-        ));
+        return view('karyawan.fhl.dashboard', compact('todayAbsensi', 'absensi', 'statistik', 'fridays', 'isFriday', 'month', 'year'));
     }
 
     // Check-in FHL (dengan validasi kode, tanpa batasan jam)
     public function checkIn(Request $request)
     {
         $request->validate([
-            'foto_bukti'   => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            'foto_bukti' => 'required|image|mimes:jpeg,png,jpg|max:2048',
             'kode_absensi' => 'required|string|max:20',
         ]);
 
@@ -77,35 +63,47 @@ class FhlController extends Controller
 
         // 1. Cek hari Jumat
         if (!FhlAbsensi::isFriday()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'FHL hanya dilaksanakan pada hari Jumat!'
-            ], 400);
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'FHL hanya dilaksanakan pada hari Jumat!',
+                ],
+                400,
+            );
         }
 
         // 2. Cek apakah sudah absen hari ini
         if (FhlAbsensi::hasCheckedInToday($user->id)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Anda sudah melakukan absen FHL hari ini!'
-            ], 400);
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Anda sudah melakukan absen FHL hari ini!',
+                ],
+                400,
+            );
         }
 
         // 3. Validasi kode kegiatan
         $kodeBenar = FhlKode::getKodeForDate($today);
         if (!$kodeBenar) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Kode kegiatan belum dibuat oleh HR untuk hari ini.'
-            ], 400);
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Kode kegiatan belum dibuat oleh HR untuk hari ini.',
+                ],
+                400,
+            );
         }
 
         $kodeInput = $request->input('kode_absensi');
         if (strtoupper($kodeInput) !== strtoupper($kodeBenar)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Kode kegiatan yang Anda masukkan salah!'
-            ], 400);
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Kode kegiatan yang Anda masukkan salah!',
+                ],
+                400,
+            );
         }
 
         // 4. Upload foto
@@ -116,22 +114,22 @@ class FhlController extends Controller
         // 5. Simpan absensi
         $absensi = FhlAbsensi::create([
             'karyawan_id' => $user->id,
-            'tanggal'     => $today,
-            'check_in'    => $now,
-            'foto_bukti'  => $path,
-            'kode_input'  => $kodeInput,
-            'status'      => 'Hadir',
-            'ip_address'  => $request->ip(),
+            'tanggal' => $today,
+            'check_in' => $now,
+            'foto_bukti' => $path,
+            'kode_input' => $kodeInput,
+            'status' => 'Hadir',
+            'ip_address' => $request->ip(),
         ]);
 
         return response()->json([
             'success' => true,
             'message' => '✅ Absen FHL berhasil!',
             'data' => [
-                'waktu'   => $now->format('H:i:s'),
+                'waktu' => $now->format('H:i:s'),
                 'tanggal' => $now->format('d-m-Y'),
-                'foto'    => Storage::url($path),
-            ]
+                'foto' => Storage::url($path),
+            ],
         ]);
     }
 
@@ -142,16 +140,14 @@ class FhlController extends Controller
 
         // Filter bulan dan tahun
         if ($request->filled('month') && $request->filled('year')) {
-            $query->whereMonth('tanggal', $request->month)
-                  ->whereYear('tanggal', $request->year);
+            $query->whereMonth('tanggal', $request->month)->whereYear('tanggal', $request->year);
         } else {
             // Default: bulan dan tahun sekarang
             $request->merge([
                 'month' => date('m'),
-                'year' => date('Y')
+                'year' => date('Y'),
             ]);
-            $query->whereMonth('tanggal', date('m'))
-                  ->whereYear('tanggal', date('Y'));
+            $query->whereMonth('tanggal', date('m'))->whereYear('tanggal', date('Y'));
         }
 
         // Filter karyawan
@@ -159,7 +155,7 @@ class FhlController extends Controller
             $query->where('karyawan_id', $request->karyawan_id);
         }
 
-        $absensis = $query->orderBy('tanggal', 'desc')->paginate(15);
+        $absensis = $query->orderBy('tanggal', 'desc')->paginate(10)->withQueryString();
         $karyawans = Karyawan::all();
         $month = $request->month ?? date('m');
         $year = $request->year ?? date('Y');
@@ -184,14 +180,17 @@ class FhlController extends Controller
     // HR: Buat kode kegiatan untuk hari ini (input manual oleh HR)
     public function generateKode(Request $request)
     {
-        $request->validate([
-            'kode' => 'required|string|min:3|max:20|alpha_num',
-        ], [
-            'kode.required'  => 'Kode kegiatan wajib diisi!',
-            'kode.min'       => 'Kode kegiatan minimal 3 karakter!',
-            'kode.max'       => 'Kode kegiatan maksimal 20 karakter!',
-            'kode.alpha_num' => 'Kode kegiatan hanya boleh huruf dan angka (tanpa spasi/simbol)!',
-        ]);
+        $request->validate(
+            [
+                'kode' => 'required|string|min:3|max:20|alpha_num',
+            ],
+            [
+                'kode.required' => 'Kode kegiatan wajib diisi!',
+                'kode.min' => 'Kode kegiatan minimal 3 karakter!',
+                'kode.max' => 'Kode kegiatan maksimal 20 karakter!',
+                'kode.alpha_num' => 'Kode kegiatan hanya boleh huruf dan angka (tanpa spasi/simbol)!',
+            ],
+        );
 
         $user = Auth::user();
         $today = Carbon::today();
@@ -210,12 +209,14 @@ class FhlController extends Controller
 
         // Simpan
         FhlKode::create([
-            'tanggal'    => $today,
-            'kode'       => $kode,
+            'tanggal' => $today,
+            'kode' => $kode,
             'created_by' => $user->id,
         ]);
 
-        return redirect()->route('hr.fhl.index')->with('success', "Kode kegiatan FHL berhasil dibuat: <strong>{$kode}</strong>");
+        return redirect()
+            ->route('hr.fhl.index')
+            ->with('success', "Kode kegiatan FHL berhasil dibuat: <strong>{$kode}</strong>");
     }
 
     // Helper: Hitung jumlah Jumat dalam bulan

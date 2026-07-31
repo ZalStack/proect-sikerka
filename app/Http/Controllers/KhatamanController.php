@@ -148,7 +148,7 @@ class KhatamanController extends Controller
             $query->where('karyawan_id', $request->karyawan_id);
         }
 
-        $absensis = $query->orderBy('tanggal', 'desc')->paginate(15);
+        $absensis = $query->orderBy('tanggal', 'desc')->paginate(10)->withQueryString();
         $karyawans = Karyawan::all();
         $month = $request->month ?? date('m');
         $year = $request->year ?? date('Y');

@@ -206,7 +206,71 @@
                         </div>
                     </div>
                     <div class="p-3 sm:p-4">
-                        {{ $absensis->links() }}
+                        @if ($absensis->hasPages())
+                            <div class="px-4 py-4 border-t border-gray-200 bg-white">
+
+                                <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+
+                                    <div class="text-sm text-gray-600">
+                                        Menampilkan
+                                        <span class="font-semibold">{{ $absensis->firstItem() }}</span>
+                                        -
+                                        <span class="font-semibold">{{ $absensis->lastItem() }}</span>
+                                        dari
+                                        <span class="font-semibold">{{ $absensis->total() }}</span>
+                                        data
+                                    </div>
+
+                                    <div class="flex items-center gap-2 flex-wrap">
+
+                                        {{-- Previous --}}
+                                        @if ($absensis->onFirstPage())
+                                            <span
+                                                class="px-4 py-2 rounded-lg bg-gray-200 text-gray-400 cursor-not-allowed">
+                                                ← Previous
+                                            </span>
+                                        @else
+                                            <a href="{{ $absensis->previousPageUrl() }}"
+                                                class="px-4 py-2 rounded-lg bg-[#161758] text-white hover:bg-[#0f1045] transition">
+                                                ← Previous
+                                            </a>
+                                        @endif
+
+
+                                        {{-- Nomor Halaman --}}
+                                        @foreach ($absensis->getUrlRange(1, $absensis->lastPage()) as $page => $url)
+                                            @if ($page == $absensis->currentPage())
+                                                <span class="px-4 py-2 rounded-lg bg-[#00a2e9] text-white">
+                                                    {{ $page }}
+                                                </span>
+                                            @else
+                                                <a href="{{ $url }}"
+                                                    class="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 transition">
+                                                    {{ $page }}
+                                                </a>
+                                            @endif
+                                        @endforeach
+
+
+                                        {{-- Next --}}
+                                        @if ($absensis->hasMorePages())
+                                            <a href="{{ $absensis->nextPageUrl() }}"
+                                                class="px-4 py-2 rounded-lg bg-[#161758] text-white hover:bg-[#0f1045] transition">
+                                                Next →
+                                            </a>
+                                        @else
+                                            <span
+                                                class="px-4 py-2 rounded-lg bg-gray-200 text-gray-400 cursor-not-allowed">
+                                                Next →
+                                            </span>
+                                        @endif
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
