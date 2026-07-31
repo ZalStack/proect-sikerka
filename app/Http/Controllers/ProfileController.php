@@ -149,20 +149,23 @@ class ProfileController extends Controller
         $videoSubmissions = $englishToday->getVideoSubmissionsByEmail();
         $videoSummary = $englishToday->getVideoChallengeSummary();
 
-        // Pamer Suku: leaderboard volume terbaru + daftar kepala suku (global & PKA)
-        // dicocokkan lewat kode_pegawai, bukan email. Data rekap penuh & agregat
-        // lintas semua volume baru diambil di bawah, khusus untuk role HR (lebih berat).
-        $pamerSukuLeaderboard = $pamerSuku->getLeaderboardByKodePegawai();
-        $kepalaSukuMap = $pamerSuku->getKepalaSukuByKodePegawai();
+        // Pamer Suku: rekap performa leaderboard lintas semua volume + siapa
+        // yang jadi kepala suku bulan ini (global & PKA)
+        $pamerSukuSummary = $pamerSuku->getLeaderboardSummaryByKodePegawai();
+        $kepalaSukuGlobal = $this->resolveKepalaSuku($pamerSuku->getCurrentKepalaSuku('global'));
+        $kepalaSukuPka = $this->resolveKepalaSuku($pamerSuku->getCurrentKepalaSuku('pka'));
+        $pamerSukuTotalVolumes = count($pamerSuku->getVolumes());
 
         if ($user->isHr()) {
             // HR: tampilkan semua karyawan aktif dengan peringkat
             $karyawans = Karyawan::where('is_resigned', false)->get();
-            $data = $karyawans->map(function ($karyawan) use ($month, $year, $englishScores, $videoSubmissions, $pamerSukuLeaderboard, $kepalaSukuMap) {
+            $data = $karyawans->map(function ($karyawan) use ($month, $year, $englishScores, $videoSubmissions, $pamerSukuSummary, $kepalaSukuGlobal, $kepalaSukuPka) {
                 $achievement = $this->getKaryawanAchievement($karyawan, $month, $year);
                 $achievement['english_today'] = $this->matchEnglishTodayScore($karyawan, $englishScores);
                 $achievement['video_challenges'] = $this->matchVideoSubmissions($karyawan, $videoSubmissions);
-                $achievement['pamer_suku'] = $this->matchPamerSuku($karyawan, $pamerSukuLeaderboard, $kepalaSukuMap);
+                $achievement['pamer_suku'] = $this->matchPamerSuku($karyawan, $pamerSukuSummary);
+                $achievement['is_kepala_suku_global'] = $this->isSameKepalaSuku($karyawan, $kepalaSukuGlobal);
+                $achievement['is_kepala_suku_pka'] = $this->isSameKepalaSuku($karyawan, $kepalaSukuPka);
                 return $achievement;
             })->sortByDesc('total_score')->values();
 
@@ -183,56 +186,26 @@ class ProfileController extends Controller
                 ]
             );
 
-            // Rekap Pamer Suku khusus HR: ringkasan, rata-rata waktu pengerjaan
-            // keseluruhan (semua volume), riwayat kepala suku, dan leaderboard per volume.
-            $pamerSukuSummary = $pamerSuku->getOverallSummary();
-            $pamerSukuAggregated = $pamerSuku->getAggregatedLeaderboardByKodePegawai();
-            $pamerSukuAllLeaderboards = $pamerSuku->getAllLeaderboards();
-            $pamerSukuKepalaSukuGlobal = $pamerSuku->getKepalaSuku('global');
-            $pamerSukuKepalaSukuPka = $pamerSuku->getKepalaSuku('pka');
-
             return view('profile.achievement', compact(
-                'paginatedData',
-                'user',
-                'month',
-                'year',
-                'englishSummary',
-                'videoSummary',
-                'pamerSukuSummary',
-                'pamerSukuAggregated',
-                'pamerSukuAllLeaderboards',
-                'pamerSukuKepalaSukuGlobal',
-                'pamerSukuKepalaSukuPka'
+                'paginatedData', 'user', 'month', 'year',
+                'englishSummary', 'videoSummary',
+                'kepalaSukuGlobal', 'kepalaSukuPka', 'pamerSukuTotalVolumes'
             ));
         } else {
             // Karyawan biasa: hanya data sendiri
             $achievement = $this->getKaryawanAchievement($user, $month, $year);
             $achievement['english_today'] = $this->matchEnglishTodayScore($user, $englishScores);
             $achievement['video_challenges'] = $this->matchVideoSubmissions($user, $videoSubmissions);
-            $achievement['pamer_suku'] = $this->matchPamerSuku($user, $pamerSukuLeaderboard, $kepalaSukuMap);
+            $achievement['pamer_suku'] = $this->matchPamerSuku($user, $pamerSukuSummary);
+            $achievement['is_kepala_suku_global'] = $this->isSameKepalaSuku($user, $kepalaSukuGlobal);
+            $achievement['is_kepala_suku_pka'] = $this->isSameKepalaSuku($user, $kepalaSukuPka);
             $data = collect([$achievement]);
-            return view('profile.achievement', compact('data', 'user', 'month', 'year', 'englishSummary', 'videoSummary'));
+            return view('profile.achievement', compact(
+                'data', 'user', 'month', 'year',
+                'englishSummary', 'videoSummary',
+                'kepalaSukuGlobal', 'kepalaSukuPka', 'pamerSukuTotalVolumes'
+            ));
         }
-    }
-
-    /**
-     * Cocokkan data karyawan lokal dengan leaderboard & status kepala suku Pamer
-     * Suku berdasarkan kode_pegawai (bukan email, karena API Pamer Suku memakai
-     * kode_pegawai sebagai identitas peserta).
-     */
-    private function matchPamerSuku($karyawan, array $pamerSukuLeaderboard, array $kepalaSukuMap): array
-    {
-        $kode = trim($karyawan->kode_pegawai ?? '');
-
-        $leaderboard = $kode !== '' ? ($pamerSukuLeaderboard['entries'][$kode] ?? null) : null;
-        $kepalaSuku = $kode !== '' ? ($kepalaSukuMap[$kode] ?? null) : null;
-
-        return [
-            'volume_number' => $pamerSukuLeaderboard['volume_number'] ?? null,
-            'leaderboard' => $leaderboard,
-            'is_kepala_suku' => !empty($kepalaSuku),
-            'kepala_suku' => $kepalaSuku,
-        ];
     }
 
     /**
@@ -268,6 +241,62 @@ class ProfileController extends Controller
         }
 
         return $videoSubmissions[$email] ?? [];
+    }
+
+    /**
+     * Cocokkan data karyawan lokal dengan rekap leaderboard Pamer Suku
+     * berdasarkan kode_pegawai. Return null kalau belum pernah masuk
+     * leaderboard sama sekali (global maupun PKA).
+     */
+    private function matchPamerSuku($karyawan, array $pamerSukuSummary)
+    {
+        $kode = trim($karyawan->kode_pegawai ?? '');
+        if (!$kode) {
+            return null;
+        }
+
+        return $pamerSukuSummary[$kode] ?? null;
+    }
+
+    /**
+     * Tambahkan info karyawan lokal (nama, foto) ke data kepala suku dari API,
+     * kalau kode_pegawai-nya berhasil ditemukan di tabel karyawans.
+     * Tetap dikembalikan apa adanya kalau kode_pegawai kosong/tidak match,
+     * supaya flyer-nya minimal tetap bisa ditampilkan.
+     */
+    private function resolveKepalaSuku(?array $entry): ?array
+    {
+        if (!$entry) {
+            return null;
+        }
+
+        $kode = trim($entry['kode_pegawai'] ?? '');
+        if ($kode) {
+            $karyawan = Karyawan::where('kode_pegawai', $kode)->first();
+            if ($karyawan) {
+                $entry['resolved_name'] = $karyawan->nama_lengkap ?? $entry['player_name'] ?? null;
+                $entry['resolved_foto'] = $karyawan->foto_profil ?? null;
+                $entry['resolved_divisi'] = $karyawan->divisi ?? $entry['division'] ?? null;
+            }
+        }
+
+        return $entry;
+    }
+
+    /**
+     * Cek apakah satu karyawan adalah kepala suku (global/PKA) bulan ini,
+     * dicocokkan lewat kode_pegawai.
+     */
+    private function isSameKepalaSuku($karyawan, ?array $kepalaSukuEntry): bool
+    {
+        if (!$kepalaSukuEntry) {
+            return false;
+        }
+
+        $entryKode = trim($kepalaSukuEntry['kode_pegawai'] ?? '');
+        $karyawanKode = trim($karyawan->kode_pegawai ?? '');
+
+        return $entryKode !== '' && $karyawanKode !== '' && strcasecmp($entryKode, $karyawanKode) === 0;
     }
 
     /**
