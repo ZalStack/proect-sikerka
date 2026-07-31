@@ -94,6 +94,35 @@
                             </div>
                         </div>
                     @endif
+
+                    @if (!empty($pamerSukuSummary['total_volumes']))
+                        <div class="bg-[#f8faff] border border-gray-100 rounded-lg p-4 mb-4 flex flex-wrap gap-4 justify-between items-center">
+                            <div>
+                                <p class="text-sm text-gray-500">🏹 Pamer Suku &mdash; ringkasan keseluruhan volume</p>
+                                @if ($pamerSukuSummary['latest_volume_number'])
+                                    <p class="text-xs text-gray-400">Volume terbaru: #{{ $pamerSukuSummary['latest_volume_number'] }}</p>
+                                @endif
+                            </div>
+                            <div class="flex gap-6 text-sm">
+                                <div class="text-center">
+                                    <div class="font-bold text-[#161758]">{{ $pamerSukuSummary['total_volumes'] }}</div>
+                                    <div class="text-gray-500">Volume</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="font-bold text-[#161758]">{{ $pamerSukuSummary['latest_participants'] }}</div>
+                                    <div class="text-gray-500">Peserta Terbaru</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="font-bold text-[#161758]">{{ $pamerSukuSummary['total_kepala_suku_global'] }}</div>
+                                    <div class="text-gray-500">Kepala Suku (Global)</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="font-bold text-[#161758]">{{ $pamerSukuSummary['total_kepala_suku_pka'] }}</div>
+                                    <div class="text-gray-500">Kepala Suku (PKA)</div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm text-left border-collapse">
                             <thead class="bg-[#f8faff] text-[#27438D] uppercase text-xs">
@@ -106,6 +135,7 @@
                                     <th class="px-4 py-3 border-b text-center">Khataman (%)</th>
                                     <th class="px-4 py-3 border-b text-center">English Today</th>
                                     <th class="px-4 py-3 border-b text-center">Video Challenge</th>
+                                    <th class="px-4 py-3 border-b text-center">Pamer Suku</th>
                                     <th class="px-4 py-3 border-b text-center">Total Score</th>
                                     <th class="px-4 py-3 border-b text-center">Badge</th>
                                 </tr>
@@ -153,6 +183,27 @@
                                                 <span class="text-gray-400">Belum submit</span>
                                             @endif
                                         </td>
+                                        <td class="px-4 py-3 text-center">
+                                            @if ($item['pamer_suku']['is_kepala_suku'])
+                                                <span class="inline-block px-2 py-1 rounded-full text-xs font-medium bg-yellow-200 text-yellow-800">
+                                                    👑 Kepala Suku
+                                                </span>
+                                            @endif
+                                            @if ($item['pamer_suku']['leaderboard'])
+                                                @php
+                                                    $psGlobal = $item['pamer_suku']['leaderboard']['global'] ?? null;
+                                                    $psPka = $item['pamer_suku']['leaderboard']['pka'] ?? null;
+                                                @endphp
+                                                @if ($psGlobal)
+                                                    <span class="block text-xs text-gray-500 mt-0.5">Global #{{ $psGlobal['rank'] }}</span>
+                                                @endif
+                                                @if ($psPka)
+                                                    <span class="block text-xs text-gray-500">PKA #{{ $psPka['rank'] }}</span>
+                                                @endif
+                                            @elseif (!$item['pamer_suku']['is_kepala_suku'])
+                                                <span class="text-gray-400">Belum ikut</span>
+                                            @endif
+                                        </td>
                                         <td class="px-4 py-3 text-center font-bold text-[#161758]">
                                             {{ number_format($item['total_score'], 1) }}
                                         </td>
@@ -173,7 +224,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="10" class="px-4 py-6 text-center text-gray-400">Belum ada data untuk bulan ini</td>
+                                        <td colspan="11" class="px-4 py-6 text-center text-gray-400">Belum ada data untuk bulan ini</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -266,6 +317,30 @@
         @else
             <!-- ========== TAMPILAN KARYAWAN: KARTU ========== -->
             @php $item = $data->first(); @endphp
+
+            @if ($item['pamer_suku']['is_kepala_suku'])
+                <div class="bg-gradient-to-r from-[#FCC626] to-[#e6b222] rounded-xl shadow-lg p-6 mb-6 text-[#1B1B1B]">
+                    <div class="flex flex-wrap items-center gap-4">
+                        <div class="text-4xl">👑</div>
+                        <div class="flex-1 min-w-[200px]">
+                            <h3 class="text-lg font-bold">Selamat! Anda adalah Kepala Suku 🏹</h3>
+                            <div class="mt-2 flex flex-wrap gap-2">
+                                @foreach (($item['pamer_suku']['kepala_suku']['global'] ?? []) as $period)
+                                    <span class="bg-white/60 px-3 py-1 rounded-full text-sm font-medium">
+                                        Global &mdash; {{ $period['period'] }}
+                                    </span>
+                                @endforeach
+                                @foreach (($item['pamer_suku']['kepala_suku']['pka'] ?? []) as $period)
+                                    <span class="bg-white/60 px-3 py-1 rounded-full text-sm font-medium">
+                                        PKA &mdash; {{ $period['period'] }}
+                                    </span>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <!-- Kartu Sunnah -->
                 <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
@@ -421,6 +496,59 @@
                     </div>
                 @else
                     <p class="text-sm text-gray-400">Belum submit video challenge apapun.</p>
+                @endif
+            </div>
+
+            <!-- Kartu Pamer Suku -->
+            <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100 mt-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-[#161758]">🏹 Pamer Suku</h3>
+                    @if ($item['pamer_suku']['volume_number'])
+                        <span class="text-xs text-gray-400">Volume #{{ $item['pamer_suku']['volume_number'] }}</span>
+                    @endif
+                </div>
+
+                @if ($item['pamer_suku']['leaderboard'])
+                    @php
+                        $psGlobal = $item['pamer_suku']['leaderboard']['global'] ?? null;
+                        $psPka = $item['pamer_suku']['leaderboard']['pka'] ?? null;
+                    @endphp
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        @if ($psGlobal)
+                            <div class="border border-gray-100 rounded-lg p-3">
+                                <p class="text-xs text-gray-500 mb-1">Leaderboard Global</p>
+                                <p class="text-2xl font-bold text-[#161758]">#{{ $psGlobal['rank'] }}</p>
+                                <p class="text-xs text-gray-500 mt-1">Waktu: {{ $psGlobal['completion_time'] ?? '-' }}</p>
+                            </div>
+                        @endif
+                        @if ($psPka)
+                            <div class="border border-gray-100 rounded-lg p-3">
+                                <p class="text-xs text-gray-500 mb-1">Leaderboard PKA</p>
+                                <p class="text-2xl font-bold text-[#161758]">#{{ $psPka['rank'] }}</p>
+                                <p class="text-xs text-gray-500 mt-1">Waktu: {{ $psPka['completion_time'] ?? '-' }}</p>
+                            </div>
+                        @endif
+                        @if (!$psGlobal && !$psPka)
+                            <p class="text-sm text-gray-400 sm:col-span-2">Belum masuk top 10 pada volume terbaru.</p>
+                        @endif
+                    </div>
+                @else
+                    <p class="text-sm text-gray-400">Belum masuk top 10 leaderboard pada volume terbaru.</p>
+                @endif
+
+                @if ($item['pamer_suku']['is_kepala_suku'])
+                    <div class="mt-4 pt-4 border-t border-gray-100 flex flex-wrap gap-1">
+                        @foreach (($item['pamer_suku']['kepala_suku']['global'] ?? []) as $period)
+                            <span class="px-3 py-1 rounded-full text-xs font-medium bg-yellow-200 text-yellow-800">
+                                👑 Kepala Suku Global &mdash; {{ $period['period'] }}
+                            </span>
+                        @endforeach
+                        @foreach (($item['pamer_suku']['kepala_suku']['pka'] ?? []) as $period)
+                            <span class="px-3 py-1 rounded-full text-xs font-medium bg-yellow-200 text-yellow-800">
+                                👑 Kepala Suku PKA &mdash; {{ $period['period'] }}
+                            </span>
+                        @endforeach
+                    </div>
                 @endif
             </div>
 

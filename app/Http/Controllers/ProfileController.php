@@ -8,6 +8,7 @@ use App\Models\SunnahDaily;
 use App\Models\FhlAbsensi;
 use App\Models\KhatamanAbsensi;
 use App\Services\EnglishTodayService;
+use App\Services\PamerSukuService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -133,7 +134,7 @@ class ProfileController extends Controller
     /**
      * Menampilkan halaman achievement
      */
-    public function achievement(Request $request, EnglishTodayService $englishToday)
+    public function achievement(Request $request, EnglishTodayService $englishToday, PamerSukuService $pamerSuku)
     {
         $user = Auth::user();
         $month = (int) $request->input('month', date('m'));
@@ -148,13 +149,20 @@ class ProfileController extends Controller
         $videoSubmissions = $englishToday->getVideoSubmissionsByEmail();
         $videoSummary = $englishToday->getVideoChallengeSummary();
 
+        // Pamer Suku: leaderboard volume terbaru + daftar kepala suku (global & PKA)
+        // dicocokkan lewat kode_pegawai, bukan email.
+        $pamerSukuLeaderboard = $pamerSuku->getLeaderboardByKodePegawai();
+        $kepalaSukuMap = $pamerSuku->getKepalaSukuByKodePegawai();
+        $pamerSukuSummary = $pamerSuku->getOverallSummary();
+
         if ($user->isHr()) {
             // HR: tampilkan semua karyawan aktif dengan peringkat
             $karyawans = Karyawan::where('is_resigned', false)->get();
-            $data = $karyawans->map(function ($karyawan) use ($month, $year, $englishScores, $videoSubmissions) {
+            $data = $karyawans->map(function ($karyawan) use ($month, $year, $englishScores, $videoSubmissions, $pamerSukuLeaderboard, $kepalaSukuMap) {
                 $achievement = $this->getKaryawanAchievement($karyawan, $month, $year);
                 $achievement['english_today'] = $this->matchEnglishTodayScore($karyawan, $englishScores);
                 $achievement['video_challenges'] = $this->matchVideoSubmissions($karyawan, $videoSubmissions);
+                $achievement['pamer_suku'] = $this->matchPamerSuku($karyawan, $pamerSukuLeaderboard, $kepalaSukuMap);
                 return $achievement;
             })->sortByDesc('total_score')->values();
 
@@ -175,15 +183,36 @@ class ProfileController extends Controller
                 ]
             );
 
-            return view('profile.achievement', compact('paginatedData', 'user', 'month', 'year', 'englishSummary', 'videoSummary'));
+            return view('profile.achievement', compact('paginatedData', 'user', 'month', 'year', 'englishSummary', 'videoSummary', 'pamerSukuSummary'));
         } else {
             // Karyawan biasa: hanya data sendiri
             $achievement = $this->getKaryawanAchievement($user, $month, $year);
             $achievement['english_today'] = $this->matchEnglishTodayScore($user, $englishScores);
             $achievement['video_challenges'] = $this->matchVideoSubmissions($user, $videoSubmissions);
+            $achievement['pamer_suku'] = $this->matchPamerSuku($user, $pamerSukuLeaderboard, $kepalaSukuMap);
             $data = collect([$achievement]);
-            return view('profile.achievement', compact('data', 'user', 'month', 'year', 'englishSummary', 'videoSummary'));
+            return view('profile.achievement', compact('data', 'user', 'month', 'year', 'englishSummary', 'videoSummary', 'pamerSukuSummary'));
         }
+    }
+
+    /**
+     * Cocokkan data karyawan lokal dengan leaderboard & status kepala suku Pamer
+     * Suku berdasarkan kode_pegawai (bukan email, karena API Pamer Suku memakai
+     * kode_pegawai sebagai identitas peserta).
+     */
+    private function matchPamerSuku($karyawan, array $pamerSukuLeaderboard, array $kepalaSukuMap): array
+    {
+        $kode = trim($karyawan->kode_pegawai ?? '');
+
+        $leaderboard = $kode !== '' ? ($pamerSukuLeaderboard['entries'][$kode] ?? null) : null;
+        $kepalaSuku = $kode !== '' ? ($kepalaSukuMap[$kode] ?? null) : null;
+
+        return [
+            'volume_number' => $pamerSukuLeaderboard['volume_number'] ?? null,
+            'leaderboard' => $leaderboard,
+            'is_kepala_suku' => !empty($kepalaSuku),
+            'kepala_suku' => $kepalaSuku,
+        ];
     }
 
     /**
