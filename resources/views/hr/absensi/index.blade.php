@@ -204,7 +204,7 @@
 
                 <!-- Pagination -->
                 <div class="px-4 py-3 bg-gray-50 border-t border-gray-200">
-                    {{ $absensis->links() }}
+                    {{ $absensis->appends(request()->query())->links('pagination::tailwind') }}
                 </div>
             </div>
 

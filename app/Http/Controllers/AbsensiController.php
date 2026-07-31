@@ -395,42 +395,60 @@ class AbsensiController extends Controller
         $query = Absensi::with('karyawan');
         $hasFilter = false;
 
-        // Cek filter tanggal
+        // Filter tanggal
         if ($request->filled('start_date') && $request->filled('end_date')) {
             $query->whereBetween('tanggal', [$request->start_date, $request->end_date]);
             $hasFilter = true;
         }
 
-        // Cek filter bulan/tahun
+        // Filter bulan/tahun
         if ($request->filled('month') && $request->filled('year')) {
             $query->whereMonth('tanggal', $request->month)->whereYear('tanggal', $request->year);
             $hasFilter = true;
         }
 
-        // Cek filter karyawan
+        // Filter karyawan
         if ($request->filled('karyawan_id')) {
             $query->where('karyawan_id', $request->karyawan_id);
             $hasFilter = true;
         }
 
-        // Cek filter status
+        // Filter status
         if ($request->filled('status') && $request->status !== 'semua') {
             $query->where('status', $request->status);
             $hasFilter = true;
         }
 
-        // Jika tidak ada filter, tampilkan data kosong
-        if (!$hasFilter) {
-            // Paginator kosong
-            $displayRows = collect();
-            $page = (int) $request->get('page', 1);
-            $perPage = 15;
-            $absensis = new \Illuminate\Pagination\LengthAwarePaginator($displayRows, 0, $perPage, $page, [
-                'path' => $request->url(),
-                'query' => $request->query(),
-            ]);
+        // --- Pagination ---
+        $perPage = 15;
+        $page = (int) $request->get('page', 1);
 
-            // Chart data semua 0
+        if (!$hasFilter) {
+            // Tidak ada filter → tampilkan kosong
+            $displayRows = collect();
+            $total = 0;
+        } else {
+            // Ambil semua data yang sesuai filter (urutkan tanggal)
+            $allMatching = $query->orderBy('tanggal', 'asc')->get();
+            // Gabungkan data Perjalanan Dinas yang berturut-turut
+            $displayRows = Absensi::mergeConsecutivePerjalananDinas($allMatching);
+            $total = $displayRows->count();
+        }
+
+        // Potong sesuai halaman
+        $paginatedItems = $displayRows->forPage($page, $perPage)->values();
+
+        // Buat instance LengthAwarePaginator dengan membawa semua query string
+        $absensis = new \Illuminate\Pagination\LengthAwarePaginator($paginatedItems, $total, $perPage, $page, [
+            'path' => $request->url(),
+            'query' => $request->query(), // otomatis bawa semua filter
+            'pageName' => 'page',
+        ]);
+
+        // Data chart (hanya jika ada filter)
+        if ($hasFilter) {
+            $chartData = $this->getChartData($request);
+        } else {
             $chartData = [
                 'total' => 0,
                 'hadir' => 0,
@@ -441,21 +459,6 @@ class AbsensiController extends Controller
                 'valid_location' => 0,
                 'invalid_location' => 0,
             ];
-        } else {
-            // Ada filter, jalankan query
-            $allMatching = $query->orderBy('tanggal', 'asc')->get();
-            $displayRows = Absensi::mergeConsecutivePerjalananDinas($allMatching);
-
-            $page = (int) $request->get('page', 1);
-            $perPage = 15;
-
-            $absensis = new \Illuminate\Pagination\LengthAwarePaginator($displayRows->forPage($page, $perPage)->values(), $displayRows->count(), $perPage, $page, [
-                'path' => $request->url(),
-                'query' => $request->query(),
-            ]);
-
-            // Ambil chart data berdasarkan filter yang sudah diterapkan
-            $chartData = $this->getChartData($request);
         }
 
         $karyawans = Karyawan::all();
