@@ -20,14 +20,14 @@
                 </a>
             </div>
 
-            <!-- Stats Cards -->
+            <!-- Stats -->
             <div class="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4 mb-6">
                 <div class="bg-white rounded-xl shadow-sm p-3 sm:p-4 border-l-4 border-[#161758]">
                     <p class="text-xs text-gray-500">Total</p>
                     <p class="text-xl sm:text-2xl font-bold text-[#161758]">{{ $stats['total'] }}</p>
                 </div>
                 <div class="bg-white rounded-xl shadow-sm p-3 sm:p-4 border-l-4 border-yellow-500">
-                    <p class="text-xs text-gray-500">Pending</p>
+                    <p class="text-xs text-gray-500">Menunggu</p>
                     <p class="text-xl sm:text-2xl font-bold text-yellow-500">{{ $stats['pending'] }}</p>
                 </div>
                 <div class="bg-white rounded-xl shadow-sm p-3 sm:p-4 border-l-4 border-green-500">
@@ -49,17 +49,13 @@
                 <form action="{{ route('karyawan.perjalanan-dinas.index') }}" method="GET" class="flex flex-col sm:flex-row gap-3">
                     <select name="status" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent text-sm bg-white">
                         <option value="semua">Semua Status</option>
-                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Menunggu</option>
                         <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Disetujui</option>
                         <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Ditolak</option>
                         <option value="selesai" {{ request('status') == 'selesai' ? 'selected' : '' }}>Selesai</option>
                     </select>
-                    <button type="submit" class="px-4 py-2 bg-[#00a2e9] text-white rounded-lg hover:bg-[#0088c4] transition text-sm">
-                        Filter
-                    </button>
-                    <a href="{{ route('karyawan.perjalanan-dinas.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm">
-                        Reset
-                    </a>
+                    <button type="submit" class="px-4 py-2 bg-[#00a2e9] text-white rounded-lg hover:bg-[#0088c4] transition text-sm">Filter</button>
+                    <a href="{{ route('karyawan.perjalanan-dinas.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm">Reset</a>
                 </form>
             </div>
 
@@ -76,6 +72,7 @@
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Catatan HR</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Surat Tugas</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -127,17 +124,25 @@
                                         <span class="text-xs text-gray-400">Tidak ada</span>
                                     @endif
                                 </td>
+                                <td class="px-4 py-3">
+                                    <div class="flex flex-wrap items-center gap-1">
+                                        @if($item->status === 'pending')
+                                            <a href="{{ route('karyawan.perjalanan-dinas.edit', $item->id) }}"
+                                               class="text-blue-600 hover:text-blue-800 text-sm whitespace-nowrap">Edit</a>
+                                        @endif
+                                        <a href="{{ route('karyawan.perjalanan-dinas.show', $item->id) }}"
+                                           class="text-blue-600 hover:text-blue-800 text-sm whitespace-nowrap">Detail</a>
+                                    </div>
+                                </td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="6" class="px-4 py-8 text-center text-gray-500">
+                                <td colspan="7" class="px-4 py-8 text-center text-gray-500">
                                     <svg class="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                     </svg>
                                     <p>Belum ada pengajuan perjalanan dinas.</p>
-                                    <a href="{{ route('karyawan.perjalanan-dinas.create') }}" class="text-[#00a2e9] hover:underline text-sm mt-2 inline-block">
-                                        Ajukan sekarang
-                                    </a>
+                                    <a href="{{ route('karyawan.perjalanan-dinas.create') }}" class="text-[#00a2e9] hover:underline text-sm mt-2 inline-block">Ajukan sekarang</a>
                                 </td>
                             </tr>
                             @endforelse
@@ -145,8 +150,6 @@
                     </table>
                     </div>
                 </div>
-
-                <!-- Pagination -->
                 <div class="px-4 py-3 bg-gray-50 border-t border-gray-200">
                     {{ $perjalananDinas->appends(request()->query())->links() }}
                 </div>

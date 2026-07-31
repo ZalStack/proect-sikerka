@@ -52,7 +52,7 @@ class KaryawanController extends Controller
             'password' => 'required|min:8|confirmed',
             'nama_lengkap' => 'required|string|max:100',
             'jabatan' => 'required|string|max:100',
-            'divisi' => 'required|string|max:50', // Ubah menjadi string, tidak ada in:...
+            'divisi' => 'required|string|max:50', 
             'status' => 'required|in:Karyawan Tetap,Contract,Internship',
             'tanggal_bergabung' => 'required|date',
             'tempat_lahir' => 'nullable|string|max:50',

@@ -14,18 +14,18 @@ use Carbon\Carbon;
 class PerjalananDinasController extends Controller
 {
     /**
-     * Display a listing of the resource for HR.
+     * HR: index dengan filter
      */
     public function index(Request $request)
     {
         $query = PerjalananDinas::with('karyawan');
 
-        // Filter by status
+        // Filter status
         if ($request->filled('status') && $request->status !== 'semua') {
             $query->where('status', $request->status);
         }
 
-        // Filter by date range
+        // Filter tanggal
         if ($request->filled('tanggal_mulai')) {
             $query->whereDate('tanggal_mulai', '>=', $request->tanggal_mulai);
         }
@@ -33,19 +33,20 @@ class PerjalananDinasController extends Controller
             $query->whereDate('tanggal_selesai', '<=', $request->tanggal_selesai);
         }
 
-        // Search by karyawan name or judul
+        // Search
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('judul', 'like', "%{$search}%")->orWhereHas('karyawan', function ($sub) use ($search) {
-                    $sub->where('nama_lengkap', 'like', "%{$search}%")->orWhere('kode_pegawai', 'like', "%{$search}%");
-                });
+                $q->where('judul', 'like', "%{$search}%")
+                  ->orWhereHas('karyawan', function ($sub) use ($search) {
+                      $sub->where('nama_lengkap', 'like', "%{$search}%")
+                          ->orWhere('kode_pegawai', 'like', "%{$search}%");
+                  });
             });
         }
 
         $perjalananDinas = $query->orderBy('created_at', 'desc')->paginate(15);
 
-        // Stats
         $stats = [
             'total' => PerjalananDinas::count(),
             'pending' => PerjalananDinas::where('status', 'pending')->count(),
@@ -58,7 +59,7 @@ class PerjalananDinasController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource for Karyawan.
+     * Karyawan: form create
      */
     public function create()
     {
@@ -67,32 +68,27 @@ class PerjalananDinasController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
-     * Otomatis approved, langsung rekap ke absensi.
+     * Karyawan: store pengajuan (status pending)
      */
     public function store(Request $request)
     {
-        $validator = Validator::make(
-            $request->all(),
-            [
-                'judul' => 'required|string|max:200',
-                'agenda' => 'required|string',
-                'tanggal_mulai' => [
-                    'required',
-                    'date',
-                    'after_or_equal:' . now()->addDay()->toDateString(), // minimal H-1 (besok)
-                ],
-                'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
-                'surat_tugas' => 'required|file|mimes:pdf|max:2048', // wajib
+        $validator = Validator::make($request->all(), [
+            'judul' => 'required|string|max:200',
+            'agenda' => 'required|string',
+            'tanggal_mulai' => [
+                'required',
+                'date',
+                'after_or_equal:' . now()->addDay()->toDateString(),
             ],
-            [
-                'surat_tugas.required' => 'Surat tugas wajib diupload.',
-                'surat_tugas.max' => 'Ukuran file surat tugas maksimal 2 MB.',
-                'surat_tugas.mimes' => 'File surat tugas harus berformat PDF.',
-                'tanggal_mulai.after_or_equal' => 'Tanggal mulai harus minimal 1 hari dari hari ini.',
-                'tanggal_selesai.after_or_equal' => 'Tanggal selesai harus setelah atau sama dengan tanggal mulai.',
-            ],
-        );
+            'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
+            'surat_tugas' => 'required|file|mimes:pdf|max:2048',
+        ], [
+            'surat_tugas.required' => 'Surat tugas wajib diupload.',
+            'surat_tugas.max' => 'Ukuran file surat tugas maksimal 2 MB.',
+            'surat_tugas.mimes' => 'File surat tugas harus berformat PDF.',
+            'tanggal_mulai.after_or_equal' => 'Tanggal mulai minimal 1 hari dari hari ini.',
+            'tanggal_selesai.after_or_equal' => 'Tanggal selesai harus setelah atau sama dengan tanggal mulai.',
+        ]);
 
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
@@ -101,36 +97,174 @@ class PerjalananDinasController extends Controller
         $data = $request->all();
         $data['karyawan_id'] = Auth::id();
         $data['tanggal_pengajuan'] = Carbon::today();
-        $data['status'] = 'approved'; // langsung approved
-        $data['approved_at'] = Carbon::now();
-        $data['approved_by'] = null; // tidak ada approval dari HR
+        $data['status'] = 'pending'; // status menunggu
+        $data['approved_at'] = null;
+        $data['approved_by'] = null;
 
-        // Handle file upload
         if ($request->hasFile('surat_tugas')) {
             $file = $request->file('surat_tugas');
-
             if ($file->getSize() > 2 * 1024 * 1024) {
-                return redirect()
-                    ->back()
-                    ->withErrors(['surat_tugas' => 'Ukuran file surat tugas maksimal 2 MB.'])
-                    ->withInput();
+                return redirect()->back()->withErrors(['surat_tugas' => 'Ukuran file maksimal 2 MB.'])->withInput();
             }
-
             $filename = time() . '_' . $file->getClientOriginalName();
             $path = $file->storeAs('surat_tugas', $filename, 'public');
             $data['surat_tugas'] = $path;
         }
 
-        $perjalanan = PerjalananDinas::create($data);
+        PerjalananDinas::create($data);
 
-        // Rekap ke absensi otomatis
-        $this->rekapKeAbsensi($perjalanan);
-
-        return redirect()->route('karyawan.perjalanan-dinas.index')->with('success', 'Pengajuan perjalanan dinas berhasil disetujui otomatis dan telah direkap ke absensi.');
+        return redirect()->route('karyawan.perjalanan-dinas.index')
+            ->with('success', 'Pengajuan perjalanan dinas berhasil dikirim dan menunggu persetujuan HRD.');
     }
 
     /**
-     * Display the specified resource.
+     * Karyawan: edit form (hanya jika status pending)
+     */
+    public function edit($id)
+    {
+        $perjalananDinas = PerjalananDinas::where('karyawan_id', Auth::id())
+            ->where('status', 'pending')
+            ->findOrFail($id);
+
+        return view('karyawan.perjalanan-dinas.edit', compact('perjalananDinas'));
+    }
+
+    /**
+     * Karyawan: update pengajuan (hanya jika pending)
+     */
+    public function update(Request $request, $id)
+    {
+        $perjalananDinas = PerjalananDinas::where('karyawan_id', Auth::id())
+            ->where('status', 'pending')
+            ->findOrFail($id);
+
+        $validator = Validator::make($request->all(), [
+            'judul' => 'required|string|max:200',
+            'agenda' => 'required|string',
+            'tanggal_mulai' => 'required|date|after_or_equal:' . now()->addDay()->toDateString(),
+            'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
+            'surat_tugas' => 'nullable|file|mimes:pdf|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        $data = $request->only(['judul', 'agenda', 'tanggal_mulai', 'tanggal_selesai']);
+
+        if ($request->hasFile('surat_tugas')) {
+            // Hapus file lama
+            if ($perjalananDinas->surat_tugas && Storage::disk('public')->exists($perjalananDinas->surat_tugas)) {
+                Storage::disk('public')->delete($perjalananDinas->surat_tugas);
+            }
+            $file = $request->file('surat_tugas');
+            if ($file->getSize() > 2 * 1024 * 1024) {
+                return redirect()->back()->withErrors(['surat_tugas' => 'Ukuran file maksimal 2 MB.'])->withInput();
+            }
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $path = $file->storeAs('surat_tugas', $filename, 'public');
+            $data['surat_tugas'] = $path;
+        }
+
+        $perjalananDinas->update($data);
+
+        return redirect()->route('karyawan.perjalanan-dinas.index')
+            ->with('success', 'Pengajuan perjalanan dinas berhasil diperbarui.');
+    }
+
+    /**
+     * HR: approve pengajuan
+     */
+    public function approve($id)
+    {
+        $perjalananDinas = PerjalananDinas::findOrFail($id);
+
+        if ($perjalananDinas->status !== 'pending') {
+            return redirect()->back()->with('error', 'Hanya pengajuan dengan status menunggu yang dapat disetujui.');
+        }
+
+        $perjalananDinas->status = 'approved';
+        $perjalananDinas->approved_at = Carbon::now();
+        $perjalananDinas->approved_by = Auth::id();
+        // Hapus catatan HR karena sudah disetujui (sesuai permintaan: "NOTES NYA LANGSUNG TERHAPUS SETELAH BERHASIL")
+        $perjalananDinas->catatan_hr = null;
+        $perjalananDinas->save();
+
+        // Rekap ke absensi
+        $this->rekapKeAbsensi($perjalananDinas);
+
+        return redirect()->route('hr.perjalanan-dinas.index')
+            ->with('success', 'Pengajuan perjalanan dinas berhasil disetujui dan telah direkap ke absensi.');
+    }
+
+    /**
+     * HR: reject pengajuan (dengan catatan)
+     */
+    public function reject(Request $request, $id)
+    {
+        $request->validate([
+            'catatan_hr' => 'required|string|max:1000',
+        ]);
+
+        $perjalananDinas = PerjalananDinas::findOrFail($id);
+
+        if ($perjalananDinas->status !== 'pending') {
+            return redirect()->back()->with('error', 'Hanya pengajuan dengan status menunggu yang dapat ditolak.');
+        }
+
+        $perjalananDinas->status = 'rejected';
+        $perjalananDinas->catatan_hr = $request->catatan_hr;
+        $perjalananDinas->approved_at = null;
+        $perjalananDinas->approved_by = null;
+        $perjalananDinas->save();
+
+        return redirect()->route('hr.perjalanan-dinas.index')
+            ->with('success', 'Pengajuan perjalanan dinas ditolak.');
+    }
+
+    /**
+     * HR: hapus data perjalanan dinas (hanya jika status pending atau rejected)
+     */
+    public function destroy($id)
+    {
+        $perjalananDinas = PerjalananDinas::findOrFail($id);
+
+        // Hanya boleh hapus jika status pending atau rejected
+        if (!in_array($perjalananDinas->status, ['pending', 'rejected'])) {
+            return redirect()->back()->with('error', 'Data yang sudah disetujui atau selesai tidak dapat dihapus.');
+        }
+
+        // Hapus file surat tugas
+        if ($perjalananDinas->surat_tugas && Storage::disk('public')->exists($perjalananDinas->surat_tugas)) {
+            Storage::disk('public')->delete($perjalananDinas->surat_tugas);
+        }
+
+        $perjalananDinas->delete();
+
+        return redirect()->route('hr.perjalanan-dinas.index')
+            ->with('success', 'Data perjalanan dinas berhasil dihapus.');
+    }
+
+    /**
+     * HR: tandai selesai (hanya jika status approved)
+     */
+    public function markAsSelesai($id)
+    {
+        $perjalananDinas = PerjalananDinas::findOrFail($id);
+
+        if ($perjalananDinas->status !== 'approved') {
+            return redirect()->back()->with('error', 'Hanya pengajuan yang sudah disetujui yang dapat ditandai selesai.');
+        }
+
+        $perjalananDinas->status = 'selesai';
+        $perjalananDinas->save();
+
+        return redirect()->route('hr.perjalanan-dinas.index')
+            ->with('success', 'Perjalanan dinas ditandai sebagai selesai.');
+    }
+
+    /**
+     * HR & Karyawan: show detail
      */
     public function show($id)
     {
@@ -140,11 +274,17 @@ class PerjalananDinasController extends Controller
             abort(403, 'Anda tidak memiliki akses ke data ini.');
         }
 
-        return view('hr.perjalanan-dinas.show', compact('perjalananDinas'));
+        // Ambil previous dan next ID untuk navigasi (hanya untuk HR)
+        $prevNext = null;
+        if (Auth::user()->posisi === 'hr') {
+            $prevNext = $this->getPrevNextIds($id);
+        }
+
+        return view('hr.perjalanan-dinas.show', compact('perjalananDinas', 'prevNext'));
     }
 
     /**
-     * Dashboard for Karyawan.
+     * Karyawan: dashboard / index
      */
     public function dashboard(Request $request)
     {
@@ -169,24 +309,7 @@ class PerjalananDinasController extends Controller
     }
 
     /**
-     * Mark as selesai (completed) by HR.
-     */
-    public function markAsSelesai($id)
-    {
-        $perjalananDinas = PerjalananDinas::findOrFail($id);
-
-        if ($perjalananDinas->status !== 'approved') {
-            return redirect()->back()->with('error', 'Hanya pengajuan yang sudah disetujui yang dapat ditandai selesai.');
-        }
-
-        $perjalananDinas->status = 'selesai';
-        $perjalananDinas->save();
-
-        return redirect()->route('hr.perjalanan-dinas.index')->with('success', 'Perjalanan dinas ditandai sebagai selesai.');
-    }
-
-    /**
-     * Download surat tugas file.
+     * Download surat tugas
      */
     public function downloadSuratTugas($id)
     {
@@ -204,7 +327,7 @@ class PerjalananDinasController extends Controller
     }
 
     /**
-     * Update catatan HR untuk perjalanan dinas.
+     * HR: update catatan (catatan akan tetap ada sampai approve)
      */
     public function updateCatatan(Request $request, $id)
     {
@@ -217,11 +340,12 @@ class PerjalananDinasController extends Controller
         $perjalananDinas->catatan_hr = $request->catatan_hr;
         $perjalananDinas->save();
 
-        return redirect()->route('hr.perjalanan-dinas.show', $perjalananDinas->id)->with('success', 'Catatan HR berhasil diperbarui.');
+        return redirect()->route('hr.perjalanan-dinas.show', $perjalananDinas->id)
+            ->with('success', 'Catatan HR berhasil diperbarui.');
     }
 
     /**
-     * Rekap perjalanan dinas ke tabel absensi untuk setiap hari dalam rentang tanggal.
+     * Rekap ke absensi untuk setiap hari dalam rentang tanggal
      */
     private function rekapKeAbsensi(PerjalananDinas $perjalananDinas)
     {
@@ -233,7 +357,9 @@ class PerjalananDinasController extends Controller
         for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
             $tanggal = $date->format('Y-m-d');
 
-            $absensi = Absensi::where('karyawan_id', $karyawanId)->whereDate('tanggal', $tanggal)->first();
+            $absensi = Absensi::where('karyawan_id', $karyawanId)
+                ->whereDate('tanggal', $tanggal)
+                ->first();
 
             if (!$absensi) {
                 Absensi::create([
@@ -262,5 +388,18 @@ class PerjalananDinasController extends Controller
                 $absensi->save();
             }
         }
+    }
+
+    /**
+     * Ambil previous dan next ID untuk navigasi (HR only)
+     */
+    private function getPrevNextIds($currentId)
+    {
+        $ids = PerjalananDinas::orderBy('created_at', 'desc')->pluck('id')->toArray();
+        $index = array_search($currentId, $ids);
+        return [
+            'prev' => $index > 0 ? $ids[$index - 1] : null,
+            'next' => $index < count($ids) - 1 ? $ids[$index + 1] : null,
+        ];
     }
 }

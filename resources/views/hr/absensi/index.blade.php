@@ -58,7 +58,7 @@
             <!-- Filter -->
             <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
                 <form action="{{ route('hr.absensi.index') }}" method="GET"
-                      class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                      class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Karyawan</label>
                         <select name="karyawan_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent">
@@ -71,6 +71,17 @@
                         </select>
                     </div>
                     <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
+                        <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent bg-white">
+                            <option value="semua" {{ !request('status') || request('status') == 'semua' ? 'selected' : '' }}>Semua Status</option>
+                            <option value="Hadir" {{ request('status') == 'Hadir' ? 'selected' : '' }}>Hadir</option>
+                            <option value="Izin" {{ request('status') == 'Izin' ? 'selected' : '' }}>Izin</option>
+                            <option value="Sakit" {{ request('status') == 'Sakit' ? 'selected' : '' }}>Sakit</option>
+                            <option value="Alpha" {{ request('status') == 'Alpha' ? 'selected' : '' }}>Alpha</option>
+                            <option value="Perjalanan Dinas" {{ request('status') == 'Perjalanan Dinas' ? 'selected' : '' }}>Perjalanan Dinas</option>
+                        </select>
+                    </div>
+                    <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Dari Tanggal</label>
                         <input type="date" name="start_date" value="{{ request('start_date') }}"
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent">
@@ -80,7 +91,7 @@
                         <input type="date" name="end_date" value="{{ request('end_date') }}"
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent">
                     </div>
-                    <div class="flex items-end gap-2">
+                    <div class="flex items-end gap-2 sm:col-span-2 lg:col-span-2">
                         <button type="submit" class="flex-1 px-4 py-2 bg-[#00a2e9] text-white rounded-lg hover:bg-[#0088c4] transition text-sm">
                             Filter
                         </button>

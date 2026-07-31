@@ -40,7 +40,7 @@ class PerjalananDinas extends Model
         return $this->belongsTo(Karyawan::class, 'approved_by');
     }
 
-    // Scope untuk filter status
+    // Scope
     public function scopePending($query)
     {
         return $query->where('status', 'pending');
@@ -56,19 +56,16 @@ class PerjalananDinas extends Model
         return $query->where('status', 'rejected');
     }
 
-    // Cek apakah pengajuan masih pending
     public function isPending(): bool
     {
         return $this->status === 'pending';
     }
 
-    // Cek apakah sudah disetujui
     public function isApproved(): bool
     {
         return $this->status === 'approved';
     }
 
-    // Cek apakah ditolak
     public function isRejected(): bool
     {
         return $this->status === 'rejected';

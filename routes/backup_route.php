@@ -7,8 +7,12 @@ use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\KaryawanDashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AbsensiController;
+use App\Http\Controllers\CutiController;
 use App\Http\Controllers\FhlController;
+use App\Http\Controllers\KhatamanController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PengumumanController;
+use App\Http\Controllers\PerjalananDinasController;
 use App\Http\Controllers\SunnahController;
 use Illuminate\Support\Facades\Route;
 
@@ -43,12 +47,13 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
-    // Profile Routes
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/profile/change-password', [ProfileController::class, 'showChangePassword'])->name('profile.change-password');
     Route::put('/profile/update-password', [ProfileController::class, 'updatePassword'])->name('profile.update-password');
+    Route::get('/profile/achievement', [ProfileController::class, 'achievement'])->name('profile.achievement');
 
-    // HR Routes
     Route::middleware('hr')
         ->prefix('hr')
         ->name('hr.')
@@ -65,13 +70,32 @@ Route::middleware('auth')->group(function () {
             Route::get('/pengumuman/{id}/send-whatsapp', [PengumumanController::class, 'sendWhatsApp'])->name('pengumuman.send-whatsapp');
             Route::get('/pengumuman/{id}/send-whatsapp/{phone}', [PengumumanController::class, 'sendWhatsAppToNumber'])->name('pengumuman.send-whatsapp-number');
             Route::get('/pengumuman/{id}/select-contact', [PengumumanController::class, 'selectContact'])->name('pengumuman.select-contact');
+            Route::post('/pengumuman/{id}/resend-whatsapp', [PengumumanController::class, 'resendWhatsApp'])->name('pengumuman.resend-whatsapp');
 
             Route::get('/fhl', [FhlController::class, 'index'])->name('fhl.index');
+            Route::post('/fhl/generate-kode', [FhlController::class, 'generateKode'])->name('fhl.generate-kode');
             Route::get('/fhl/detail/{id}', [FhlController::class, 'detail'])->name('fhl.detail');
 
+            Route::get('/khataman', [KhatamanController::class, 'index'])->name('khataman.index');
+            Route::post('/khataman/generate-kode', [KhatamanController::class, 'generateKode'])->name('khataman.generate-kode');
+            Route::get('/khataman/detail/{id}', [KhatamanController::class, 'detail'])->name('khataman.detail');
+
             Route::get('/sunnah', [SunnahController::class, 'index'])->name('sunnah.index');
+            Route::get('/sunnah/rekap', [SunnahController::class, 'rekapBulanan'])->name('sunnah.rekap');
             Route::get('/sunnah/detail/{id}', [SunnahController::class, 'detail'])->name('sunnah.detail');
             Route::post('/sunnah/approve/{id}', [SunnahController::class, 'approve'])->name('sunnah.approve');
+            Route::post('/sunnah/bulk-approve', [SunnahController::class, 'bulkApprove'])->name('sunnah.bulk-approve');
+
+            Route::get('/cuti', [CutiController::class, 'index'])->name('cuti.index');
+            Route::get('/cuti/{id}', [CutiController::class, 'show'])->name('cuti.show');
+            Route::post('/cuti/approve/{id}', [CutiController::class, 'approve'])->name('cuti.approve');
+            Route::post('/cuti/bulk-approve', [CutiController::class, 'bulkApprove'])->name('cuti.bulk-approve');
+
+            Route::get('/perjalanan-dinas', [PerjalananDinasController::class, 'index'])->name('perjalanan-dinas.index');
+            Route::get('/perjalanan-dinas/{id}', [PerjalananDinasController::class, 'show'])->name('perjalanan-dinas.show');
+            Route::get('/perjalanan-dinas/{id}/mark-selesai', [PerjalananDinasController::class, 'markAsSelesai'])->name('perjalanan-dinas.mark-selesai');
+            Route::get('/perjalanan-dinas/{id}/download', [PerjalananDinasController::class, 'downloadSuratTugas'])->name('perjalanan-dinas.download');
+            Route::post('/perjalanan-dinas/{id}/catatan', [PerjalananDinasController::class, 'updateCatatan'])->name('perjalanan-dinas.catatan');
         });
 
     // Karyawan Routes
@@ -82,16 +106,32 @@ Route::middleware('auth')->group(function () {
             Route::get('/dashboard', [KaryawanDashboardController::class, 'index'])->name('dashboard');
             Route::get('/absensi', [AbsensiController::class, 'dashboard'])->name('absensi');
 
-            Route::post('/absensi/check-wifi', [AbsensiController::class, 'checkWifi'])->name('absensi.check-wifi');
-            Route::post('/absensi/checkin', [AbsensiController::class, 'checkIn'])->name('absensi.checkin');
-            Route::post('/absensi/checkout', [AbsensiController::class, 'checkOut'])->name('absensi.checkout');
+            Route::post('/absensi/checkin', [AbsensiController::class, 'checkIn'])
+                ->name('absensi.checkin')
+                ->middleware('throttle:10,1');
+            Route::post('/absensi/checkout', [AbsensiController::class, 'checkOut'])
+                ->name('absensi.checkout')
+                ->middleware('throttle:10,1');
             Route::get('/absensi/status', [AbsensiController::class, 'status'])->name('absensi.status');
             Route::get('/absensi/server-time', [AbsensiController::class, 'serverTime'])->name('absensi.server-time');
 
             Route::get('/fhl', [FhlController::class, 'dashboard'])->name('fhl.dashboard');
             Route::post('/fhl/checkin', [FhlController::class, 'checkIn'])->name('fhl.checkin');
 
+            Route::get('/khataman', [KhatamanController::class, 'dashboard'])->name('khataman.dashboard');
+            Route::post('/khataman/checkin', [KhatamanController::class, 'checkIn'])->name('khataman.checkin');
+            Route::get('/khataman/server-time', [KhatamanController::class, 'serverTime'])->name('khataman.server-time');
+
             Route::get('/sunnah', [SunnahController::class, 'dashboard'])->name('sunnah.dashboard');
             Route::post('/sunnah/save', [SunnahController::class, 'saveDaily'])->name('sunnah.save');
+
+            Route::get('/cuti', [CutiController::class, 'dashboard'])->name('cuti.dashboard');
+            Route::get('/cuti/create', [CutiController::class, 'create'])->name('cuti.create');
+            Route::post('/cuti/store', [CutiController::class, 'store'])->name('cuti.store');
+
+            Route::get('/perjalanan-dinas', [PerjalananDinasController::class, 'dashboard'])->name('perjalanan-dinas.index');
+            Route::get('/perjalanan-dinas/create', [PerjalananDinasController::class, 'create'])->name('perjalanan-dinas.create');
+            Route::post('/perjalanan-dinas/store', [PerjalananDinasController::class, 'store'])->name('perjalanan-dinas.store');
+            Route::get('/perjalanan-dinas/{id}/download', [PerjalananDinasController::class, 'downloadSuratTugas'])->name('perjalanan-dinas.download');
         });
 });

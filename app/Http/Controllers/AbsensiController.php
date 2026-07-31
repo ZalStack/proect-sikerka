@@ -82,7 +82,7 @@ class AbsensiController extends Controller
                 'success' => false,
                 'message' => 'Absensi ditolak! Sistem mendeteksi indikasi penggunaan lokasi palsu (fake GPS) pada perangkat Anda. Nonaktifkan aplikasi/mode fake GPS lalu coba lagi menggunakan lokasi GPS asli.',
                 'code' => 'FAKE_GPS_DETECTED',
-                'reasons' => array_map(fn ($r) => Absensi::suspiciousReasonLabel($r), $suspicion['reasons']),
+                'reasons' => array_map(fn($r) => Absensi::suspiciousReasonLabel($r), $suspicion['reasons']),
             ],
             403,
         );
@@ -97,7 +97,7 @@ class AbsensiController extends Controller
             return null;
         }
 
-        return implode('; ', array_map(fn ($r) => Absensi::suspiciousReasonLabel($r), $suspicion['reasons']));
+        return implode('; ', array_map(fn($r) => Absensi::suspiciousReasonLabel($r), $suspicion['reasons']));
     }
 
     /**
@@ -406,6 +406,11 @@ class AbsensiController extends Controller
             $query->where('karyawan_id', $request->karyawan_id);
         }
 
+        // Filter status (Hadir, Izin, Sakit, Alpha, Perjalanan Dinas)
+        if ($request->filled('status') && $request->status !== 'semua') {
+            $query->where('status', $request->status);
+        }
+
         // Ambil semua data yang cocok dengan filter, lalu gabungkan baris "Perjalanan Dinas"
         // yang berturut-turut menjadi satu baris periode (tanpa mengubah data di database),
         // baru dipaginasi manual supaya nomor halaman tetap konsisten.
@@ -484,6 +489,10 @@ class AbsensiController extends Controller
             $query->where('karyawan_id', $request->karyawan_id);
         }
 
+        if ($request->filled('status') && $request->status !== 'semua') {
+            $query->where('status', $request->status);
+        }
+
         $absensis = $query->orderBy('tanggal', 'desc')->get();
 
         return $this->generateExcel($absensis);
@@ -554,6 +563,10 @@ class AbsensiController extends Controller
             $query->where('karyawan_id', $request->karyawan_id);
         }
 
+        if ($request->filled('status') && $request->status !== 'semua') {
+            $query->where('status', $request->status);
+        }
+
         $absensis = $query->get();
 
         return [
@@ -583,14 +596,23 @@ class AbsensiController extends Controller
         // supaya HR bisa lihat konteks periode & surat tugasnya.
         $perjalananDinas = null;
         if ($absensi->status === 'Perjalanan Dinas') {
-            $perjalananDinas = \App\Models\PerjalananDinas::where('karyawan_id', $absensi->karyawan_id)
-                ->whereDate('tanggal_mulai', '<=', $absensi->tanggal)
-                ->whereDate('tanggal_selesai', '>=', $absensi->tanggal)
-                ->latest('id')
-                ->first();
+            $perjalananDinas = \App\Models\PerjalananDinas::where('karyawan_id', $absensi->karyawan_id)->whereDate('tanggal_mulai', '<=', $absensi->tanggal)->whereDate('tanggal_selesai', '>=', $absensi->tanggal)->latest('id')->first();
         }
 
-        return view('hr.absensi.detail', compact('absensi', 'distances', 'perjalananDinas'));
+        // Ambil previous dan next ID
+        $prevNext = $this->getPrevNextIds($id);
+
+        return view('hr.absensi.detail', compact('absensi', 'distances', 'perjalananDinas', 'prevNext'));
+    }
+
+    private function getPrevNextIds($currentId)
+    {
+        $ids = Absensi::orderBy('tanggal', 'desc')->pluck('id')->toArray();
+        $index = array_search($currentId, $ids);
+        return [
+            'prev' => $index > 0 ? $ids[$index - 1] : null,
+            'next' => $index < count($ids) - 1 ? $ids[$index + 1] : null,
+        ];
     }
 
     public function updateStatus(Request $request, $id)
