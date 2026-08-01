@@ -391,55 +391,75 @@ class AbsensiController extends Controller
     // HR Methods
     // ==========================================================
 
-    public function index(Request $request)
+    /**
+     * Terapkan filter tanggal/bulan-tahun/karyawan/status secara konsisten.
+     * Dipakai bareng oleh index(), getChartData(), dan exportExcel() supaya
+     * hasil filter di halaman, di chart, dan di export SELALU sinkron.
+     *
+     * Prioritas filter tanggal: kalau start_date & end_date diisi, itu yang
+     * dipakai (bulan/tahun diabaikan). Kalau tidak, baru pakai bulan/tahun.
+     */
+    private function applyAbsensiFilters($query, Request $request)
     {
-        $query = Absensi::with('karyawan');
-        $hasFilter = false;
-
-        // Filter tanggal
         if ($request->filled('start_date') && $request->filled('end_date')) {
             $query->whereBetween('tanggal', [$request->start_date, $request->end_date]);
-            $hasFilter = true;
-        }
-
-        // Filter bulan/tahun
-        if ($request->filled('month') && $request->filled('year')) {
+        } elseif ($request->filled('month') && $request->filled('year')) {
             $query->whereMonth('tanggal', $request->month)->whereYear('tanggal', $request->year);
-
-            $hasFilter = true;
         }
 
-        // Filter karyawan
         if ($request->filled('karyawan_id')) {
             $query->where('karyawan_id', $request->karyawan_id);
-            $hasFilter = true;
         }
 
-        // Filter status
-        if ($request->filled('status') && $request->status != 'semua') {
+        if ($request->filled('status') && $request->status !== 'semua') {
             $query->where('status', $request->status);
-            $hasFilter = true;
         }
+
+        return $query;
+    }
+
+    /**
+     * Kalau HR belum memilih filter apapun, defaultkan ke bulan berjalan
+     * supaya halaman tidak tampil kosong saat pertama dibuka. HR tetap bebas
+     * mengganti/reset filter seperti biasa (reset akan kembali ke bulan ini juga).
+     */
+    private function withDefaultMonthFilter(Request $request): Request
+    {
+        $hasExplicitFilter = $request->filled('start_date')
+            || $request->filled('end_date')
+            || $request->filled('month')
+            || $request->filled('year')
+            || $request->filled('karyawan_id')
+            || ($request->filled('status') && $request->status !== 'semua');
+
+        if (!$hasExplicitFilter) {
+            $request->merge([
+                'month' => Carbon::now($this->officeTimezone)->month,
+                'year' => Carbon::now($this->officeTimezone)->year,
+            ]);
+        }
+
+        return $request;
+    }
+
+    public function index(Request $request)
+    {
+        $request = $this->withDefaultMonthFilter($request);
+
+        $query = $this->applyAbsensiFilters(Absensi::with('karyawan'), $request);
 
         /*
     |--------------------------------------------------------------------------
-    | Pagination
+    | Pagination (10 data per halaman, dengan tombol Previous/Next)
     |--------------------------------------------------------------------------
     */
 
         $perPage = 10;
         $page = LengthAwarePaginator::resolveCurrentPage();
 
-        if (!$hasFilter) {
-            $displayRows = collect();
-            $total = 0;
-        } else {
-            $allMatching = $query->orderBy('tanggal', 'desc')->get();
-
-            $displayRows = Absensi::mergeConsecutivePerjalananDinas($allMatching);
-
-            $total = $displayRows->count();
-        }
+        $allMatching = $query->orderBy('tanggal', 'desc')->get();
+        $displayRows = Absensi::mergeConsecutivePerjalananDinas($allMatching);
+        $total = $displayRows->count();
 
         $results = $displayRows->slice(($page - 1) * $perPage, $perPage)->values();
 
@@ -448,24 +468,16 @@ class AbsensiController extends Controller
             'query' => request()->query(),
         ]);
 
-        if ($hasFilter) {
-            $chartData = $this->getChartData($request);
-        } else {
-            $chartData = [
-                'total' => 0,
-                'hadir' => 0,
-                'izin' => 0,
-                'sakit' => 0,
-                'alpha' => 0,
-                'perjalanan_dinas' => 0,
-                'valid_location' => 0,
-                'invalid_location' => 0,
-            ];
-        }
+        $chartData = $this->getChartData($request);
 
-        $karyawans = Karyawan::all();
+        $karyawans = Karyawan::orderBy('nama_lengkap')->get();
 
-        return view('hr.absensi.index', compact('absensis', 'karyawans', 'chartData'));
+        // Supaya form filter bulan/tahun tetap menampilkan pilihan yang sedang
+        // aktif (termasuk saat default bulan-berjalan diterapkan otomatis).
+        $selectedMonth = $request->input('month');
+        $selectedYear = $request->input('year');
+
+        return view('hr.absensi.index', compact('absensis', 'karyawans', 'chartData', 'selectedMonth', 'selectedYear'));
     }
 
     public function dashboard()
@@ -511,29 +523,23 @@ class AbsensiController extends Controller
 
     public function exportExcel(Request $request)
     {
-        $query = Absensi::with('karyawan');
+        $query = $this->applyAbsensiFilters(Absensi::with('karyawan'), $request);
 
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $query->whereBetween('tanggal', [$request->start_date, $request->end_date]);
-        }
-
-        if ($request->filled('month') && $request->filled('year')) {
-            $query->whereMonth('tanggal', $request->month)->whereYear('tanggal', $request->year);
-        }
-
-        if ($request->filled('karyawan_id')) {
-            $query->where('karyawan_id', $request->karyawan_id);
-        }
-
-        if ($request->filled('status') && $request->status !== 'semua') {
-            $query->where('status', $request->status);
-        }
-
-        $absensis = $query->orderBy('tanggal', 'desc')->get();
+        $absensis = $query->orderBy('tanggal', 'asc')->get();
 
         return $this->generateExcel($absensis);
     }
 
+    /**
+     * Generate laporan absensi dalam bentuk CSV, DIKELOMPOKKAN PER KARYAWAN.
+     * Tiap karyawan mendapat blok tersendiri berisi:
+     *   - Data harian: tanggal, hari, check-in, check-out, status, terlambat
+     *     (menit), total jam kerja (menit), lembur (menit), keterangan.
+     *   - Ringkasan per karyawan: jumlah hari kerja, total jam kerja, total
+     *     lembur, total keterlambatan, rekap status, dan jumlah masuk di hari
+     *     Minggu (hari libur kantor).
+     * Di akhir file ditambahkan ringkasan total untuk seluruh karyawan.
+     */
     private function generateExcel($absensis)
     {
         $fileName = 'laporan_absensi_' . Carbon::now($this->officeTimezone)->format('Ymd_His') . '.csv';
@@ -547,35 +553,124 @@ class AbsensiController extends Controller
             $file = fopen('php://output', 'w');
             fprintf($file, chr(0xef) . chr(0xbb) . chr(0xbf));
 
-            fputcsv($file, ['No', 'Nama Karyawan', 'Kode Pegawai', 'Tanggal', 'Check In', 'Check Out', 'Kantor Cabang', 'Status', 'Total Jam Kerja', 'Latitude', 'Longitude', 'Valid Lokasi', 'Jarak Terdekat (meter)', 'Keterangan']);
+            fputcsv($file, ['LAPORAN ABSENSI PER KARYAWAN']);
+            fputcsv($file, ['Dicetak', Carbon::now($this->officeTimezone)->translatedFormat('d F Y H:i')]);
+            fputcsv($file, []);
 
-            $no = 1;
-            foreach ($absensis as $absen) {
-                $distance = '-';
-                if ($absen->latitude && $absen->longitude) {
-                    $locations = $this->getOfficeLocations();
-                    $minDist = PHP_FLOAT_MAX;
-                    foreach ($locations as $coords) {
-                        $d = $this->haversineDistance($absen->latitude, $absen->longitude, $coords['latitude'], $coords['longitude']);
-                        if ($d < $minDist) {
-                            $minDist = $d;
-                        }
+            // Kelompokkan per karyawan (bukan tercampur semua orang jadi satu tabel),
+            // lalu urutkan kelompok berdasarkan nama karyawan supaya rapi dibaca.
+            $groups = $absensis->groupBy('karyawan_id')->sortBy(function ($items) {
+                return $items->first()->karyawan->nama_lengkap ?? '';
+            });
+
+            $grandTotal = [
+                'hari_kerja' => 0,
+                'menit_kerja' => 0,
+                'menit_lembur' => 0,
+                'menit_terlambat' => 0,
+                'jumlah_karyawan' => $groups->count(),
+            ];
+
+            foreach ($groups as $items) {
+                $items = $items->sortBy(fn ($item) => $item->tanggal->timestamp)->values();
+                $karyawan = $items->first()->karyawan;
+
+                fputcsv($file, ['KARYAWAN', $karyawan->nama_lengkap ?? '-']);
+                fputcsv($file, ['Kode Pegawai', $karyawan->kode_pegawai ?? '-']);
+                fputcsv($file, ['No', 'Tanggal', 'Hari', 'Check In', 'Check Out', 'Status', 'Terlambat (menit)', 'Total Jam Kerja (menit)', 'Lembur (menit)', 'Keterangan']);
+
+                $summary = [
+                    'hari_kerja' => 0,
+                    'menit_kerja' => 0,
+                    'menit_lembur' => 0,
+                    'menit_terlambat' => 0,
+                    'hadir' => 0,
+                    'izin' => 0,
+                    'sakit' => 0,
+                    'alpha' => 0,
+                    'dinas' => 0,
+                    'masuk_hari_minggu' => 0,
+                ];
+
+                $no = 1;
+                foreach ($items as $absen) {
+                    $totalMenit = $absen->total_menit_kerja;
+                    $terlambat = $absen->terlambat_menit;
+                    $lembur = $absen->lembur_menit;
+
+                    // Tetap tampilkan jam check-in/check-out apa adanya untuk
+                    // SEMUA hari, termasuk kalau karyawan masuk di hari Minggu
+                    // atau Senin -- bukan cuma hari kerja "biasa".
+                    fputcsv($file, [
+                        $no++,
+                        $absen->tanggal->format('d-m-Y'),
+                        $absen->hari,
+                        $absen->check_in ? $absen->check_in->format('H:i') : '-',
+                        $absen->check_out ? $absen->check_out->format('H:i') : '-',
+                        $absen->status,
+                        $terlambat,
+                        $totalMenit,
+                        $lembur,
+                        $absen->keterangan ?? '-',
+                    ]);
+
+                    $summary['menit_kerja'] += $totalMenit;
+                    $summary['menit_lembur'] += $lembur;
+                    $summary['menit_terlambat'] += $terlambat;
+
+                    switch ($absen->status) {
+                        case 'Hadir':
+                            $summary['hadir']++;
+                            $summary['hari_kerja']++;
+                            break;
+                        case 'Izin':
+                            $summary['izin']++;
+                            break;
+                        case 'Sakit':
+                            $summary['sakit']++;
+                            break;
+                        case 'Alpha':
+                            $summary['alpha']++;
+                            break;
+                        case 'Perjalanan Dinas':
+                            $summary['dinas']++;
+                            $summary['hari_kerja']++;
+                            break;
                     }
-                    $distance = $minDist < PHP_FLOAT_MAX ? round($minDist, 2) : '-';
+
+                    if ($absen->is_hari_minggu && $absen->check_in) {
+                        $summary['masuk_hari_minggu']++;
+                    }
                 }
 
-                fputcsv($file, [$no++, $absen->karyawan->nama_lengkap, $absen->karyawan->kode_pegawai, $absen->tanggal->format('d-m-Y'), $absen->check_in ? Carbon::parse($absen->check_in)->format('H:i') : '-', $absen->check_out ? Carbon::parse($absen->check_out)->format('H:i') : '-', $absen->kantor_cabang, $absen->status, $absen->total_jam_kerja . ' jam', $absen->latitude ?? '-', $absen->longitude ?? '-', $absen->is_valid_location ? 'Ya' : 'Tidak', $distance, $absen->keterangan ?? '-']);
+                fputcsv($file, []);
+                fputcsv($file, ['RINGKASAN', $karyawan->nama_lengkap ?? '-']);
+                fputcsv($file, ['Jumlah Hari Kerja (Hadir + Perjalanan Dinas)', $summary['hari_kerja']]);
+                fputcsv($file, ['Total Jam Kerja (menit)', $summary['menit_kerja']]);
+                fputcsv($file, ['Total Jam Kerja (jam:menit)', intdiv($summary['menit_kerja'], 60) . ' jam ' . str_pad($summary['menit_kerja'] % 60, 2, '0', STR_PAD_LEFT) . ' menit']);
+                fputcsv($file, ['Total Lembur (menit)', $summary['menit_lembur']]);
+                fputcsv($file, ['Total Keterlambatan (menit)', $summary['menit_terlambat']]);
+                fputcsv($file, ['Jumlah Hadir', $summary['hadir']]);
+                fputcsv($file, ['Jumlah Izin', $summary['izin']]);
+                fputcsv($file, ['Jumlah Sakit', $summary['sakit']]);
+                fputcsv($file, ['Jumlah Alpha', $summary['alpha']]);
+                fputcsv($file, ['Jumlah Perjalanan Dinas', $summary['dinas']]);
+                fputcsv($file, ['Jumlah Masuk di Hari Minggu (hari libur)', $summary['masuk_hari_minggu']]);
+                fputcsv($file, []);
+                fputcsv($file, []);
+
+                $grandTotal['hari_kerja'] += $summary['hari_kerja'];
+                $grandTotal['menit_kerja'] += $summary['menit_kerja'];
+                $grandTotal['menit_lembur'] += $summary['menit_lembur'];
+                $grandTotal['menit_terlambat'] += $summary['menit_terlambat'];
             }
 
-            fputcsv($file, []);
-            fputcsv($file, ['RINGKASAN LAPORAN']);
-            fputcsv($file, ['Total Absensi', $absensis->count()]);
-            fputcsv($file, ['Total Hadir', $absensis->where('status', 'Hadir')->count()]);
-            fputcsv($file, ['Total Izin', $absensis->where('status', 'Izin')->count()]);
-            fputcsv($file, ['Total Sakit', $absensis->where('status', 'Sakit')->count()]);
-            fputcsv($file, ['Total Alpha', $absensis->where('status', 'Alpha')->count()]);
-            fputcsv($file, ['Total Perjalanan Dinas', $absensis->where('status', 'Perjalanan Dinas')->count()]);
-            fputcsv($file, ['Valid Lokasi', $absensis->where('is_valid_location', true)->count()]);
+            fputcsv($file, ['RINGKASAN TOTAL SEMUA KARYAWAN']);
+            fputcsv($file, ['Jumlah Karyawan', $grandTotal['jumlah_karyawan']]);
+            fputcsv($file, ['Total Hari Kerja', $grandTotal['hari_kerja']]);
+            fputcsv($file, ['Total Jam Kerja (menit)', $grandTotal['menit_kerja']]);
+            fputcsv($file, ['Total Lembur (menit)', $grandTotal['menit_lembur']]);
+            fputcsv($file, ['Total Keterlambatan (menit)', $grandTotal['menit_terlambat']]);
 
             fclose($file);
         };
@@ -585,23 +680,7 @@ class AbsensiController extends Controller
 
     private function getChartData($request)
     {
-        $query = Absensi::with('karyawan');
-
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $query->whereBetween('tanggal', [$request->start_date, $request->end_date]);
-        }
-
-        if ($request->filled('month') && $request->filled('year')) {
-            $query->whereMonth('tanggal', $request->month)->whereYear('tanggal', $request->year);
-        }
-
-        if ($request->filled('karyawan_id')) {
-            $query->where('karyawan_id', $request->karyawan_id);
-        }
-
-        if ($request->filled('status') && $request->status !== 'semua') {
-            $query->where('status', $request->status);
-        }
+        $query = $this->applyAbsensiFilters(Absensi::with('karyawan'), $request);
 
         $absensis = $query->get();
 

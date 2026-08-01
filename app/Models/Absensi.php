@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class Absensi extends Model
 {
@@ -46,6 +47,96 @@ class Absensi extends Model
     public function karyawan()
     {
         return $this->belongsTo(Karyawan::class, 'karyawan_id');
+    }
+
+    /**
+     * ==========================================================
+     * JAM KERJA STANDAR & PERHITUNGAN TERLAMBAT / LEMBUR
+     * ==========================================================
+     */
+
+    // Batas jam check-in maksimum supaya TIDAK dianggap terlambat.
+    // Check-in setelah jam ini akan dihitung terlambat (dalam menit).
+    const WORK_START_TIME = '07:45:00';
+
+    // Jam pulang standar kantor, dipakai sebagai basis perhitungan lembur.
+    // Check-out setelah jam ini akan dihitung sebagai lembur (dalam menit).
+    const WORK_END_TIME = '16:00:00';
+
+    /**
+     * Nama hari (Bahasa Indonesia) dari tanggal absensi. Contoh: Senin, Selasa, ... Minggu.
+     * Dipakai supaya tiap baris laporan/export jelas jatuh di hari apa,
+     * termasuk kalau karyawan masuk di hari Minggu atau Senin.
+     */
+    public function getHariAttribute(): ?string
+    {
+        return $this->tanggal ? $this->tanggal->copy()->locale('id')->isoFormat('dddd') : null;
+    }
+
+    /**
+     * True kalau tanggal absensi jatuh di hari Minggu (hari libur kantor).
+     * Dipakai untuk menandai kalau ada karyawan yang masuk kerja di hari Minggu.
+     */
+    public function getIsHariMingguAttribute(): bool
+    {
+        return $this->tanggal ? $this->tanggal->dayOfWeekIso === 7 : false;
+    }
+
+    /**
+     * Jumlah menit keterlambatan check-in, dihitung dari batas WORK_START_TIME (07:45).
+     * Kalau check-in dilakukan tepat atau sebelum jam 07:45, atau belum check-in
+     * sama sekali, hasilnya 0 (tidak dianggap terlambat).
+     */
+    public function getTerlambatMenitAttribute(): int
+    {
+        if (!$this->check_in || !$this->tanggal) {
+            return 0;
+        }
+
+        $checkIn = $this->check_in->copy();
+        $batas = Carbon::parse($this->tanggal->format('Y-m-d') . ' ' . self::WORK_START_TIME, $checkIn->getTimezone());
+
+        return $checkIn->greaterThan($batas) ? $batas->diffInMinutes($checkIn) : 0;
+    }
+
+    /**
+     * Helper boolean: apakah absensi ini terlambat (check-in melebihi jam 07:45)?
+     */
+    public function getIsTerlambatAttribute(): bool
+    {
+        return $this->terlambat_menit > 0;
+    }
+
+    /**
+     * Jumlah menit lembur, dihitung dari selisih check-out terhadap jam pulang
+     * standar (WORK_END_TIME / 16:00). Kalau belum check-out, atau pulang
+     * lebih awal/tepat waktu, hasilnya 0.
+     */
+    public function getLemburMenitAttribute(): int
+    {
+        if (!$this->check_out || !$this->tanggal) {
+            return 0;
+        }
+
+        $checkOut = $this->check_out->copy();
+        $batas = Carbon::parse($this->tanggal->format('Y-m-d') . ' ' . self::WORK_END_TIME, $checkOut->getTimezone());
+
+        return $checkOut->greaterThan($batas) ? $batas->diffInMinutes($checkOut) : 0;
+    }
+
+    /**
+     * Total menit kerja aktual, dihitung presisi per menit dari selisih
+     * check-in ke check-out. Berbeda dari kolom total_jam_kerja yang
+     * disimpan dalam satuan jam (dibulatkan), field ini dipakai untuk
+     * laporan/export yang butuh akurasi per menit.
+     */
+    public function getTotalMenitKerjaAttribute(): int
+    {
+        if (!$this->check_in || !$this->check_out) {
+            return 0;
+        }
+
+        return $this->check_in->diffInMinutes($this->check_out);
     }
 
     /**

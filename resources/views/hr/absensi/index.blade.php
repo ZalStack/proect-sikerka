@@ -118,6 +118,44 @@
                             </select>
                         </div>
                         <div>
+                            <label
+                                class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Bulan</label>
+                            <select name="month"
+                                class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent transition">
+                                <option value="">Semua Bulan</option>
+                                @php
+                                    $bulanList = [
+                                        1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+                                        5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+                                        9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+                                    ];
+                                    $activeMonth = request('month', $selectedMonth ?? null);
+                                @endphp
+                                @foreach ($bulanList as $num => $label)
+                                    <option value="{{ $num }}" {{ (int) $activeMonth === $num ? 'selected' : '' }}>
+                                        {{ $label }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label
+                                class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Tahun</label>
+                            @php
+                                $activeYear = request('year', $selectedYear ?? null);
+                                $currentYear = (int) \Carbon\Carbon::now('Asia/Jakarta')->year;
+                            @endphp
+                            <select name="year"
+                                class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent transition">
+                                <option value="">Semua Tahun</option>
+                                @for ($y = $currentYear; $y >= $currentYear - 4; $y--)
+                                    <option value="{{ $y }}" {{ (int) $activeYear === $y ? 'selected' : '' }}>
+                                        {{ $y }}
+                                    </option>
+                                @endfor
+                            </select>
+                        </div>
+                        <div>
                             <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Dari
                                 Tanggal</label>
                             <input type="date" name="start_date" value="{{ request('start_date') }}"
@@ -129,6 +167,9 @@
                             <input type="date" name="end_date" value="{{ request('end_date') }}"
                                 class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent transition">
                         </div>
+                        <p class="text-xs text-gray-400 sm:col-span-2 lg:col-span-6 -mt-1">
+                            * Kalau "Dari Tanggal" &amp; "Sampai Tanggal" diisi, filter Bulan/Tahun akan diabaikan.
+                        </p>
                         <div class="flex items-end gap-2 sm:col-span-2 lg:col-span-2">
                             <button type="submit"
                                 class="flex-1 px-4 py-2.5 bg-[#00a2e9] text-white rounded-xl hover:bg-[#0088c4] transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md">
@@ -157,6 +198,9 @@
                                     <th scope="col"
                                         class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden sm:table-cell">
                                         Check-in / out</th>
+                                    <th scope="col"
+                                        class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                                        Terlambat</th>
                                     <th scope="col"
                                         class="px-4 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                         Status</th>
@@ -213,6 +257,21 @@
                                                 <span class="text-gray-300">/</span>
                                                 {{ $item->check_out ? \Carbon\Carbon::parse($item->check_out)->format('H:i') : '-' }}
                                             </p>
+                                            @if (!$item->is_periode)
+                                                <p class="text-xs text-gray-400">{{ $item->hari }}</p>
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-3.5 hidden md:table-cell">
+                                            @if (!$item->is_periode && $item->is_terlambat)
+                                                <span
+                                                    class="inline-block px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                                                    +{{ $item->terlambat_menit }} menit
+                                                </span>
+                                            @elseif(!$item->is_periode && $item->check_in)
+                                                <span class="text-xs font-medium text-[#2E7D3E]">Tepat waktu</span>
+                                            @else
+                                                <span class="text-xs text-gray-400">—</span>
+                                            @endif
                                         </td>
                                         <td class="px-4 py-3.5">
                                             <div>
@@ -283,7 +342,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="px-4 py-12 text-center">
+                                        <td colspan="8" class="px-4 py-12 text-center">
                                             <div class="flex flex-col items-center justify-center text-gray-400">
                                                 <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
@@ -300,10 +359,62 @@
                         </table>
                     </div>
 
-                    <!-- Pagination -->
-                    <div class="p-4 sm:p-4">
-                        {{ $absensis->withQueryString()->links() }}
-                    </div>
+                    <!-- Pagination (Previous / Next, 10 data per halaman) -->
+                    @if ($absensis->total() > 0)
+                        <div
+                            class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-gray-100 px-4 py-4">
+                            <p class="text-xs sm:text-sm text-gray-500 text-center sm:text-left">
+                                Menampilkan
+                                <span class="font-semibold text-gray-700">{{ $absensis->firstItem() }}</span>
+                                –
+                                <span class="font-semibold text-gray-700">{{ $absensis->lastItem() }}</span>
+                                dari
+                                <span class="font-semibold text-gray-700">{{ $absensis->total() }}</span> data
+                                &middot; Halaman {{ $absensis->currentPage() }} dari {{ $absensis->lastPage() }}
+                            </p>
+                            <div class="flex items-center justify-center gap-2">
+                                @if ($absensis->onFirstPage())
+                                    <span
+                                        class="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-medium text-gray-300 bg-gray-50 cursor-not-allowed select-none">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15 19l-7-7 7-7" />
+                                        </svg>
+                                        Previous
+                                    </span>
+                                @else
+                                    <a href="{{ $absensis->appends(request()->query())->previousPageUrl() }}"
+                                        class="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15 19l-7-7 7-7" />
+                                        </svg>
+                                        Previous
+                                    </a>
+                                @endif
+
+                                @if ($absensis->hasMorePages())
+                                    <a href="{{ $absensis->appends(request()->query())->nextPageUrl() }}"
+                                        class="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-medium text-white bg-[#00a2e9] hover:bg-[#0088c4] transition-colors">
+                                        Next
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </a>
+                                @else
+                                    <span
+                                        class="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-medium text-gray-300 bg-gray-50 cursor-not-allowed select-none">
+                                        Next
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Keterangan -->
