@@ -744,4 +744,132 @@ class AbsensiController extends Controller
 
         return redirect()->route('hr.absensi.index')->with('success', 'Status absensi berhasil diupdate');
     }
+
+    /**
+     * ==========================================================
+     * VERIFIKASI ABSEN MANUAL OLEH HR
+     * ==========================================================
+     * Dipakai kalau karyawan lupa/tidak bisa check-in atau check-out sendiri.
+     * Lokasi TIDAK diinput manual -- diambil otomatis dari lokasi GPS HR saat
+     * menekan tombol verifikasi, lalu dicocokkan ke kantor terdekat, supaya
+     * kolom Lokasi tetap konsisten dengan data absensi karyawan biasa.
+     */
+
+    /**
+     * Verifikasi check-in manual oleh HR.
+     */
+    public function manualCheckIn(Request $request, $id)
+    {
+        $request->validate([
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+        ]);
+
+        $absensi = Absensi::findOrFail($id);
+
+        if ($absensi->check_in) {
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Karyawan ini sudah punya data check-in.',
+                ],
+                400,
+            );
+        }
+
+        $now = Carbon::now($this->officeTimezone);
+
+        // Cocokkan lokasi HR saat ini ke kantor terdekat (tanpa batas radius/akurasi,
+        // karena ini verifikasi manual oleh HR, bukan absensi mandiri karyawan).
+        $locationCheck = $this->isValidLocation((float) $request->latitude, (float) $request->longitude, $this->maxRadius, null);
+        $hrName = Auth::user()->nama_lengkap ?? 'HR';
+
+        $absensi->check_in = $now;
+        $absensi->kantor_cabang = $locationCheck['location_name'] ?? $locationCheck['nearest'];
+        $absensi->latitude = $request->latitude;
+        $absensi->longitude = $request->longitude;
+        $absensi->is_valid_location = true;
+
+        if (!$absensi->status || $absensi->status === 'Alpha') {
+            $absensi->status = 'Hadir';
+        }
+
+        $catatanVerifikasi = 'Check-in diverifikasi manual oleh HR (' . $hrName . ') pada ' . $now->format('d-m-Y H:i');
+        $absensi->keterangan = $absensi->keterangan ? $absensi->keterangan . ' | ' . $catatanVerifikasi : $catatanVerifikasi;
+
+        $absensi->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Check-in berhasil diverifikasi secara manual.',
+            'data' => [
+                'check_in' => $now->format('H:i'),
+                'kantor_cabang' => $absensi->kantor_cabang,
+            ],
+        ]);
+    }
+
+    /**
+     * Verifikasi check-out manual oleh HR.
+     */
+    public function manualCheckOut(Request $request, $id)
+    {
+        $request->validate([
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+        ]);
+
+        $absensi = Absensi::findOrFail($id);
+
+        if (!$absensi->check_in) {
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Karyawan ini belum check-in, tidak bisa diverifikasi check-out.',
+                ],
+                400,
+            );
+        }
+
+        if ($absensi->check_out) {
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Karyawan ini sudah punya data check-out.',
+                ],
+                400,
+            );
+        }
+
+        $now = Carbon::now($this->officeTimezone);
+
+        $locationCheck = $this->isValidLocation((float) $request->latitude, (float) $request->longitude, $this->maxRadius, null);
+        $hrName = Auth::user()->nama_lengkap ?? 'HR';
+
+        $checkInTime = Carbon::parse($absensi->check_in);
+        $totalJamKerja = max(0, (int) round($checkInTime->diffInMinutes($now) / 60));
+
+        $absensi->check_out = $now;
+        $absensi->total_jam_kerja = $totalJamKerja;
+
+        // Kalau kolom lokasi belum kebisi (mis. checkin lama tanpa lokasi), lengkapi
+        // dari lokasi HR sekarang. Kalau sudah ada (dari checkin karyawan/HR), biarkan.
+        if (!$absensi->kantor_cabang) {
+            $absensi->kantor_cabang = $locationCheck['location_name'] ?? $locationCheck['nearest'];
+        }
+
+        $catatanVerifikasi = 'Check-out diverifikasi manual oleh HR (' . $hrName . ') pada ' . $now->format('d-m-Y H:i');
+        $absensi->keterangan = $absensi->keterangan ? $absensi->keterangan . ' | ' . $catatanVerifikasi : $catatanVerifikasi;
+
+        $absensi->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Check-out berhasil diverifikasi secara manual.',
+            'data' => [
+                'check_out' => $now->format('H:i'),
+                'total_jam_kerja' => $totalJamKerja,
+            ],
+        ]);
+    }
 }

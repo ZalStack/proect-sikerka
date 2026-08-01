@@ -57,7 +57,7 @@ class Absensi extends Model
 
     // Batas jam check-in maksimum supaya TIDAK dianggap terlambat.
     // Check-in setelah jam ini akan dihitung terlambat (dalam menit).
-    const WORK_START_TIME = '07:45:00';
+    const WORK_START_TIME = '07:40:00';
 
     // Jam pulang standar kantor, dipakai sebagai basis perhitungan lembur.
     // Check-out setelah jam ini akan dihitung sebagai lembur (dalam menit).
@@ -93,7 +93,13 @@ class Absensi extends Model
             return 0;
         }
 
-        $checkIn = $this->check_in->copy();
+        // Rekonstruksi jam check-in DI ATAS tanggal absensi (kolom `tanggal`),
+        // bukan ikut tanggal yang tersimpan di kolom check_in itu sendiri.
+        // Kalau ada data check_in yang tanggalnya "meleset" dari kolom tanggal
+        // (mis. data lama/hasil input manual), perhitungan telat tetap dihitung
+        // dari JAM check-in-nya saja terhadap tanggal absensi yang benar --
+        // supaya tidak muncul angka telat yang tidak masuk akal (ribuan menit).
+        $checkIn = Carbon::parse($this->tanggal->format('Y-m-d') . ' ' . $this->check_in->format('H:i:s'), $this->check_in->getTimezone());
         $batas = Carbon::parse($this->tanggal->format('Y-m-d') . ' ' . self::WORK_START_TIME, $checkIn->getTimezone());
 
         return $checkIn->greaterThan($batas) ? $batas->diffInMinutes($checkIn) : 0;
@@ -118,7 +124,10 @@ class Absensi extends Model
             return 0;
         }
 
-        $checkOut = $this->check_out->copy();
+        // Sama seperti terlambat_menit di atas: pakai JAM check-out saja di atas
+        // tanggal absensi yang benar, supaya kebal terhadap data check_out yang
+        // tanggalnya meleset dari kolom tanggal.
+        $checkOut = Carbon::parse($this->tanggal->format('Y-m-d') . ' ' . $this->check_out->format('H:i:s'), $this->check_out->getTimezone());
         $batas = Carbon::parse($this->tanggal->format('Y-m-d') . ' ' . self::WORK_END_TIME, $checkOut->getTimezone());
 
         return $checkOut->greaterThan($batas) ? $batas->diffInMinutes($checkOut) : 0;

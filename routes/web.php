@@ -65,6 +65,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/absensi/export', [AbsensiController::class, 'exportExcel'])->name('absensi.export');
             Route::get('/absensi/{id}', [AbsensiController::class, 'detail'])->name('absensi.detail');
             Route::put('/absensi/{id}/status', [AbsensiController::class, 'updateStatus'])->name('absensi.update-status');
+            Route::post('/absensi/{id}/verifikasi-checkin', [AbsensiController::class, 'manualCheckIn'])->name('absensi.verifikasi-checkin');
+            Route::post('/absensi/{id}/verifikasi-checkout', [AbsensiController::class, 'manualCheckOut'])->name('absensi.verifikasi-checkout');
 
             Route::resource('pengumuman', PengumumanController::class);
             Route::get('/pengumuman/{id}/send-whatsapp', [PengumumanController::class, 'sendWhatsApp'])->name('pengumuman.send-whatsapp');

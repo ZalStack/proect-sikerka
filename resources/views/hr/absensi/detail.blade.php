@@ -228,6 +228,107 @@
                         </div>
                     </div>
 
+                    <!-- Verifikasi Absen Manual (HR) -->
+                    <div class="mt-6 pt-6 border-t border-gray-200">
+                        <h3 class="text-base sm:text-lg font-semibold text-[#161758] mb-2">✅ Verifikasi Absen Manual (HR)
+                        </h3>
+                        <p class="text-xs sm:text-sm text-gray-500 mb-3">
+                            Dipakai kalau karyawan lupa/tidak bisa absen sendiri. Kolom Lokasi diisi otomatis dari lokasi
+                            Anda (HR) saat menekan tombol ini -- tidak perlu diisi manual.
+                        </p>
+                        <div id="verifikasi-manual-alert" class="hidden mb-3 text-xs sm:text-sm rounded-lg p-3"></div>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            @if (!$absensi->check_in)
+                                <button type="button" id="btn-verifikasi-checkin"
+                                    data-url="{{ route('hr.absensi.verifikasi-checkin', $absensi->id) }}"
+                                    class="verifikasi-manual-btn w-full sm:w-auto bg-[#2E7D3E] text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-[#256b34] transition-colors duration-200 text-sm sm:text-base">
+                                    Verifikasi Check-in Manual
+                                </button>
+                            @endif
+                            @if ($absensi->check_in && !$absensi->check_out)
+                                <button type="button" id="btn-verifikasi-checkout"
+                                    data-url="{{ route('hr.absensi.verifikasi-checkout', $absensi->id) }}"
+                                    class="verifikasi-manual-btn w-full sm:w-auto bg-[#00a2e9] text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-[#0088c4] transition-colors duration-200 text-sm sm:text-base">
+                                    Verifikasi Check-out Manual
+                                </button>
+                            @endif
+                            @if ($absensi->check_in && $absensi->check_out)
+                                <p class="text-xs sm:text-sm text-gray-400">Check-in dan check-out sudah lengkap.</p>
+                            @endif
+                        </div>
+                    </div>
+
+                    <script>
+                        document.querySelectorAll('.verifikasi-manual-btn').forEach(function(btn) {
+                            btn.addEventListener('click', function() {
+                                var url = btn.dataset.url;
+                                var alertBox = document.getElementById('verifikasi-manual-alert');
+                                var originalText = btn.textContent;
+
+                                if (!navigator.geolocation) {
+                                    alertBox.textContent = 'Browser Anda tidak mendukung deteksi lokasi (geolocation).';
+                                    alertBox.className = 'mb-3 text-xs sm:text-sm rounded-lg p-3 bg-[#ec1d1d]/10 text-[#ec1d1d]';
+                                    alertBox.classList.remove('hidden');
+                                    return;
+                                }
+
+                                btn.disabled = true;
+                                btn.textContent = 'Mengambil lokasi...';
+
+                                navigator.geolocation.getCurrentPosition(function(position) {
+                                    btn.textContent = 'Memproses...';
+
+                                    fetch(url, {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
+                                                .content,
+                                            'Accept': 'application/json',
+                                        },
+                                        body: JSON.stringify({
+                                            latitude: position.coords.latitude,
+                                            longitude: position.coords.longitude,
+                                        }),
+                                    })
+                                    .then(function(res) {
+                                        return res.json();
+                                    })
+                                    .then(function(data) {
+                                        alertBox.textContent = data.message;
+                                        alertBox.className = 'mb-3 text-xs sm:text-sm rounded-lg p-3 ' + (data
+                                            .success ? 'bg-[#2E7D3E]/10 text-[#2E7D3E]' :
+                                            'bg-[#ec1d1d]/10 text-[#ec1d1d]');
+                                        alertBox.classList.remove('hidden');
+
+                                        if (data.success) {
+                                            setTimeout(function() {
+                                                window.location.reload();
+                                            }, 900);
+                                        } else {
+                                            btn.disabled = false;
+                                            btn.textContent = originalText;
+                                        }
+                                    })
+                                    .catch(function() {
+                                        alertBox.textContent = 'Terjadi kesalahan, coba lagi.';
+                                        alertBox.className = 'mb-3 text-xs sm:text-sm rounded-lg p-3 bg-[#ec1d1d]/10 text-[#ec1d1d]';
+                                        alertBox.classList.remove('hidden');
+                                        btn.disabled = false;
+                                        btn.textContent = originalText;
+                                    });
+                                }, function() {
+                                    alertBox.textContent =
+                                        'Gagal mengambil lokasi. Pastikan izin lokasi browser diaktifkan.';
+                                    alertBox.className = 'mb-3 text-xs sm:text-sm rounded-lg p-3 bg-[#ec1d1d]/10 text-[#ec1d1d]';
+                                    alertBox.classList.remove('hidden');
+                                    btn.disabled = false;
+                                    btn.textContent = originalText;
+                                });
+                            });
+                        });
+                    </script>
+
                     <!-- Form Update Status -->
                     <div class="mt-6 pt-6 border-t border-gray-200">
                         <h3 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">Update Status</h3>
