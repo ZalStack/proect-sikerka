@@ -9,6 +9,11 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class AbsensiController extends Controller
 {
@@ -531,152 +536,348 @@ class AbsensiController extends Controller
     }
 
     /**
-     * Generate laporan absensi dalam bentuk CSV, DIKELOMPOKKAN PER KARYAWAN.
-     * Tiap karyawan mendapat blok tersendiri berisi:
+     * Generate laporan absensi dalam bentuk EXCEL (.xlsx) yang rapi & profesional,
+     * DIKELOMPOKKAN PER KARYAWAN. Tiap karyawan mendapat blok tersendiri berisi:
      *   - Data harian: tanggal, hari, check-in, check-out, status, terlambat
      *     (menit), total jam kerja (menit), lembur (menit), keterangan.
      *   - Ringkasan per karyawan: jumlah hari kerja, total jam kerja, total
      *     lembur, total keterlambatan, rekap status, dan jumlah masuk di hari
      *     Minggu (hari libur kantor).
      * Di akhir file ditambahkan ringkasan total untuk seluruh karyawan.
+     *
+     * Tampilan dibuat dengan style ala laporan HR profesional: judul bertema
+     * warna korporat, header tabel berwarna, baris selang-seling (banded rows),
+     * status ditandai warna (Hadir/Izin/Sakit/Alpha/Perjalanan Dinas), kolom
+     * terlambat & lembur ditonjolkan kalau > 0, serta kotak ringkasan yang
+     * jelas dipisahkan dari tabel data.
      */
     private function generateExcel($absensis)
     {
-        $fileName = 'laporan_absensi_' . Carbon::now($this->officeTimezone)->format('Ymd_His') . '.csv';
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Laporan Absensi');
 
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+        // ==========================================================
+        // PALET WARNA (nuansa biru korporat, konsisten & profesional)
+        // ==========================================================
+        $colorPrimary   = '1F4E78'; // biru tua - judul utama & ringkasan total
+        $colorSecondary = '2E75B6'; // biru sedang - blok nama karyawan
+        $colorHeader    = '4472C4'; // biru header tabel
+        $colorBandA     = 'FFFFFF'; // baris data terang
+        $colorBandB     = 'DCE6F1'; // baris data selang-seling
+        $colorBorder    = 'B7B7B7'; // garis tabel
+        $colorSummaryBg = 'F2F2F2'; // latar ringkasan per karyawan
+        $colorGrandBg   = 'BDD7EE'; // latar ringkasan total
+
+        $statusFill = [
+            'Hadir'            => 'C6EFCE',
+            'Izin'             => 'FFEB9C',
+            'Sakit'            => 'FCE4D6',
+            'Alpha'            => 'F8CBAD',
+            'Perjalanan Dinas' => 'D9D2E9',
+        ];
+        $statusFont = [
+            'Hadir'            => '1E7B34',
+            'Izin'             => '9C6500',
+            'Sakit'            => 'C55A11',
+            'Alpha'            => 'C00000',
+            'Perjalanan Dinas' => '5B2C87',
         ];
 
-        $callback = function () use ($absensis) {
-            $file = fopen('php://output', 'w');
-            fprintf($file, chr(0xef) . chr(0xbb) . chr(0xbf));
+        $columns   = ['No', 'Tanggal', 'Hari', 'Check In', 'Check Out', 'Status', 'Terlambat (menit)', 'Total Jam Kerja (menit)', 'Lembur (menit)', 'Keterangan'];
+        $lastCol   = 'J';
+        $colWidths = ['A' => 5, 'B' => 13, 'C' => 12, 'D' => 10, 'E' => 10, 'F' => 17, 'G' => 13, 'H' => 16, 'I' => 12, 'J' => 34];
 
-            fputcsv($file, ['LAPORAN ABSENSI PER KARYAWAN']);
-            fputcsv($file, ['Dicetak', Carbon::now($this->officeTimezone)->translatedFormat('d F Y H:i')]);
-            fputcsv($file, []);
+        foreach ($colWidths as $col => $width) {
+            $sheet->getColumnDimension($col)->setWidth($width);
+        }
 
-            // Kelompokkan per karyawan (bukan tercampur semua orang jadi satu tabel),
-            // lalu urutkan kelompok berdasarkan nama karyawan supaya rapi dibaca.
-            $groups = $absensis->groupBy('karyawan_id')->sortBy(function ($items) {
-                return $items->first()->karyawan->nama_lengkap ?? '';
-            });
+        $thinBorder = [
+            'borders' => [
+                'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => $colorBorder]],
+            ],
+        ];
 
-            $grandTotal = [
-                'hari_kerja' => 0,
-                'menit_kerja' => 0,
-                'menit_lembur' => 0,
-                'menit_terlambat' => 0,
-                'jumlah_karyawan' => $groups->count(),
+        $row = 1;
+
+        // ==========================================================
+        // JUDUL LAPORAN
+        // ==========================================================
+        $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
+        $sheet->setCellValue("A{$row}", 'LAPORAN ABSENSI KARYAWAN');
+        $sheet->getStyle("A{$row}")->applyFromArray([
+            'font'      => ['bold' => true, 'size' => 16, 'color' => ['rgb' => 'FFFFFF']],
+            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorPrimary]],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+        ]);
+        $sheet->getRowDimension($row)->setRowHeight(32);
+        $row++;
+
+        $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
+        $sheet->setCellValue("A{$row}", 'Dicetak pada ' . Carbon::now($this->officeTimezone)->translatedFormat('d F Y, H:i') . ' WIB');
+        $sheet->getStyle("A{$row}")->applyFromArray([
+            'font'      => ['italic' => true, 'size' => 10, 'color' => ['rgb' => 'FFFFFF']],
+            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorPrimary]],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+        ]);
+        $sheet->getRowDimension($row)->setRowHeight(18);
+        $row += 2;
+
+        // Kelompokkan per karyawan (bukan tercampur semua orang jadi satu tabel),
+        // lalu urutkan kelompok berdasarkan nama karyawan supaya rapi dibaca.
+        $groups = $absensis->groupBy('karyawan_id')->sortBy(function ($items) {
+            return $items->first()->karyawan->nama_lengkap ?? '';
+        });
+
+        $grandTotal = [
+            'hari_kerja'       => 0,
+            'menit_kerja'      => 0,
+            'menit_lembur'     => 0,
+            'menit_terlambat'  => 0,
+            'jumlah_karyawan'  => $groups->count(),
+        ];
+
+        foreach ($groups as $items) {
+            $items    = $items->sortBy(fn ($item) => $item->tanggal->timestamp)->values();
+            $karyawan = $items->first()->karyawan;
+
+            // ==========================================================
+            // NAMA & KODE KARYAWAN (header blok)
+            // ==========================================================
+            $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
+            $sheet->setCellValue("A{$row}", strtoupper($karyawan->nama_lengkap ?? '-') . '   |   Kode Pegawai: ' . ($karyawan->kode_pegawai ?? '-'));
+            $sheet->getStyle("A{$row}")->applyFromArray([
+                'font'      => ['bold' => true, 'size' => 12, 'color' => ['rgb' => 'FFFFFF']],
+                'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorSecondary]],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'vertical' => Alignment::VERTICAL_CENTER, 'indent' => 1],
+            ]);
+            $sheet->getRowDimension($row)->setRowHeight(24);
+            $row++;
+
+            // ==========================================================
+            // HEADER TABEL
+            // ==========================================================
+            foreach ($columns as $i => $colName) {
+                $col = chr(65 + $i);
+                $sheet->setCellValue("{$col}{$row}", $colName);
+            }
+            $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
+                'font'      => ['bold' => true, 'size' => 10, 'color' => ['rgb' => 'FFFFFF']],
+                'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorHeader]],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
+                'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'FFFFFF']]],
+            ]);
+            $sheet->getRowDimension($row)->setRowHeight(22);
+            $headerRowForFreeze = $row;
+            $row++;
+
+            $summary = [
+                'hari_kerja'         => 0,
+                'menit_kerja'        => 0,
+                'menit_lembur'       => 0,
+                'menit_terlambat'    => 0,
+                'hadir'              => 0,
+                'izin'               => 0,
+                'sakit'              => 0,
+                'alpha'              => 0,
+                'dinas'              => 0,
+                'masuk_hari_minggu'  => 0,
             ];
 
-            foreach ($groups as $items) {
-                $items = $items->sortBy(fn ($item) => $item->tanggal->timestamp)->values();
-                $karyawan = $items->first()->karyawan;
+            $no = 1;
+            foreach ($items as $absen) {
+                $totalMenit = $absen->total_menit_kerja;
+                $terlambat  = $absen->terlambat_menit;
+                $lembur     = $absen->lembur_menit;
 
-                fputcsv($file, ['KARYAWAN', $karyawan->nama_lengkap ?? '-']);
-                fputcsv($file, ['Kode Pegawai', $karyawan->kode_pegawai ?? '-']);
-                fputcsv($file, ['No', 'Tanggal', 'Hari', 'Check In', 'Check Out', 'Status', 'Terlambat (menit)', 'Total Jam Kerja (menit)', 'Lembur (menit)', 'Keterangan']);
+                // Tetap tampilkan jam check-in/check-out apa adanya untuk
+                // SEMUA hari, termasuk kalau karyawan masuk di hari Minggu
+                // atau Senin -- bukan cuma hari kerja "biasa".
+                $sheet->setCellValue("A{$row}", $no);
+                $sheet->setCellValue("B{$row}", $absen->tanggal->format('d-m-Y'));
+                $sheet->setCellValue("C{$row}", $absen->hari);
+                $sheet->setCellValue("D{$row}", $absen->check_in ? $absen->check_in->format('H:i') : '-');
+                $sheet->setCellValue("E{$row}", $absen->check_out ? $absen->check_out->format('H:i') : '-');
+                $sheet->setCellValue("F{$row}", $absen->status);
+                $sheet->setCellValue("G{$row}", $terlambat);
+                $sheet->setCellValue("H{$row}", $totalMenit);
+                $sheet->setCellValue("I{$row}", $lembur);
+                $sheet->setCellValue("J{$row}", $absen->keterangan ?? '-');
 
-                $summary = [
-                    'hari_kerja' => 0,
-                    'menit_kerja' => 0,
-                    'menit_lembur' => 0,
-                    'menit_terlambat' => 0,
-                    'hadir' => 0,
-                    'izin' => 0,
-                    'sakit' => 0,
-                    'alpha' => 0,
-                    'dinas' => 0,
-                    'masuk_hari_minggu' => 0,
-                ];
+                // Baris selang-seling (banded rows) supaya mudah dibaca
+                $bandColor = ($no % 2 === 0) ? $colorBandB : $colorBandA;
+                $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
+                    'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $bandColor]],
+                    'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => $colorBorder]]],
+                    'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
+                    'font'      => ['size' => 10],
+                ]);
+                $sheet->getStyle("A{$row}:E{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle("G{$row}:I{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                $no = 1;
-                foreach ($items as $absen) {
-                    $totalMenit = $absen->total_menit_kerja;
-                    $terlambat = $absen->terlambat_menit;
-                    $lembur = $absen->lembur_menit;
-
-                    // Tetap tampilkan jam check-in/check-out apa adanya untuk
-                    // SEMUA hari, termasuk kalau karyawan masuk di hari Minggu
-                    // atau Senin -- bukan cuma hari kerja "biasa".
-                    fputcsv($file, [
-                        $no++,
-                        $absen->tanggal->format('d-m-Y'),
-                        $absen->hari,
-                        $absen->check_in ? $absen->check_in->format('H:i') : '-',
-                        $absen->check_out ? $absen->check_out->format('H:i') : '-',
-                        $absen->status,
-                        $terlambat,
-                        $totalMenit,
-                        $lembur,
-                        $absen->keterangan ?? '-',
-                    ]);
-
-                    $summary['menit_kerja'] += $totalMenit;
-                    $summary['menit_lembur'] += $lembur;
-                    $summary['menit_terlambat'] += $terlambat;
-
-                    switch ($absen->status) {
-                        case 'Hadir':
-                            $summary['hadir']++;
-                            $summary['hari_kerja']++;
-                            break;
-                        case 'Izin':
-                            $summary['izin']++;
-                            break;
-                        case 'Sakit':
-                            $summary['sakit']++;
-                            break;
-                        case 'Alpha':
-                            $summary['alpha']++;
-                            break;
-                        case 'Perjalanan Dinas':
-                            $summary['dinas']++;
-                            $summary['hari_kerja']++;
-                            break;
-                    }
-
-                    if ($absen->is_hari_minggu && $absen->check_in) {
-                        $summary['masuk_hari_minggu']++;
-                    }
+                // Tandai hari Minggu (masuk di hari libur kantor)
+                if ($absen->is_hari_minggu) {
+                    $sheet->getStyle("C{$row}")->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFC00000'));
                 }
 
-                fputcsv($file, []);
-                fputcsv($file, ['RINGKASAN', $karyawan->nama_lengkap ?? '-']);
-                fputcsv($file, ['Jumlah Hari Kerja (Hadir + Perjalanan Dinas)', $summary['hari_kerja']]);
-                fputcsv($file, ['Total Jam Kerja (menit)', $summary['menit_kerja']]);
-                fputcsv($file, ['Total Jam Kerja (jam:menit)', intdiv($summary['menit_kerja'], 60) . ' jam ' . str_pad($summary['menit_kerja'] % 60, 2, '0', STR_PAD_LEFT) . ' menit']);
-                fputcsv($file, ['Total Lembur (menit)', $summary['menit_lembur']]);
-                fputcsv($file, ['Total Keterlambatan (menit)', $summary['menit_terlambat']]);
-                fputcsv($file, ['Jumlah Hadir', $summary['hadir']]);
-                fputcsv($file, ['Jumlah Izin', $summary['izin']]);
-                fputcsv($file, ['Jumlah Sakit', $summary['sakit']]);
-                fputcsv($file, ['Jumlah Alpha', $summary['alpha']]);
-                fputcsv($file, ['Jumlah Perjalanan Dinas', $summary['dinas']]);
-                fputcsv($file, ['Jumlah Masuk di Hari Minggu (hari libur)', $summary['masuk_hari_minggu']]);
-                fputcsv($file, []);
-                fputcsv($file, []);
+                // Warna badge status
+                $fillColor = $statusFill[$absen->status] ?? 'FFFFFF';
+                $fontColor = $statusFont[$absen->status] ?? '000000';
+                $sheet->getStyle("F{$row}")->applyFromArray([
+                    'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $fillColor]],
+                    'font'      => ['bold' => true, 'size' => 10, 'color' => ['rgb' => $fontColor]],
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                ]);
 
-                $grandTotal['hari_kerja'] += $summary['hari_kerja'];
-                $grandTotal['menit_kerja'] += $summary['menit_kerja'];
-                $grandTotal['menit_lembur'] += $summary['menit_lembur'];
-                $grandTotal['menit_terlambat'] += $summary['menit_terlambat'];
+                // Tonjolkan keterlambatan & lembur kalau > 0
+                if ($terlambat > 0) {
+                    $sheet->getStyle("G{$row}")->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFC00000'));
+                }
+                if ($lembur > 0) {
+                    $sheet->getStyle("I{$row}")->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF1F4E78'));
+                }
+
+                $summary['menit_kerja']     += $totalMenit;
+                $summary['menit_lembur']    += $lembur;
+                $summary['menit_terlambat'] += $terlambat;
+
+                switch ($absen->status) {
+                    case 'Hadir':
+                        $summary['hadir']++;
+                        $summary['hari_kerja']++;
+                        break;
+                    case 'Izin':
+                        $summary['izin']++;
+                        break;
+                    case 'Sakit':
+                        $summary['sakit']++;
+                        break;
+                    case 'Alpha':
+                        $summary['alpha']++;
+                        break;
+                    case 'Perjalanan Dinas':
+                        $summary['dinas']++;
+                        $summary['hari_kerja']++;
+                        break;
+                }
+
+                if ($absen->is_hari_minggu && $absen->check_in) {
+                    $summary['masuk_hari_minggu']++;
+                }
+
+                $no++;
+                $row++;
             }
 
-            fputcsv($file, ['RINGKASAN TOTAL SEMUA KARYAWAN']);
-            fputcsv($file, ['Jumlah Karyawan', $grandTotal['jumlah_karyawan']]);
-            fputcsv($file, ['Total Hari Kerja', $grandTotal['hari_kerja']]);
-            fputcsv($file, ['Total Jam Kerja (menit)', $grandTotal['menit_kerja']]);
-            fputcsv($file, ['Total Lembur (menit)', $grandTotal['menit_lembur']]);
-            fputcsv($file, ['Total Keterlambatan (menit)', $grandTotal['menit_terlambat']]);
+            $row++; // spasi sebelum ringkasan
 
-            fclose($file);
-        };
+            // ==========================================================
+            // RINGKASAN PER KARYAWAN
+            // ==========================================================
+            $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
+            $sheet->setCellValue("A{$row}", 'RINGKASAN — ' . strtoupper($karyawan->nama_lengkap ?? '-'));
+            $sheet->getStyle("A{$row}")->applyFromArray([
+                'font'      => ['bold' => true, 'size' => 11, 'color' => ['rgb' => 'FFFFFF']],
+                'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '808080']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'vertical' => Alignment::VERTICAL_CENTER, 'indent' => 1],
+            ]);
+            $sheet->getRowDimension($row)->setRowHeight(20);
+            $row++;
 
-        return response()->stream($callback, 200, $headers);
+            $totalJamKerjaLabel = intdiv($summary['menit_kerja'], 60) . ' jam ' . str_pad($summary['menit_kerja'] % 60, 2, '0', STR_PAD_LEFT) . ' menit';
+
+            $summaryPairs = [
+                ['Jumlah Hari Kerja (Hadir + Perjalanan Dinas)', $summary['hari_kerja']],
+                ['Total Jam Kerja (menit)', $summary['menit_kerja']],
+                ['Total Jam Kerja (jam:menit)', $totalJamKerjaLabel],
+                ['Total Lembur (menit)', $summary['menit_lembur']],
+                ['Total Keterlambatan (menit)', $summary['menit_terlambat']],
+                ['Jumlah Hadir', $summary['hadir']],
+                ['Jumlah Izin', $summary['izin']],
+                ['Jumlah Sakit', $summary['sakit']],
+                ['Jumlah Alpha', $summary['alpha']],
+                ['Jumlah Perjalanan Dinas', $summary['dinas']],
+                ['Jumlah Masuk di Hari Minggu (hari libur)', $summary['masuk_hari_minggu']],
+            ];
+
+            foreach ($summaryPairs as [$label, $value]) {
+                $sheet->mergeCells("A{$row}:F{$row}");
+                $sheet->mergeCells("G{$row}:{$lastCol}{$row}");
+                $sheet->setCellValue("A{$row}", $label);
+                $sheet->setCellValue("G{$row}", $value);
+                $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
+                    'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorSummaryBg]],
+                    'font'    => ['size' => 10],
+                    'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => $colorBorder]]],
+                ]);
+                $sheet->getStyle("G{$row}")->applyFromArray([
+                    'font'      => ['bold' => true],
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                ]);
+                $row++;
+            }
+
+            $row += 2; // spasi antar blok karyawan
+
+            $grandTotal['hari_kerja']      += $summary['hari_kerja'];
+            $grandTotal['menit_kerja']     += $summary['menit_kerja'];
+            $grandTotal['menit_lembur']    += $summary['menit_lembur'];
+            $grandTotal['menit_terlambat'] += $summary['menit_terlambat'];
+        }
+
+        // ==========================================================
+        // RINGKASAN TOTAL SELURUH KARYAWAN
+        // ==========================================================
+        $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
+        $sheet->setCellValue("A{$row}", 'RINGKASAN TOTAL SELURUH KARYAWAN');
+        $sheet->getStyle("A{$row}")->applyFromArray([
+            'font'      => ['bold' => true, 'size' => 13, 'color' => ['rgb' => 'FFFFFF']],
+            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorPrimary]],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+        ]);
+        $sheet->getRowDimension($row)->setRowHeight(26);
+        $row++;
+
+        $grandPairs = [
+            ['Jumlah Karyawan', $grandTotal['jumlah_karyawan']],
+            ['Total Hari Kerja', $grandTotal['hari_kerja']],
+            ['Total Jam Kerja (menit)', $grandTotal['menit_kerja']],
+            ['Total Lembur (menit)', $grandTotal['menit_lembur']],
+            ['Total Keterlambatan (menit)', $grandTotal['menit_terlambat']],
+        ];
+
+        foreach ($grandPairs as [$label, $value]) {
+            $sheet->mergeCells("A{$row}:F{$row}");
+            $sheet->mergeCells("G{$row}:{$lastCol}{$row}");
+            $sheet->setCellValue("A{$row}", $label);
+            $sheet->setCellValue("G{$row}", $value);
+            $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
+                'font'    => ['bold' => true, 'size' => 11],
+                'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorGrandBg]],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['rgb' => $colorPrimary]]],
+            ]);
+            $sheet->getStyle("G{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $row++;
+        }
+
+        // Bekukan baris judul supaya tetap kelihatan saat scroll ke bawah
+        $sheet->freezePane('A4');
+        $sheet->setSelectedCell('A1');
+
+        // ==========================================================
+        // OUTPUT FILE .xlsx
+        // ==========================================================
+        $fileName = 'Laporan_Absensi_' . Carbon::now($this->officeTimezone)->format('Ymd_His') . '.xlsx';
+        $writer   = new Xlsx($spreadsheet);
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $fileName, [
+            'Content-Type'  => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0',
+        ]);
     }
+
 
     private function getChartData($request)
     {
