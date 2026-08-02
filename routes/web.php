@@ -133,6 +133,9 @@ Route::middleware('auth')->group(function () {
             Route::get('/cuti', [CutiController::class, 'dashboard'])->name('cuti.dashboard');
             Route::get('/cuti/create', [CutiController::class, 'create'])->name('cuti.create');
             Route::post('/cuti/store', [CutiController::class, 'store'])->name('cuti.store');
+            Route::get('/cuti/{id}/edit', [CutiController::class, 'edit'])->name('cuti.edit');
+            Route::put('/cuti/{id}', [CutiController::class, 'update'])->name('cuti.update');
+            Route::delete('/cuti/{id}/cancel', [CutiController::class, 'cancel'])->name('cuti.cancel');
 
             Route::get('/perjalanan-dinas', [PerjalananDinasController::class, 'dashboard'])->name('perjalanan-dinas.index');
             Route::get('/perjalanan-dinas/create', [PerjalananDinasController::class, 'create'])->name('perjalanan-dinas.create');
