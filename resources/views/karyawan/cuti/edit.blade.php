@@ -34,9 +34,10 @@
             @endif
 
             <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
+                {{-- PENTING: Gunakan method PUT untuk update --}}
                 <form action="{{ route('karyawan.cuti.update', $cuti->id) }}" method="POST">
                     @csrf
-                    @method('PUT')
+                    @method('PUT') {{-- Ini penting! --}}
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <!-- Status Cuti -->

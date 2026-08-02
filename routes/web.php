@@ -90,8 +90,11 @@ Route::middleware('auth')->group(function () {
 
             Route::get('/cuti', [CutiController::class, 'index'])->name('cuti.index');
             Route::get('/cuti/{id}', [CutiController::class, 'show'])->name('cuti.show');
+            Route::get('/cuti/{id}/edit-hr', [CutiController::class, 'editHr'])->name('cuti.edit-hr');
+            Route::put('/cuti/{id}/update-hr', [CutiController::class, 'updateHr'])->name('cuti.update-hr');
             Route::post('/cuti/approve/{id}', [CutiController::class, 'approve'])->name('cuti.approve');
             Route::post('/cuti/bulk-approve', [CutiController::class, 'bulkApprove'])->name('cuti.bulk-approve');
+            Route::delete('/cuti/{id}', [CutiController::class, 'destroy'])->name('cuti.destroy');
 
             Route::get('/perjalanan-dinas', [PerjalananDinasController::class, 'index'])->name('perjalanan-dinas.index');
             Route::get('/perjalanan-dinas/{id}', [PerjalananDinasController::class, 'show'])->name('perjalanan-dinas.show');

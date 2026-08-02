@@ -173,6 +173,8 @@ class CutiController extends Controller
     public function update(Request $request, $id)
     {
         $user = Auth::user();
+
+        // Cari data cuti yang akan diupdate
         $cuti = Cuti::where('id', $id)
             ->where('karyawan_id', $user->id)
             ->where('status', 'pending')
@@ -184,9 +186,9 @@ class CutiController extends Controller
             'keterangan' => 'required|string|max:500',
         ]);
 
-        $tanggalMulai = Carbon::parse($request->tanggal_mulai);
-        $tanggalSelesai = Carbon::parse($request->tanggal_selesai);
-        $durasiBaru = $tanggalMulai->diffInDays($tanggalSelesai) + 1;
+        $tanggalMulaiBaru = Carbon::parse($request->tanggal_mulai);
+        $tanggalSelesaiBaru = Carbon::parse($request->tanggal_selesai);
+        $durasiBaru = $tanggalMulaiBaru->diffInDays($tanggalSelesaiBaru) + 1;
 
         // Ambil data cuti tahunan
         $cutiTahunan = Cuti::where('karyawan_id', $user->id)
@@ -207,7 +209,7 @@ class CutiController extends Controller
             return back()->with('error', 'Sisa cuti tidak mencukupi untuk penambahan durasi. Sisa cuti: ' . $cutiTahunan->sisa_cuti . ' hari');
         }
 
-        // Update data cuti
+        // UPDATE data cuti yang sudah ada (BUKAN membuat baru)
         $cuti->update([
             'tanggal_mulai' => $request->tanggal_mulai,
             'tanggal_selesai' => $request->tanggal_selesai,
@@ -216,12 +218,13 @@ class CutiController extends Controller
 
         // Update sisa cuti jika ada perubahan durasi
         if ($selisihDurasi != 0) {
+            // Update sisa cuti di data cuti tahunan
             $cutiTahunan->update([
                 'sisa_cuti' => $cutiTahunan->sisa_cuti - $selisihDurasi,
                 'cuti_digunakan' => $cutiTahunan->cuti_digunakan + $selisihDurasi,
             ]);
 
-            // Update sisa cuti di data pengajuan
+            // Update sisa cuti di data pengajuan (data yang sedang diedit)
             $cuti->update([
                 'sisa_cuti' => $cuti->sisa_cuti - $selisihDurasi,
                 'cuti_digunakan' => $cuti->cuti_digunakan + $selisihDurasi,
@@ -265,6 +268,49 @@ class CutiController extends Controller
     {
         $cuti = Cuti::with('karyawan')->findOrFail($id);
         return view('hr.cuti.show', compact('cuti'));
+    }
+
+    // Form Edit Cuti untuk HR
+    public function editHr($id)
+    {
+        $cuti = Cuti::with('karyawan')->findOrFail($id);
+        $karyawans = Karyawan::orderBy('nama_lengkap')->get();
+        return view('hr.cuti.edit', compact('cuti', 'karyawans'));
+    }
+
+    // Update Cuti untuk HR
+    public function updateHr(Request $request, $id)
+    {
+        $cuti = Cuti::findOrFail($id);
+
+        $request->validate([
+            'karyawan_id' => 'required|exists:karyawan,id',
+            'jenis_cuti' => 'required|string',
+            'jatah_cuti' => 'required|integer|min:0',
+            'sisa_cuti' => 'required|integer|min:0',
+            'cuti_digunakan' => 'required|integer|min:0',
+            'tanggal_mulai' => 'nullable|date',
+            'tanggal_selesai' => 'nullable|date|after_or_equal:tanggal_mulai',
+            'keterangan' => 'nullable|string|max:500',
+            'status' => 'required|in:pending,approved,rejected',
+            'catatan_hr' => 'nullable|string|max:500',
+        ]);
+
+        $cuti->update([
+            'karyawan_id' => $request->karyawan_id,
+            'jenis_cuti' => $request->jenis_cuti,
+            'jatah_cuti' => $request->jatah_cuti,
+            'sisa_cuti' => $request->sisa_cuti,
+            'cuti_digunakan' => $request->cuti_digunakan,
+            'tanggal_mulai' => $request->tanggal_mulai,
+            'tanggal_selesai' => $request->tanggal_selesai,
+            'keterangan' => $request->keterangan,
+            'status' => $request->status,
+            'catatan_hr' => $request->catatan_hr,
+        ]);
+
+        return redirect()->route('hr.cuti.index')
+            ->with('success', 'Data cuti berhasil diperbarui.');
     }
 
     // Approve Cuti (HR)
