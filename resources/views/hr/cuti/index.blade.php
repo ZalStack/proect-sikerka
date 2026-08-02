@@ -160,14 +160,14 @@
                                     <div class="flex flex-wrap gap-1">
                                         <!-- Detail -->
                                         <a href="{{ route('hr.cuti.show', $item->id) }}"
-                                           class="text-[#00a2e9] hover:text-[#27438D] text-xs sm:text-sm px-2 py-1 rounded hover:bg-blue-50 transition-colors" title="Detail">
-                                            <i class="fas fa-eye"></i>
+                                           class="text-[#00a2e9] hover:text-[#27438D] text-xs sm:text-sm px-2 py-1 rounded hover:bg-blue-50 transition-colors whitespace-nowrap" title="Detail">
+                                            <i class="fas fa-eye mr-1"></i>Detail
                                         </a>
 
                                         <!-- Edit -->
                                         <a href="{{ route('hr.cuti.edit-hr', $item->id) }}"
-                                           class="text-[#FCC626] hover:text-[#e6b800] text-xs sm:text-sm px-2 py-1 rounded hover:bg-yellow-50 transition-colors" title="Edit">
-                                            <i class="fas fa-edit"></i>
+                                           class="text-[#FCC626] hover:text-[#e6b800] text-xs sm:text-sm px-2 py-1 rounded hover:bg-yellow-50 transition-colors whitespace-nowrap" title="Edit">
+                                            <i class="fas fa-edit mr-1"></i>Edit
                                         </a>
 
                                         <!-- Setujui -->
@@ -175,15 +175,15 @@
                                             <form action="{{ route('hr.cuti.approve', $item->id) }}" method="POST" class="inline">
                                                 @csrf
                                                 <input type="hidden" name="status" value="approved">
-                                                <button type="submit" class="text-[#2E7D3E] hover:text-green-700 text-xs sm:text-sm px-2 py-1 rounded hover:bg-green-50 transition-colors" title="Setujui">
-                                                    <i class="fas fa-check-circle"></i>
+                                                <button type="submit" class="text-[#2E7D3E] hover:text-green-700 text-xs sm:text-sm px-2 py-1 rounded hover:bg-green-50 transition-colors whitespace-nowrap" title="Setujui">
+                                                    <i class="fas fa-check-circle mr-1"></i>Setujui
                                                 </button>
                                             </form>
                                             <form action="{{ route('hr.cuti.approve', $item->id) }}" method="POST" class="inline">
                                                 @csrf
                                                 <input type="hidden" name="status" value="rejected">
-                                                <button type="submit" class="text-[#ec1d1d] hover:text-red-700 text-xs sm:text-sm px-2 py-1 rounded hover:bg-red-50 transition-colors" title="Tolak">
-                                                    <i class="fas fa-times-circle"></i>
+                                                <button type="submit" class="text-[#ec1d1d] hover:text-red-700 text-xs sm:text-sm px-2 py-1 rounded hover:bg-red-50 transition-colors whitespace-nowrap" title="Tolak">
+                                                    <i class="fas fa-times-circle mr-1"></i>Tolak
                                                 </button>
                                             </form>
                                         @endif
@@ -193,8 +193,8 @@
                                               onsubmit="return confirm('Yakin ingin menghapus data cuti ini?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="text-gray-400 hover:text-[#ec1d1d] text-xs sm:text-sm px-2 py-1 rounded hover:bg-red-50 transition-colors" title="Hapus">
-                                                <i class="fas fa-trash"></i>
+                                            <button type="submit" class="text-gray-400 hover:text-[#ec1d1d] text-xs sm:text-sm px-2 py-1 rounded hover:bg-red-50 transition-colors whitespace-nowrap" title="Hapus">
+                                                <i class="fas fa-trash mr-1"></i>Hapus
                                             </button>
                                         </form>
                                     </div>
