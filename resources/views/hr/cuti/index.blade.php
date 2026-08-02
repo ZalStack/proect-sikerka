@@ -26,13 +26,6 @@
                 </div>
             @endif
 
-            @if(session('error'))
-                <div class="bg-[#ec1d1d] text-white p-3 sm:p-4 rounded-lg mb-4 text-sm flex justify-between items-center">
-                    <span>{{ session('error') }}</span>
-                    <button onclick="this.parentElement.style.display='none'" class="text-white hover:text-gray-200">×</button>
-                </div>
-            @endif
-
             <!-- Statistik -->
             <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
                 <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 text-center border-l-4 border-[#00a2e9] hover:shadow-lg transition-shadow">
@@ -93,7 +86,7 @@
                 </div>
 
                 <!-- Bulk Action -->
-                <div class="p-3 sm:p-4 border-b border-gray-200 bg-gray-50 flex flex-wrap items-center gap-3">
+                <div class="p-3 sm:p-4 border-b border-gray-200 bg-[#F5F5F5] flex flex-wrap items-center gap-3">
                     <span class="text-sm font-medium text-[#1B1B1B]">Bulk Action:</span>
                     <form id="bulkApproveForm" action="{{ route('hr.cuti.bulk-approve') }}" method="POST" class="flex flex-wrap items-center gap-2">
                         @csrf
@@ -132,7 +125,7 @@
                         </thead>
                         <tbody>
                             @forelse($cuti as $item)
-                            <tr class="border-b border-gray-200 hover:bg-[#F5F5F5] transition-colors" id="row-{{ $item->id }}">
+                            <tr class="border-b border-gray-200 hover:bg-[#F5F5F5] transition-colors">
                                 <td class="px-3 sm:px-4 py-2 sm:py-3">
                                     @if($item->status === 'pending')
                                         <input type="checkbox" class="cuti-checkbox rounded border-gray-300" value="{{ $item->id }}" onchange="updateSelectedCount()">
@@ -165,19 +158,19 @@
                                 </td>
                                 <td class="px-3 sm:px-4 py-2 sm:py-3">
                                     <div class="flex flex-wrap gap-1">
-                                        <!-- Tombol Detail -->
+                                        <!-- Detail -->
                                         <a href="{{ route('hr.cuti.show', $item->id) }}"
                                            class="text-[#00a2e9] hover:text-[#27438D] text-xs sm:text-sm px-2 py-1 rounded hover:bg-blue-50 transition-colors" title="Detail">
                                             <i class="fas fa-eye"></i>
                                         </a>
 
-                                        <!-- Tombol Edit -->
+                                        <!-- Edit -->
                                         <a href="{{ route('hr.cuti.edit-hr', $item->id) }}"
                                            class="text-[#FCC626] hover:text-[#e6b800] text-xs sm:text-sm px-2 py-1 rounded hover:bg-yellow-50 transition-colors" title="Edit">
                                             <i class="fas fa-edit"></i>
                                         </a>
 
-                                        <!-- Tombol Setujui (hanya untuk pending) -->
+                                        <!-- Setujui -->
                                         @if($item->status === 'pending')
                                             <form action="{{ route('hr.cuti.approve', $item->id) }}" method="POST" class="inline">
                                                 @csrf
@@ -195,7 +188,7 @@
                                             </form>
                                         @endif
 
-                                        <!-- Tombol Hapus -->
+                                        <!-- Hapus -->
                                         <form action="{{ route('hr.cuti.destroy', $item->id) }}" method="POST" class="inline"
                                               onsubmit="return confirm('Yakin ingin menghapus data cuti ini?')">
                                             @csrf
@@ -215,7 +208,6 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                         </svg>
                                         <p class="text-base sm:text-lg font-semibold text-gray-500">Belum ada pengajuan cuti</p>
-                                        <p class="text-xs sm:text-sm text-gray-400 mt-1">Belum ada karyawan yang mengajukan cuti</p>
                                     </div>
                                 </td>
                             </tr>
@@ -256,7 +248,7 @@
                                 {{ $item->sisa_cuti }} hari
                             </span>
                         </div>
-                        <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-gray-100">
+                        <div class="flex flex-wrap items-center gap-1 pt-1 border-t border-gray-100">
                             <a href="{{ route('hr.cuti.show', $item->id) }}" class="text-[#00a2e9] text-xs font-medium px-2 py-1 rounded hover:bg-blue-50">
                                 <i class="fas fa-eye mr-1"></i> Detail
                             </a>
@@ -311,7 +303,6 @@
 </div>
 
 <script>
-// Fungsi untuk toggle select all checkbox
 function toggleAllCheckbox(selectAll) {
     const checkboxes = document.querySelectorAll('.cuti-checkbox, .cuti-checkbox-mobile');
     checkboxes.forEach(cb => {
@@ -320,7 +311,6 @@ function toggleAllCheckbox(selectAll) {
     updateSelectedCount();
 }
 
-// Fungsi untuk update jumlah yang dipilih
 function updateSelectedCount() {
     const checkboxes = document.querySelectorAll('.cuti-checkbox:checked, .cuti-checkbox-mobile:checked');
     const count = checkboxes.length;
@@ -339,7 +329,6 @@ function updateSelectedCount() {
     }
 }
 
-// Fungsi untuk bulk action
 function bulkAction(status) {
     const checkboxes = document.querySelectorAll('.cuti-checkbox:checked, .cuti-checkbox-mobile:checked');
     const ids = Array.from(checkboxes).map(cb => cb.value);
@@ -359,34 +348,8 @@ function bulkAction(status) {
     document.getElementById('bulkApproveForm').submit();
 }
 
-// Update selected count on page load
 document.addEventListener('DOMContentLoaded', function() {
     updateSelectedCount();
 });
 </script>
-
-<style>
-/* Style untuk checkbox */
-.cuti-checkbox, .cuti-checkbox-mobile {
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-}
-
-.cuti-checkbox:checked, .cuti-checkbox-mobile:checked {
-    accent-color: #27438D;
-}
-
-/* Style untuk tombol aksi */
-[class*="hover:bg-"] {
-    transition: all 0.2s ease;
-}
-
-/* Animasi hover untuk card mobile */
-@media (max-width: 640px) {
-    .hover\:bg-\[\#F5F5F5\]:hover {
-        background-color: #F5F5F5;
-    }
-}
-</style>
 @endsection
