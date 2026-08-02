@@ -36,6 +36,23 @@ class Cuti extends Model
         return $this->belongsTo(Karyawan::class, 'karyawan_id');
     }
 
+    /**
+     * Baris "kuota" adalah baris tracker jatah/sisa cuti tahunan,
+     * dibedakan dari pengajuan cuti asli lewat tanggal_mulai yang kosong.
+     */
+    public function scopeKuota($query)
+    {
+        return $query->whereNull('tanggal_mulai');
+    }
+
+    /**
+     * Baris "pengajuan" adalah pengajuan cuti asli yang punya rentang tanggal.
+     */
+    public function scopePengajuan($query)
+    {
+        return $query->whereNotNull('tanggal_mulai');
+    }
+
     // Hitung durasi cuti dalam hari
     public function getDurasiAttribute()
     {
