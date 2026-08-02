@@ -14,7 +14,7 @@
                 <div class="flex flex-wrap gap-2 w-full sm:w-auto">
                     <a href="{{ route('hr.cuti.index') }}"
                        class="w-full sm:w-auto text-center bg-[#27438D] text-white px-4 py-2 rounded-lg hover:bg-[#161758] transition-colors text-sm">
-                        Refresh
+                        <i class="fas fa-sync mr-1"></i> Refresh
                     </a>
                 </div>
             </div>
@@ -92,11 +92,35 @@
                     <span class="text-xs text-gray-500">Total: {{ $cuti->total() }} data</span>
                 </div>
 
+                <!-- Bulk Action -->
+                <div class="p-3 sm:p-4 border-b border-gray-200 bg-gray-50 flex flex-wrap items-center gap-3">
+                    <span class="text-sm font-medium text-[#1B1B1B]">Bulk Action:</span>
+                    <form id="bulkApproveForm" action="{{ route('hr.cuti.bulk-approve') }}" method="POST" class="flex flex-wrap items-center gap-2">
+                        @csrf
+                        <input type="hidden" name="ids" id="bulkIds" value="">
+                        <input type="hidden" name="target_status" id="bulkStatus" value="">
+                        <button type="button" onclick="bulkAction('approved')"
+                                class="bg-[#2E7D3E] text-white px-3 py-1.5 rounded-lg hover:bg-green-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                id="btnApproveAll" disabled>
+                            <i class="fas fa-check mr-1"></i> Setujui Semua
+                        </button>
+                        <button type="button" onclick="bulkAction('rejected')"
+                                class="bg-[#ec1d1d] text-white px-3 py-1.5 rounded-lg hover:bg-red-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                id="btnRejectAll" disabled>
+                            <i class="fas fa-times mr-1"></i> Tolak Semua
+                        </button>
+                        <span class="text-xs text-gray-500 ml-2" id="selectedCount">Belum ada yang dipilih</span>
+                    </form>
+                </div>
+
                 {{-- Desktop Table --}}
                 <div class="hidden sm:block overflow-x-auto">
                     <table class="w-full">
                         <thead class="bg-[#F5F5F5]">
                             <tr>
+                                <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">
+                                    <input type="checkbox" id="selectAll" onchange="toggleAllCheckbox(this)" class="rounded border-gray-300">
+                                </th>
                                 <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">No</th>
                                 <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Karyawan</th>
                                 <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Tanggal</th>
@@ -108,7 +132,12 @@
                         </thead>
                         <tbody>
                             @forelse($cuti as $item)
-                            <tr class="border-b border-gray-200 hover:bg-[#F5F5F5] transition-colors">
+                            <tr class="border-b border-gray-200 hover:bg-[#F5F5F5] transition-colors" id="row-{{ $item->id }}">
+                                <td class="px-3 sm:px-4 py-2 sm:py-3">
+                                    @if($item->status === 'pending')
+                                        <input type="checkbox" class="cuti-checkbox rounded border-gray-300" value="{{ $item->id }}" onchange="updateSelectedCount()">
+                                    @endif
+                                </td>
                                 <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">{{ $loop->iteration + ($cuti->currentPage() - 1) * $cuti->perPage() }}</td>
                                 <td class="px-3 sm:px-4 py-2 sm:py-3">
                                     <div class="flex items-center gap-2">
@@ -136,30 +165,37 @@
                                 </td>
                                 <td class="px-3 sm:px-4 py-2 sm:py-3">
                                     <div class="flex flex-wrap gap-1">
+                                        <!-- Tombol Detail -->
                                         <a href="{{ route('hr.cuti.show', $item->id) }}"
-                                           class="text-[#00a2e9] hover:text-[#27438D] text-xs sm:text-sm px-2 py-1 rounded hover:bg-blue-50 transition-colors">
+                                           class="text-[#00a2e9] hover:text-[#27438D] text-xs sm:text-sm px-2 py-1 rounded hover:bg-blue-50 transition-colors" title="Detail">
                                             <i class="fas fa-eye"></i>
                                         </a>
+
+                                        <!-- Tombol Edit -->
                                         <a href="{{ route('hr.cuti.edit-hr', $item->id) }}"
-                                           class="text-[#FCC626] hover:text-[#e6b800] text-xs sm:text-sm px-2 py-1 rounded hover:bg-yellow-50 transition-colors">
+                                           class="text-[#FCC626] hover:text-[#e6b800] text-xs sm:text-sm px-2 py-1 rounded hover:bg-yellow-50 transition-colors" title="Edit">
                                             <i class="fas fa-edit"></i>
                                         </a>
+
+                                        <!-- Tombol Setujui (hanya untuk pending) -->
                                         @if($item->status === 'pending')
                                             <form action="{{ route('hr.cuti.approve', $item->id) }}" method="POST" class="inline">
                                                 @csrf
                                                 <input type="hidden" name="status" value="approved">
                                                 <button type="submit" class="text-[#2E7D3E] hover:text-green-700 text-xs sm:text-sm px-2 py-1 rounded hover:bg-green-50 transition-colors" title="Setujui">
-                                                    <i class="fas fa-check"></i>
+                                                    <i class="fas fa-check-circle"></i>
                                                 </button>
                                             </form>
                                             <form action="{{ route('hr.cuti.approve', $item->id) }}" method="POST" class="inline">
                                                 @csrf
                                                 <input type="hidden" name="status" value="rejected">
                                                 <button type="submit" class="text-[#ec1d1d] hover:text-red-700 text-xs sm:text-sm px-2 py-1 rounded hover:bg-red-50 transition-colors" title="Tolak">
-                                                    <i class="fas fa-times"></i>
+                                                    <i class="fas fa-times-circle"></i>
                                                 </button>
                                             </form>
                                         @endif
+
+                                        <!-- Tombol Hapus -->
                                         <form action="{{ route('hr.cuti.destroy', $item->id) }}" method="POST" class="inline"
                                               onsubmit="return confirm('Yakin ingin menghapus data cuti ini?')">
                                             @csrf
@@ -173,7 +209,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="7" class="px-4 py-8 text-center text-[#1B1B1B]">
+                                <td colspan="8" class="px-4 py-8 text-center text-[#1B1B1B]">
                                     <div class="flex flex-col items-center">
                                         <svg class="w-12 sm:w-16 h-12 sm:h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
@@ -194,6 +230,9 @@
                     <div class="p-3 space-y-2 hover:bg-[#F5F5F5] transition-colors">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2">
+                                @if($item->status === 'pending')
+                                    <input type="checkbox" class="cuti-checkbox-mobile rounded border-gray-300" value="{{ $item->id }}" onchange="updateSelectedCount()">
+                                @endif
                                 <div class="w-8 h-8 rounded-full bg-[#27438D] text-white flex items-center justify-center text-xs font-semibold">
                                     {{ strtoupper(substr($item->karyawan->nama_lengkap, 0, 2)) }}
                                 </div>
@@ -217,26 +256,36 @@
                                 {{ $item->sisa_cuti }} hari
                             </span>
                         </div>
-                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1 border-t border-gray-100">
-                            <a href="{{ route('hr.cuti.show', $item->id) }}" class="text-[#00a2e9] text-xs font-medium">Detail</a>
-                            <a href="{{ route('hr.cuti.edit-hr', $item->id) }}" class="text-[#FCC626] text-xs font-medium">Edit</a>
+                        <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-gray-100">
+                            <a href="{{ route('hr.cuti.show', $item->id) }}" class="text-[#00a2e9] text-xs font-medium px-2 py-1 rounded hover:bg-blue-50">
+                                <i class="fas fa-eye mr-1"></i> Detail
+                            </a>
+                            <a href="{{ route('hr.cuti.edit-hr', $item->id) }}" class="text-[#FCC626] text-xs font-medium px-2 py-1 rounded hover:bg-yellow-50">
+                                <i class="fas fa-edit mr-1"></i> Edit
+                            </a>
                             @if($item->status === 'pending')
-                                <form action="{{ route('hr.cuti.approve', $item->id) }}" method="POST" class="inline-flex items-center">
+                                <form action="{{ route('hr.cuti.approve', $item->id) }}" method="POST" class="inline">
                                     @csrf
                                     <input type="hidden" name="status" value="approved">
-                                    <button type="submit" class="text-[#2E7D3E] text-xs font-medium">Setujui</button>
+                                    <button type="submit" class="text-[#2E7D3E] text-xs font-medium px-2 py-1 rounded hover:bg-green-50">
+                                        <i class="fas fa-check-circle mr-1"></i> Setujui
+                                    </button>
                                 </form>
-                                <form action="{{ route('hr.cuti.approve', $item->id) }}" method="POST" class="inline-flex items-center">
+                                <form action="{{ route('hr.cuti.approve', $item->id) }}" method="POST" class="inline">
                                     @csrf
                                     <input type="hidden" name="status" value="rejected">
-                                    <button type="submit" class="text-[#ec1d1d] text-xs font-medium">Tolak</button>
+                                    <button type="submit" class="text-[#ec1d1d] text-xs font-medium px-2 py-1 rounded hover:bg-red-50">
+                                        <i class="fas fa-times-circle mr-1"></i> Tolak
+                                    </button>
                                 </form>
                             @endif
-                            <form action="{{ route('hr.cuti.destroy', $item->id) }}" method="POST" class="inline-flex items-center"
+                            <form action="{{ route('hr.cuti.destroy', $item->id) }}" method="POST" class="inline"
                                   onsubmit="return confirm('Yakin ingin menghapus data cuti ini?')">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="text-gray-400 text-xs font-medium">Hapus</button>
+                                <button type="submit" class="text-gray-400 hover:text-[#ec1d1d] text-xs font-medium px-2 py-1 rounded hover:bg-red-50">
+                                    <i class="fas fa-trash mr-1"></i> Hapus
+                                </button>
                             </form>
                         </div>
                     </div>
@@ -260,4 +309,84 @@
         </div>
     </div>
 </div>
+
+<script>
+// Fungsi untuk toggle select all checkbox
+function toggleAllCheckbox(selectAll) {
+    const checkboxes = document.querySelectorAll('.cuti-checkbox, .cuti-checkbox-mobile');
+    checkboxes.forEach(cb => {
+        cb.checked = selectAll.checked;
+    });
+    updateSelectedCount();
+}
+
+// Fungsi untuk update jumlah yang dipilih
+function updateSelectedCount() {
+    const checkboxes = document.querySelectorAll('.cuti-checkbox:checked, .cuti-checkbox-mobile:checked');
+    const count = checkboxes.length;
+    const selectedCount = document.getElementById('selectedCount');
+    const btnApproveAll = document.getElementById('btnApproveAll');
+    const btnRejectAll = document.getElementById('btnRejectAll');
+
+    if (count > 0) {
+        selectedCount.textContent = `${count} data dipilih`;
+        btnApproveAll.disabled = false;
+        btnRejectAll.disabled = false;
+    } else {
+        selectedCount.textContent = 'Belum ada yang dipilih';
+        btnApproveAll.disabled = true;
+        btnRejectAll.disabled = true;
+    }
+}
+
+// Fungsi untuk bulk action
+function bulkAction(status) {
+    const checkboxes = document.querySelectorAll('.cuti-checkbox:checked, .cuti-checkbox-mobile:checked');
+    const ids = Array.from(checkboxes).map(cb => cb.value);
+
+    if (ids.length === 0) {
+        alert('Pilih minimal satu data cuti!');
+        return;
+    }
+
+    const statusText = status === 'approved' ? 'menyetujui' : 'menolak';
+    if (!confirm(`Yakin ingin ${statusText} ${ids.length} pengajuan cuti yang dipilih?`)) {
+        return;
+    }
+
+    document.getElementById('bulkIds').value = JSON.stringify(ids);
+    document.getElementById('bulkStatus').value = status;
+    document.getElementById('bulkApproveForm').submit();
+}
+
+// Update selected count on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateSelectedCount();
+});
+</script>
+
+<style>
+/* Style untuk checkbox */
+.cuti-checkbox, .cuti-checkbox-mobile {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.cuti-checkbox:checked, .cuti-checkbox-mobile:checked {
+    accent-color: #27438D;
+}
+
+/* Style untuk tombol aksi */
+[class*="hover:bg-"] {
+    transition: all 0.2s ease;
+}
+
+/* Animasi hover untuk card mobile */
+@media (max-width: 640px) {
+    .hover\:bg-\[\#F5F5F5\]:hover {
+        background-color: #F5F5F5;
+    }
+}
+</style>
 @endsection
