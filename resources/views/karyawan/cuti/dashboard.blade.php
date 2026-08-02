@@ -76,6 +76,18 @@
                             {{ $item->status_label }}
                         </span>
                     </div>
+                    @if($item->status === 'pending')
+                    <div class="flex items-center gap-2 pt-1">
+                        <a href="{{ route('karyawan.cuti.edit', $item->id) }}"
+                           class="text-[#00a2e9] text-xs font-medium">Edit</a>
+                        <form action="{{ route('karyawan.cuti.cancel', $item->id) }}" method="POST" class="inline"
+                              onsubmit="return confirm('Yakin ingin membatalkan pengajuan cuti ini?')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="text-[#ec1d1d] text-xs font-medium">Batalkan</button>
+                        </form>
+                    </div>
+                    @endif
                 </div>
                 @empty
                 {{-- Empty State --}}
@@ -101,6 +113,7 @@
                                     <th class="px-4 py-3 text-left text-xs font-semibold text-[#1B1B1B]">Durasi</th>
                                     <th class="px-4 py-3 text-left text-xs font-semibold text-[#1B1B1B]">Keterangan</th>
                                     <th class="px-4 py-3 text-left text-xs font-semibold text-[#1B1B1B]">Status</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-[#1B1B1B]">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -117,6 +130,26 @@
                                         <span class="px-2 py-1 rounded-full text-[10px] font-medium {{ $item->status_badge }}">
                                             {{ $item->status_label }}
                                         </span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        @if($item->status === 'pending')
+                                        <div class="flex items-center gap-2">
+                                            <a href="{{ route('karyawan.cuti.edit', $item->id) }}"
+                                               class="text-[#00a2e9] hover:text-[#27438D] text-xs font-medium">
+                                                Edit
+                                            </a>
+                                            <form action="{{ route('karyawan.cuti.cancel', $item->id) }}" method="POST" class="inline"
+                                                  onsubmit="return confirm('Yakin ingin membatalkan pengajuan cuti ini?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-[#ec1d1d] hover:text-red-700 text-xs font-medium">
+                                                    Batalkan
+                                                </button>
+                                            </form>
+                                        </div>
+                                        @else
+                                        <span class="text-xs text-gray-400">-</span>
+                                        @endif
                                     </td>
                                 </tr>
                                 @endforeach
