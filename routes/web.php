@@ -54,6 +54,10 @@ Route::middleware('auth')->group(function () {
     Route::put('/profile/update-password', [ProfileController::class, 'updatePassword'])->name('profile.update-password');
     Route::get('/profile/achievement', [ProfileController::class, 'achievement'])->name('profile.achievement');
 
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/latest', [NotificationController::class, 'latest'])->name('notifications.latest');
+    Route::post('/notifications/mark-read', [NotificationController::class, 'markRead'])->name('notifications.mark-read');
+
     Route::middleware('hr')
         ->prefix('hr')
         ->name('hr.')
