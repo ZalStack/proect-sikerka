@@ -12,8 +12,11 @@
                     <p class="text-sm sm:text-base text-[#27438D]">Kelola pengajuan cuti Anda</p>
                 </div>
                 <a href="{{ route('karyawan.cuti.create') }}"
-                   class="w-full sm:w-auto text-center bg-[#27438D] text-white px-4 py-2 rounded-lg hover:bg-[#161758] transition-colors whitespace-nowrap text-sm sm:text-base">
-                    + Ajukan Cuti
+                   class="w-full sm:w-auto inline-flex items-center justify-center text-center bg-[#27438D] text-white px-4 py-2 rounded-lg hover:bg-[#161758] transition-colors whitespace-nowrap text-sm sm:text-base">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
+                    </svg>
+                    Ajukan Cuti
                 </a>
             </div>
 
@@ -77,14 +80,24 @@
                         </span>
                     </div>
                     @if($item->status === 'pending')
-                    <div class="flex items-center gap-2 pt-1">
+                    <div class="flex items-center gap-3 pt-1">
                         <a href="{{ route('karyawan.cuti.edit', $item->id) }}"
-                           class="text-[#00a2e9] text-xs font-medium">✏️ Edit</a>
+                           class="inline-flex items-center text-[#00a2e9] text-xs font-medium">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 mr-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                            </svg>
+                            Edit
+                        </a>
                         <form action="{{ route('karyawan.cuti.cancel', $item->id) }}" method="POST" class="inline"
                               onsubmit="return confirm('Yakin ingin membatalkan pengajuan cuti ini?')">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="text-[#ec1d1d] text-xs font-medium">🗑️ Batalkan</button>
+                            <button type="submit" class="inline-flex items-center text-[#ec1d1d] text-xs font-medium">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 mr-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482 41.03 41.03 0 00-2.365-.298V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clip-rule="evenodd" />
+                                </svg>
+                                Batalkan
+                            </button>
                         </form>
                     </div>
                     @endif
@@ -133,17 +146,21 @@
                                     </td>
                                     <td class="px-4 py-3">
                                         @if($item->status === 'pending')
-                                        <div class="flex items-center gap-2">
+                                        <div class="flex items-center gap-3">
                                             <a href="{{ route('karyawan.cuti.edit', $item->id) }}"
-                                               class="text-[#00a2e9] hover:text-[#27438D] text-xs font-medium">
-                                                ✏️ Edit
+                                               class="inline-flex items-center text-[#00a2e9] hover:text-[#27438D] text-xs font-medium">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 mr-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                                </svg>
                                             </a>
                                             <form action="{{ route('karyawan.cuti.cancel', $item->id) }}" method="POST" class="inline"
                                                   onsubmit="return confirm('Yakin ingin membatalkan pengajuan cuti ini?')">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="text-[#ec1d1d] hover:text-red-700 text-xs font-medium">
-                                                    🗑️ Batalkan
+                                                <button type="submit" class="inline-flex items-center text-[#ec1d1d] hover:text-red-700 text-xs font-medium">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 mr-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                        <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482 41.03 41.03 0 00-2.365-.298V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clip-rule="evenodd" />
+                                                    </svg>
                                                 </button>
                                             </form>
                                         </div>

@@ -13,8 +13,11 @@
                 </div>
                 <div class="flex flex-wrap gap-2 w-full sm:w-auto">
                     <a href="{{ route('hr.cuti.index') }}"
-                       class="w-full sm:w-auto text-center bg-[#27438D] text-white px-4 py-2 rounded-lg hover:bg-[#161758] transition-colors text-sm">
-                        <i class="fas fa-sync mr-1"></i> Refresh
+                       class="w-full sm:w-auto inline-flex items-center justify-center text-center bg-[#27438D] text-white px-4 py-2 rounded-lg hover:bg-[#161758] transition-colors text-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311h2.433a.75.75 0 000-1.5H3.989a.75.75 0 00-.75.75v4.242a.75.75 0 001.5 0v-2.43l.31.31a7 7 0 0011.712-3.138.75.75 0 00-1.449-.39zm1.23-3.723a.75.75 0 00.219-.53V2.929a.75.75 0 00-1.5 0V5.36l-.31-.31A7 7 0 003.239 8.188a.75.75 0 101.448.389A5.5 5.5 0 0113.89 6.11l.311.31h-2.432a.75.75 0 000 1.5h4.243a.75.75 0 00.53-.219z" clip-rule="evenodd" />
+                        </svg>
+                        Refresh
                     </a>
                 </div>
             </div>
@@ -67,12 +70,18 @@
                             @endforeach
                         </select>
                     </div>
-                    <button type="submit" class="bg-[#27438D] text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-[#161758] transition-colors text-sm">
-                        <i class="fas fa-filter mr-1"></i> Filter
+                    <button type="submit" class="inline-flex items-center bg-[#27438D] text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-[#161758] transition-colors text-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M2.628 1.601C5.028 1.206 7.49 1 10 1s4.973.206 7.372.601a.75.75 0 01.628.74v2.288a2.25 2.25 0 01-.659 1.59l-4.682 4.683a2.25 2.25 0 00-.659 1.59v3.037c0 .684-.31 1.33-.844 1.757l-1.937 1.55A.75.75 0 018 18.25v-5.757a2.25 2.25 0 00-.659-1.591L2.659 6.22A2.25 2.25 0 012 4.629V2.34a.75.75 0 01.628-.74z" clip-rule="evenodd" />
+                        </svg>
+                        Filter
                     </button>
                     @if(request('status') || request('karyawan_id'))
-                        <a href="{{ route('hr.cuti.index') }}" class="bg-gray-500 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors text-sm">
-                            <i class="fas fa-undo mr-1"></i> Reset
+                        <a href="{{ route('hr.cuti.index') }}" class="inline-flex items-center bg-gray-500 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors text-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M9.53 2.47a.75.75 0 010 1.06L5.81 7.25H15a6.75 6.75 0 010 13.5h-3a.75.75 0 010-1.5h3a5.25 5.25 0 100-10.5H5.81l3.72 3.72a.75.75 0 11-1.06 1.06l-5-5a.75.75 0 010-1.06l5-5a.75.75 0 011.06 0z" clip-rule="evenodd" />
+                            </svg>
+                            Reset
                         </a>
                     @endif
                 </form>
@@ -93,14 +102,20 @@
                         <input type="hidden" name="ids" id="bulkIds" value="">
                         <input type="hidden" name="target_status" id="bulkStatus" value="">
                         <button type="button" onclick="bulkAction('approved')"
-                                class="bg-[#2E7D3E] text-white px-3 py-1.5 rounded-lg hover:bg-green-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                class="inline-flex items-center bg-[#2E7D3E] text-white px-3 py-1.5 rounded-lg hover:bg-green-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                 id="btnApproveAll" disabled>
-                            <i class="fas fa-check mr-1"></i> Setujui Semua
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
+                            </svg>
+                            Setujui Semua
                         </button>
                         <button type="button" onclick="bulkAction('rejected')"
-                                class="bg-[#ec1d1d] text-white px-3 py-1.5 rounded-lg hover:bg-red-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                class="inline-flex items-center bg-[#ec1d1d] text-white px-3 py-1.5 rounded-lg hover:bg-red-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                 id="btnRejectAll" disabled>
-                            <i class="fas fa-times mr-1"></i> Tolak Semua
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                            </svg>
+                            Tolak Semua
                         </button>
                         <span class="text-xs text-gray-500 ml-2" id="selectedCount">Belum ada yang dipilih</span>
                     </form>
@@ -160,41 +175,30 @@
                                     <div class="flex flex-wrap gap-1">
                                         <!-- Detail -->
                                         <a href="{{ route('hr.cuti.show', $item->id) }}"
-                                           class="text-[#00a2e9] hover:text-[#27438D] text-xs sm:text-sm px-2 py-1 rounded hover:bg-blue-50 transition-colors whitespace-nowrap" title="Detail">
-                                            <i class="fas fa-eye mr-1"></i>Detail
+                                           class="inline-flex items-center text-[#00a2e9] hover:text-[#27438D] text-xs sm:text-sm px-2 py-1 rounded hover:bg-blue-50 transition-colors whitespace-nowrap" title="Detail">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                                            </svg>
                                         </a>
 
                                         <!-- Edit -->
                                         <a href="{{ route('hr.cuti.edit-hr', $item->id) }}"
-                                           class="text-[#FCC626] hover:text-[#e6b800] text-xs sm:text-sm px-2 py-1 rounded hover:bg-yellow-50 transition-colors whitespace-nowrap" title="Edit">
-                                            <i class="fas fa-edit mr-1"></i>Edit
+                                           class="inline-flex items-center text-[#FCC626] hover:text-[#e6b800] text-xs sm:text-sm px-2 py-1 rounded hover:bg-yellow-50 transition-colors whitespace-nowrap" title="Edit">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                            </svg>
                                         </a>
-
-                                        <!-- Setujui -->
-                                        @if($item->status === 'pending')
-                                            <form action="{{ route('hr.cuti.approve', $item->id) }}" method="POST" class="inline">
-                                                @csrf
-                                                <input type="hidden" name="status" value="approved">
-                                                <button type="submit" class="text-[#2E7D3E] hover:text-green-700 text-xs sm:text-sm px-2 py-1 rounded hover:bg-green-50 transition-colors whitespace-nowrap" title="Setujui">
-                                                    <i class="fas fa-check-circle mr-1"></i>Setujui
-                                                </button>
-                                            </form>
-                                            <form action="{{ route('hr.cuti.approve', $item->id) }}" method="POST" class="inline">
-                                                @csrf
-                                                <input type="hidden" name="status" value="rejected">
-                                                <button type="submit" class="text-[#ec1d1d] hover:text-red-700 text-xs sm:text-sm px-2 py-1 rounded hover:bg-red-50 transition-colors whitespace-nowrap" title="Tolak">
-                                                    <i class="fas fa-times-circle mr-1"></i>Tolak
-                                                </button>
-                                            </form>
-                                        @endif
 
                                         <!-- Hapus -->
                                         <form action="{{ route('hr.cuti.destroy', $item->id) }}" method="POST" class="inline"
                                               onsubmit="return confirm('Yakin ingin menghapus data cuti ini?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="text-gray-400 hover:text-[#ec1d1d] text-xs sm:text-sm px-2 py-1 rounded hover:bg-red-50 transition-colors whitespace-nowrap" title="Hapus">
-                                                <i class="fas fa-trash mr-1"></i>Hapus
+                                            <button type="submit" class="inline-flex items-center text-gray-400 hover:text-[#ec1d1d] text-xs sm:text-sm px-2 py-1 rounded hover:bg-red-50 transition-colors whitespace-nowrap" title="Hapus">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                    <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482 41.03 41.03 0 00-2.365-.298V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clip-rule="evenodd" />
+                                                </svg>
                                             </button>
                                         </form>
                                     </div>
@@ -249,25 +253,38 @@
                             </span>
                         </div>
                         <div class="flex flex-wrap items-center gap-1 pt-1 border-t border-gray-100">
-                            <a href="{{ route('hr.cuti.show', $item->id) }}" class="text-[#00a2e9] text-xs font-medium px-2 py-1 rounded hover:bg-blue-50">
-                                <i class="fas fa-eye mr-1"></i> Detail
+                            <a href="{{ route('hr.cuti.show', $item->id) }}" class="inline-flex items-center text-[#00a2e9] text-xs font-medium px-2 py-1 rounded hover:bg-blue-50">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                    <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                                </svg>
+                                Detail
                             </a>
-                            <a href="{{ route('hr.cuti.edit-hr', $item->id) }}" class="text-[#FCC626] text-xs font-medium px-2 py-1 rounded hover:bg-yellow-50">
-                                <i class="fas fa-edit mr-1"></i> Edit
+                            <a href="{{ route('hr.cuti.edit-hr', $item->id) }}" class="inline-flex items-center text-[#FCC626] text-xs font-medium px-2 py-1 rounded hover:bg-yellow-50">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                </svg>
+                                Edit
                             </a>
                             @if($item->status === 'pending')
                                 <form action="{{ route('hr.cuti.approve', $item->id) }}" method="POST" class="inline">
                                     @csrf
                                     <input type="hidden" name="status" value="approved">
-                                    <button type="submit" class="text-[#2E7D3E] text-xs font-medium px-2 py-1 rounded hover:bg-green-50">
-                                        <i class="fas fa-check-circle mr-1"></i> Setujui
+                                    <button type="submit" class="inline-flex items-center text-[#2E7D3E] text-xs font-medium px-2 py-1 rounded hover:bg-green-50">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                        </svg>
+                                        Setujui
                                     </button>
                                 </form>
                                 <form action="{{ route('hr.cuti.approve', $item->id) }}" method="POST" class="inline">
                                     @csrf
                                     <input type="hidden" name="status" value="rejected">
-                                    <button type="submit" class="text-[#ec1d1d] text-xs font-medium px-2 py-1 rounded hover:bg-red-50">
-                                        <i class="fas fa-times-circle mr-1"></i> Tolak
+                                    <button type="submit" class="inline-flex items-center text-[#ec1d1d] text-xs font-medium px-2 py-1 rounded hover:bg-red-50">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                        </svg>
+                                        Tolak
                                     </button>
                                 </form>
                             @endif
@@ -275,8 +292,11 @@
                                   onsubmit="return confirm('Yakin ingin menghapus data cuti ini?')">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="text-gray-400 hover:text-[#ec1d1d] text-xs font-medium px-2 py-1 rounded hover:bg-red-50">
-                                    <i class="fas fa-trash mr-1"></i> Hapus
+                                <button type="submit" class="inline-flex items-center text-gray-400 hover:text-[#ec1d1d] text-xs font-medium px-2 py-1 rounded hover:bg-red-50">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482 41.03 41.03 0 00-2.365-.298V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clip-rule="evenodd" />
+                                    </svg>
+                                    Hapus
                                 </button>
                             </form>
                         </div>
