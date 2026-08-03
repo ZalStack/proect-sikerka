@@ -60,6 +60,7 @@ class ProfileController extends Controller
             'nama_kontak_darurat' => 'nullable|string|max:100',
             'telepon_kontak_darurat' => 'nullable|string|max:20',
             'foto_profil' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'cropped_image' => 'nullable|string', // Tambahkan validasi untuk cropped_image
             'tanggal_pengangkatan_tetap' => 'nullable|date',
             'nomor_rekening' => 'nullable|string|max:50',
             'ipk_terakhir' => 'nullable|numeric|min:0|max:4',
@@ -76,25 +77,69 @@ class ProfileController extends Controller
 
         $request->validate($rules);
 
-        $data = $request->except(['foto_profil', '_token', '_method']);
+        // Ambil semua data kecuali foto_profil dan cropped_image
+        $data = $request->except(['foto_profil', 'cropped_image', '_token', '_method']);
 
         $data['jumlah_anak'] = $data['jumlah_anak'] ?? 0;
         $data['nama_bank'] = 'BSI';
-        // PERBAIKAN: cek nilai radio, bukan keberadaan field
         $data['is_continuing_education'] = $request->input('is_continuing_education') == 1;
-
         $data['posisi'] = $this->determinePosisi($request->divisi);
 
-        if ($request->hasFile('foto_profil')) {
+        // ========== HANDLE FOTO PROFIL ==========
+        $fotoSaved = false;
+
+        // PRIORITAS 1: Cek apakah ada cropped_image (dari modal crop)
+        if ($request->filled('cropped_image')) {
+            try {
+                // Decode base64 image
+                $imageData = $request->cropped_image;
+
+                // Cek apakah formatnya valid (data:image/jpeg;base64,...)
+                if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type)) {
+                    $imageData = substr($imageData, strpos($imageData, ',') + 1);
+                    $imageType = strtolower($type[1]); // jpg, jpeg, png, etc
+
+                    // Decode base64
+                    $imageData = base64_decode($imageData);
+
+                    if ($imageData === false) {
+                        throw new \Exception('Gagal decode base64 image');
+                    }
+
+                    // Generate nama file unik
+                    $filename = 'foto_profil/' . time() . '_' . Str::slug($request->nama_lengkap) . '.' . $imageType;
+
+                    // Hapus foto lama jika ada
+                    if ($user->foto_profil) {
+                        Storage::disk('public')->delete($user->foto_profil);
+                    }
+
+                    // Simpan ke storage
+                    Storage::disk('public')->put($filename, $imageData);
+
+                    $data['foto_profil'] = $filename;
+                    $fotoSaved = true;
+                }
+            } catch (\Exception $e) {
+                return back()->withErrors(['cropped_image' => 'Gagal menyimpan foto: ' . $e->getMessage()]);
+            }
+        }
+
+        // PRIORITAS 2: Jika tidak ada cropped_image, cek upload file biasa
+        if (!$fotoSaved && $request->hasFile('foto_profil')) {
+            // Hapus foto lama jika ada
             if ($user->foto_profil) {
                 Storage::disk('public')->delete($user->foto_profil);
             }
+
             $file = $request->file('foto_profil');
             $filename = time() . '_' . Str::slug($request->nama_lengkap) . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('foto_profil', $filename, 'public');
             $data['foto_profil'] = $path;
+            $fotoSaved = true;
         }
 
+        // Update data user
         $user->update($data);
         $user->refresh();
 
@@ -120,7 +165,7 @@ class ProfileController extends Controller
         }
 
         $user->update([
-            'kata_sandi' => Hash::make($request->password)
+            'kata_sandi' => Hash::make($request->password),
         ]);
 
         return redirect()->route('profile.show')->with('success', 'Password berhasil diupdate');
@@ -159,38 +204,31 @@ class ProfileController extends Controller
         if ($user->isHr()) {
             // HR: tampilkan semua karyawan aktif dengan peringkat
             $karyawans = Karyawan::where('is_resigned', false)->get();
-            $data = $karyawans->map(function ($karyawan) use ($month, $year, $englishScores, $videoSubmissions, $pamerSukuSummary, $kepalaSukuGlobal, $kepalaSukuPka) {
-                $achievement = $this->getKaryawanAchievement($karyawan, $month, $year);
-                $achievement['english_today'] = $this->matchEnglishTodayScore($karyawan, $englishScores);
-                $achievement['video_challenges'] = $this->matchVideoSubmissions($karyawan, $videoSubmissions);
-                $achievement['pamer_suku'] = $this->matchPamerSuku($karyawan, $pamerSukuSummary);
-                $achievement['is_kepala_suku_global'] = $this->isSameKepalaSuku($karyawan, $kepalaSukuGlobal);
-                $achievement['is_kepala_suku_pka'] = $this->isSameKepalaSuku($karyawan, $kepalaSukuPka);
-                return $achievement;
-            })->sortByDesc('total_score')->values();
+            $data = $karyawans
+                ->map(function ($karyawan) use ($month, $year, $englishScores, $videoSubmissions, $pamerSukuSummary, $kepalaSukuGlobal, $kepalaSukuPka) {
+                    $achievement = $this->getKaryawanAchievement($karyawan, $month, $year);
+                    $achievement['english_today'] = $this->matchEnglishTodayScore($karyawan, $englishScores);
+                    $achievement['video_challenges'] = $this->matchVideoSubmissions($karyawan, $videoSubmissions);
+                    $achievement['pamer_suku'] = $this->matchPamerSuku($karyawan, $pamerSukuSummary);
+                    $achievement['is_kepala_suku_global'] = $this->isSameKepalaSuku($karyawan, $kepalaSukuGlobal);
+                    $achievement['is_kepala_suku_pka'] = $this->isSameKepalaSuku($karyawan, $kepalaSukuPka);
+                    return $achievement;
+                })
+                ->sortByDesc('total_score')
+                ->values();
 
             // Pagination manual (10 per halaman)
             $perPage = 10;
             $currentPage = Paginator::resolveCurrentPage('page');
             $currentItems = $data->slice(($currentPage - 1) * $perPage, $perPage)->all();
 
-            $paginatedData = new LengthAwarePaginator(
-                $currentItems,
-                $data->count(),
-                $perPage,
-                $currentPage,
-                [
-                    'path' => Paginator::resolveCurrentPath(),
-                    'pageName' => 'page',
-                    'query' => $request->only(['month', 'year']) // penting! agar filter tetap terjaga
-                ]
-            );
+            $paginatedData = new LengthAwarePaginator($currentItems, $data->count(), $perPage, $currentPage, [
+                'path' => Paginator::resolveCurrentPath(),
+                'pageName' => 'page',
+                'query' => $request->only(['month', 'year']), // penting! agar filter tetap terjaga
+            ]);
 
-            return view('profile.achievement', compact(
-                'paginatedData', 'user', 'month', 'year',
-                'englishSummary', 'videoSummary',
-                'kepalaSukuGlobal', 'kepalaSukuPka', 'pamerSukuTotalVolumes'
-            ));
+            return view('profile.achievement', compact('paginatedData', 'user', 'month', 'year', 'englishSummary', 'videoSummary', 'kepalaSukuGlobal', 'kepalaSukuPka', 'pamerSukuTotalVolumes'));
         } else {
             // Karyawan biasa: hanya data sendiri
             $achievement = $this->getKaryawanAchievement($user, $month, $year);
@@ -200,11 +238,7 @@ class ProfileController extends Controller
             $achievement['is_kepala_suku_global'] = $this->isSameKepalaSuku($user, $kepalaSukuGlobal);
             $achievement['is_kepala_suku_pka'] = $this->isSameKepalaSuku($user, $kepalaSukuPka);
             $data = collect([$achievement]);
-            return view('profile.achievement', compact(
-                'data', 'user', 'month', 'year',
-                'englishSummary', 'videoSummary',
-                'kepalaSukuGlobal', 'kepalaSukuPka', 'pamerSukuTotalVolumes'
-            ));
+            return view('profile.achievement', compact('data', 'user', 'month', 'year', 'englishSummary', 'videoSummary', 'kepalaSukuGlobal', 'kepalaSukuPka', 'pamerSukuTotalVolumes'));
         }
     }
 
@@ -274,9 +308,9 @@ class ProfileController extends Controller
         if ($kode) {
             $karyawan = Karyawan::where('kode_pegawai', $kode)->first();
             if ($karyawan) {
-                $entry['resolved_name'] = $karyawan->nama_lengkap ?? $entry['player_name'] ?? null;
+                $entry['resolved_name'] = $karyawan->nama_lengkap ?? ($entry['player_name'] ?? null);
                 $entry['resolved_foto'] = $karyawan->foto_profil ?? null;
-                $entry['resolved_divisi'] = $karyawan->divisi ?? $entry['division'] ?? null;
+                $entry['resolved_divisi'] = $karyawan->divisi ?? ($entry['division'] ?? null);
             }
         }
 
@@ -322,35 +356,23 @@ class ProfileController extends Controller
     private function getKaryawanAchievement($karyawan, $month, $year)
     {
         // ---- SUNNAH ----
-        $sunnah = SunnahDaily::where('karyawan_id', $karyawan->id)
-            ->whereMonth('tanggal', $month)
-            ->whereYear('tanggal', $year)
-            ->where('status_approval', 'approved')
-            ->get();
+        $sunnah = SunnahDaily::where('karyawan_id', $karyawan->id)->whereMonth('tanggal', $month)->whereYear('tanggal', $year)->where('status_approval', 'approved')->get();
         $sunnahTotalPoin = $sunnah->sum('total_poin');
         $sunnahCount = $sunnah->count();
         $sunnahAvg = $sunnahCount > 0 ? round($sunnahTotalPoin / $sunnahCount, 1) : 0;
 
         // ---- FHL ----
-        $fhlHadir = FhlAbsensi::where('karyawan_id', $karyawan->id)
-            ->whereMonth('tanggal', $month)
-            ->whereYear('tanggal', $year)
-            ->where('status', 'hadir')
-            ->count();
+        $fhlHadir = FhlAbsensi::where('karyawan_id', $karyawan->id)->whereMonth('tanggal', $month)->whereYear('tanggal', $year)->where('status', 'hadir')->count();
         $totalFridays = $this->countDayInMonth($month, $year, 5); // 5 = Jumat
         $fhlPercentage = $totalFridays > 0 ? round(($fhlHadir / $totalFridays) * 100, 1) : 0;
 
         // ---- KHATAMAN ----
-        $khatamanHadir = KhatamanAbsensi::where('karyawan_id', $karyawan->id)
-            ->whereMonth('tanggal', $month)
-            ->whereYear('tanggal', $year)
-            ->where('status', 'hadir')
-            ->count();
+        $khatamanHadir = KhatamanAbsensi::where('karyawan_id', $karyawan->id)->whereMonth('tanggal', $month)->whereYear('tanggal', $year)->where('status', 'hadir')->count();
         $totalThursdays = $this->countDayInMonth($month, $year, 4); // 4 = Kamis
         $khatamanPercentage = $totalThursdays > 0 ? round(($khatamanHadir / $totalThursdays) * 100, 1) : 0;
 
         // ---- SCORE GABUNGAN ----
-        $score = ($sunnahAvg * 0.5) + ($fhlPercentage * 0.25) + ($khatamanPercentage * 0.25);
+        $score = $sunnahAvg * 0.5 + $fhlPercentage * 0.25 + $khatamanPercentage * 0.25;
 
         return [
             'karyawan' => $karyawan,
