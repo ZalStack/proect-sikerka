@@ -46,7 +46,7 @@
                 </form>
             </div>
 
-            <!-- Ringkasan -->
+            <!-- Ringkasan - Total Poin Bulanan -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
                 <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 text-center">
                     <p class="text-lg sm:text-2xl font-bold text-[#161758]">{{ $rekap->total() }}</p>
@@ -57,8 +57,8 @@
                     <p class="text-[10px] sm:text-sm">Karyawan Sudah Mengisi</p>
                 </div>
                 <div class="bg-[#2E7D3E] text-white rounded-lg shadow-md p-3 sm:p-4 text-center">
-                    <p class="text-lg sm:text-2xl font-bold">{{ $totalPoinKeseluruhan }}</p>
-                    <p class="text-[10px] sm:text-sm">Total Poin Seluruh Karyawan</p>
+                    <p class="text-lg sm:text-2xl font-bold">{{ $totalPoinBulanan }}</p>
+                    <p class="text-[10px] sm:text-sm">Total Poin Bulan {{ DateTime::createFromFormat('!m', $month)->format('F') }} {{ $year }}</p>
                 </div>
             </div>
 

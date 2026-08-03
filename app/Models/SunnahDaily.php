@@ -314,4 +314,14 @@ class SunnahDaily extends Model
         ->sortByDesc('total_poin')
         ->values();
     }
+
+    /**
+     * Cek apakah data masih dalam periode approval (1 minggu terakhir)
+     */
+    public function isWithinApprovalPeriod()
+    {
+        $tanggalData = Carbon::parse($this->tanggal);
+        $batasWaktu = Carbon::today()->subDays(6)->startOfDay();
+        return $tanggalData->greaterThanOrEqualTo($batasWaktu);
+    }
 }

@@ -23,6 +23,24 @@
                 </div>
             @endif
 
+            @if(session('error'))
+                <div class="bg-[#ec1d1d] text-white p-3 sm:p-4 rounded-lg mb-4 text-sm">
+                    {{ session('error') }}
+                </div>
+            @endif
+
+            <!-- Info Periode Approval -->
+            <div class="bg-[#161758] text-white p-3 sm:p-4 rounded-lg mb-6 text-sm">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <div>
+                        <strong>📋 Periode Approval:</strong> HR hanya dapat melakukan approve/reject untuk data <strong>1 minggu terakhir</strong> (termasuk hari ini).
+                    </div>
+                    <span class="text-[10px] sm:text-xs bg-white/20 px-2 sm:px-3 py-1 rounded-full whitespace-nowrap">
+                        Periode: {{ \Carbon\Carbon::today()->subDays(6)->format('d/m/Y') }} - {{ \Carbon\Carbon::today()->format('d/m/Y') }}
+                    </span>
+                </div>
+            </div>
+
             <!-- Filter -->
             <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
                 <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">Filter Laporan</h2>
@@ -179,6 +197,9 @@
                 <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div class="text-xs sm:text-sm text-[#1B1B1B]">
                         <span id="bulk-selected-count">0</span> data dipilih
+                        <span class="text-[10px] sm:text-xs text-[#27438D] ml-2 hidden sm:inline">
+                            (Hanya data dalam periode 1 minggu terakhir yang dapat di-approve)
+                        </span>
                     </div>
                     <div class="flex flex-wrap gap-2">
                         <button type="button" onclick="submitBulk('approved')"
@@ -208,7 +229,7 @@
                         </div>
                         <div class="overflow-x-auto -mx-4 sm:mx-0">
                             <div class="inline-block min-w-full align-middle">
-                                <table class="min-w-[800px] sm:min-w-full">
+                                <table class="min-w-[900px] sm:min-w-full">
                                     <thead class="bg-[#F5F5F5]">
                                         <tr>
                                             <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">
@@ -218,7 +239,8 @@
                                             <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Tanggal</th>
                                             <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Total Poin</th>
                                             <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Status</th>
-                                            <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Catatan HR</th>
+                                            <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden lg:table-cell">Periode Approval</th>
+                                            <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden md:table-cell">Catatan HR</th>
                                             <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Aksi</th>
                                         </tr>
                                     </thead>
@@ -228,7 +250,11 @@
                                             <td class="px-3 sm:px-4 py-2 sm:py-3">
                                                 <input type="checkbox"
                                                        class="row-check divisi-{{ \Illuminate\Support\Str::slug($divisi) }} w-3 h-3 sm:w-4 sm:h-4"
-                                                       value="{{ $item->id }}">
+                                                       value="{{ $item->id }}"
+                                                       {{ !$item->isWithinApprovalPeriod() ? 'disabled' : '' }}>
+                                                @if(!$item->isWithinApprovalPeriod())
+                                                    <span class="text-[8px] sm:text-[10px] text-[#ec1d1d] block">expired</span>
+                                                @endif
                                             </td>
                                             <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">{{ $item->karyawan->nama_lengkap }}</td>
                                             <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">{{ $item->tanggal->format('d-m-Y') }}</td>
@@ -238,7 +264,14 @@
                                                     {{ $item->status_label }}
                                                 </span>
                                             </td>
-                                            <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">{{ $item->catatan_hr ?? '-' }}</td>
+                                            <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm hidden lg:table-cell">
+                                                @if($item->isWithinApprovalPeriod())
+                                                    <span class="text-[#2E7D3E] text-xs font-medium">✅ Aktif</span>
+                                                @else
+                                                    <span class="text-[#ec1d1d] text-xs font-medium">❌ Expired</span>
+                                                @endif
+                                            </td>
+                                            <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm hidden md:table-cell">{{ $item->catatan_hr ?? '-' }}</td>
                                             <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
                                                 <a href="{{ route('hr.sunnah.detail', $item->id) }}"
                                                    class="text-[#00a2e9] hover:text-[#27438D] text-xs sm:text-sm">
@@ -322,10 +355,36 @@ function submitBulk(status) {
     const checked = getCheckedRows();
     if (checked.length === 0) return;
 
+    // Cek apakah ada data yang expired (checkbox disabled tidak akan terpilih)
+    // Tapi kita tetap beri peringatan jika ada data yang tidak dalam periode approval
     let confirmText = `Ubah status ${checked.length} data terpilih?`;
-    if (status === 'approved') confirmText = `Setujui ${checked.length} data terpilih?`;
-    if (status === 'rejected') confirmText = `Tolak ${checked.length} data terpilih?`;
-    if (status === 'pending') confirmText = `Kembalikan ${checked.length} data terpilih ke status Menunggu? (Termasuk yang sudah Disetujui)`;
+
+    // Cek apakah ada data yang sudah expired (tidak mungkin terpilih karena disabled)
+    // Tapi tetap tampilkan peringatan
+    const allCheckboxes = document.querySelectorAll('.row-check:checked');
+    const expiredCount = Array.from(allCheckboxes).filter(cb => {
+        const row = cb.closest('tr');
+        // Cek apakah ada teks "expired" di row
+        return row && row.textContent.includes('expired');
+    }).length;
+
+    if (status === 'approved') {
+        confirmText = `Setujui ${checked.length} data terpilih?`;
+        if (expiredCount > 0) {
+            confirmText += `\n\n⚠️ Peringatan: ${expiredCount} data sudah melewati periode approval dan TIDAK akan diproses.`;
+        }
+    } else if (status === 'rejected') {
+        confirmText = `Tolak ${checked.length} data terpilih?`;
+        if (expiredCount > 0) {
+            confirmText += `\n\n⚠️ Peringatan: ${expiredCount} data sudah melewati periode approval dan TIDAK akan diproses.`;
+        }
+    } else if (status === 'pending') {
+        confirmText = `Kembalikan ${checked.length} data terpilih ke status Menunggu? (Termasuk yang sudah Disetujui)`;
+        if (expiredCount > 0) {
+            confirmText += `\n\n⚠️ Peringatan: ${expiredCount} data sudah melewati periode approval dan TIDAK akan diproses.`;
+        }
+    }
+
     if (!confirm(confirmText)) return;
 
     // Bersihkan input ids sebelumnya
@@ -341,5 +400,10 @@ function submitBulk(status) {
     bulkTargetStatus.value = status;
     bulkForm.submit();
 }
+
+// Tambahkan tooltip untuk checkbox yang disabled
+document.querySelectorAll('.row-check:disabled').forEach(cb => {
+    cb.title = 'Data ini sudah melewati periode approval (1 minggu terakhir)';
+});
 </script>
 @endsection

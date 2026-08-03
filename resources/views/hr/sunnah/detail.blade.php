@@ -11,6 +11,16 @@
                 <p class="text-sm sm:text-base text-[#27438D]">Detail kegiatan 7 Sunnah Plus Suprasional</p>
             </div>
 
+            @if(!$sunnah->isWithinApprovalPeriod())
+                <div class="bg-[#ec1d1d] text-white p-3 sm:p-4 rounded-lg mb-4 text-sm">
+                    <strong>⚠️ Perhatian:</strong> Data ini sudah melewati batas waktu approval (1 minggu terakhir). Tanggal: {{ $sunnah->tanggal->format('d-m-Y') }}
+                </div>
+            @else
+                <div class="bg-[#2E7D3E] text-white p-3 sm:p-4 rounded-lg mb-4 text-sm">
+                    <strong>✅ Informasi:</strong> Data ini masih dalam periode approval (1 minggu terakhir).
+                </div>
+            @endif
+
             <div class="bg-white rounded-lg shadow-md overflow-hidden">
                 <div class="p-4 sm:p-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
@@ -49,6 +59,16 @@
                                         <span class="px-2 py-1 rounded-full text-xs font-medium {{ $sunnah->status_badge }}">
                                             {{ $sunnah->status_label }}
                                         </span>
+                                    </p>
+                                </div>
+                                <div>
+                                    <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Periode Approval</label>
+                                    <p class="text-xs sm:text-sm text-[#27438D]">
+                                        @if($sunnah->isWithinApprovalPeriod())
+                                            <span class="text-[#2E7D3E] font-medium">✅ Masih dalam periode approval (1 minggu terakhir)</span>
+                                        @else
+                                            <span class="text-[#ec1d1d] font-medium">❌ Melewati batas approval (1 minggu terakhir)</span>
+                                        @endif
                                     </p>
                                 </div>
                             </div>
@@ -135,24 +155,37 @@
                     <!-- Approval Form -->
                     <div class="mt-6 pt-6 border-t border-gray-200">
                         <h3 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">✏️ Approval / Assessment</h3>
+
+                        @if(!$sunnah->isWithinApprovalPeriod())
+                            <div class="bg-[#ec1d1d] text-white p-3 sm:p-4 rounded-lg mb-4 text-sm">
+                                <strong>⚠️ Approval Tidak Tersedia:</strong> Data ini sudah melewati batas waktu approval (1 minggu terakhir).
+                            </div>
+                        @endif
+
                         <form action="{{ route('hr.sunnah.approve', $sunnah->id) }}" method="POST" class="space-y-4">
                             @csrf
                             <div>
                                 <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Status</label>
                                 <select name="status" required
-                                        class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                                        class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9] {{ !$sunnah->isWithinApprovalPeriod() ? 'bg-gray-100 cursor-not-allowed' : '' }}"
+                                        {{ !$sunnah->isWithinApprovalPeriod() ? 'disabled' : '' }}>
                                     <option value="pending" {{ $sunnah->status_approval === 'pending' ? 'selected' : '' }}>⏳ Menunggu</option>
                                     <option value="approved" {{ $sunnah->status_approval === 'approved' ? 'selected' : '' }}>✅ Disetujui</option>
                                     <option value="rejected" {{ $sunnah->status_approval === 'rejected' ? 'selected' : '' }}>❌ Ditolak</option>
                                 </select>
+                                @if(!$sunnah->isWithinApprovalPeriod())
+                                    <p class="text-xs text-[#ec1d1d] mt-1">Data ini sudah melewati batas waktu approval.</p>
+                                @endif
                             </div>
                             <div>
                                 <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Catatan</label>
                                 <textarea name="catatan_hr" rows="3"
-                                          class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">{{ old('catatan_hr', $sunnah->catatan_hr) }}</textarea>
+                                          class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9] {{ !$sunnah->isWithinApprovalPeriod() ? 'bg-gray-100 cursor-not-allowed' : '' }}"
+                                          {{ !$sunnah->isWithinApprovalPeriod() ? 'disabled' : '' }}>{{ old('catatan_hr', $sunnah->catatan_hr) }}</textarea>
                             </div>
                             <button type="submit"
-                                    class="w-full sm:w-auto bg-[#27438D] text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-[#161758] transition-colors duration-200 text-sm sm:text-base">
+                                    class="w-full sm:w-auto bg-[#27438D] text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-[#161758] transition-colors duration-200 text-sm sm:text-base {{ !$sunnah->isWithinApprovalPeriod() ? 'opacity-50 cursor-not-allowed' : '' }}"
+                                    {{ !$sunnah->isWithinApprovalPeriod() ? 'disabled' : '' }}>
                                 Simpan Approval
                             </button>
                         </form>

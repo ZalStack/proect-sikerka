@@ -298,7 +298,9 @@ class SunnahController extends Controller
 
         // Ambil seluruh rekap (sudah terurut dari poin tertinggi) untuk hitung total & ranking yang benar
         $rekapAll = SunnahDaily::rekapPerKaryawan($month, $year);
-        $totalPoinKeseluruhan = $rekapAll->sum('total_poin');
+
+        // HITUNG TOTAL POIN BULANAN (bukan total poin keseluruhan)
+        $totalPoinBulanan = $rekapAll->sum('total_poin');
         $totalKaryawanAktif = $rekapAll->where('total_hari', '>', 0)->count();
 
         // Paginasi manual 10 data per halaman (next/previous), tanpa mengubah urutan ranking
@@ -321,7 +323,7 @@ class SunnahController extends Controller
             'rekap',
             'month',
             'year',
-            'totalPoinKeseluruhan',
+            'totalPoinBulanan',
             'totalKaryawanAktif'
         ));
     }
@@ -335,7 +337,7 @@ class SunnahController extends Controller
         return view('hr.sunnah.detail', compact('sunnah', 'poinConfig', 'sholatWajibKeys'));
     }
 
-    // HR Approve/Reject (satuan)
+    // HR Approve/Reject (satuan) - Dibatasi untuk data 1 minggu terakhir
     public function approve(Request $request, $id)
     {
         $request->validate([
@@ -344,6 +346,16 @@ class SunnahController extends Controller
         ]);
 
         $sunnah = SunnahDaily::findOrFail($id);
+
+        // Cek apakah data masih dalam periode 1 minggu terakhir
+        $tanggalData = Carbon::parse($sunnah->tanggal);
+        $batasWaktu = Carbon::today()->subDays(6)->startOfDay(); // 1 minggu (7 hari termasuk hari ini)
+
+        if ($tanggalData->lessThan($batasWaktu)) {
+            return redirect()->route('hr.sunnah.index')
+                ->with('error', 'Approval hanya dapat dilakukan untuk data 1 minggu terakhir! Data tanggal ' . $tanggalData->format('d-m-Y') . ' sudah melewati batas waktu approval.');
+        }
+
         $sunnah->status_approval = $request->status;
         $sunnah->catatan_hr = $request->catatan_hr;
         $sunnah->save();
@@ -354,7 +366,7 @@ class SunnahController extends Controller
             ->with('success', "Status approval berhasil diubah menjadi {$statusLabel}");
     }
 
-    // HR Approve/Reject (bulk / massal)
+    // HR Approve/Reject (bulk / massal) - Dibatasi untuk data 1 minggu terakhir
     // Bisa mengubah status ke arah manapun (pending/approved/rejected), termasuk
     // membatalkan data yang sebelumnya sudah "Disetujui" kembali ke "Menunggu"/"Ditolak".
     public function bulkApprove(Request $request)
@@ -368,9 +380,37 @@ class SunnahController extends Controller
 
         $ids = $request->input('ids');
 
-        // Update seluruh data terpilih tanpa memandang status_approval saat ini,
-        // sehingga perubahan bisa dua arah (mis. approved -> pending, pending -> approved, dst).
-        $jumlah = SunnahDaily::whereIn('id', $ids)
+        // Ambil data untuk dicek periodenya
+        $dataToUpdate = SunnahDaily::whereIn('id', $ids)->get();
+        $batasWaktu = Carbon::today()->subDays(6)->startOfDay(); // 1 minggu (7 hari termasuk hari ini)
+
+        // Filter data yang masih dalam periode 1 minggu
+        $validIds = [];
+        $expiredTanggal = [];
+
+        foreach ($dataToUpdate as $data) {
+            $tanggalData = Carbon::parse($data->tanggal);
+            if ($tanggalData->greaterThanOrEqualTo($batasWaktu)) {
+                $validIds[] = $data->id;
+            } else {
+                $expiredTanggal[] = $tanggalData->format('d-m-Y');
+            }
+        }
+
+        if (empty($validIds)) {
+            return redirect()->route('hr.sunnah.index', $request->only([
+                'month', 'year', 'periode', 'karyawan_id', 'status', 'divisi',
+            ]))->with('error', 'Tidak ada data yang dapat di-approve karena semua data sudah melewati batas waktu approval (1 minggu terakhir).');
+        }
+
+        // Jika ada data yang expired, beri peringatan
+        $warningMessage = '';
+        if (!empty($expiredTanggal)) {
+            $warningMessage = ' ' . count($expiredTanggal) . ' data tidak dapat di-approve karena sudah melewati batas waktu (tanggal ' . implode(', ', array_unique($expiredTanggal)) . ').';
+        }
+
+        // Update seluruh data terpilih yang valid
+        $jumlah = SunnahDaily::whereIn('id', $validIds)
             ->update([
                 'status_approval' => $request->input('target_status'),
                 'catatan_hr' => $request->input('catatan_hr'),
@@ -386,6 +426,6 @@ class SunnahController extends Controller
         return redirect()->route('hr.sunnah.index', $request->only([
                 'month', 'year', 'periode', 'karyawan_id', 'status', 'divisi',
             ]))
-            ->with('success', "{$jumlah} data berhasil diubah menjadi {$statusLabel} secara massal");
+            ->with('success', "{$jumlah} data berhasil diubah menjadi {$statusLabel} secara massal." . $warningMessage);
     }
 }
