@@ -10,175 +10,186 @@
     $userInitial = strtoupper(substr($user->nama_lengkap ?? 'U', 0, 1));
 @endphp
 
-<nav class="bg-[#161758] border-b border-[#27438D] fixed top-0 left-0 right-0 z-50">
-    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+<nav class="bg-gradient-to-r from-[#0F1245] via-[#161758] to-[#0F1245] border-b border-[#27438D]/50 fixed top-0 left-0 right-0 z-50 shadow-lg backdrop-blur-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-14 sm:h-16">
-            <div class="flex items-center">
+            <!-- Logo & Menu -->
+            <div class="flex items-center gap-3">
                 <!-- Mobile menu button -->
-                <button id="mobile-menu-toggle" class="md:hidden text-white hover:text-[#00a2e9] focus:outline-none mr-2 sm:mr-3">
-                    <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button id="mobile-menu-toggle" class="md:hidden text-white hover:text-[#00a2e9] focus:outline-none transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                     </svg>
                 </button>
-                <a href="{{ route($dashboardRoute) }}" class="flex items-center space-x-2">
-                    <span class="text-[#FCC626] text-base sm:text-xl font-bold font-['Montserrat']">SIKEKAR</span>
+
+                <a href="{{ route($dashboardRoute) }}" class="flex items-center gap-2">
+                    <span class="text-[#FCC626] text-lg sm:text-xl font-bold font-['Montserrat'] tracking-wide">
+                        SIKEKAR
+                    </span>
                 </a>
             </div>
 
-            <div class="flex items-center space-x-2 sm:space-x-4">
-                <span class="text-white text-xs sm:text-sm hidden sm:block truncate max-w-[100px] md:max-w-[150px]">
+            <!-- Right Section -->
+            <div class="flex items-center gap-3 sm:gap-4">
+                <!-- User Name -->
+                <span class="text-white/90 text-xs sm:text-sm hidden md:block truncate max-w-[200px] font-medium">
                     {{ $user->nama_lengkap ?? $user->email }}
                 </span>
 
-                {{-- ==========================================================
-                     NOTIFIKASI (bell icon + dropdown)
-                     Berlaku untuk KEDUA role (HR & karyawan). Data notifikasi
-                     dirakit di backend (NotificationService) dari data yang
-                     sudah ada, tanpa tabel/migration baru.
-                ========================================================== --}}
+                {{-- Notifikasi --}}
                 <div class="relative"
-                     x-data="{
-                        open: false,
-                        loading: true,
-                        items: [],
-                        unreadCount: 0,
-                        icons: { pengumuman: '📢', cuti: '🗓️', dinas: '🧳', sunnah: '🌙', absensi: '⚠️', profile: '👤', fhl: '🕌', khataman: '📖' },
-                        colors: {
-                            blue: 'bg-blue-100 text-blue-700',
-                            amber: 'bg-amber-100 text-amber-700',
-                            violet: 'bg-violet-100 text-violet-700',
-                            emerald: 'bg-emerald-100 text-emerald-700',
-                            rose: 'bg-rose-100 text-rose-700',
-                            sky: 'bg-sky-100 text-sky-700',
-                            teal: 'bg-teal-100 text-teal-700',
-                            indigo: 'bg-indigo-100 text-indigo-700',
-                            cyan: 'bg-cyan-100 text-cyan-700',
-                        },
-                        notifIcon(type) { return this.icons[type] || '🔔'; },
-                        notifColorClass(color) { return this.colors[color] || 'bg-gray-100 text-gray-700'; },
-                        async fetchLatest() {
-                            try {
-                                const res = await fetch('{{ route('notifications.latest') }}', {
-                                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
-                                });
-                                if (!res.ok) return;
-                                const data = await res.json();
-                                this.items = data.items || [];
-                                this.unreadCount = data.unread_count || 0;
-                            } catch (e) {
-                                // Diam saja kalau gagal fetch, badge tetap seperti sebelumnya
-                            } finally {
-                                this.loading = false;
-                            }
-                        },
-                        async markRead() {
-                            if (this.unreadCount === 0) return;
-                            this.unreadCount = 0;
-                            this.items = this.items.map(i => ({ ...i, is_new: false }));
-                            try {
-                                await fetch('{{ route('notifications.mark-read') }}', {
-                                    method: 'POST',
-                                    headers: {
-                                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-                                        'X-Requested-With': 'XMLHttpRequest',
-                                        'Accept': 'application/json',
-                                    },
-                                });
-                            } catch (e) {
-                                // Tidak fatal -- badge akan sinkron lagi di polling berikutnya
-                            }
-                        },
-                        toggle() {
-                            this.open = !this.open;
-                            if (this.open) { this.markRead(); }
-                        },
-                     }"
-                     x-init="fetchLatest(); setInterval(() => fetchLatest(), 60000)"
+                     x-data="notificationHandler()"
+                     x-init="init()"
                      @keydown.escape.window="open = false">
 
+                    <!-- Bell Button -->
                     <button @click="toggle()" type="button"
-                        class="relative text-white hover:text-[#00a2e9] focus:outline-none p-1.5 sm:p-2 rounded-full hover:bg-white/10 transition"
+                        class="relative text-white/90 hover:text-white focus:outline-none p-2 rounded-full hover:bg-white/10 transition-all duration-200 transform hover:scale-105"
                         aria-label="Notifikasi">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor" class="w-5 h-5 sm:w-6 sm:h-6">
                             <path stroke-linecap="round" stroke-linejoin="round"
                                 d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
                         </svg>
-                        <span x-show="unreadCount > 0" x-text="unreadCount > 9 ? '9+' : unreadCount"
-                            class="absolute -top-0.5 -right-0.5 bg-[#ec1d1d] text-white text-[9px] sm:text-[10px] font-bold rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center leading-none"
+
+                        <!-- Badge -->
+                        <span x-show="unreadCount > 0"
+                            x-text="unreadCount > 99 ? '99+' : unreadCount"
+                            class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center leading-none px-1 shadow-md animate-pulse"
                             style="display: none;"></span>
                     </button>
 
-                    <div x-show="open" @click.away="open = false" x-transition
-                        class="fixed sm:absolute left-2 right-2 sm:left-auto sm:right-0 top-14 sm:top-auto sm:mt-2 w-auto sm:w-96 max-w-full bg-white rounded-lg shadow-xl z-50 max-h-[80vh] sm:max-h-[28rem] flex flex-col overflow-hidden"
-                        style="display: none;">
-                        <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-[#F5F5F5] flex-shrink-0">
-                            <h3 class="text-sm font-semibold text-[#1B1B1B]">Notifikasi</h3>
-                            <span x-show="unreadCount > 0" x-text="unreadCount + ' baru'"
-                                class="text-[10px] sm:text-xs text-[#00a2e9] font-medium" style="display: none;"></span>
+                    <!-- Dropdown Notifikasi - Fixed positioning -->
+                    <div x-show="open"
+                        @click.away="open = false"
+                        x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0 translate-y-1"
+                        x-transition:enter-end="opacity-100 translate-y-0"
+                        x-transition:leave="transition ease-in duration-150"
+                        x-transition:leave-start="opacity-100 translate-y-0"
+                        x-transition:leave-end="opacity-0 translate-y-1"
+                        class="fixed inset-x-4 top-16 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[380px] md:w-[420px] bg-white rounded-xl shadow-2xl z-50 border border-gray-100 overflow-hidden"
+                        style="display: none; max-height: calc(100vh - 80px);">
+
+                        <!-- Header -->
+                        <div class="px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white flex items-center justify-between">
+                            <h3 class="text-sm font-bold text-gray-800">Notifikasi</h3>
+                            <span x-show="unreadCount > 0"
+                                x-text="unreadCount + ' baru'"
+                                class="text-xs text-[#00a2e9] font-semibold bg-[#E9F5FC] px-2 py-1 rounded-full"
+                                style="display: none;"></span>
                         </div>
 
-                        <div class="overflow-y-auto flex-1">
+                        <!-- Content -->
+                        <div class="overflow-y-auto" style="max-height: calc(80vh - 140px);">
+                            <!-- Loading -->
                             <template x-if="loading">
-                                <div class="p-6 text-center text-xs text-gray-400">Memuat notifikasi...</div>
+                                <div class="p-8 text-center">
+                                    <div class="animate-spin w-6 h-6 border-2 border-[#00a2e9] border-t-transparent rounded-full mx-auto mb-2"></div>
+                                    <p class="text-xs text-gray-400">Memuat notifikasi...</p>
+                                </div>
                             </template>
+
+                            <!-- Empty -->
                             <template x-if="!loading && items.length === 0">
-                                <div class="p-6 text-center text-xs text-gray-400">Belum ada notifikasi</div>
+                                <div class="p-8 text-center">
+                                    <div class="text-3xl mb-2">🔔</div>
+                                    <p class="text-sm text-gray-500 font-medium">Belum ada notifikasi</p>
+                                    <p class="text-xs text-gray-400 mt-1">Notifikasi akan muncul di sini</p>
+                                </div>
                             </template>
+
+                            <!-- Notification List -->
                             <template x-for="item in items" :key="item.id">
                                 <a :href="item.url"
-                                    class="flex items-start gap-3 px-4 py-3 border-b border-gray-50 hover:bg-[#F5F5F5] transition"
-                                    :class="item.is_new ? 'bg-[#E9F5FC]' : ''">
-                                    <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm"
-                                        :class="notifColorClass(item.color)" x-text="notifIcon(item.type)"></div>
-                                    <div class="min-w-0 flex-1">
-                                        <p class="text-xs sm:text-sm font-semibold text-[#1B1B1B] truncate" x-text="item.title"></p>
-                                        <p class="text-[11px] sm:text-xs text-gray-500 line-clamp-2" x-text="item.message"></p>
-                                        <p class="text-[10px] text-gray-400 mt-0.5" x-text="item.time_ago"></p>
+                                    class="flex items-start gap-3 px-5 py-4 border-b border-gray-50 hover:bg-gray-50/80 transition-colors duration-150 cursor-pointer"
+                                    :class="item.is_new ? 'bg-blue-50/50 border-l-2 border-l-[#00a2e9]' : ''">
+
+                                    <!-- Icon -->
+                                    <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-lg shadow-sm"
+                                        :class="notifColorClass(item.color)">
+                                        <span x-text="notifIcon(item.type)"></span>
                                     </div>
-                                    <span x-show="item.is_new" class="flex-shrink-0 w-2 h-2 rounded-full bg-[#00a2e9] mt-1.5" style="display: none;"></span>
+
+                                    <!-- Content -->
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-start justify-between gap-2">
+                                            <p class="text-sm font-semibold text-gray-800 truncate" x-text="item.title"></p>
+                                            <span x-show="item.is_new"
+                                                class="flex-shrink-0 w-2 h-2 rounded-full bg-[#00a2e9] mt-1.5 animate-pulse"
+                                                style="display: none;"></span>
+                                        </div>
+                                        <p class="text-xs text-gray-600 mt-1 line-clamp-2 leading-relaxed" x-text="item.message"></p>
+                                        <p class="text-[11px] text-gray-400 mt-2 flex items-center gap-1">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            <span x-text="item.time_ago"></span>
+                                        </p>
+                                    </div>
                                 </a>
                             </template>
                         </div>
 
+                        <!-- Footer -->
                         <a href="{{ route('notifications.index') }}"
-                            class="block text-center text-xs sm:text-sm font-medium text-[#00a2e9] py-2.5 border-t border-gray-100 hover:bg-[#F5F5F5] flex-shrink-0">
+                            class="block text-center text-sm font-semibold text-[#00a2e9] py-3.5 border-t border-gray-100 hover:bg-blue-50/50 transition-colors duration-150">
                             Lihat Semua Notifikasi
                         </a>
                     </div>
                 </div>
 
+                <!-- Profile Dropdown -->
                 <div class="relative" x-data="{ open: false }">
-                    <button @click="open = !open" class="flex items-center space-x-1 sm:space-x-2 focus:outline-none">
-                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#00a2e9] flex items-center justify-center text-white font-bold overflow-hidden text-xs sm:text-sm">
+                    <button @click="open = !open"
+                        class="flex items-center gap-2 focus:outline-none group">
+                        <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-[#00a2e9] to-[#0077b6] flex items-center justify-center text-white font-bold overflow-hidden text-xs sm:text-sm shadow-md group-hover:shadow-lg transition-all duration-200 ring-2 ring-transparent group-hover:ring-[#FCC626]/50">
                             @if($userPhoto)
                                 <img src="{{ $userPhoto }}" alt="{{ $user->nama_lengkap }}" class="w-full h-full object-cover">
                             @else
                                 {{ $userInitial }}
                             @endif
                         </div>
-                        <svg class="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4 text-white/70 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
                     </button>
 
-                    <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-44 sm:w-48 bg-white rounded-md shadow-lg py-1 z-50">
-                        <a href="{{ route('profile.show') }}" class="block px-3 sm:px-4 py-2 text-xs sm:text-sm text-[#1B1B1B] hover:bg-[#F5F5F5]">
-                            <div class="flex items-center space-x-2">
-                                <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#00a2e9] flex items-center justify-center text-white text-[10px] sm:text-xs overflow-hidden">
-                                    @if($userPhoto)
-                                        <img src="{{ $userPhoto }}" alt="{{ $user->nama_lengkap }}" class="w-full h-full object-cover">
-                                    @else
-                                        {{ $userInitial }}
-                                    @endif
-                                </div>
-                                <span>Profile</span>
-                            </div>
+                    <!-- Dropdown Menu -->
+                    <div x-show="open"
+                        @click.away="open = false"
+                        x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0 scale-95"
+                        x-transition:enter-end="opacity-100 scale-100"
+                        x-transition:leave="transition ease-in duration-150"
+                        x-transition:leave-start="opacity-100 scale-100"
+                        x-transition:leave-end="opacity-0 scale-95"
+                        class="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl py-2 z-50 border border-gray-100"
+                        style="display: none;">
+
+                        <!-- User Info -->
+                        <div class="px-4 py-3 border-b border-gray-100">
+                            <p class="text-sm font-semibold text-gray-800 truncate">{{ $user->nama_lengkap }}</p>
+                            <p class="text-xs text-gray-500 truncate">{{ $user->email }}</p>
+                        </div>
+
+                        <!-- Menu Items -->
+                        <a href="{{ route('profile.show') }}"
+                            class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                            <span>Profile Saya</span>
                         </a>
+
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
-                            <button type="submit" class="block w-full text-left px-3 sm:px-4 py-2 text-xs sm:text-sm text-[#ec1d1d] hover:bg-[#F5F5F5]">
-                                Logout
+                            <button type="submit"
+                                class="flex items-center gap-3 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                </svg>
+                                <span>Logout</span>
                             </button>
                         </form>
                     </div>
@@ -187,3 +198,92 @@
         </div>
     </div>
 </nav>
+
+<script>
+function notificationHandler() {
+    return {
+        open: false,
+        loading: true,
+        items: [],
+        unreadCount: 0,
+        icons: {
+            pengumuman: '📢',
+            cuti: '🗓️',
+            dinas: '🧳',
+            sunnah: '🌙',
+            absensi: '⚠️',
+            profile: '👤',
+            fhl: '🕌',
+            khataman: '📖'
+        },
+        colors: {
+            blue: 'bg-blue-100 text-blue-700',
+            amber: 'bg-amber-100 text-amber-700',
+            violet: 'bg-violet-100 text-violet-700',
+            emerald: 'bg-emerald-100 text-emerald-700',
+            rose: 'bg-rose-100 text-rose-700',
+            sky: 'bg-sky-100 text-sky-700',
+            teal: 'bg-teal-100 text-teal-700',
+            indigo: 'bg-indigo-100 text-indigo-700',
+            cyan: 'bg-cyan-100 text-cyan-700',
+        },
+
+        notifIcon(type) {
+            return this.icons[type] || '🔔';
+        },
+
+        notifColorClass(color) {
+            return this.colors[color] || 'bg-gray-100 text-gray-700';
+        },
+
+        async fetchLatest() {
+            try {
+                const res = await fetch('{{ route('notifications.latest') }}', {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                this.items = data.items || [];
+                this.unreadCount = data.unread_count || 0;
+            } catch (e) {
+                // Silent fail
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async markRead() {
+            if (this.unreadCount === 0) return;
+            this.unreadCount = 0;
+            this.items = this.items.map(i => ({ ...i, is_new: false }));
+            try {
+                await fetch('{{ route('notifications.mark-read') }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    },
+                });
+            } catch (e) {
+                // Silent fail
+            }
+        },
+
+        toggle() {
+            this.open = !this.open;
+            if (this.open) {
+                this.markRead();
+            }
+        },
+
+        init() {
+            this.fetchLatest();
+            setInterval(() => this.fetchLatest(), 60000);
+        }
+    }
+}
+</script>
