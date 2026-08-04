@@ -82,7 +82,12 @@
                                     <p class="text-xs sm:text-sm font-semibold text-[#161758]">🗓️ Bagian dari Pengajuan
                                         Cuti</p>
                                     <p class="text-sm sm:text-base text-[#27438D] font-medium break-words mt-1">
-                                        {{ $cutiInfo->jenis_cuti }}</p>
+                                        {{ $cutiInfo->jenis_cuti }}
+                                        <span
+                                            class="ml-2 px-2 py-0.5 rounded-full text-[10px] font-medium {{ $cutiInfo->status_badge }}">
+                                            {{ $cutiInfo->status_label }}
+                                        </span>
+                                    </p>
                                     <p class="text-xs sm:text-sm text-[#27438D] mt-1">
                                         Periode: {{ $cutiInfo->tanggal_mulai->format('d/m/Y') }}
                                         s/d {{ $cutiInfo->tanggal_selesai->format('d/m/Y') }}

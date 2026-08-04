@@ -72,8 +72,9 @@ class CutiController extends Controller
 
     /**
      * Buat/perbarui baris Absensi berstatus "Cuti" untuk setiap tanggal dalam
-     * periode pengajuan cuti yang BARU SAJA disetujui HR, supaya periode cuti
-     * otomatis muncul di halaman Manajemen Absensi HR (dan ikut ter-export ke Excel).
+     * periode pengajuan cuti (dipanggil begitu karyawan MENGAJUKAN cuti/pending,
+     * bukan menunggu approval HR, supaya HR langsung melihatnya di Manajemen
+     * Absensi -- keterangan otomatis membedakan status "menunggu" vs "disetujui").
      *
      * Tidak menimpa hari yang karyawan sudah benar-benar check-in (data kehadiran
      * asli tetap diprioritaskan/tidak ditindih oleh status Cuti).
@@ -84,7 +85,14 @@ class CutiController extends Controller
             return;
         }
 
-        $keteranganAbsensi = 'Cuti disetujui HR' . ($cuti->keterangan ? ' - ' . $cuti->keterangan : '');
+        // Cuti yang sudah ditolak tidak boleh punya baris Cuti di Absensi.
+        if ($cuti->status === 'rejected') {
+            $this->removeAbsensiCuti($cuti->karyawan_id, $cuti->tanggal_mulai, $cuti->tanggal_selesai);
+            return;
+        }
+
+        $labelStatus = $cuti->status === 'approved' ? 'Cuti disetujui HR' : 'Cuti (menunggu persetujuan HR)';
+        $keteranganAbsensi = $labelStatus . ($cuti->keterangan ? ' - ' . $cuti->keterangan : '');
 
         for ($tanggal = $cuti->tanggal_mulai->copy(); $tanggal->lte($cuti->tanggal_selesai); $tanggal->addDay()) {
             $absensiHariIni = Absensi::where('karyawan_id', $cuti->karyawan_id)
@@ -107,6 +115,21 @@ class CutiController extends Controller
                 ]
             );
         }
+    }
+
+    /**
+     * Wrapper untuk dipakai di alur HR (approve/updateHr) yang bisa mengubah
+     * tanggal dan/atau karyawan pengajuan sekaligus. Membersihkan periode LAMA
+     * dulu (kalau ada & berbeda), baru menyesuaikan periode BARU sesuai status
+     * cuti saat ini (pending/approved -> buat baris Cuti, rejected -> hapus).
+     */
+    private function syncAbsensiUntukCuti(Cuti $cuti, ?int $karyawanIdLama = null, $tanggalMulaiLama = null, $tanggalSelesaiLama = null): void
+    {
+        if ($karyawanIdLama && $tanggalMulaiLama && $tanggalSelesaiLama) {
+            $this->removeAbsensiCuti($karyawanIdLama, $tanggalMulaiLama, $tanggalSelesaiLama);
+        }
+
+        $this->syncAbsensiCuti($cuti);
     }
 
     /**
@@ -215,7 +238,7 @@ class CutiController extends Controller
             return back()->withInput()->with('error', 'Sisa cuti Anda tidak mencukupi. Sisa cuti: ' . $cutiTahunan->sisa_cuti . ' hari');
         }
 
-        Cuti::create([
+        $cutiBaru = Cuti::create([
             'karyawan_id' => $user->id,
             'jenis_cuti' => 'Cuti Tahunan',
             'jatah_cuti' => $cutiTahunan->jatah_cuti,
@@ -232,6 +255,11 @@ class CutiController extends Controller
             'sisa_cuti' => $cutiTahunan->sisa_cuti - $durasi,
             'cuti_digunakan' => $cutiTahunan->cuti_digunakan + $durasi,
         ]);
+
+        // Langsung sinkronkan ke tabel Absensi supaya periode cuti ini SEKETIKA
+        // muncul di Manajemen Absensi HR dengan status "Cuti" (masih berketerangan
+        // "menunggu persetujuan HR" selama belum di-approve).
+        $this->syncAbsensiCuti($cutiBaru);
 
         return redirect()->route('karyawan.cuti.dashboard')
             ->with('success', 'Pengajuan cuti berhasil dikirim. Menunggu persetujuan HR.');
@@ -288,6 +316,9 @@ class CutiController extends Controller
             return back()->withInput()->with('error', 'Sisa cuti tidak mencukupi untuk penambahan durasi. Sisa cuti: ' . $cutiTahunan->sisa_cuti . ' hari');
         }
 
+        $tanggalMulaiLama = $cuti->tanggal_mulai;
+        $tanggalSelesaiLama = $cuti->tanggal_selesai;
+
         $cuti->update([
             'tanggal_mulai' => $request->tanggal_mulai,
             'tanggal_selesai' => $request->tanggal_selesai,
@@ -305,6 +336,9 @@ class CutiController extends Controller
                 'cuti_digunakan' => $cuti->cuti_digunakan + $selisihDurasi,
             ]);
         }
+
+        // Resinkronkan Absensi: hapus baris Cuti di periode lama, buat lagi di periode baru.
+        $this->syncAbsensiUntukCuti($cuti, $user->id, $tanggalMulaiLama, $tanggalSelesaiLama);
 
         return redirect()->route('karyawan.cuti.dashboard')
             ->with('success', 'Pengajuan cuti berhasil diperbarui.');
@@ -328,6 +362,9 @@ class CutiController extends Controller
                 'cuti_digunakan' => $cutiTahunan->cuti_digunakan - $cuti->durasi,
             ]);
         }
+
+        // Hapus baris Cuti di Absensi yang sebelumnya dibuat otomatis saat pengajuan ini dibuat.
+        $this->removeAbsensiCuti($user->id, $cuti->tanggal_mulai, $cuti->tanggal_selesai);
 
         $cuti->delete();
 
@@ -399,14 +436,10 @@ class CutiController extends Controller
             }
         }
 
-        // Sinkronkan tabel Absensi: bersihkan periode cuti lama (kalau sebelumnya
-        // approved), lalu buat lagi kalau statusnya sekarang approved.
-        if ($oldStatus === 'approved') {
-            $this->removeAbsensiCuti($karyawanIdLama, $tanggalMulaiLama, $tanggalSelesaiLama);
-        }
-        if ($cuti->status === 'approved') {
-            $this->syncAbsensiCuti($cuti);
-        }
+        // Sinkronkan tabel Absensi: bersihkan periode lama (kalau tanggal/karyawan
+        // berubah), lalu sesuaikan lagi berdasarkan status cuti yang terbaru
+        // (pending/approved -> tetap tampil sebagai Cuti, rejected -> dihapus).
+        $this->syncAbsensiUntukCuti($cuti, $karyawanIdLama, $tanggalMulaiLama, $tanggalSelesaiLama);
 
         return redirect()->route('hr.cuti.index')
             ->with('success', 'Data cuti berhasil diperbarui.');
@@ -438,14 +471,10 @@ class CutiController extends Controller
             }
         }
 
-        // Sinkronkan tabel Absensi supaya periode cuti yang disetujui langsung
-        // muncul dengan status "Cuti" di Manajemen Absensi HR (dan di export Excel).
-        if ($oldStatus === 'approved' && $request->status !== 'approved') {
-            $this->removeAbsensiCuti($cuti->karyawan_id, $cuti->tanggal_mulai, $cuti->tanggal_selesai);
-        }
-        if ($request->status === 'approved') {
-            $this->syncAbsensiCuti($cuti);
-        }
+        // Sinkronkan tabel Absensi: kalau ditolak, baris "Cuti" yang sudah dibuat
+        // sejak pengajuan (status pending) akan dihapus; kalau disetujui/menunggu,
+        // keterangannya disesuaikan (menunggu persetujuan -> disetujui HR).
+        $this->syncAbsensiUntukCuti($cuti);
 
         $statusLabel = $request->status === 'approved' ? 'Disetujui' : ($request->status === 'rejected' ? 'Ditolak' : 'Menunggu');
 
@@ -492,10 +521,9 @@ class CutiController extends Controller
                     }
                 }
 
-                // Sinkronkan tabel Absensi kalau pengajuan ini disetujui lewat bulk approve.
-                if ($targetStatus === 'approved') {
-                    $this->syncAbsensiCuti($cuti);
-                }
+                // Sinkronkan tabel Absensi (Cuti dihapus kalau ditolak, keterangan
+                // diperbarui jadi "disetujui HR" kalau approved).
+                $this->syncAbsensiUntukCuti($cuti);
 
                 $processed++;
             }
@@ -523,11 +551,9 @@ class CutiController extends Controller
             }
         }
 
-        // Kalau pengajuan ini sudah approved, bersihkan juga periode "Cuti" yang
-        // sebelumnya otomatis dibuat di tabel Absensi.
-        if ($cuti->status === 'approved') {
-            $this->removeAbsensiCuti($cuti->karyawan_id, $cuti->tanggal_mulai, $cuti->tanggal_selesai);
-        }
+        // Bersihkan baris "Cuti" yang otomatis dibuat di tabel Absensi untuk
+        // pengajuan ini (berlaku baik masih pending maupun sudah approved).
+        $this->removeAbsensiCuti($cuti->karyawan_id, $cuti->tanggal_mulai, $cuti->tanggal_selesai);
 
         $cuti->delete();
 

@@ -923,13 +923,13 @@ class AbsensiController extends Controller
             $perjalananDinas = \App\Models\PerjalananDinas::where('karyawan_id', $absensi->karyawan_id)->whereDate('tanggal_mulai', '<=', $absensi->tanggal)->whereDate('tanggal_selesai', '>=', $absensi->tanggal)->latest('id')->first();
         }
 
-        // Kalau statusnya "Cuti", cari pengajuan cuti terkait (yang sudah approved)
+        // Kalau statusnya "Cuti", cari pengajuan cuti terkait (pending atau approved)
         // supaya HR bisa lihat konteks periode & keterangan pengajuannya.
         $cutiInfo = null;
         if ($absensi->status === 'Cuti') {
             $cutiInfo = \App\Models\Cuti::pengajuan()
                 ->where('karyawan_id', $absensi->karyawan_id)
-                ->where('status', 'approved')
+                ->whereIn('status', ['pending', 'approved'])
                 ->whereDate('tanggal_mulai', '<=', $absensi->tanggal)
                 ->whereDate('tanggal_selesai', '>=', $absensi->tanggal)
                 ->latest('id')
