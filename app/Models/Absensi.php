@@ -408,12 +408,22 @@ class Absensi extends Model
 
     /**
      * Cek validitas lokasi
+     *
+     * @param  int|null  $karyawanId  Dipakai untuk anti "salah kantor": kalau lokasi
+     *                                karyawan berada dalam radius LEBIH DARI SATU kantor
+     *                                sekaligus (mis. dua titik kantor yang jaraknya cuma
+     *                                belasan meter satu sama lain), fungsi ini akan
+     *                                mempertahankan kantor yang SAMA dengan riwayat
+     *                                absensi karyawan tersebut sebelumnya -- supaya tidak
+     *                                "ketuker"/melenceng ke kantor lain hanya karena
+     *                                jitter/noise GPS membuatnya terbaca sedikit lebih
+     *                                dekat. Kalau tidak ada riwayat, atau $karyawanId
+     *                                tidak dikirim, perilaku lama (pilih yang benar-benar
+     *                                paling dekat) tetap berjalan seperti biasa.
      */
-    public static function isValidLocation($latitude, $longitude, $radius = 50, $accuracy = null)
+    public static function isValidLocation($latitude, $longitude, $radius = 50, $accuracy = null, $karyawanId = null)
     {
         $locations = self::getOfficeLocations();
-        $nearestLocation = null;
-        $nearestDistance = PHP_FLOAT_MAX;
 
         $accuracyOk = true;
         $accuracyReason = null;
@@ -427,31 +437,67 @@ class Absensi extends Model
             }
         }
 
+        // Hitung jarak ke SEMUA titik kantor.
+        $distances = [];
         foreach ($locations as $name => $coords) {
-            $distance = self::haversineDistance(
+            $distances[$name] = self::haversineDistance(
                 $latitude,
                 $longitude,
                 $coords['latitude'],
                 $coords['longitude']
             );
+        }
 
-            if ($distance < $nearestDistance) {
-                $nearestDistance = $distance;
-                $nearestLocation = $name;
+        if (empty($distances)) {
+            return [
+                'valid' => false,
+                'within_radius' => false,
+                'accuracy_ok' => $accuracyOk,
+                'accuracy_reason' => $accuracyReason,
+                'distance' => null,
+                'location_name' => null,
+                'nearest' => null,
+                'nearest_distance' => null,
+            ];
+        }
+
+        asort($distances);
+        $nearestLocation = array_key_first($distances);
+        $nearestDistance = $distances[$nearestLocation];
+        $withinRadius = $nearestDistance <= $radius;
+
+        // ==========================================================
+        // ANTI "SALAH KANTOR" (lihat docblock di atas)
+        // ==========================================================
+        $matchedLocation = $nearestLocation;
+
+        if ($withinRadius) {
+            $candidatesWithinRadius = array_keys(array_filter($distances, fn ($d) => $d <= $radius));
+
+            if (count($candidatesWithinRadius) > 1 && $karyawanId) {
+                $habitualOffice = self::where('karyawan_id', $karyawanId)
+                    ->whereNotNull('kantor_cabang')
+                    ->orderByDesc('tanggal')
+                    ->orderByDesc('id')
+                    ->value('kantor_cabang');
+
+                if ($habitualOffice && in_array($habitualOffice, $candidatesWithinRadius, true)) {
+                    $matchedLocation = $habitualOffice;
+                }
             }
         }
 
-        $withinRadius = $nearestDistance <= $radius;
+        $matchedDistance = $distances[$matchedLocation] ?? $nearestDistance;
 
         return [
             'valid' => $withinRadius && $accuracyOk,
             'within_radius' => $withinRadius,
             'accuracy_ok' => $accuracyOk,
             'accuracy_reason' => $accuracyReason,
-            'distance' => round($nearestDistance, 2),
-            'location_name' => ($withinRadius && $accuracyOk) ? $nearestLocation : null,
-            'nearest' => $nearestLocation,
-            'nearest_distance' => round($nearestDistance, 2),
+            'distance' => round($matchedDistance, 2),
+            'location_name' => ($withinRadius && $accuracyOk) ? $matchedLocation : null,
+            'nearest' => $matchedLocation,
+            'nearest_distance' => round($matchedDistance, 2),
         ];
     }
 }

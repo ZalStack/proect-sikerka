@@ -46,9 +46,9 @@ class AbsensiController extends Controller
     /**
      * Cek apakah lokasi (dan akurasi GPS-nya) valid untuk absensi.
      */
-    private function isValidLocation($latitude, $longitude, $radius = 50, $accuracy = null): array
+    private function isValidLocation($latitude, $longitude, $radius = 50, $accuracy = null, $karyawanId = null): array
     {
-        return Absensi::isValidLocation($latitude, $longitude, $radius, $accuracy);
+        return Absensi::isValidLocation($latitude, $longitude, $radius, $accuracy, $karyawanId);
     }
 
     /**
@@ -132,7 +132,7 @@ class AbsensiController extends Controller
             return $this->rejectFakeGps($suspicion);
         }
 
-        $locationCheck = $this->isValidLocation((float) $request->latitude, (float) $request->longitude, $this->maxRadius, (float) $request->accuracy);
+        $locationCheck = $this->isValidLocation((float) $request->latitude, (float) $request->longitude, $this->maxRadius, (float) $request->accuracy, $user->id);
 
         if (!$locationCheck['valid']) {
             Log::warning('Percobaan check-in ditolak', [
@@ -247,7 +247,7 @@ class AbsensiController extends Controller
             return $this->rejectFakeGps($suspicion);
         }
 
-        $locationCheck = $this->isValidLocation((float) $request->latitude, (float) $request->longitude, $this->maxRadius, (float) $request->accuracy);
+        $locationCheck = $this->isValidLocation((float) $request->latitude, (float) $request->longitude, $this->maxRadius, (float) $request->accuracy, $user->id);
 
         if (!$locationCheck['valid']) {
             if (!$locationCheck['accuracy_ok']) {
@@ -982,7 +982,7 @@ class AbsensiController extends Controller
 
         // Cocokkan lokasi HR saat ini ke kantor terdekat (tanpa batas radius/akurasi,
         // karena ini verifikasi manual oleh HR, bukan absensi mandiri karyawan).
-        $locationCheck = $this->isValidLocation((float) $request->latitude, (float) $request->longitude, $this->maxRadius, null);
+        $locationCheck = $this->isValidLocation((float) $request->latitude, (float) $request->longitude, $this->maxRadius, null, $absensi->karyawan_id);
         $hrName = Auth::user()->nama_lengkap ?? 'HR';
 
         $absensi->check_in = $now;
@@ -1044,7 +1044,7 @@ class AbsensiController extends Controller
 
         $now = Carbon::now($this->officeTimezone);
 
-        $locationCheck = $this->isValidLocation((float) $request->latitude, (float) $request->longitude, $this->maxRadius, null);
+        $locationCheck = $this->isValidLocation((float) $request->latitude, (float) $request->longitude, $this->maxRadius, null, $absensi->karyawan_id);
         $hrName = Auth::user()->nama_lengkap ?? 'HR';
 
         $checkInTime = Carbon::parse($absensi->check_in);
