@@ -176,6 +176,9 @@
                                                     <span
                                                         class="px-2 py-1 rounded-full text-[10px] font-medium bg-purple-600 text-white">Perjalanan
                                                         Dinas</span>
+                                                @elseif($day['status'] == 'Cuti')
+                                                    <span
+                                                        class="px-2 py-1 rounded-full text-[10px] font-medium bg-[#27438D] text-white">Cuti</span>
                                                 @else
                                                     <span
                                                         class="px-2 py-1 rounded-full text-[10px] font-medium bg-[#ec1d1d] text-white">Alpha</span>
