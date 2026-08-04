@@ -11,7 +11,7 @@ class Absensi extends Model
     use HasFactory;
 
     // Daftar status yang diperbolehkan
-    const STATUSES = ['Hadir', 'Izin', 'Sakit', 'Alpha', 'Perjalanan Dinas'];
+    const STATUSES = ['Hadir', 'Izin', 'Sakit', 'Alpha', 'Perjalanan Dinas', 'Cuti'];
 
     protected $fillable = [
         'karyawan_id',
@@ -149,9 +149,17 @@ class Absensi extends Model
     }
 
     /**
-     * Gabungkan baris-baris absensi "Perjalanan Dinas" yang berturut-turut (per karyawan,
-     * per keterangan) menjadi SATU baris tampilan berbentuk periode (tanggal_mulai s/d
-     * tanggal_selesai), sementara baris absensi harian biasa tetap tampil apa adanya.
+     * Status yang baris-barisnya digabung jadi tampilan periode kalau berturut-turut
+     * (per karyawan, per keterangan yang sama): Perjalanan Dinas & Cuti (baris Cuti
+     * dibuat otomatis lewat CutiController saat pengajuan cuti disetujui HR).
+     */
+    const MERGEABLE_PERIODE_STATUSES = ['Perjalanan Dinas', 'Cuti'];
+
+    /**
+     * Gabungkan baris-baris absensi "Perjalanan Dinas" ATAU "Cuti" yang berturut-turut
+     * (per karyawan, per status, per keterangan) menjadi SATU baris tampilan berbentuk
+     * periode (tanggal_mulai s/d tanggal_selesai), sementara baris absensi harian biasa
+     * tetap tampil apa adanya.
      *
      * Ini HANYA mengubah tampilan/urutan koleksi, TIDAK mengubah data di database.
      * Setiap baris hasil gabungan akan punya atribut tambahan:
@@ -171,9 +179,9 @@ class Absensi extends Model
             $buffer = null;
 
             foreach ($items as $item) {
-                $isPD = $item->status === 'Perjalanan Dinas';
+                $isMergeable = in_array($item->status, self::MERGEABLE_PERIODE_STATUSES, true);
 
-                if ($isPD && $buffer && $buffer->keterangan === $item->keterangan && $item->tanggal->isSameDay($buffer->tanggal_selesai_display->copy()->addDay())) {
+                if ($isMergeable && $buffer && $buffer->status === $item->status && $buffer->keterangan === $item->keterangan && $item->tanggal->isSameDay($buffer->tanggal_selesai_display->copy()->addDay())) {
                     // Perpanjang periode yang sedang berjalan
                     $buffer->tanggal_selesai_display = $item->tanggal;
                     $buffer->jumlah_hari += 1;
@@ -191,9 +199,9 @@ class Absensi extends Model
                 $item->jumlah_hari = 1;
                 $item->is_periode = false;
 
-                $buffer = $isPD ? $item : null;
+                $buffer = $isMergeable ? $item : null;
 
-                if (!$isPD) {
+                if (!$isMergeable) {
                     $displayRows->push($item);
                 }
             }

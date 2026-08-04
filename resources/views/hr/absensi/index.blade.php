@@ -24,7 +24,7 @@
 
                 <!-- Stats Cards -->
                 @if (isset($chartData))
-                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4 mb-8">
+                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 sm:gap-4 mb-8">
                         @php
                             $cards = [
                                 [
@@ -62,6 +62,12 @@
                                     'value' => $chartData['perjalanan_dinas'],
                                     'color' => 'border-purple-600',
                                     'text' => 'text-purple-600',
+                                ],
+                                [
+                                    'label' => 'Cuti',
+                                    'value' => $chartData['cuti'],
+                                    'color' => 'border-[#27438D]',
+                                    'text' => 'text-[#27438D]',
                                 ],
                                 [
                                     'label' => 'Lokasi Invalid',
@@ -114,6 +120,8 @@
                                 <option value="Alpha" {{ request('status') == 'Alpha' ? 'selected' : '' }}>Alpha</option>
                                 <option value="Perjalanan Dinas"
                                     {{ request('status') == 'Perjalanan Dinas' ? 'selected' : '' }}>Perjalanan Dinas
+                                </option>
+                                <option value="Cuti" {{ request('status') == 'Cuti' ? 'selected' : '' }}>Cuti
                                 </option>
                             </select>
                         </div>
@@ -229,6 +237,12 @@
                                         </td>
                                         <td class="px-4 py-3.5">
                                             @if ($item->is_periode)
+                                                @php
+                                                    $periodeBadgeClass = $item->status === 'Cuti'
+                                                        ? 'bg-blue-100 text-[#27438D]'
+                                                        : 'bg-purple-100 text-purple-700';
+                                                    $periodeLabel = $item->status === 'Cuti' ? 'Periode Cuti' : 'Periode';
+                                                @endphp
                                                 <div>
                                                     <p class="text-sm font-medium text-gray-900">
                                                         {{ $item->tanggal_mulai_display->format('d/m/Y') }}
@@ -236,8 +250,8 @@
                                                         {{ $item->tanggal_selesai_display->format('d/m/Y') }}
                                                     </p>
                                                     <span
-                                                        class="inline-flex items-center mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-purple-100 text-purple-700">
-                                                        Periode • {{ $item->jumlah_hari }} hari
+                                                        class="inline-flex items-center mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold {{ $periodeBadgeClass }}">
+                                                        {{ $periodeLabel }} • {{ $item->jumlah_hari }} hari
                                                     </span>
                                                 </div>
                                             @else
@@ -282,6 +296,7 @@
                                                         'Sakit' => 'bg-[#00a2e9] text-white',
                                                         'Alpha' => 'bg-[#ec1d1d] text-white',
                                                         'Perjalanan Dinas' => 'bg-purple-600 text-white',
+                                                        'Cuti' => 'bg-[#27438D] text-white',
                                                         default => 'bg-gray-200 text-gray-800',
                                                     };
                                                 @endphp
@@ -298,7 +313,7 @@
                                             </div>
                                         </td>
                                         <td class="px-4 py-3.5 hidden md:table-cell">
-                                            @if ($item->status === 'Perjalanan Dinas')
+                                            @if ($item->status === 'Perjalanan Dinas' || $item->status === 'Cuti')
                                                 <span class="text-xs text-gray-400">—</span>
                                             @elseif($item->is_valid_location)
                                                 <span

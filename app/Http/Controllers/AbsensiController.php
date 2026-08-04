@@ -575,6 +575,7 @@ class AbsensiController extends Controller
             'Sakit'            => 'FCE4D6',
             'Alpha'            => 'F8CBAD',
             'Perjalanan Dinas' => 'D9D2E9',
+            'Cuti'             => 'BDD7EE',
         ];
         $statusFont = [
             'Hadir'            => '1E7B34',
@@ -582,6 +583,7 @@ class AbsensiController extends Controller
             'Sakit'            => 'C55A11',
             'Alpha'            => 'C00000',
             'Perjalanan Dinas' => '5B2C87',
+            'Cuti'             => '1F4E78',
         ];
 
         $columns   = ['No', 'Tanggal', 'Hari', 'Check In', 'Check Out', 'Status', 'Terlambat (menit)', 'Total Jam Kerja (menit)', 'Lembur (menit)', 'Keterangan'];
@@ -681,6 +683,7 @@ class AbsensiController extends Controller
                 'sakit'              => 0,
                 'alpha'              => 0,
                 'dinas'              => 0,
+                'cuti'               => 0,
                 'masuk_hari_minggu'  => 0,
             ];
 
@@ -759,6 +762,9 @@ class AbsensiController extends Controller
                         $summary['dinas']++;
                         $summary['hari_kerja']++;
                         break;
+                    case 'Cuti':
+                        $summary['cuti']++;
+                        break;
                 }
 
                 if ($absen->is_hari_minggu && $absen->check_in) {
@@ -797,6 +803,7 @@ class AbsensiController extends Controller
                 ['Jumlah Sakit', $summary['sakit']],
                 ['Jumlah Alpha', $summary['alpha']],
                 ['Jumlah Perjalanan Dinas', $summary['dinas']],
+                ['Jumlah Cuti', $summary['cuti']],
                 ['Jumlah Masuk di Hari Minggu (hari libur)', $summary['masuk_hari_minggu']],
             ];
 
@@ -891,6 +898,7 @@ class AbsensiController extends Controller
             'sakit' => $absensis->where('status', 'Sakit')->count(),
             'alpha' => $absensis->where('status', 'Alpha')->count(),
             'perjalanan_dinas' => $absensis->where('status', 'Perjalanan Dinas')->count(),
+            'cuti' => $absensis->where('status', 'Cuti')->count(),
             'total' => $absensis->count(),
             'valid_location' => $absensis->where('is_valid_location', true)->count(),
             'invalid_location' => $absensis->where('is_valid_location', false)->count(),
@@ -915,10 +923,23 @@ class AbsensiController extends Controller
             $perjalananDinas = \App\Models\PerjalananDinas::where('karyawan_id', $absensi->karyawan_id)->whereDate('tanggal_mulai', '<=', $absensi->tanggal)->whereDate('tanggal_selesai', '>=', $absensi->tanggal)->latest('id')->first();
         }
 
+        // Kalau statusnya "Cuti", cari pengajuan cuti terkait (yang sudah approved)
+        // supaya HR bisa lihat konteks periode & keterangan pengajuannya.
+        $cutiInfo = null;
+        if ($absensi->status === 'Cuti') {
+            $cutiInfo = \App\Models\Cuti::pengajuan()
+                ->where('karyawan_id', $absensi->karyawan_id)
+                ->where('status', 'approved')
+                ->whereDate('tanggal_mulai', '<=', $absensi->tanggal)
+                ->whereDate('tanggal_selesai', '>=', $absensi->tanggal)
+                ->latest('id')
+                ->first();
+        }
+
         // Ambil previous dan next ID
         $prevNext = $this->getPrevNextIds($id);
 
-        return view('hr.absensi.detail', compact('absensi', 'distances', 'perjalananDinas', 'prevNext'));
+        return view('hr.absensi.detail', compact('absensi', 'distances', 'perjalananDinas', 'cutiInfo', 'prevNext'));
     }
 
     private function getPrevNextIds($currentId)
@@ -934,7 +955,7 @@ class AbsensiController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|in:Hadir,Izin,Sakit,Alpha,Perjalanan Dinas',
+            'status' => 'required|in:Hadir,Izin,Sakit,Alpha,Perjalanan Dinas,Cuti',
             'keterangan' => 'nullable|string',
         ]);
 

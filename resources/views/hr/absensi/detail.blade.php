@@ -75,6 +75,32 @@
                         </div>
                     @endif
 
+                    @if ($absensi->status === 'Cuti' && isset($cutiInfo) && $cutiInfo)
+                        <div class="mb-6 bg-blue-50 border border-[#27438D]/30 rounded-lg p-3 sm:p-4">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="text-xs sm:text-sm font-semibold text-[#161758]">🗓️ Bagian dari Pengajuan
+                                        Cuti</p>
+                                    <p class="text-sm sm:text-base text-[#27438D] font-medium break-words mt-1">
+                                        {{ $cutiInfo->jenis_cuti }}</p>
+                                    <p class="text-xs sm:text-sm text-[#27438D] mt-1">
+                                        Periode: {{ $cutiInfo->tanggal_mulai->format('d/m/Y') }}
+                                        s/d {{ $cutiInfo->tanggal_selesai->format('d/m/Y') }}
+                                        ({{ $cutiInfo->durasi }} hari)
+                                    </p>
+                                    @if ($cutiInfo->keterangan)
+                                        <p class="text-xs sm:text-sm text-[#27438D] mt-1 break-words">
+                                            Keterangan: {{ $cutiInfo->keterangan }}</p>
+                                    @endif
+                                </div>
+                                <a href="{{ route('hr.cuti.show', $cutiInfo->id) }}"
+                                    class="w-full sm:w-auto text-center flex-shrink-0 bg-[#27438D] text-white px-4 py-2 rounded-lg hover:bg-[#161758] transition-colors duration-200 text-xs sm:text-sm">
+                                    Lihat Detail Pengajuan
+                                </a>
+                            </div>
+                        </div>
+                    @endif
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                         <div>
                             <h3
@@ -146,6 +172,7 @@
                                                 'Sakit' => 'bg-[#00a2e9] text-white',
                                                 'Alpha' => 'bg-[#ec1d1d] text-white',
                                                 'Perjalanan Dinas' => 'bg-purple-600 text-white',
+                                                'Cuti' => 'bg-[#27438D] text-white',
                                                 default => 'bg-gray-200 text-gray-800',
                                             };
                                         @endphp
@@ -350,6 +377,8 @@
                                     </option>
                                     <option value="Perjalanan Dinas"
                                         {{ $absensi->status == 'Perjalanan Dinas' ? 'selected' : '' }}>Perjalanan Dinas
+                                    </option>
+                                    <option value="Cuti" {{ $absensi->status == 'Cuti' ? 'selected' : '' }}>Cuti
                                     </option>
                                 </select>
                             </div>
