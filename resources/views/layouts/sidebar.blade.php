@@ -144,8 +144,7 @@
                     </a>
 
                     <!-- 7SPS -->
-                    <a onclick="alert('🚧 Maaf, menu 7SPS saat ini sedang dalam tahap pengembangan dan perbaikan. Silakan coba kembali dalam beberapa waktu. Terima kasih atas pengertiannya.');"
-                        {{-- href="{{ route('hr.sunnah.index') }}" --}}
+                    <a {{-- onclick="alert('🚧 Maaf, menu 7SPS saat ini sedang dalam tahap pengembangan dan perbaikan. Silakan coba kembali dalam beberapa waktu. Terima kasih atas pengertiannya.');" --}} href="{{ route('hr.sunnah.index') }}"
                         class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition-colors duration-200 text-xs sm:text-sm {{ $currentRoute === 'hr.sunnah.index' || str_starts_with($currentRoute, 'hr.sunnah.') ? 'bg-[#27438D] text-white' : 'text-[#F5F5F5] hover:bg-[#27438D] hover:text-white' }}">
                         <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
                             viewBox="0 0 24 24">
@@ -260,8 +259,7 @@
                     </a>
 
                     <!-- 7SPS -->
-                    <a onclick="alert('🚧 Maaf, menu 7SPS saat ini sedang dalam tahap pengembangan dan perbaikan. Silakan coba kembali dalam beberapa waktu. Terima kasih atas pengertiannya.');"
-                        {{-- href="{{ route('karyawan.sunnah.dashboard') }}" --}}
+                    <a {{-- onclick="alert('🚧 Maaf, menu 7SPS saat ini sedang dalam tahap pengembangan dan perbaikan. Silakan coba kembali dalam beberapa waktu. Terima kasih atas pengertiannya.');" --}} href="{{ route('karyawan.sunnah.dashboard') }}"
                         class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition-colors duration-200 text-xs sm:text-sm {{ $currentRoute === 'karyawan.sunnah.dashboard' ? 'bg-[#27438D] text-white' : 'text-[#F5F5F5] hover:bg-[#27438D] hover:text-white' }}">
                         <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
                             viewBox="0 0 24 24">
