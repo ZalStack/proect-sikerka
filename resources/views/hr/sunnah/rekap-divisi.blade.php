@@ -13,11 +13,11 @@
                 </div>
                 <div class="flex flex-wrap gap-2 w-full sm:w-auto">
                     <a href="{{ route('hr.sunnah.index') }}"
-                       class="flex-1 sm:flex-none text-center bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors duration-200 text-sm">
-                        ← Monitoring Harian
+                       class="flex-1 sm:flex-none text-center bg-gray-500 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors duration-200 text-xs sm:text-sm">
+                        📋 Monitoring
                     </a>
                     <a href="{{ route('hr.sunnah.rekap') }}"
-                       class="flex-1 sm:flex-none text-center bg-[#00a2e9] text-white px-4 py-2 rounded-lg hover:bg-[#27438D] transition-colors duration-200 text-sm">
+                       class="flex-1 sm:flex-none text-center bg-[#00a2e9] text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-[#27438D] transition-colors duration-200 text-xs sm:text-sm">
                         📊 Rekap Karyawan
                     </a>
                 </div>

@@ -8,18 +8,30 @@
         <div class="p-3 sm:p-6">
             <div class="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
                 <div>
-                    <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">7SPS - Monitoring</h1>
+                    <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">📋 Monitoring 7SPS</h1>
                     <p class="text-sm sm:text-base text-[#27438D]">Monitoring kegiatan 7 Sunnah Plus Suprasional karyawan</p>
                 </div>
                 <div class="flex flex-wrap gap-2 w-full sm:w-auto">
                     <a href="{{ route('hr.sunnah.rekap') }}"
-                       class="flex-1 sm:flex-none text-center bg-[#00a2e9] text-white px-4 py-2 rounded-lg hover:bg-[#27438D] transition-colors duration-200 text-sm font-medium">
+                       class="flex-1 sm:flex-none text-center bg-[#00a2e9] text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-[#27438D] transition-colors duration-200 text-xs sm:text-sm font-medium">
                         📊 Rekap Karyawan
                     </a>
                     <a href="{{ route('hr.sunnah.rekap-divisi') }}"
-                       class="flex-1 sm:flex-none text-center bg-[#2E7D3E] text-white px-4 py-2 rounded-lg hover:bg-[#1a5a2a] transition-colors duration-200 text-sm font-medium">
+                       class="flex-1 sm:flex-none text-center bg-[#2E7D3E] text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-[#1a5a2a] transition-colors duration-200 text-xs sm:text-sm font-medium">
                         🏆 Rekap Divisi
                     </a>
+                </div>
+            </div>
+
+            <!-- Info Periode Approval -->
+            <div class="bg-[#161758] text-white p-3 sm:p-4 rounded-lg mb-6 text-sm">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <div>
+                        <strong>📋 Periode Approval:</strong> HR hanya dapat melakukan approve/reject untuk data <strong>1 minggu terakhir</strong> (termasuk hari ini).
+                    </div>
+                    <span class="text-[10px] sm:text-xs bg-white/20 px-2 sm:px-3 py-1 rounded-full whitespace-nowrap">
+                        Periode: {{ \Carbon\Carbon::today()->subDays(6)->format('d/m/Y') }} - {{ \Carbon\Carbon::today()->format('d/m/Y') }}
+                    </span>
                 </div>
             </div>
 
@@ -34,18 +46,6 @@
                     {{ session('error') }}
                 </div>
             @endif
-
-            <!-- Info Periode Approval -->
-            <div class="bg-[#161758] text-white p-3 sm:p-4 rounded-lg mb-6 text-sm">
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                    <div>
-                        <strong>📋 Periode Approval:</strong> HR hanya dapat melakukan approve/reject untuk data <strong>1 minggu terakhir</strong> (termasuk hari ini).
-                    </div>
-                    <span class="text-[10px] sm:text-xs bg-white/20 px-2 sm:px-3 py-1 rounded-full whitespace-nowrap">
-                        Periode: {{ \Carbon\Carbon::today()->subDays(6)->format('d/m/Y') }} - {{ \Carbon\Carbon::today()->format('d/m/Y') }}
-                    </span>
-                </div>
-            </div>
 
             <!-- Filter dengan Date Picker -->
             <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
