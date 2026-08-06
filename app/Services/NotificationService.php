@@ -30,15 +30,6 @@ use Illuminate\Support\Facades\Cache;
  * key `notif_last_seen_{karyawan_id}` menyimpan waktu terakhir user
  * membuka dropdown/halaman notifikasi. Item yang lebih baru dari
  * timestamp itu dianggap "baru" (badge merah di navbar).
- *
- * CATATAN: "Pamer Suku" dan "English Today" adalah aplikasi terpisah yang
- * di-hosting di domain lain (lihat sidebar) dan tidak mengirim data apa pun
- * ke aplikasi ini, sehingga TIDAK BISA dibuatkan notifikasi otomatis dari
- * sini kecuali suatu saat disediakan API/webhook dari sistem tersebut.
- *
- * Menambah sumber notifikasi baru cukup dengan menambah method builder di
- * bawah lalu memanggilnya dari getAll() -- tanpa perlu migration baru
- * selama datanya sudah tersedia di tabel yang ada.
  */
 class NotificationService
 {
@@ -61,6 +52,7 @@ class NotificationService
             $items = $items->merge($this->hrDinasPending($since));
             $items = $items->merge($this->hrSunnahPending($since));
             $items = $items->merge($this->hrAbsensiMencurigakan($since));
+            $items = $items->merge($this->hrProfileUpdates($since));
         } else {
             $items = $items->merge($this->karyawanCutiStatus($user, $since));
             $items = $items->merge($this->karyawanDinasStatus($user, $since));
@@ -85,6 +77,7 @@ class NotificationService
                 'dinas' => 'Perjalanan Dinas',
                 'sunnah' => '7SPS',
                 'absensi' => 'Absensi Mencurigakan',
+                'profile' => 'Update Profil Karyawan',
             ];
         }
 
@@ -162,8 +155,6 @@ class NotificationService
                     'Pengumuman Baru',
                     $p->judul,
                     'blue',
-                    // Karyawan belum punya halaman detail pengumuman tersendiri,
-                    // jadi diarahkan ke dashboard (menampilkan pengumuman terbaru).
                     $isHr ? route('hr.pengumuman.show', $p->id) : route('karyawan.dashboard'),
                     $p->created_at,
                 );
@@ -275,6 +266,83 @@ class NotificationService
                     $a->created_at,
                 );
             });
+    }
+
+    /**
+     * [HR] Notifikasi ketika karyawan mengupdate profil
+     * Mendeteksi perubahan pada updated_at dari tabel karyawans
+     * dan membandingkan dengan created_at untuk mengetahui apakah ada update
+     */
+    private function hrProfileUpdates(Carbon $since): Collection
+    {
+        return Karyawan::where('is_resigned', false)
+            ->where('updated_at', '>=', $since)
+            ->whereRaw('updated_at > created_at + INTERVAL 1 MINUTE')
+            ->latest('updated_at')
+            ->limit(30)
+            ->get()
+            ->map(function ($karyawan) {
+                $nama = $karyawan->nama_lengkap ?? 'Karyawan';
+                $posisi = $karyawan->posisi ?? 'karyawan';
+                $field = $this->getUpdatedField($karyawan);
+
+                return $this->item(
+                    'profile-update-hr-' . $karyawan->id . '-' . $karyawan->updated_at->timestamp,
+                    'profile',
+                    'Update Profil Karyawan',
+                    $nama . ' (' . ucfirst($posisi) . ') telah memperbarui data profil' . ($field ? ' (' . $field . ')' : ''),
+                    'sky',
+                    route('hr.karyawan.show', $karyawan->id),
+                    $karyawan->updated_at,
+                );
+            });
+    }
+
+    /**
+     * Helper untuk mendeteksi field apa yang mungkin diupdate
+     * (hanya untuk memberikan informasi tambahan)
+     */
+    private function getUpdatedField(Karyawan $karyawan): ?string
+    {
+        // Ini hanya perkiraan - sebenarnya untuk deteksi field yang diubah
+        // lebih baik menggunakan model events, tapi untuk simplicity,
+        // kita gunakan pendekatan sederhana
+
+        $fields = [
+            'nama_lengkap' => 'Nama',
+            'nomor_telepon' => 'No. Telepon',
+            'no_wa' => 'No. WhatsApp',
+            'alamat' => 'Alamat',
+            'foto_profil' => 'Foto Profil',
+            'nik' => 'NIK',
+            'npwp' => 'NPWP',
+            'tempat_lahir' => 'Tempat Lahir',
+            'pendidikan_terakhir' => 'Pendidikan',
+            'perguruan_tinggi' => 'Perguruan Tinggi',
+            'jurusan' => 'Jurusan',
+            'nama_ibu_kandung' => 'Nama Ibu Kandung',
+            'nama_kontak_darurat' => 'Kontak Darurat',
+            'nomor_rekening' => 'Nomor Rekening',
+        ];
+
+        // Coba deteksi field yang diupdate dengan membandingkan
+        // Tidak akurat 100%, cukup untuk memberikan info
+        $updatedFields = [];
+        $original = $karyawan->getOriginal();
+
+        foreach ($fields as $field => $label) {
+            if (isset($original[$field]) && isset($karyawan->$field) &&
+                $original[$field] != $karyawan->$field) {
+                $updatedFields[] = $label;
+            }
+        }
+
+        // Jika ada field yang diupdate, kembalikan 2 field pertama
+        if (!empty($updatedFields)) {
+            return implode(', ', array_slice($updatedFields, 0, 2));
+        }
+
+        return null;
     }
 
     /**

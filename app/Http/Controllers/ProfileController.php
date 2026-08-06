@@ -9,6 +9,7 @@ use App\Models\FhlAbsensi;
 use App\Models\KhatamanAbsensi;
 use App\Services\EnglishTodayService;
 use App\Services\PamerSukuService;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -20,6 +21,13 @@ use Illuminate\Pagination\Paginator;
 
 class ProfileController extends Controller
 {
+    protected $notificationService;
+
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
+
     public function show()
     {
         $user = Auth::user();
@@ -60,7 +68,7 @@ class ProfileController extends Controller
             'nama_kontak_darurat' => 'nullable|string|max:100',
             'telepon_kontak_darurat' => 'nullable|string|max:20',
             'foto_profil' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'cropped_image' => 'nullable|string', // Tambahkan validasi untuk cropped_image
+            'cropped_image' => 'nullable|string',
             'tanggal_pengangkatan_tetap' => 'nullable|date',
             'nomor_rekening' => 'nullable|string|max:50',
             'ipk_terakhir' => 'nullable|numeric|min:0|max:4',
@@ -143,6 +151,17 @@ class ProfileController extends Controller
         $user->update($data);
         $user->refresh();
 
+        /**
+         * ==========================================================
+         * NOTIFIKASI OTOMATIS KE HRD
+         * ==========================================================
+         * Saat karyawan mengupdate profil, kita panggil method
+         * notifyHrAboutProfileUpdate() untuk mengirim notifikasi
+         * ke semua HRD. Ini akan memastikan HRD mendapat notifikasi
+         * real-time di dropdown notifikasi mereka.
+         */
+        $this->notifyHrAboutProfileUpdate($user);
+
         return redirect()->route('profile.show')->with('success', 'Profile berhasil diupdate');
     }
 
@@ -168,12 +187,87 @@ class ProfileController extends Controller
             'kata_sandi' => Hash::make($request->password),
         ]);
 
+        // Update updated_at untuk trigger notifikasi
+        $user->touch();
+
         return redirect()->route('profile.show')->with('success', 'Password berhasil diupdate');
     }
 
     private function determinePosisi($divisi)
     {
         return trim($divisi) === 'HRD' ? 'hr' : 'karyawan';
+    }
+
+    /**
+     * ==========================================================
+     * NOTIFIKASI KE HRD SAAT PROFIL KARYAWAN DIUPDATE
+     * ==========================================================
+     * Method ini akan mengirim notifikasi ke semua HRD
+     * bahwa ada karyawan yang mengupdate profilnya.
+     *
+     * Cara kerja:
+     * 1. Cari semua HRD (posisi = 'hr')
+     * 2. Untuk setiap HRD, update cache last_seen mereka
+     *    agar notifikasi muncul sebagai "baru"
+     * 3. Notifikasi akan otomatis terdeteksi oleh NotificationService
+     *    karena method hrProfileUpdates() akan mendeteksi perubahan
+     *    pada tabel karyawans
+     */
+    private function notifyHrAboutProfileUpdate(Karyawan $karyawan)
+    {
+        try {
+            // Cari semua HRD
+            $hrs = Karyawan::where('posisi', 'hr')
+                ->where('is_resigned', false)
+                ->get();
+
+            if ($hrs->isEmpty()) {
+                return;
+            }
+
+            /**
+             * Untuk setiap HRD, kita reset last_seen mereka
+             * agar notifikasi muncul sebagai "baru" di dropdown
+             *
+             * Ini penting karena NotificationService menggunakan
+             * cache untuk menentukan mana notifikasi yang sudah dibaca.
+             */
+            foreach ($hrs as $hr) {
+                // Set last_seen ke waktu sebelum update
+                // agar notifikasi ini dianggap "baru"
+                $this->notificationService->markSeen($hr);
+
+                // Lalu set ulang last_seen ke waktu sebelum update
+                // sehingga notifikasi ini muncul sebagai "baru"
+                // Ini dilakukan dengan menggeser cache ke belakang
+                cache()->put(
+                    'notif_last_seen_' . $hr->id,
+                    Carbon::now()->subSeconds(5)->toDateTimeString(),
+                    Carbon::now()->addDays(30)
+                );
+            }
+
+            /**
+             * Catatan Penting:
+             * Sebenarnya notifikasi akan otomatis terdeteksi oleh
+             * NotificationService@hrProfileUpdates() karena method itu
+             * akan mengambil semua karyawan yang updated_at-nya berubah.
+             *
+             * Jadi sebenarnya kita tidak perlu melakukan apa-apa di sini
+             * selain memastikan updated_at berubah (sudah otomatis dari
+             * $user->update($data)).
+             *
+             * Namun untuk memastikan notifikasi muncul sebagai "baru"
+             * di dropdown HRD, kita reset cache last_seen mereka.
+             *
+             * Alternatif: kita bisa langsung menggunakan
+             * NotificationService@markSeen dengan timestamp yang tepat.
+             */
+        } catch (\Exception $e) {
+            // Log error jika terjadi masalah
+            // Tapi jangan sampai mengganggu proses update profil
+            \Log::error('Gagal mengirim notifikasi HRD: ' . $e->getMessage());
+        }
     }
 
     /**
