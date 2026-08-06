@@ -11,10 +11,16 @@
                     <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">7SPS - Monitoring</h1>
                     <p class="text-sm sm:text-base text-[#27438D]">Monitoring kegiatan 7 Sunnah Plus Suprasional karyawan</p>
                 </div>
-                <a href="{{ route('hr.sunnah.rekap') }}"
-                   class="w-full sm:w-auto text-center bg-[#00a2e9] text-white px-4 py-2 rounded-lg hover:bg-[#27438D] transition-colors duration-200 text-sm font-medium">
-                    📊 Lihat Rekap Poin Bulanan per Karyawan
-                </a>
+                <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+                    <a href="{{ route('hr.sunnah.rekap') }}"
+                       class="flex-1 sm:flex-none text-center bg-[#00a2e9] text-white px-4 py-2 rounded-lg hover:bg-[#27438D] transition-colors duration-200 text-sm font-medium">
+                        📊 Rekap Karyawan
+                    </a>
+                    <a href="{{ route('hr.sunnah.rekap-divisi') }}"
+                       class="flex-1 sm:flex-none text-center bg-[#2E7D3E] text-white px-4 py-2 rounded-lg hover:bg-[#1a5a2a] transition-colors duration-200 text-sm font-medium">
+                        🏆 Rekap Divisi
+                    </a>
+                </div>
             </div>
 
             @if(session('success'))
@@ -41,36 +47,19 @@
                 </div>
             </div>
 
-            <!-- Filter -->
+            <!-- Filter dengan Date Picker -->
             <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
                 <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">Filter Laporan</h2>
-                <form action="{{ route('hr.sunnah.index') }}" method="GET" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+                <form action="{{ route('hr.sunnah.index') }}" method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
                     <div>
-                        <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Periode Cepat</label>
-                        <select name="periode" class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
-                            <option value="">Gunakan Bulan/Tahun</option>
-                            @foreach($periodeOptions as $value => $label)
-                                <option value="{{ $value }}" {{ $periode === $value ? 'selected' : '' }}>{{ $label }}</option>
-                            @endforeach
-                        </select>
+                        <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Tanggal Mulai</label>
+                        <input type="date" name="start_date" value="{{ $startDate ? $startDate->format('Y-m-d') : $defaultStartDate }}"
+                               class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                     </div>
                     <div>
-                        <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Bulan</label>
-                        <select name="month" {{ $periode ? 'disabled' : '' }} class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9] disabled:bg-gray-100">
-                            @for($m = 1; $m <= 12; $m++)
-                                <option value="{{ $m }}" {{ (int) ($month ?? date('m')) === $m ? 'selected' : '' }}>
-                                    {{ DateTime::createFromFormat('!m', $m)->format('F') }}
-                                </option>
-                            @endfor
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Tahun</label>
-                        <select name="year" {{ $periode ? 'disabled' : '' }} class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9] disabled:bg-gray-100">
-                            @for($y = date('Y'); $y >= date('Y')-5; $y--)
-                                <option value="{{ $y }}" {{ (int) ($year ?? date('Y')) === $y ? 'selected' : '' }}>{{ $y }}</option>
-                            @endfor
-                        </select>
+                        <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Tanggal Selesai</label>
+                        <input type="date" name="end_date" value="{{ $endDate ? $endDate->format('Y-m-d') : $defaultEndDate }}"
+                               class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
                     </div>
                     <div>
                         <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Karyawan</label>
@@ -101,7 +90,7 @@
                             <option value="rejected" {{ request('status') === 'rejected' ? 'selected' : '' }}>Ditolak</option>
                         </select>
                     </div>
-                    <div class="sm:col-span-2 md:col-span-3 lg:col-span-6 flex justify-end">
+                    <div class="sm:col-span-2 lg:col-span-5 flex justify-end">
                         <button type="submit" class="w-full sm:w-auto bg-[#27438D] text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-[#161758] transition-colors duration-200 text-sm sm:text-base">
                             Filter
                         </button>
@@ -133,61 +122,12 @@
                 </div>
             </div>
 
-            <!-- Divisi Paling Suprasional -->
-            <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-                <div class="bg-[#161758] text-white px-3 sm:px-4 py-2 sm:py-3">
-                    <h3 class="font-semibold text-sm sm:text-base">🏆 Divisi Paling Suprasional</h3>
-                    <p class="text-[10px] sm:text-xs text-white/80">Rata-rata poin per anggota = total poin seluruh anggota ÷ jumlah anggota divisi, sesuai filter periode/bulan di atas</p>
-                </div>
-                <div class="overflow-x-auto -mx-4 sm:mx-0">
-                    <div class="inline-block min-w-full align-middle">
-                        <table class="min-w-[500px] sm:min-w-full">
-                            <thead class="bg-[#F5F5F5]">
-                                <tr>
-                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Rank</th>
-                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Divisi</th>
-                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Jumlah Anggota</th>
-                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Total Poin Divisi</th>
-                                    <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Rata-rata Poin/Anggota</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($divisiRanking as $index => $row)
-                                <tr class="border-b border-gray-200 hover:bg-[#F5F5F5]">
-                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold">
-                                        @if($index === 0 && $row['rata_rata_poin'] > 0)
-                                            🥇
-                                        @elseif($index === 1 && $row['rata_rata_poin'] > 0)
-                                            🥈
-                                        @elseif($index === 2 && $row['rata_rata_poin'] > 0)
-                                            🥉
-                                        @else
-                                            {{ $index + 1 }}
-                                        @endif
-                                    </td>
-                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-[#161758]">{{ $row['divisi'] }}</td>
-                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">{{ $row['jumlah_anggota'] }}</td>
-                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">{{ $row['total_poin'] }}</td>
-                                    <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-bold text-[#2E7D3E]">{{ $row['rata_rata_poin'] }}</td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="5" class="px-4 py-6 text-center text-[#1B1B1B] text-sm">Belum ada data divisi.</td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
             <!-- Form Bulk Approve -->
             <form id="bulk-approve-form" action="{{ route('hr.sunnah.bulk-approve') }}" method="POST">
                 @csrf
                 <input type="hidden" name="target_status" id="bulk-target-status" value="">
-                <input type="hidden" name="month" value="{{ $month }}">
-                <input type="hidden" name="year" value="{{ $year }}">
-                <input type="hidden" name="periode" value="{{ $periode }}">
+                <input type="hidden" name="start_date" value="{{ request('start_date') }}">
+                <input type="hidden" name="end_date" value="{{ request('end_date') }}">
                 <input type="hidden" name="karyawan_id" value="{{ request('karyawan_id') }}">
                 <input type="hidden" name="status" value="{{ request('status') }}">
                 <input type="hidden" name="divisi" value="{{ request('divisi') }}">
@@ -205,17 +145,17 @@
                         <button type="button" onclick="submitBulk('approved')"
                                 class="flex-1 sm:flex-none bg-[#2E7D3E] text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:opacity-90 transition-opacity duration-200 disabled:opacity-40"
                                 id="btn-bulk-approve" disabled>
-                            ✅ Setujui Terpilih
+                            ✅ Setujui
                         </button>
                         <button type="button" onclick="submitBulk('rejected')"
                                 class="flex-1 sm:flex-none bg-[#ec1d1d] text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:opacity-90 transition-opacity duration-200 disabled:opacity-40"
                                 id="btn-bulk-reject" disabled>
-                            ❌ Tolak Terpilih
+                            ❌ Tolak
                         </button>
                         <button type="button" onclick="submitBulk('pending')"
                                 class="flex-1 sm:flex-none bg-[#FCC626] text-[#1B1B1B] px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:opacity-90 transition-opacity duration-200 disabled:opacity-40"
                                 id="btn-bulk-pending" disabled>
-                            ⏳ Kembalikan ke Menunggu
+                            ⏳ Kembalikan
                         </button>
                     </div>
                 </div>
@@ -305,18 +245,6 @@
 </div>
 
 <script>
-// Nonaktifkan filter Bulan/Tahun secara langsung ketika Periode Cepat dipilih
-const periodeSelect = document.querySelector('select[name="periode"]');
-const monthSelect = document.querySelector('select[name="month"]');
-const yearSelect = document.querySelector('select[name="year"]');
-if (periodeSelect) {
-    periodeSelect.addEventListener('change', function () {
-        const active = this.value !== '';
-        if (monthSelect) monthSelect.disabled = active;
-        if (yearSelect) yearSelect.disabled = active;
-    });
-}
-
 const bulkForm = document.getElementById('bulk-approve-form');
 const bulkTargetStatus = document.getElementById('bulk-target-status');
 const bulkIdsContainer = document.getElementById('bulk-ids-container');
@@ -355,39 +283,18 @@ function submitBulk(status) {
     const checked = getCheckedRows();
     if (checked.length === 0) return;
 
-    // Cek apakah ada data yang expired (checkbox disabled tidak akan terpilih)
-    // Tapi kita tetap beri peringatan jika ada data yang tidak dalam periode approval
     let confirmText = `Ubah status ${checked.length} data terpilih?`;
-
-    // Cek apakah ada data yang sudah expired (tidak mungkin terpilih karena disabled)
-    // Tapi tetap tampilkan peringatan
-    const allCheckboxes = document.querySelectorAll('.row-check:checked');
-    const expiredCount = Array.from(allCheckboxes).filter(cb => {
-        const row = cb.closest('tr');
-        // Cek apakah ada teks "expired" di row
-        return row && row.textContent.includes('expired');
-    }).length;
 
     if (status === 'approved') {
         confirmText = `Setujui ${checked.length} data terpilih?`;
-        if (expiredCount > 0) {
-            confirmText += `\n\n⚠️ Peringatan: ${expiredCount} data sudah melewati periode approval dan TIDAK akan diproses.`;
-        }
     } else if (status === 'rejected') {
         confirmText = `Tolak ${checked.length} data terpilih?`;
-        if (expiredCount > 0) {
-            confirmText += `\n\n⚠️ Peringatan: ${expiredCount} data sudah melewati periode approval dan TIDAK akan diproses.`;
-        }
     } else if (status === 'pending') {
         confirmText = `Kembalikan ${checked.length} data terpilih ke status Menunggu? (Termasuk yang sudah Disetujui)`;
-        if (expiredCount > 0) {
-            confirmText += `\n\n⚠️ Peringatan: ${expiredCount} data sudah melewati periode approval dan TIDAK akan diproses.`;
-        }
     }
 
     if (!confirm(confirmText)) return;
 
-    // Bersihkan input ids sebelumnya
     bulkIdsContainer.innerHTML = '';
     checked.forEach(cb => {
         const input = document.createElement('input');
@@ -400,10 +307,5 @@ function submitBulk(status) {
     bulkTargetStatus.value = status;
     bulkForm.submit();
 }
-
-// Tambahkan tooltip untuk checkbox yang disabled
-document.querySelectorAll('.row-check:disabled').forEach(cb => {
-    cb.title = 'Data ini sudah melewati periode approval (1 minggu terakhir)';
-});
 </script>
 @endsection

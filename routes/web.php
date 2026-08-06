@@ -88,6 +88,7 @@ Route::middleware('auth')->group(function () {
 
             Route::get('/sunnah', [SunnahController::class, 'index'])->name('sunnah.index');
             Route::get('/sunnah/rekap', [SunnahController::class, 'rekapBulanan'])->name('sunnah.rekap');
+            Route::get('/sunnah/rekap-divisi', [SunnahController::class, 'rekapDivisi'])->name('sunnah.rekap-divisi');
             Route::get('/sunnah/detail/{id}', [SunnahController::class, 'detail'])->name('sunnah.detail');
             Route::post('/sunnah/approve/{id}', [SunnahController::class, 'approve'])->name('sunnah.approve');
             Route::post('/sunnah/bulk-approve', [SunnahController::class, 'bulkApprove'])->name('sunnah.bulk-approve');

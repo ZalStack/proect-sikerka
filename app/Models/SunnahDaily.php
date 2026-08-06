@@ -1,5 +1,4 @@
 <?php
-// app/Models/SunnahDaily.php
 
 namespace App\Models;
 
@@ -172,6 +171,15 @@ class SunnahDaily extends Model
         return $colors[$this->status_approval] ?? 'bg-gray-500 text-white';
     }
 
+    public function scopeFilterByMonthYear($query, $month, $year)
+    {
+        if ($month && $year) {
+            return $query->whereMonth('tanggal', $month)
+                        ->whereYear('tanggal', $year);
+        }
+        return $query;
+    }
+
     public function isWithinApprovalPeriod()
     {
         $tanggalData = Carbon::parse($this->tanggal);
@@ -180,27 +188,20 @@ class SunnahDaily extends Model
     }
 
     /**
-     * ==========================================================
-     * REKAP PER DIVISI - Method untuk ranking divisi
-     * ==========================================================
+     * Rekap per Divisi berdasarkan rentang tanggal
      */
-    public static function rekapPerDivisi($month = null, $year = null, $periode = null)
+    public static function rekapPerDivisiByDateRange($startDate, $endDate)
     {
-        $query = self::query();
+        $query = self::query()
+            ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
 
-        if ($periode && array_key_exists($periode, self::getPeriodeOptions())) {
-            $query->filterByPeriode($periode);
-        } elseif ($month && $year) {
-            $query->whereMonth('tanggal', $month)->whereYear('tanggal', $year);
-        }
-
-        // Total poin per karyawan pada rentang yang difilter
         $poinPerKaryawan = $query->selectRaw('karyawan_id, SUM(total_poin) as total_poin')
             ->groupBy('karyawan_id')
             ->pluck('total_poin', 'karyawan_id');
 
         $karyawans = Karyawan::whereNotNull('divisi')
             ->where('divisi', '!=', '')
+            ->where('is_resigned', false)
             ->get();
 
         return $karyawans
@@ -223,13 +224,11 @@ class SunnahDaily extends Model
     }
 
     /**
-     * ==========================================================
-     * REKAP PER KARYAWAN - Method untuk rekap bulanan
-     * ==========================================================
+     * Rekap total poin 7SPS per karyawan untuk bulan & tahun tertentu.
      */
     public static function rekapPerKaryawan($month, $year)
     {
-        $karyawans = Karyawan::all();
+        $karyawans = Karyawan::where('is_resigned', false)->get();
 
         $dataBulanIni = self::whereMonth('tanggal', $month)
             ->whereYear('tanggal', $year)
@@ -257,45 +256,5 @@ class SunnahDaily extends Model
         })
         ->sortByDesc('total_poin')
         ->values();
-    }
-
-    /**
-     * ==========================================================
-     * PERIODE OPTIONS - Untuk dropdown filter cepat
-     * ==========================================================
-     */
-    public static function getPeriodeOptions()
-    {
-        return [
-            '3_hari' => '3 Hari Terakhir',
-            '1_minggu' => '1 Minggu Terakhir',
-            '1_bulan' => '1 Bulan Terakhir',
-        ];
-    }
-
-    /**
-     * ==========================================================
-     * SCOPE FILTER BY PERIODE - Untuk filter cepat
-     * ==========================================================
-     */
-    public function scopeFilterByPeriode($query, $periode)
-    {
-        $end = Carbon::today()->endOfDay();
-
-        switch ($periode) {
-            case '3_hari':
-                $start = Carbon::today()->subDays(2)->startOfDay();
-                break;
-            case '1_minggu':
-                $start = Carbon::today()->subDays(6)->startOfDay();
-                break;
-            case '1_bulan':
-                $start = Carbon::today()->subDays(29)->startOfDay();
-                break;
-            default:
-                return $query;
-        }
-
-        return $query->whereBetween('tanggal', [$start->format('Y-m-d'), $end->format('Y-m-d')]);
     }
 }
