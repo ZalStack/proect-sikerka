@@ -1,4 +1,5 @@
 <?php
+// app/Models/SunnahDaily.php
 
 namespace App\Models;
 
@@ -12,7 +13,6 @@ class SunnahDaily extends Model
 
     protected $table = 'sunnah_daily';
 
-    // Poin kelompok sholat wajib (subuh, zuhur, asar, maghrib, isya)
     const POIN_WAJIB_KOSONG   = 0;
     const POIN_WAJIB_PER_ITEM = 1;
     const POIN_WAJIB_LENGKAP  = 20;
@@ -172,19 +172,130 @@ class SunnahDaily extends Model
         return $colors[$this->status_approval] ?? 'bg-gray-500 text-white';
     }
 
-    public function scopeFilterByMonthYear($query, $month, $year)
-    {
-        if ($month && $year) {
-            return $query->whereMonth('tanggal', $month)
-                        ->whereYear('tanggal', $year);
-        }
-        return $query;
-    }
-
     public function isWithinApprovalPeriod()
     {
         $tanggalData = Carbon::parse($this->tanggal);
         $batasWaktu = Carbon::today()->subDays(6)->startOfDay();
         return $tanggalData->greaterThanOrEqualTo($batasWaktu);
+    }
+
+    /**
+     * ==========================================================
+     * REKAP PER DIVISI - Method untuk ranking divisi
+     * ==========================================================
+     */
+    public static function rekapPerDivisi($month = null, $year = null, $periode = null)
+    {
+        $query = self::query();
+
+        if ($periode && array_key_exists($periode, self::getPeriodeOptions())) {
+            $query->filterByPeriode($periode);
+        } elseif ($month && $year) {
+            $query->whereMonth('tanggal', $month)->whereYear('tanggal', $year);
+        }
+
+        // Total poin per karyawan pada rentang yang difilter
+        $poinPerKaryawan = $query->selectRaw('karyawan_id, SUM(total_poin) as total_poin')
+            ->groupBy('karyawan_id')
+            ->pluck('total_poin', 'karyawan_id');
+
+        $karyawans = Karyawan::whereNotNull('divisi')
+            ->where('divisi', '!=', '')
+            ->get();
+
+        return $karyawans
+            ->groupBy('divisi')
+            ->map(function ($anggota, $divisi) use ($poinPerKaryawan) {
+                $jumlahAnggota = $anggota->count();
+                $totalPoinDivisi = $anggota->sum(function ($k) use ($poinPerKaryawan) {
+                    return $poinPerKaryawan->get($k->id, 0);
+                });
+
+                return [
+                    'divisi' => $divisi,
+                    'jumlah_anggota' => $jumlahAnggota,
+                    'total_poin' => $totalPoinDivisi,
+                    'rata_rata_poin' => $jumlahAnggota > 0 ? round($totalPoinDivisi / $jumlahAnggota, 1) : 0,
+                ];
+            })
+            ->sortByDesc('rata_rata_poin')
+            ->values();
+    }
+
+    /**
+     * ==========================================================
+     * REKAP PER KARYAWAN - Method untuk rekap bulanan
+     * ==========================================================
+     */
+    public static function rekapPerKaryawan($month, $year)
+    {
+        $karyawans = Karyawan::all();
+
+        $dataBulanIni = self::whereMonth('tanggal', $month)
+            ->whereYear('tanggal', $year)
+            ->get()
+            ->groupBy('karyawan_id');
+
+        return $karyawans->map(function ($karyawan) use ($dataBulanIni) {
+            $items = $dataBulanIni->get($karyawan->id, collect());
+
+            $totalHari = $items->count();
+            $totalPoin = $items->sum('total_poin');
+
+            return [
+                'karyawan_id' => $karyawan->id,
+                'nama_lengkap' => $karyawan->nama_lengkap,
+                'kode_pegawai' => $karyawan->kode_pegawai ?? '-',
+                'divisi' => $karyawan->divisi ?? '-',
+                'total_hari' => $totalHari,
+                'total_poin' => $totalPoin,
+                'rata_rata' => $totalHari > 0 ? round($totalPoin / $totalHari, 1) : 0,
+                'approved' => $items->where('status_approval', 'approved')->count(),
+                'pending' => $items->where('status_approval', 'pending')->count(),
+                'rejected' => $items->where('status_approval', 'rejected')->count(),
+            ];
+        })
+        ->sortByDesc('total_poin')
+        ->values();
+    }
+
+    /**
+     * ==========================================================
+     * PERIODE OPTIONS - Untuk dropdown filter cepat
+     * ==========================================================
+     */
+    public static function getPeriodeOptions()
+    {
+        return [
+            '3_hari' => '3 Hari Terakhir',
+            '1_minggu' => '1 Minggu Terakhir',
+            '1_bulan' => '1 Bulan Terakhir',
+        ];
+    }
+
+    /**
+     * ==========================================================
+     * SCOPE FILTER BY PERIODE - Untuk filter cepat
+     * ==========================================================
+     */
+    public function scopeFilterByPeriode($query, $periode)
+    {
+        $end = Carbon::today()->endOfDay();
+
+        switch ($periode) {
+            case '3_hari':
+                $start = Carbon::today()->subDays(2)->startOfDay();
+                break;
+            case '1_minggu':
+                $start = Carbon::today()->subDays(6)->startOfDay();
+                break;
+            case '1_bulan':
+                $start = Carbon::today()->subDays(29)->startOfDay();
+                break;
+            default:
+                return $query;
+        }
+
+        return $query->whereBetween('tanggal', [$start->format('Y-m-d'), $end->format('Y-m-d')]);
     }
 }
