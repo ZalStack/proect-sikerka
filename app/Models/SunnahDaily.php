@@ -13,9 +13,9 @@ class SunnahDaily extends Model
     protected $table = 'sunnah_daily';
 
     // Poin kelompok sholat wajib (subuh, zuhur, asar, maghrib, isya)
-    const POIN_WAJIB_KOSONG   = 0;  // tidak ada satupun sholat wajib yang berjamaah
-    const POIN_WAJIB_PER_ITEM = 1;  // poin per sholat wajib yang berjamaah (jika tidak lengkap)
-    const POIN_WAJIB_LENGKAP  = 20; // seluruh (5 dari 5) sholat wajib berjamaah (5 × 4)
+    const POIN_WAJIB_KOSONG   = 0;
+    const POIN_WAJIB_PER_ITEM = 1;
+    const POIN_WAJIB_LENGKAP  = 20;
 
     protected $fillable = [
         'karyawan_id',
@@ -68,7 +68,6 @@ class SunnahDaily extends Model
         return $this->belongsTo(Karyawan::class, 'karyawan_id');
     }
 
-    // Konfigurasi poin per kegiatan (untuk kegiatan sunnah non-wajib, dihitung per item seperti biasa)
     public static function getPoinConfig()
     {
         return [
@@ -87,7 +86,6 @@ class SunnahDaily extends Model
         ];
     }
 
-    // 5 field sholat wajib yang dihitung sebagai satu kelompok (bukan per item)
     public static function getSholatWajibKeys()
     {
         return [
@@ -99,12 +97,6 @@ class SunnahDaily extends Model
         ];
     }
 
-    /**
-     * Hitung poin kelompok sholat wajib berdasarkan jumlah sholat yang dikerjakan berjamaah.
-     * - Jika semua 5 sholat berjamaah (lengkap) → 20 poin (5 × 4)
-     * - Jika sebagian (1-4) sholat berjamaah → jumlah × 1 poin
-     * - Jika tidak ada yang berjamaah → 0 poin
-     */
     public static function hitungPoinWajib(array $data): array
     {
         $wajibKeys = self::getSholatWajibKeys();
@@ -117,15 +109,11 @@ class SunnahDaily extends Model
             }
         }
 
-        // Hitung poin berdasarkan jumlah sholat yang berjamaah
         if ($jumlahBerjamaah >= 5) {
-            // Semua 5 sholat berjamaah → 5 × 4 = 20 poin
             $poin = self::POIN_WAJIB_LENGKAP;
         } elseif ($jumlahBerjamaah >= 1) {
-            // Sebagian sholat berjamaah (1-4) → jumlah × 1 poin
             $poin = $jumlahBerjamaah * self::POIN_WAJIB_PER_ITEM;
         } else {
-            // Tidak ada yang berjamaah → 0 poin
             $poin = self::POIN_WAJIB_KOSONG;
         }
 
@@ -135,19 +123,16 @@ class SunnahDaily extends Model
         ];
     }
 
-    // Hitung total poin berdasarkan checklist (kelompok wajib + kegiatan sunnah lain)
     public static function calculateTotalPoin($data)
     {
         $config = self::getPoinConfig();
         $wajibKeys = self::getSholatWajibKeys();
 
-        // Poin kelompok sholat wajib (subuh, zuhur, asar, maghrib, isya)
         $total = self::hitungPoinWajib($data)['poin'];
 
-        // Poin kegiatan sunnah lainnya (dihitung per item seperti biasa)
         foreach ($config as $key => $value) {
             if (in_array($key, $wajibKeys, true)) {
-                continue; // sudah dihitung di atas sebagai kelompok
+                continue;
             }
             if (!empty($data[$key])) {
                 $total += $value['poin'];
@@ -157,19 +142,16 @@ class SunnahDaily extends Model
         return $total;
     }
 
-    // Jumlah sholat wajib yang dikerjakan secara berjamaah pada record ini
     public function getJumlahSholatBerjamaahAttribute()
     {
         return self::hitungPoinWajib($this->attributesToArray())['jumlah_berjamaah'];
     }
 
-    // Poin kelompok sholat wajib pada record ini
     public function getPoinSholatWajibAttribute()
     {
         return self::hitungPoinWajib($this->attributesToArray())['poin'];
     }
 
-    // Dapatkan label status approval
     public function getStatusLabelAttribute()
     {
         $labels = [
@@ -180,7 +162,6 @@ class SunnahDaily extends Model
         return $labels[$this->status_approval] ?? $this->status_approval;
     }
 
-    // Dapatkan badge status approval
     public function getStatusBadgeAttribute()
     {
         $colors = [
@@ -191,7 +172,6 @@ class SunnahDaily extends Model
         return $colors[$this->status_approval] ?? 'bg-gray-500 text-white';
     }
 
-    // Scope untuk filter bulan dan tahun
     public function scopeFilterByMonthYear($query, $month, $year)
     {
         if ($month && $year) {
@@ -201,123 +181,6 @@ class SunnahDaily extends Model
         return $query;
     }
 
-    /**
-     * Scope untuk filter berdasarkan periode cepat: 3_hari, 1_minggu, 1_bulan.
-     * Rentang dihitung mundur dari hari ini (inklusif).
-     */
-    public function scopeFilterByPeriode($query, $periode)
-    {
-        $end = Carbon::today()->endOfDay();
-
-        switch ($periode) {
-            case '3_hari':
-                $start = Carbon::today()->subDays(2)->startOfDay();
-                break;
-            case '1_minggu':
-                $start = Carbon::today()->subDays(6)->startOfDay();
-                break;
-            case '1_bulan':
-                $start = Carbon::today()->subDays(29)->startOfDay();
-                break;
-            default:
-                return $query;
-        }
-
-        return $query->whereBetween('tanggal', [$start->format('Y-m-d'), $end->format('Y-m-d')]);
-    }
-
-    // Label periode untuk tampilan
-    public static function getPeriodeOptions()
-    {
-        return [
-            '3_hari' => '3 Hari Terakhir',
-            '1_minggu' => '1 Minggu Terakhir',
-            '1_bulan' => '1 Bulan Terakhir',
-        ];
-    }
-
-    /**
-     * Rekap "Divisi Paling Suprasional": rata-rata poin per anggota divisi.
-     * Rumus: total poin seluruh anggota divisi / jumlah anggota divisi.
-     * Mendukung filter periode cepat (3_hari/1_minggu/1_bulan) ATAU bulan & tahun.
-     */
-    public static function rekapPerDivisi($month = null, $year = null, $periode = null)
-    {
-        $query = self::query();
-
-        if ($periode && array_key_exists($periode, self::getPeriodeOptions())) {
-            $query->filterByPeriode($periode);
-        } elseif ($month && $year) {
-            $query->whereMonth('tanggal', $month)->whereYear('tanggal', $year);
-        }
-
-        // Total poin per karyawan pada rentang yang difilter
-        $poinPerKaryawan = $query->selectRaw('karyawan_id, SUM(total_poin) as total_poin')
-            ->groupBy('karyawan_id')
-            ->pluck('total_poin', 'karyawan_id');
-
-        $karyawans = Karyawan::whereNotNull('divisi')
-            ->where('divisi', '!=', '')
-            ->get();
-
-        return $karyawans
-            ->groupBy('divisi')
-            ->map(function ($anggota, $divisi) use ($poinPerKaryawan) {
-                $jumlahAnggota = $anggota->count();
-                $totalPoinDivisi = $anggota->sum(function ($k) use ($poinPerKaryawan) {
-                    return $poinPerKaryawan->get($k->id, 0);
-                });
-
-                return [
-                    'divisi' => $divisi,
-                    'jumlah_anggota' => $jumlahAnggota,
-                    'total_poin' => $totalPoinDivisi,
-                    // Poin dari divisi paling suprasional = total poin dibagi jumlah anggota divisi
-                    'rata_rata_poin' => $jumlahAnggota > 0 ? round($totalPoinDivisi / $jumlahAnggota, 1) : 0,
-                ];
-            })
-            ->sortByDesc('rata_rata_poin')
-            ->values();
-    }
-
-    /**
-     * Rekap total poin 7SPS per karyawan untuk bulan & tahun tertentu.
-     */
-    public static function rekapPerKaryawan($month, $year)
-    {
-        $karyawans = Karyawan::all();
-
-        $dataBulanIni = self::whereMonth('tanggal', $month)
-            ->whereYear('tanggal', $year)
-            ->get()
-            ->groupBy('karyawan_id');
-
-        return $karyawans->map(function ($karyawan) use ($dataBulanIni) {
-            $items = $dataBulanIni->get($karyawan->id, collect());
-
-            $totalHari = $items->count();
-            $totalPoin = $items->sum('total_poin');
-
-            return [
-                'karyawan_id' => $karyawan->id,
-                'nama_lengkap' => $karyawan->nama_lengkap,
-                'kode_pegawai' => $karyawan->kode_pegawai ?? '-',
-                'divisi' => $karyawan->divisi ?? '-',
-                'total_hari' => $totalHari,
-                'total_poin' => $totalPoin,
-                'rata_rata' => $totalHari > 0 ? round($totalPoin / $totalHari, 1) : 0,
-                'approved' => $items->where('status_approval', 'approved')->count(),
-                'pending' => $items->where('status_approval', 'pending')->count(),
-                'rejected' => $items->where('status_approval', 'rejected')->count(),
-            ];
-        })
-        ->sortByDesc('total_poin')
-        ->values();
-    }
-
-    /**
-     * Cek apakah data masih dalam periode approval (1 minggu terakhir)
-     */
     public function isWithinApprovalPeriod()
     {
         $tanggalData = Carbon::parse($this->tanggal);
