@@ -57,7 +57,7 @@ class Absensi extends Model
 
     // Batas jam check-in maksimum supaya TIDAK dianggap terlambat.
     // Check-in setelah jam ini akan dihitung terlambat (dalam menit).
-    const WORK_START_TIME = '07:40:00';
+    const WORK_START_TIME = '07:45:00';
 
     // Jam pulang standar kantor, dipakai sebagai basis perhitungan lembur.
     // Check-out setelah jam ini akan dihitung sebagai lembur (dalam menit).

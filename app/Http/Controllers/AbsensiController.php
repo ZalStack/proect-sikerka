@@ -485,45 +485,158 @@ class AbsensiController extends Controller
         return view('hr.absensi.index', compact('absensis', 'karyawans', 'chartData', 'selectedMonth', 'selectedYear'));
     }
 
-    public function dashboard()
+
+    /**
+     * Get riwayat absensi karyawan dengan filter dan pagination
+     * Untuk halaman dashboard karyawan
+     */
+    public function getRiwayat(Request $request)
+    {
+        $user = Auth::user();
+
+        $query = Absensi::where('karyawan_id', $user->id);
+
+        // Filter tanggal
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereBetween('tanggal', [$request->start_date, $request->end_date]);
+        }
+
+        // Filter status
+        if ($request->filled('status') && $request->status !== 'semua') {
+            $query->where('status', $request->status);
+        }
+
+        // Pagination 7 data per halaman
+        $perPage = 7;
+        $riwayat = $query->orderBy('tanggal', 'desc')->paginate($perPage);
+
+        // Format data untuk ditampilkan
+        $riwayatData = $riwayat->map(function($absensi) {
+            $locations = $this->getOfficeLocations();
+            $minDist = null;
+            if ($absensi->latitude && $absensi->longitude) {
+                $minDist = PHP_FLOAT_MAX;
+                foreach ($locations as $coords) {
+                    $d = $this->haversineDistance(
+                        $absensi->latitude,
+                        $absensi->longitude,
+                        $coords['latitude'],
+                        $coords['longitude']
+                    );
+                    if ($d < $minDist) $minDist = $d;
+                }
+                $minDist = $minDist < PHP_FLOAT_MAX ? round($minDist, 1) : null;
+            }
+
+            return [
+                'id' => $absensi->id,
+                'tanggal' => $absensi->tanggal->format('d/m/Y'),
+                'check_in' => $absensi->check_in ? Carbon::parse($absensi->check_in)->format('H:i') : '-',
+                'check_out' => $absensi->check_out ? Carbon::parse($absensi->check_out)->format('H:i') : '-',
+                'status' => $absensi->status ?? 'Alpha',
+                'total_jam' => $absensi->total_jam_kerja ?? 0,
+                'is_valid' => $absensi->is_valid_location ?? false,
+                'distance' => $minDist,
+                'kantor' => $absensi->kantor_cabang ?? '-',
+                'terlambat_menit' => $absensi->terlambat_menit ?? 0,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $riwayatData,
+            'pagination' => [
+                'total' => $riwayat->total(),
+                'per_page' => $riwayat->perPage(),
+                'current_page' => $riwayat->currentPage(),
+                'last_page' => $riwayat->lastPage(),
+                'from' => $riwayat->firstItem(),
+                'to' => $riwayat->lastItem(),
+                'has_previous' => $riwayat->previousPageUrl() !== null,
+                'has_next' => $riwayat->nextPageUrl() !== null,
+                'previous_page_url' => $riwayat->previousPageUrl(),
+                'next_page_url' => $riwayat->nextPageUrl(),
+            ]
+        ]);
+    }
+
+    /**
+     * Dashboard karyawan - revisi dengan filter dan pagination
+     */
+    public function dashboard(Request $request)
     {
         $user = Auth::user();
         $today = Carbon::today($this->officeTimezone);
 
-        $todayAbsensi = Absensi::where('karyawan_id', $user->id)->whereDate('tanggal', $today)->first();
+        $todayAbsensi = Absensi::where('karyawan_id', $user->id)
+            ->whereDate('tanggal', $today)
+            ->first();
 
-        $last7Days = [];
-        for ($i = 6; $i >= 0; $i--) {
-            $date = Carbon::today($this->officeTimezone)->subDays($i);
-            $absensi = Absensi::where('karyawan_id', $user->id)->whereDate('tanggal', $date)->first();
+        // Ambil riwayat dengan filter dan pagination
+        $query = Absensi::where('karyawan_id', $user->id);
 
-            $distance = null;
-            if ($absensi && $absensi->latitude && $absensi->longitude) {
-                $locations = $this->getOfficeLocations();
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereBetween('tanggal', [$request->start_date, $request->end_date]);
+        }
+
+        if ($request->filled('status') && $request->status !== 'semua') {
+            $query->where('status', $request->status);
+        }
+
+        $riwayat = $query->orderBy('tanggal', 'desc')->paginate(7);
+
+        // Format riwayat
+        $formattedRiwayat = $riwayat->map(function($absensi) {
+            $locations = $this->getOfficeLocations();
+            $minDist = null;
+            if ($absensi->latitude && $absensi->longitude) {
                 $minDist = PHP_FLOAT_MAX;
                 foreach ($locations as $coords) {
-                    $d = $this->haversineDistance($absensi->latitude, $absensi->longitude, $coords['latitude'], $coords['longitude']);
-                    if ($d < $minDist) {
-                        $minDist = $d;
-                    }
+                    $d = $this->haversineDistance(
+                        $absensi->latitude,
+                        $absensi->longitude,
+                        $coords['latitude'],
+                        $coords['longitude']
+                    );
+                    if ($d < $minDist) $minDist = $d;
                 }
-                $distance = $minDist < PHP_FLOAT_MAX ? round($minDist, 1) : null;
+                $minDist = $minDist < PHP_FLOAT_MAX ? round($minDist, 1) : null;
             }
 
-            $last7Days[] = [
-                'tanggal' => $date->format('d/m'),
-                'check_in' => $absensi && $absensi->check_in ? Carbon::parse($absensi->check_in)->format('H:i') : '-',
-                'check_out' => $absensi && $absensi->check_out ? Carbon::parse($absensi->check_out)->format('H:i') : '-',
-                'status' => $absensi ? $absensi->status : 'Alpha',
-                'total_jam' => $absensi ? $absensi->total_jam_kerja : 0,
-                'is_valid' => $absensi ? $absensi->is_valid_location : false,
-                'distance' => $distance,
+            return [
+                'id' => $absensi->id,
+                'tanggal' => $absensi->tanggal->format('d/m/Y'),
+                'tanggal_raw' => $absensi->tanggal,
+                'check_in' => $absensi->check_in ? Carbon::parse($absensi->check_in)->format('H:i') : '-',
+                'check_out' => $absensi->check_out ? Carbon::parse($absensi->check_out)->format('H:i') : '-',
+                'status' => $absensi->status ?? 'Alpha',
+                'total_jam' => $absensi->total_jam_kerja ?? 0,
+                'is_valid' => $absensi->is_valid_location ?? false,
+                'distance' => $minDist,
+                'kantor' => $absensi->kantor_cabang ?? '-',
+                'terlambat_menit' => $absensi->terlambat_menit ?? 0,
+                'is_terlambat' => $absensi->is_terlambat ?? false,
             ];
-        }
+        });
 
         $officeLocations = $this->getOfficeLocations();
 
-        return view('karyawan.absensi', compact('todayAbsensi', 'last7Days', 'officeLocations'));
+        // Data untuk filter
+        $statuses = ['semua', 'Hadir', 'Izin', 'Sakit', 'Alpha', 'Perjalanan Dinas', 'Cuti'];
+        $selectedStatus = $request->input('status', 'semua');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        return view('karyawan.absensi', compact(
+            'todayAbsensi',
+            'formattedRiwayat',
+            'riwayat',
+            'officeLocations',
+            'statuses',
+            'selectedStatus',
+            'startDate',
+            'endDate'
+        ));
     }
 
     public function exportExcel(Request $request)

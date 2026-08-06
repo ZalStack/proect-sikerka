@@ -10,6 +10,7 @@
                     <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">Absensi Karyawan</h1>
                     <p class="text-sm sm:text-base text-[#27438D]">Check-in / Check-out dengan lokasi GPS</p>
                     <p class="text-xs text-gray-500 mt-1">📍 Radius absensi: 50 meter dari kantor KPM</p>
+                    <p class="text-xs text-gray-500">⏰ Batas keterlambatan: 07:45</p>
                 </div>
 
                 <!-- Jam Realtime -->
@@ -72,12 +73,12 @@
                         <ul class="list-disc list-inside mt-1 space-y-1 text-xs sm:text-sm">
                             <li>Absensi dilakukan dengan <strong>deteksi lokasi GPS</strong></li>
                             <li>Lokasi Anda harus berada dalam <strong>radius 50 meter</strong> dari kantor KPM</li>
-                            <li>Sinyal GPS harus cukup akurat (akurasi lebih baik dari 75 meter). Jika di dalam
-                                ruangan/gedung, coba dekat jendela atau area terbuka</li>
+                            <li>Sinyal GPS harus cukup akurat (akurasi lebih baik dari 75 meter)</li>
                             <li>Check-in hanya 1 kali per hari, Check-out setelah Check-in</li>
-                            <li>Jam yang digunakan adalah <strong>jam server</strong> (realtime), bukan jam HP Anda</li>
-                            <li>Sistem mendeteksi <strong>fake GPS/lokasi palsu</strong>. Absensi dengan indikasi lokasi
-                                palsu akan ditolak atau ditandai untuk ditinjau HR</li>
+                            <li><strong>Keterlambatan:</strong> dihitung jika check-in setelah pukul <strong>07:45</strong>
+                            </li>
+                            <li>Jam yang digunakan adalah <strong>jam server</strong> (realtime)</li>
+                            <li>Sistem mendeteksi <strong>fake GPS/lokasi palsu</strong></li>
                         </ul>
                     </div>
                 </div>
@@ -116,8 +117,6 @@
                     </div>
                 </div>
 
-
-
                 <!-- Lokasi Kantor -->
                 @if (!empty($officeLocations))
                     <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
@@ -134,59 +133,125 @@
                     </div>
                 @endif
 
-                <!-- Riwayat 7 Hari Terakhir -->
+                <!-- Riwayat dengan Filter & Pagination -->
                 <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
-                    <h2 class="text-lg font-semibold text-[#161758] mb-4">Riwayat 7 Hari Terakhir</h2>
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                        <h2 class="text-lg font-semibold text-[#161758]">Riwayat Absensi</h2>
+                        <button onclick="resetFilters()"
+                            class="text-xs text-[#27438D] hover:text-[#161758] transition-colors">
+                            Reset Filter
+                        </button>
+                    </div>
+
+                    <!-- Filter -->
+                    <form id="filterForm" method="GET" action="{{ route('karyawan.absensi') }}"
+                        class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Dari Tanggal</label>
+                            <input type="date" name="start_date" id="filterStartDate"
+                                value="{{ request('start_date') }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Sampai Tanggal</label>
+                            <input type="date" name="end_date" id="filterEndDate"
+                                value="{{ request('end_date') }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
+                            <select name="status" id="filterStatus"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                                <option value="semua" {{ request('status', 'semua') == 'semua' ? 'selected' : '' }}>
+                                    Semua Status</option>
+                                @foreach (['Hadir', 'Izin', 'Sakit', 'Alpha', 'Perjalanan Dinas', 'Cuti'] as $status)
+                                    <option value="{{ $status }}"
+                                        {{ request('status') == $status ? 'selected' : '' }}>
+                                        {{ $status }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="sm:col-span-3 flex gap-2">
+                            <button type="submit"
+                                class="px-4 py-2 bg-[#00a2e9] text-white rounded-lg hover:bg-[#0088c4] transition-colors text-sm">
+                                Filter
+                            </button>
+                            <button type="button" onclick="resetFilters()"
+                                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm">
+                                Reset
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Tabel Riwayat -->
                     <div class="overflow-x-auto -mx-4 sm:mx-0">
                         <div class="inline-block min-w-full align-middle">
                             <table class="min-w-full">
                                 <thead>
                                     <tr class="bg-[#F5F5F5]">
-                                        <th class="px-3 sm:px-4 py-2 text-left text-xs font-semibold text-[#1B1B1B]">Tanggal
-                                        </th>
+                                        <th class="px-3 sm:px-4 py-2 text-left text-xs font-semibold text-[#1B1B1B]">
+                                            Tanggal</th>
+                                        <th class="px-3 sm:px-4 py-2 text-left text-xs font-semibold text-[#1B1B1B] hidden sm:table-cell">
+                                            Hari</th>
                                         <th class="px-3 sm:px-4 py-2 text-left text-xs font-semibold text-[#1B1B1B]">
                                             Check-in</th>
                                         <th class="px-3 sm:px-4 py-2 text-left text-xs font-semibold text-[#1B1B1B] hidden sm:table-cell">
                                             Check-out</th>
-                                        <th class="px-3 sm:px-4 py-2 text-left text-xs font-semibold text-[#1B1B1B]">Status
-                                        </th>
-                                        <th class="px-3 sm:px-4 py-2 text-left text-xs font-semibold text-[#1B1B1B] hidden md:table-cell">Lokasi
-                                        </th>
-                                        <th class="px-3 sm:px-4 py-2 text-left text-xs font-semibold text-[#1B1B1B] hidden lg:table-cell">Total
-                                            Jam</th>
+                                        <th class="px-3 sm:px-4 py-2 text-left text-xs font-semibold text-[#1B1B1B]">
+                                            Status</th>
+                                        <th class="px-3 sm:px-4 py-2 text-left text-xs font-semibold text-[#1B1B1B] hidden md:table-cell">
+                                            Terlambat</th>
+                                        <th class="px-3 sm:px-4 py-2 text-left text-xs font-semibold text-[#1B1B1B] hidden lg:table-cell">
+                                            Lokasi</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    @forelse($last7Days as $day)
-                                        <tr class="border-b border-gray-200">
+                                <tbody id="riwayatBody">
+                                    @forelse($formattedRiwayat as $day)
+                                        <tr class="border-b border-gray-200 hover:bg-gray-50/50 transition-colors">
                                             <td class="px-3 sm:px-4 py-2 text-xs">{{ $day['tanggal'] }}</td>
-                                            <td class="px-3 sm:px-4 py-2 text-xs">{{ $day['check_in'] }}</td>
-                                            <td class="px-3 sm:px-4 py-2 text-xs hidden sm:table-cell">{{ $day['check_out'] }}</td>
+                                            <td class="px-3 sm:px-4 py-2 text-xs hidden sm:table-cell">
+                                                {{ $day['tanggal_raw'] ? \Carbon\Carbon::parse($day['tanggal_raw'])->locale('id')->isoFormat('dddd') : '-' }}
+                                            </td>
+                                            <td class="px-3 sm:px-4 py-2 text-xs font-medium">
+                                                {{ $day['check_in'] }}
+                                            </td>
+                                            <td class="px-3 sm:px-4 py-2 text-xs hidden sm:table-cell">
+                                                {{ $day['check_out'] }}
+                                            </td>
                                             <td class="px-3 sm:px-4 py-2 text-xs">
-                                                @if ($day['status'] == 'Hadir')
+                                                @php
+                                                    $statusColors = [
+                                                        'Hadir' => 'bg-[#2E7D3E] text-white',
+                                                        'Izin' => 'bg-[#FCC626] text-[#1B1B1B]',
+                                                        'Sakit' => 'bg-[#00a2e9] text-white',
+                                                        'Alpha' => 'bg-[#ec1d1d] text-white',
+                                                        'Perjalanan Dinas' => 'bg-purple-600 text-white',
+                                                        'Cuti' => 'bg-[#27438D] text-white',
+                                                    ];
+                                                    $color = $statusColors[$day['status']] ?? 'bg-gray-200 text-gray-800';
+                                                @endphp
+                                                <span
+                                                    class="px-2 py-1 rounded-full text-[10px] font-medium {{ $color }}">
+                                                    {{ $day['status'] }}
+                                                </span>
+                                                @if ($day['is_terlambat'] && $day['status'] == 'Hadir')
                                                     <span
-                                                        class="px-2 py-1 rounded-full text-[10px] font-medium bg-[#2E7D3E] text-white">Hadir</span>
-                                                @elseif($day['status'] == 'Izin')
-                                                    <span
-                                                        class="px-2 py-1 rounded-full text-[10px] font-medium bg-[#FCC626] text-[#1B1B1B]">Izin</span>
-                                                @elseif($day['status'] == 'Sakit')
-                                                    <span
-                                                        class="px-2 py-1 rounded-full text-[10px] font-medium bg-[#00a2e9] text-white">Sakit</span>
-                                                @elseif($day['status'] == 'Perjalanan Dinas')
-                                                    <span
-                                                        class="px-2 py-1 rounded-full text-[10px] font-medium bg-purple-600 text-white">Perjalanan
-                                                        Dinas</span>
-                                                @elseif($day['status'] == 'Cuti')
-                                                    <span
-                                                        class="px-2 py-1 rounded-full text-[10px] font-medium bg-[#27438D] text-white">Cuti</span>
-                                                @else
-                                                    <span
-                                                        class="px-2 py-1 rounded-full text-[10px] font-medium bg-[#ec1d1d] text-white">Alpha</span>
+                                                        class="ml-1 text-[10px] text-red-500 font-semibold">⏰</span>
                                                 @endif
                                             </td>
                                             <td class="px-3 sm:px-4 py-2 text-xs hidden md:table-cell">
+                                                @if ($day['is_terlambat'] && $day['status'] == 'Hadir')
+                                                    <span class="text-red-500 font-semibold">
+                                                        +{{ $day['terlambat_menit'] }} min
+                                                    </span>
+                                                @else
+                                                    <span class="text-gray-400">-</span>
+                                                @endif
+                                            </td>
+                                            <td class="px-3 sm:px-4 py-2 text-xs hidden lg:table-cell">
                                                 @if ($day['is_valid'])
-                                                    <span class="text-[#2E7D3E]">✅ Valid</span>
+                                                    <span class="text-[#2E7D3E]">✅ {{ $day['kantor'] }}</span>
                                                     @if ($day['distance'])
                                                         <span
                                                             class="text-[10px] text-gray-500 block">{{ $day['distance'] }}m</span>
@@ -195,18 +260,75 @@
                                                     <span class="text-[#ec1d1d]">❌ Invalid</span>
                                                 @endif
                                             </td>
-                                            <td class="px-3 sm:px-4 py-2 text-xs hidden lg:table-cell">{{ $day['total_jam'] }} jam</td>
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="6" class="px-4 py-8 text-center text-gray-500">Belum ada data
-                                                absensi 7 hari terakhir.</td>
+                                            <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                                                Belum ada data absensi.
+                                            </td>
                                         </tr>
                                     @endforelse
                                 </tbody>
                             </table>
                         </div>
                     </div>
+
+                    <!-- Pagination -->
+                    @if (isset($riwayat) && $riwayat->total() > 0)
+                        <div
+                            class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-gray-100 px-4 py-3 mt-3">
+                            <p class="text-xs sm:text-sm text-gray-500 text-center sm:text-left">
+                                Menampilkan
+                                <span class="font-semibold text-gray-700">{{ $riwayat->firstItem() }}</span>
+                                –
+                                <span class="font-semibold text-gray-700">{{ $riwayat->lastItem() }}</span>
+                                dari
+                                <span class="font-semibold text-gray-700">{{ $riwayat->total() }}</span> data
+                                &middot; Halaman {{ $riwayat->currentPage() }} dari {{ $riwayat->lastPage() }}
+                            </p>
+                            <div class="flex items-center justify-center gap-2">
+                                @if ($riwayat->onFirstPage())
+                                    <span
+                                        class="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-medium text-gray-300 bg-gray-50 cursor-not-allowed select-none">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15 19l-7-7 7-7" />
+                                        </svg>
+                                        Previous
+                                    </span>
+                                @else
+                                    <a href="{{ $riwayat->appends(request()->query())->previousPageUrl() }}"
+                                        class="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15 19l-7-7 7-7" />
+                                        </svg>
+                                        Previous
+                                    </a>
+                                @endif
+
+                                @if ($riwayat->hasMorePages())
+                                    <a href="{{ $riwayat->appends(request()->query())->nextPageUrl() }}"
+                                        class="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-medium text-white bg-[#00a2e9] hover:bg-[#0088c4] transition-colors">
+                                        Next
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </a>
+                                @else
+                                    <span
+                                        class="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-medium text-gray-300 bg-gray-50 cursor-not-allowed select-none">
+                                        Next
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -220,32 +342,21 @@
         // KONFIGURASI
         // ==========================================================
         const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-        const MAX_RADIUS = 50; // meter
-        const MAX_GPS_ACCURACY = 75; // meter, harus sinkron dengan Absensi::MAX_GPS_ACCURACY di backend
-
-        // Selama proses mencari sinyal GPS, cek lebih sering (lebih responsif)
-        const LOCATION_SEARCH_INTERVAL = 3000; // 3 detik
-        // Setelah lokasi valid & akurat didapat, kunci hasilnya selama 1 menit
-        // supaya UI tidak balik ke "mencari lokasi" terus-menerus
-        const LOCATION_LOCK_DURATION = 60000; // 1 menit
-        // Jika error (izin ditolak / GPS mati / timeout), coba lagi lebih cepat
-        const LOCATION_RETRY_INTERVAL = 3000; // 3 detik
+        const MAX_RADIUS = 50;
+        const MAX_GPS_ACCURACY = 75;
+        const LOCATION_SEARCH_INTERVAL = 3000;
+        const LOCATION_LOCK_DURATION = 60000;
+        const LOCATION_RETRY_INTERVAL = 3000;
 
         let currentLocation = null;
         let isLocationValid = false;
         let isLocationChecking = false;
-        let locationLockedUntil = 0; // timestamp (ms) sampai kapan lokasi masih dianggap terkunci/valid
+        let locationLockedUntil = 0;
 
-        // ==========================================================
-        // ANTI FAKE GPS (deteksi di sisi browser)
-        // ==========================================================
-        // Riwayat beberapa sample lokasi terakhir, dipakai untuk mendeteksi:
-        // - lokasi yang "melompat" dengan kecepatan tidak wajar
-        // - lokasi yang tidak punya variasi sama sekali (indikasi fake GPS statis)
+        // Anti Fake GPS
         const locationSampleHistory = [];
         const MAX_SAMPLE_HISTORY = 5;
-        const MAX_REALISTIC_SPEED_KMH = 200; // di atas ini dianggap tidak wajar untuk perpindahan lokasi absensi
-
+        const MAX_REALISTIC_SPEED_KMH = 200;
         let clientSuspicionFlags = new Set();
 
         function markSuspicion(flag) {
@@ -253,14 +364,10 @@
         }
 
         function clearTransientSuspicion() {
-            // "lokasi_melompat_tidak_wajar" & "lokasi_tanpa_variasi" dihitung ulang tiap sample baru,
-            // supaya tidak menumpuk dari sample lama yang mungkin sudah tidak relevan.
             clientSuspicionFlags.delete('lokasi_melompat_tidak_wajar');
             clientSuspicionFlags.delete('lokasi_tanpa_variasi');
         }
 
-        // 1) Deteksi automasi browser (bot/tools semacam Selenium/Puppeteer sering
-        //    dipakai bareng ekstensi fake GPS)
         function detectAutomation() {
             try {
                 if (navigator.webdriver === true) {
@@ -269,9 +376,6 @@
             } catch (e) {}
         }
 
-        // 2) Deteksi apakah fungsi Geolocation API asli sudah "dibungkus"/dimodifikasi
-        //    (banyak ekstensi fake-GPS bekerja dengan cara override fungsi ini).
-        //    Fungsi native browser selalu punya toString() berbentuk "function xxx() { [native code] }".
         function detectGeolocationTampering() {
             try {
                 const fnStr = navigator.geolocation.getCurrentPosition.toString();
@@ -279,14 +383,10 @@
                     markSuspicion('geolocation_api_dimodifikasi');
                 }
             } catch (e) {
-                // Kalau sampai error saat introspeksi, anggap juga sebagai sinyal mencurigakan
                 markSuspicion('geolocation_api_dimodifikasi');
             }
         }
 
-        // 3) Analisa histori sample lokasi: cek kecepatan perpindahan yang tidak wajar
-        //    (lokasi "melompat") dan cek apakah lokasi sama sekali tidak ada variasi
-        //    (GPS asli selalu punya sedikit drift, walau berdiri diam di tempat yang sama).
         function analyzeLocationSamples(newSample) {
             clearTransientSuspicion();
 
@@ -319,17 +419,13 @@
             }
         }
 
-        // Jalankan pengecekan yang sifatnya statis sekali saat halaman dimuat
         detectAutomation();
         detectGeolocationTampering();
 
-        // Server time offset
+        // Server time
         let serverTimeOffsetMs = 0;
         let clockSynced = false;
 
-        // ==========================================================
-        // JAM REALTIME
-        // ==========================================================
         function syncServerTime(timestampMs) {
             serverTimeOffsetMs = timestampMs - Date.now();
             clockSynced = true;
@@ -377,12 +473,9 @@
         setInterval(fetchServerTime, 30000);
 
         // ==========================================================
-        // GEOLOKASI - AUTO DETECT
+        // GEOLOKASI
         // ==========================================================
         function getLocation(force = false) {
-            // Kalau lokasi masih "terkunci" (baru saja dapat sinyal akurat) dan
-            // bukan permintaan paksa (refresh manual / retry setelah gagal absen),
-            // jangan cari ulang dulu supaya UI tidak flicker balik ke "mencari lokasi".
             if (!force && Date.now() < locationLockedUntil) {
                 return;
             }
@@ -423,7 +516,6 @@
                         timestamp: position.timestamp || Date.now()
                     };
 
-                    // Anti fake-GPS: analisa sample lokasi ini dibanding sample sebelumnya
                     analyzeLocationSamples(currentLocation);
                     renderSuspicionWarning();
 
@@ -431,15 +523,11 @@
                         `📍 ${currentLocation.latitude.toFixed(6)}, ${currentLocation.longitude.toFixed(6)} | Akurasi: ${(currentLocation.accuracy || 0).toFixed(1)}m`;
                     progress.style.width = '100%';
 
-                    // Validasi lokasi
                     validateLocation(currentLocation);
 
-                    // Kalau akurasi GPS sudah cukup baik, kunci hasil ini selama 1 menit
-                    // supaya tidak mencari-cari sinyal lagi padahal sudah dapat.
                     if (currentLocation.accuracy && currentLocation.accuracy <= MAX_GPS_ACCURACY) {
                         locationLockedUntil = Date.now() + LOCATION_LOCK_DURATION;
                     } else {
-                        // Akurasi masih kurang baik, jangan dikunci, biar dicoba lagi lebih cepat
                         locationLockedUntil = 0;
                     }
 
@@ -469,14 +557,13 @@
                     progress.style.width = '100%';
                     isLocationValid = false;
                     isLocationChecking = false;
-                    locationLockedUntil = 0; // jangan dikunci kalau gagal
+                    locationLockedUntil = 0;
                     updateButtons();
 
                     setTimeout(() => {
                         progress.style.width = '0%';
                     }, 1000);
 
-                    // Coba lagi lebih cepat (sebelumnya 5 detik)
                     setTimeout(() => getLocation(true), LOCATION_RETRY_INTERVAL);
                 }, {
                     enableHighAccuracy: true,
@@ -537,9 +624,6 @@
             updateButtons();
         }
 
-        // Tampilkan peringatan visual di halaman kalau ada indikasi fake GPS.
-        // Ini hanya notifikasi ke karyawan (dan sinyal yang dikirim ke server) —
-        // keputusan tolak/tandai tetap dilakukan & divalidasi ulang di server.
         function renderSuspicionWarning() {
             const box = document.getElementById('gpsSuspicionWarning');
             if (!box) return;
@@ -558,7 +642,8 @@
             };
 
             const messages = Array.from(clientSuspicionFlags).map(f => labels[f] || f);
-            box.textContent = '⚠️ ' + messages.join(', ') + '. Pastikan Anda menggunakan lokasi GPS asli perangkat, bukan aplikasi fake GPS.';
+            box.textContent = '⚠️ ' + messages.join(', ') +
+                '. Pastikan Anda menggunakan lokasi GPS asli perangkat, bukan aplikasi fake GPS.';
             box.classList.remove('hidden');
         }
 
@@ -597,7 +682,6 @@
                 return;
             }
 
-            // Disable buttons while processing
             document.getElementById('btnCheckIn').disabled = true;
             document.getElementById('btnCheckOut').disabled = true;
 
@@ -638,19 +722,20 @@
                             icon: 'success',
                             title: title,
                             html: `
-                    <div class="text-left">
-                        <p><strong>Waktu:</strong> ${data.data.waktu}</p>
-                        <p><strong>Tanggal:</strong> ${data.data.tanggal}</p>
-                        <p><strong>Kantor:</strong> ${data.data.kantor || 'KPM'}</p>
-                        <p><strong>Jarak:</strong> ${data.data.distance || 0} meter</p>
-                        ${data.data.total_jam ? `<p><strong>Total Jam:</strong> ${data.data.total_jam} jam</p>` : ''}
-                    </div>
-                `,
+                            <div class="text-left">
+                                <p><strong>Waktu:</strong> ${data.data.waktu}</p>
+                                <p><strong>Tanggal:</strong> ${data.data.tanggal}</p>
+                                <p><strong>Kantor:</strong> ${data.data.kantor || 'KPM'}</p>
+                                <p><strong>Jarak:</strong> ${data.data.distance || 0} meter</p>
+                                ${data.data.total_jam ? `<p><strong>Total Jam:</strong> ${data.data.total_jam} jam</p>` : ''}
+                            </div>
+                        `,
                             timer: 4000,
                             confirmButtonColor: '#2E7D3E'
                         });
 
                         loadStatus();
+                        setTimeout(() => window.location.reload(), 1500);
                         updateButtons();
                     } else {
                         let errorMsg = data.message;
@@ -675,7 +760,6 @@
                             confirmButtonColor: '#ec1d1d'
                         });
 
-                        // Re-enable buttons
                         updateButtons();
                     }
                 })
@@ -686,14 +770,10 @@
                         text: 'Terjadi kesalahan pada server',
                         confirmButtonColor: '#ec1d1d'
                     });
-                    // Re-enable buttons
                     updateButtons();
                 });
         }
 
-        // ==========================================================
-        // HANDLE CHECK-IN / CHECK-OUT
-        // ==========================================================
         function handleCheckIn() {
             performAbsensi('checkin');
         }
@@ -781,23 +861,26 @@
         }
 
         // ==========================================================
+        // RESET FILTER
+        // ==========================================================
+        function resetFilters() {
+            document.getElementById('filterStartDate').value = '';
+            document.getElementById('filterEndDate').value = '';
+            document.getElementById('filterStatus').value = 'semua';
+            document.getElementById('filterForm').submit();
+        }
+
+        // ==========================================================
         // INITIALIZATION
         // ==========================================================
         document.addEventListener('DOMContentLoaded', function() {
             fetchServerTime();
             loadStatus();
 
-            // Auto detect location immediately
             setTimeout(getLocation, 500);
         });
 
-        // Cek lokasi berkala setiap 3 detik (dipercepat dari 10 detik).
-        // Kalau lokasi sudah terkunci (valid & akurat, dalam 1 menit terakhir),
-        // getLocation() akan langsung return tanpa melakukan pencarian ulang,
-        // jadi UI tidak flicker balik ke "mencari lokasi".
         setInterval(() => getLocation(), LOCATION_SEARCH_INTERVAL);
-
-        // Refresh status every 15 seconds
         setInterval(loadStatus, 15000);
     </script>
 @endsection
