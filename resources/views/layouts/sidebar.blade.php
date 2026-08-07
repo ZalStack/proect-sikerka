@@ -155,7 +155,7 @@
                     </a>
 
                     <!-- English Today -->
-                    <a href="https://englishtoday.read1kpmseikhlasnya.com/"
+                    <a href="https://englishtoday.read1kpmseikhlasn ya.com/"
                         class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition-colors duration-200 text-xs sm:text-sm text-[#F5F5F5] hover:bg-[#27438D] hover:text-white">
                         <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
                             viewBox="0 0 24 24">

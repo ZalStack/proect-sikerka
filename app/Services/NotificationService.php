@@ -16,21 +16,6 @@ use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
-/**
- * ==========================================================
- * NOTIFICATION SERVICE
- * ==========================================================
- * Notifikasi di aplikasi ini SENGAJA tidak memakai tabel tersendiri
- * (tanpa migration baru) -- melainkan dirakit "on the fly" dari data yang
- * SUDAH ADA di tabel-tabel terkait (Cuti, Perjalanan Dinas, 7SPS/Sunnah,
- * Pengumuman, Absensi, kode FHL/Khataman, dan profil karyawan), lalu
- * digabung & diurutkan berdasarkan waktu kejadian terbaru.
- *
- * Status "sudah dibaca" ditandai lewat CACHE (bukan kolom database):
- * key `notif_last_seen_{karyawan_id}` menyimpan waktu terakhir user
- * membuka dropdown/halaman notifikasi. Item yang lebih baru dari
- * timestamp itu dianggap "baru" (badge merah di navbar).
- */
 class NotificationService
 {
     /** Berapa hari ke belakang data notifikasi diambil (supaya query tetap ringan). */
