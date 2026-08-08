@@ -9,7 +9,7 @@
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3 sm:gap-4">
                     <div>
                         <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">Pengumuman</h1>
-                        <p class="text-sm sm:text-base text-[#27438D]">Kelola pengumuman dan kirim ke WhatsApp</p>
+                        <p class="text-sm sm:text-base text-[#27438D]">Kelola pengumuman untuk karyawan</p>
                     </div>
                     <a href="{{ route('hr.pengumuman.create') }}"
                         class="w-full sm:w-auto text-center bg-[#27438D] text-white px-4 py-2 rounded-lg hover:bg-[#161758] transition-colors duration-200 whitespace-nowrap text-sm sm:text-base">
@@ -39,7 +39,6 @@
                                         <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">No</th>
                                         <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Judul</th>
                                         <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Target</th>
-                                        <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">WhatsApp</th>
                                         <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Dibuat</th>
                                         <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Aksi</th>
                                     </tr>
@@ -66,25 +65,11 @@
                                                 </span>
                                             </td>
                                             <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
-                                                @if ($item->is_sent_to_whatsapp)
-                                                    <span class="px-2 py-1 rounded-full text-[10px] sm:text-xs font-medium bg-[#2E7D3E] text-white">
-                                                        ✅ Terkirim
-                                                    </span>
-                                                    <div class="text-[10px] sm:text-xs text-gray-500 mt-1">
-                                                        {{ $item->sent_at ? $item->sent_at->format('d-m-Y H:i') : '-' }}
-                                                    </div>
-                                                @else
-                                                    <span class="px-2 py-1 rounded-full text-[10px] sm:text-xs font-medium bg-gray-300 text-gray-600">
-                                                        ❌ Belum
-                                                    </span>
-                                                @endif
-                                            </td>
-                                            <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
                                                 <div>{{ $item->created_at->format('d-m-Y') }}</div>
                                                 <div class="text-[10px] sm:text-xs text-gray-500">{{ $item->creator ? $item->creator->nama_lengkap : '-' }}</div>
                                             </td>
                                             <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
-                                                <div class="flex flex-wrap gap-1">
+                                                <div class="flex flex-wrap gap-2">
                                                     <a href="{{ route('hr.pengumuman.show', $item->id) }}"
                                                         class="text-[#00a2e9] hover:text-[#27438D] text-xs sm:text-sm">
                                                         Detail
@@ -93,19 +78,6 @@
                                                         class="text-[#FCC626] hover:text-[#e6b222] text-xs sm:text-sm">
                                                         Edit
                                                     </a>
-                                                    @if (!$item->is_sent_to_whatsapp)
-                                                        <a href="{{ route('hr.pengumuman.select-contact', $item->id) }}"
-                                                            class="text-[#25D366] hover:text-green-700 text-xs sm:text-sm"
-                                                            title="Kirim ke WhatsApp +62 811-1912-340">
-                                                            📤 Kirim WA
-                                                        </a>
-                                                    @else
-                                                        <a href="{{ route('hr.pengumuman.select-contact', $item->id) }}"
-                                                            class="text-[#00a2e9] hover:text-[#27438D] text-xs sm:text-sm"
-                                                            title="Kirim ulang ke WhatsApp +62 811-1912-340">
-                                                            📤 Kirim Ulang
-                                                        </a>
-                                                    @endif
                                                     <form action="{{ route('hr.pengumuman.destroy', $item->id) }}" method="POST"
                                                         class="inline"
                                                         onsubmit="return confirm('Apakah anda yakin ingin menghapus pengumuman ini?')">
@@ -120,7 +92,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="6" class="px-4 py-8 text-center text-[#1B1B1B]">
+                                            <td colspan="5" class="px-4 py-8 text-center text-[#1B1B1B]">
                                                 <div class="flex flex-col items-center">
                                                     <svg class="w-12 sm:w-16 h-12 sm:h-16 text-gray-400 mb-4" fill="none" stroke="currentColor"
                                                         viewBox="0 0 24 24">
@@ -155,24 +127,14 @@
                                     {{ $item->target == 'semua' ? 'bg-[#00a2e9] text-white' : ($item->target == 'hr' ? 'bg-[#27438D] text-white' : 'bg-[#FCC626] text-[#1B1B1B]') }}">
                                     {{ $item->target_label }}
                                 </span>
-                                @if ($item->is_sent_to_whatsapp)
-                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#2E7D3E] text-white">✅ Terkirim</span>
-                                @else
-                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-300 text-gray-600">❌ Belum</span>
-                                @endif
+                                <span class="text-gray-400">{{ $item->created_at->format('d-m-Y') }}</span>
                             </div>
                             <div class="flex items-center justify-between text-[11px] text-gray-500">
-                                <span>{{ $item->created_at->format('d-m-Y') }}</span>
                                 <span>{{ $item->creator ? $item->creator->nama_lengkap : '-' }}</span>
                             </div>
                             <div class="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1">
                                 <a href="{{ route('hr.pengumuman.show', $item->id) }}" class="text-[#00a2e9] text-xs">Detail</a>
                                 <a href="{{ route('hr.pengumuman.edit', $item->id) }}" class="text-[#FCC626] text-xs">Edit</a>
-                                @if (!$item->is_sent_to_whatsapp)
-                                    <a href="{{ route('hr.pengumuman.select-contact', $item->id) }}" class="text-[#25D366] text-xs">📤 Kirim WA</a>
-                                @else
-                                    <a href="{{ route('hr.pengumuman.select-contact', $item->id) }}" class="text-[#00a2e9] text-xs">📤 Kirim Ulang</a>
-                                @endif
                                 <form action="{{ route('hr.pengumuman.destroy', $item->id) }}" method="POST" class="inline-flex items-center"
                                     onsubmit="return confirm('Apakah anda yakin ingin menghapus pengumuman ini?')">
                                     @csrf

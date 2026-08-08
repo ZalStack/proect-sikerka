@@ -73,10 +73,6 @@ Route::middleware('auth')->group(function () {
             Route::post('/absensi/{id}/verifikasi-checkout', [AbsensiController::class, 'manualCheckOut'])->name('absensi.verifikasi-checkout');
 
             Route::resource('pengumuman', PengumumanController::class);
-            Route::get('/pengumuman/{id}/send-whatsapp', [PengumumanController::class, 'sendWhatsApp'])->name('pengumuman.send-whatsapp');
-            Route::get('/pengumuman/{id}/send-whatsapp/{phone}', [PengumumanController::class, 'sendWhatsAppToNumber'])->name('pengumuman.send-whatsapp-number');
-            Route::get('/pengumuman/{id}/select-contact', [PengumumanController::class, 'selectContact'])->name('pengumuman.select-contact');
-            Route::post('/pengumuman/{id}/resend-whatsapp', [PengumumanController::class, 'resendWhatsApp'])->name('pengumuman.resend-whatsapp');
 
             Route::get('/fhl', [FhlController::class, 'index'])->name('fhl.index');
             Route::post('/fhl/generate-kode', [FhlController::class, 'generateKode'])->name('fhl.generate-kode');
@@ -117,6 +113,9 @@ Route::middleware('auth')->group(function () {
         ->name('karyawan.')
         ->group(function () {
             Route::get('/dashboard', [KaryawanDashboardController::class, 'index'])->name('dashboard');
+
+            Route::get('/pengumuman/{id}', [PengumumanController::class, 'showKaryawan'])->name('pengumuman.show');
+
             Route::get('/absensi', [AbsensiController::class, 'dashboard'])->name('absensi');
 
             Route::post('/absensi/checkin', [AbsensiController::class, 'checkIn'])

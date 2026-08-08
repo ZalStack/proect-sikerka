@@ -1,4 +1,4 @@
-{{-- views/hr/pengumuman/show.blade.php --}}
+{{-- views/karyawan/pengumuman/show.blade.php --}}
 @extends('layouts.app')
 
 @section('content')
@@ -6,20 +6,14 @@
 
     {{-- Breadcrumb / Back --}}
     <div class="mb-4 sm:mb-6">
-        <a href="{{ route('hr.pengumuman.index') }}"
+        <a href="{{ route('karyawan.dashboard') }}"
             class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-[#00a2e9] hover:text-[#0077b6] transition-colors">
             <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
-            Kembali ke Daftar Pengumuman
+            Kembali ke Dashboard
         </a>
     </div>
-
-    @if (session('success'))
-        <div class="mb-4 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs sm:text-sm px-3 sm:px-4 py-2.5 sm:py-3">
-            {{ session('success') }}
-        </div>
-    @endif
 
     <div class="bg-white rounded-xl shadow-sm overflow-hidden">
 
@@ -32,10 +26,7 @@
         <div class="p-4 sm:p-6 lg:p-8">
             <div class="flex flex-wrap items-center gap-2 mb-3">
                 <span class="inline-flex items-center gap-1 text-[10px] sm:text-xs font-semibold px-2 sm:px-2.5 py-1 rounded-full bg-blue-100 text-blue-700">
-                    📌 {{ $pengumuman->target_label }}
-                </span>
-                <span class="text-[10px] sm:text-xs text-gray-400">
-                    #{{ str_pad($pengumuman->id, 4, '0', STR_PAD_LEFT) }}
+                    📢 Pengumuman
                 </span>
             </div>
 
@@ -69,25 +60,6 @@
             <div class="prose prose-sm sm:prose max-w-none text-sm sm:text-base text-gray-700 whitespace-pre-line break-words">
                 {{ $pengumuman->isi }}
             </div>
-        </div>
-
-        {{-- Action bar --}}
-        <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 px-4 sm:px-6 lg:px-8 py-3 sm:py-4 border-t border-gray-100 bg-gray-50">
-            <a href="{{ route('hr.pengumuman.edit', $pengumuman->id) }}"
-                class="flex-1 sm:flex-none text-center text-xs sm:text-sm font-semibold px-4 py-2 sm:py-2.5 rounded-lg bg-[#00a2e9] text-white hover:bg-[#0077b6] transition-colors">
-                Edit Pengumuman
-            </a>
-
-            <form method="POST" action="{{ route('hr.pengumuman.destroy', $pengumuman->id) }}"
-                onsubmit="return confirm('Yakin ingin menghapus pengumuman ini?');"
-                class="flex-1 sm:flex-none">
-                @csrf
-                @method('DELETE')
-                <button type="submit"
-                    class="w-full text-center text-xs sm:text-sm font-semibold px-4 py-2 sm:py-2.5 rounded-lg bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 transition-colors">
-                    Hapus Pengumuman
-                </button>
-            </form>
         </div>
     </div>
 </div>

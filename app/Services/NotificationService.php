@@ -122,25 +122,71 @@ class NotificationService
 
     /**
      * Pengumuman yang relevan untuk role user (target: semua / hr / karyawan).
+     *
+     * Sumber data langsung dari tabel `pengumuman` yang sudah ada (tidak ada
+     * tabel/log tambahan). Satu baris pengumuman menghasilkan SATU notifikasi
+     * sesuai kejadian TERAKHIR yang dialaminya:
+     *   - baru dibuat        -> "Pengumuman Baru"
+     *   - diedit setelah dibuat -> "Pengumuman Diperbarui"
+     *   - dihapus (soft delete) -> "Pengumuman Dihapus"
+     *
+     * Soft delete pada model Pengumuman membuat baris yang dihapus tetap ada
+     * di tabel (kolom deleted_at terisi) sehingga tetap bisa dijadikan sumber
+     * notifikasi "Pengumuman Dihapus", walau datanya sudah tidak muncul lagi
+     * di listing/index pengumuman.
      */
     private function pengumuman(Karyawan $user, Carbon $since): Collection
     {
         $isHr = $user->posisi === 'hr';
         $targets = $isHr ? ['semua', 'hr'] : ['semua', 'karyawan'];
 
-        return Pengumuman::whereIn('target', $targets)
-            ->where('created_at', '>=', $since)
-            ->latest()
+        return Pengumuman::withTrashed()
+            ->whereIn('target', $targets)
+            ->where('updated_at', '>=', $since)
+            ->orderByDesc('updated_at')
             ->limit(30)
             ->get()
             ->map(function ($p) use ($isHr) {
+                // Kasus 1: pengumuman sudah dihapus (soft deleted).
+                if ($p->trashed()) {
+                    return $this->item(
+                        'pengumuman-deleted-' . $p->id . '-' . $p->deleted_at->timestamp,
+                        'pengumuman',
+                        'Pengumuman Dihapus',
+                        '"' . $p->judul . '" telah dihapus oleh HR.',
+                        'rose',
+                        $isHr ? route('hr.pengumuman.index') : route('karyawan.dashboard'),
+                        $p->deleted_at,
+                    );
+                }
+
+                // Kasus 2: pengumuman pernah diedit (updated_at jauh dari created_at).
+                $isUpdated = $p->updated_at->gt($p->created_at->copy()->addMinute());
+
+                $detailUrl = $isHr
+                    ? route('hr.pengumuman.show', $p->id)
+                    : route('karyawan.pengumuman.show', $p->id);
+
+                if ($isUpdated) {
+                    return $this->item(
+                        'pengumuman-updated-' . $p->id . '-' . $p->updated_at->timestamp,
+                        'pengumuman',
+                        'Pengumuman Diperbarui',
+                        $p->judul,
+                        'amber',
+                        $detailUrl,
+                        $p->updated_at,
+                    );
+                }
+
+                // Kasus 3: pengumuman baru dibuat.
                 return $this->item(
-                    'pengumuman-' . $p->id,
+                    'pengumuman-created-' . $p->id,
                     'pengumuman',
                     'Pengumuman Baru',
                     $p->judul,
                     'blue',
-                    $isHr ? route('hr.pengumuman.show', $p->id) : route('karyawan.dashboard'),
+                    $detailUrl,
                     $p->created_at,
                 );
             });
