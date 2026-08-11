@@ -31,13 +31,29 @@
 
         <div class="p-4 sm:p-6 lg:p-8">
             <div class="flex flex-wrap items-center gap-2 mb-3">
-                <span class="inline-flex items-center gap-1 text-[10px] sm:text-xs font-semibold px-2 sm:px-2.5 py-1 rounded-full bg-blue-100 text-blue-700">
+                <span class="inline-flex items-center gap-1 text-[10px] sm:text-xs font-semibold px-2 sm:px-2.5 py-1 rounded-full {{ $pengumuman->target_badge_color }}">
                     📌 {{ $pengumuman->target_label }}
                 </span>
                 <span class="text-[10px] sm:text-xs text-gray-400">
                     #{{ str_pad($pengumuman->id, 4, '0', STR_PAD_LEFT) }}
                 </span>
             </div>
+
+            @if($pengumuman->target === 'spesifik' && isset($pengumuman->target_karyawan_list) && $pengumuman->target_karyawan_list->count() > 0)
+                <div class="mb-4 p-3 bg-purple-50 rounded-lg border border-purple-200">
+                    <p class="text-xs font-medium text-purple-700 mb-1.5">🎯 Ditujukan untuk:</p>
+                    <div class="flex flex-wrap gap-1.5">
+                        @foreach($pengumuman->target_karyawan_list as $k)
+                            <span class="text-[10px] bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full">
+                                {{ $k->nama_lengkap }}
+                                @if($k->divisi)
+                                    ({{ $k->divisi }})
+                                @endif
+                            </span>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
 
             <h1 class="text-lg sm:text-2xl lg:text-3xl font-bold text-[#1B1B1B] leading-snug break-words">
                 {{ $pengumuman->judul }}

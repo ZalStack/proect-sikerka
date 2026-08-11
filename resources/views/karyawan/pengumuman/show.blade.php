@@ -15,6 +15,12 @@
         </a>
     </div>
 
+    @if (session('success'))
+        <div class="mb-4 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs sm:text-sm px-3 sm:px-4 py-2.5 sm:py-3">
+            {{ session('success') }}
+        </div>
+    @endif
+
     <div class="bg-white rounded-xl shadow-sm overflow-hidden">
 
         @if ($pengumuman->gambar)
@@ -25,8 +31,11 @@
 
         <div class="p-4 sm:p-6 lg:p-8">
             <div class="flex flex-wrap items-center gap-2 mb-3">
-                <span class="inline-flex items-center gap-1 text-[10px] sm:text-xs font-semibold px-2 sm:px-2.5 py-1 rounded-full bg-blue-100 text-blue-700">
-                    📢 Pengumuman
+                <span class="inline-flex items-center gap-1 text-[10px] sm:text-xs font-semibold px-2 sm:px-2.5 py-1 rounded-full {{ $pengumuman->target_badge_color ?? 'bg-blue-100 text-blue-700' }}">
+                    📌 {{ $pengumuman->target_label ?? 'Pengumuman' }}
+                </span>
+                <span class="text-[10px] sm:text-xs text-gray-400">
+                    #{{ str_pad($pengumuman->id, 4, '0', STR_PAD_LEFT) }}
                 </span>
             </div>
 
@@ -59,6 +68,20 @@
 
             <div class="prose prose-sm sm:prose max-w-none text-sm sm:text-base text-gray-700 whitespace-pre-line break-words">
                 {{ $pengumuman->isi }}
+            </div>
+
+            {{-- Footer / Informasi Tambahan --}}
+            <div class="mt-6 pt-4 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3 text-[10px] sm:text-xs text-gray-400">
+                <div class="flex items-center gap-2">
+                    <span>📅 ID: #{{ $pengumuman->id }}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    @if($pengumuman->created_at->format('Y-m-d') === $pengumuman->updated_at->format('Y-m-d'))
+                        <span>🕐 Dipublikasikan hari ini</span>
+                    @else
+                        <span>📆 Dipublikasikan {{ $pengumuman->created_at->diffForHumans() }}</span>
+                    @endif
+                </div>
             </div>
         </div>
     </div>

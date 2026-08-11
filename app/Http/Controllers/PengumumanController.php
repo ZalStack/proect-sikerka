@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Pengumuman;
+use App\Models\Karyawan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -24,7 +25,11 @@ class PengumumanController extends Controller
 
     public function create()
     {
-        return view('hr.pengumuman.create');
+        $karyawan = Karyawan::where('is_resigned', false)
+            ->orderBy('nama_lengkap')
+            ->get(['id', 'nama_lengkap', 'kode_pegawai', 'posisi', 'divisi']);
+
+        return view('hr.pengumuman.create', compact('karyawan'));
     }
 
     public function store(Request $request)
@@ -33,7 +38,9 @@ class PengumumanController extends Controller
             'judul' => 'required|string|max:200',
             'isi' => 'required|string',
             'gambar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'target' => 'required|in:semua,hr,karyawan',
+            'target' => 'required|in:semua,spesifik',
+            'target_karyawan' => 'required_if:target,spesifik|array',
+            'target_karyawan.*' => 'exists:karyawans,id',
         ]);
 
         $data = [
@@ -42,6 +49,13 @@ class PengumumanController extends Controller
             'target' => $request->target,
             'created_by' => Auth::id(),
         ];
+
+        // Jika target spesifik, simpan sebagai JSON
+        if ($request->target === 'spesifik' && $request->has('target_karyawan')) {
+            $data['target_karyawan_ids'] = json_encode($request->target_karyawan);
+        } else {
+            $data['target_karyawan_ids'] = null;
+        }
 
         if ($request->hasFile('gambar')) {
             $file = $request->file('gambar');
@@ -53,9 +67,6 @@ class PengumumanController extends Controller
         try {
             Pengumuman::create($data);
 
-            // Tidak perlu logika kirim WhatsApp lagi.
-            // Notifikasi "Pengumuman Baru" otomatis muncul lewat NotificationService,
-            // langsung menarik dari tabel pengumuman ini (tanpa tabel tambahan).
             return redirect()->route('hr.pengumuman.index')
                 ->with('success', 'Pengumuman berhasil ditambahkan');
 
@@ -66,26 +77,38 @@ class PengumumanController extends Controller
     }
 
     /**
-     * Detail pengumuman untuk role HR. Ini juga tujuan klik notifikasi
-     * "Pengumuman Baru" / "Pengumuman Diperbarui" untuk user HR.
+     * Detail pengumuman untuk role HR.
      */
     public function show($id)
     {
         $pengumuman = Pengumuman::with('creator')->findOrFail($id);
 
+        // Tambahkan target_karyawan_list ke object
+        $pengumuman->target_karyawan_list = $pengumuman->target_karyawan_list;
+
         return view('hr.pengumuman.show', compact('pengumuman'));
     }
 
     /**
-     * Detail pengumuman untuk role karyawan. Ini tujuan klik notifikasi
-     * "Pengumuman Baru" / "Pengumuman Diperbarui" untuk user karyawan.
-     * Hanya bisa diakses kalau target pengumuman memang untuk karyawan.
+     * Detail pengumuman untuk role karyawan.
      */
     public function showKaryawan($id)
     {
+        $karyawanId = Auth::id();
+
+        // Cari pengumuman yang dapat dilihat oleh karyawan
         $pengumuman = Pengumuman::with('creator')
-            ->whereIn('target', ['semua', 'karyawan'])
+            ->where(function($query) use ($karyawanId) {
+                $query->where('target', 'semua')
+                    ->orWhere(function($q) use ($karyawanId) {
+                        $q->where('target', 'spesifik')
+                            ->whereRaw('JSON_CONTAINS(target_karyawan_ids, ?)', [json_encode((string)$karyawanId)]);
+                    });
+            })
             ->findOrFail($id);
+
+        // Tambahkan target_karyawan_list ke object
+        $pengumuman->target_karyawan_list = $pengumuman->target_karyawan_list;
 
         return view('karyawan.pengumuman.show', compact('pengumuman'));
     }
@@ -94,7 +117,20 @@ class PengumumanController extends Controller
     {
         $pengumuman = Pengumuman::findOrFail($id);
 
-        return view('hr.pengumuman.edit', compact('pengumuman'));
+        // Decode target karyawan jika spesifik
+        if ($pengumuman->target === 'spesifik' && $pengumuman->target_karyawan_ids) {
+            $pengumuman->target_karyawan_ids = is_array($pengumuman->target_karyawan_ids)
+                ? $pengumuman->target_karyawan_ids
+                : json_decode($pengumuman->target_karyawan_ids, true);
+        } else {
+            $pengumuman->target_karyawan_ids = [];
+        }
+
+        $karyawan = Karyawan::where('is_resigned', false)
+            ->orderBy('nama_lengkap')
+            ->get(['id', 'nama_lengkap', 'kode_pegawai', 'posisi', 'divisi']);
+
+        return view('hr.pengumuman.edit', compact('pengumuman', 'karyawan'));
     }
 
     public function update(Request $request, $id)
@@ -105,7 +141,9 @@ class PengumumanController extends Controller
             'judul' => 'required|string|max:200',
             'isi' => 'required|string',
             'gambar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'target' => 'required|in:semua,hr,karyawan',
+            'target' => 'required|in:semua,spesifik',
+            'target_karyawan' => 'required_if:target,spesifik|array',
+            'target_karyawan.*' => 'exists:karyawans,id',
         ]);
 
         $data = [
@@ -113,6 +151,13 @@ class PengumumanController extends Controller
             'isi' => $request->isi,
             'target' => $request->target,
         ];
+
+        // Jika target spesifik, simpan sebagai JSON
+        if ($request->target === 'spesifik' && $request->has('target_karyawan')) {
+            $data['target_karyawan_ids'] = json_encode($request->target_karyawan);
+        } else {
+            $data['target_karyawan_ids'] = null;
+        }
 
         if ($request->hasFile('gambar')) {
             if ($pengumuman->gambar) {
@@ -124,12 +169,15 @@ class PengumumanController extends Controller
             $data['gambar'] = $path;
         }
 
-        // update() otomatis mengubah kolom updated_at, dari situ
-        // NotificationService mendeteksi event "Pengumuman Diperbarui".
-        $pengumuman->update($data);
+        try {
+            $pengumuman->update($data);
 
-        return redirect()->route('hr.pengumuman.index')
-            ->with('success', 'Pengumuman berhasil diupdate');
+            return redirect()->route('hr.pengumuman.index')
+                ->with('success', 'Pengumuman berhasil diupdate');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal mengupdate pengumuman: ' . $e->getMessage())
+                ->withInput();
+        }
     }
 
     public function destroy($id)
@@ -140,10 +188,6 @@ class PengumumanController extends Controller
             Storage::disk('public')->delete($pengumuman->gambar);
         }
 
-        // Soft delete: baris tetap ada di tabel pengumuman (kolom deleted_at terisi).
-        // Dengan begitu NotificationService masih bisa menampilkan
-        // notifikasi "Pengumuman Dihapus" tanpa perlu tabel log terpisah,
-        // dan pengumuman otomatis hilang dari listing/index karena SoftDeletes.
         $pengumuman->delete();
 
         return redirect()->route('hr.pengumuman.index')

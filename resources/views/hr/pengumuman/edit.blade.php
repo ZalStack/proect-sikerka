@@ -42,15 +42,48 @@
                         </div>
                     </div>
 
-                    <div>
+                    <!-- Target Penerima -->
+                    <div class="md:col-span-2">
                         <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Target Penerima <span class="text-[#ec1d1d]">*</span></label>
-                        <select name="target" required
+                        <select name="target" id="targetSelect" required
                                 class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
-                            <option value="semua" {{ old('target', $pengumuman->target) === 'semua' ? 'selected' : '' }}>Semua Karyawan</option>
-                            <option value="hr" {{ old('target', $pengumuman->target) === 'hr' ? 'selected' : '' }}>HR</option>
-                            <option value="karyawan" {{ old('target', $pengumuman->target) === 'karyawan' ? 'selected' : '' }}>Karyawan</option>
+                            <option value="semua" {{ old('target', $pengumuman->target) === 'semua' ? 'selected' : '' }}>📢 Semua Karyawan</option>
+                            <option value="spesifik" {{ old('target', $pengumuman->target) === 'spesifik' ? 'selected' : '' }}>🎯 Karyawan Spesifik</option>
                         </select>
                         @error('target') <p class="mt-1 text-xs sm:text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
+                    </div>
+
+                    <!-- Pilih Karyawan Spesifik -->
+                    <div class="md:col-span-2" id="karyawanSelectWrapper" style="display: {{ old('target', $pengumuman->target) === 'spesifik' ? 'block' : 'none' }};">
+                        <div class="mb-4">
+                            <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">
+                                Pilih Karyawan <span class="text-[#ec1d1d]">*</span>
+                            </label>
+                            <select name="target_karyawan[]" id="targetKaryawan" multiple
+                                class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9] min-h-[150px]">
+                                @foreach($karyawan as $k)
+                                    <option value="{{ $k->id }}"
+                                        {{ in_array($k->id, old('target_karyawan', is_array($pengumuman->target_karyawan_ids) ? $pengumuman->target_karyawan_ids : [])) ? 'selected' : '' }}>
+                                        {{ $k->nama_lengkap }}
+                                        @if($k->divisi)
+                                            ({{ $k->divisi }})
+                                        @endif
+                                        @if($k->posisi)
+                                            - {{ $k->posisi }}
+                                        @endif
+                                    </option>
+                                @endforeach
+                            </select>
+                            <div id="selectedKaryawanDisplay" class="mt-2 flex flex-wrap gap-1.5">
+                                <!-- Akan diisi oleh JavaScript -->
+                            </div>
+                            <p class="text-[10px] sm:text-xs text-gray-500 mt-1">
+                                💡 Tekan <kbd class="px-1 py-0.5 bg-gray-100 rounded">Ctrl</kbd> + klik untuk memilih lebih dari satu
+                            </p>
+                            @error('target_karyawan')
+                                <p class="mt-1 text-xs sm:text-sm text-[#ec1d1d]">{{ $message }}</p>
+                            @enderror
+                        </div>
                     </div>
 
                     <div>
@@ -80,4 +113,45 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const targetSelect = document.getElementById('targetSelect');
+        const karyawanWrapper = document.getElementById('karyawanSelectWrapper');
+        const targetKaryawan = document.getElementById('targetKaryawan');
+        const selectedDisplay = document.getElementById('selectedKaryawanDisplay');
+
+        function toggleKaryawanSelect() {
+            if (targetSelect.value === 'spesifik') {
+                karyawanWrapper.style.display = 'block';
+            } else {
+                karyawanWrapper.style.display = 'none';
+            }
+        }
+
+        targetSelect.addEventListener('change', toggleKaryawanSelect);
+        toggleKaryawanSelect();
+
+        // Update selected karyawan display
+        function updateSelectedKaryawan() {
+            const selectedOptions = targetKaryawan.selectedOptions;
+            if (selectedOptions.length === 0) {
+                selectedDisplay.innerHTML = '<span class="text-xs text-gray-400">Belum ada karyawan dipilih</span>';
+                return;
+            }
+
+            let html = '';
+            for (let option of selectedOptions) {
+                html += `<span class="text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full">${option.text}</span>`;
+            }
+            selectedDisplay.innerHTML = html;
+        }
+
+        // Update when selection changes
+        targetKaryawan.addEventListener('change', updateSelectedKaryawan);
+
+        // Initial update
+        updateSelectedKaryawan();
+    });
+</script>
 @endsection

@@ -59,10 +59,16 @@
                                                 @endif
                                             </td>
                                             <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
-                                                <span class="px-2 py-1 rounded-full text-[10px] sm:text-xs font-medium
-                                                    {{ $item->target == 'semua' ? 'bg-[#00a2e9] text-white' : ($item->target == 'hr' ? 'bg-[#27438D] text-white' : 'bg-[#FCC626] text-[#1B1B1B]') }}">
-                                                    {{ $item->target_label }}
-                                                </span>
+                                                <div class="space-y-1">
+                                                    <span class="text-neutral-950 inline-block px-2 py-1 rounded-full text-[10px] sm:text-xs font-medium {{ $item->target_badge_color }}">
+                                                        {{ $item->target_label }}
+                                                    </span>
+                                                    @if($item->target === 'spesifik' && $item->target_karyawan_ids)
+                                                        <div class="text-[9px] sm:text-[10px] text-gray-500">
+                                                            👤 {{ $item->target_karyawan_names }}
+                                                        </div>
+                                                    @endif
+                                                </div>
                                             </td>
                                             <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
                                                 <div>{{ $item->created_at->format('d-m-Y') }}</div>
@@ -122,15 +128,19 @@
                                     <span class="text-[10px] text-[#00a2e9]">📷 Ada gambar</span>
                                 @endif
                             </div>
-                            <div class="flex items-center justify-between text-[11px]">
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-medium
-                                    {{ $item->target == 'semua' ? 'bg-[#00a2e9] text-white' : ($item->target == 'hr' ? 'bg-[#27438D] text-white' : 'bg-[#FCC626] text-[#1B1B1B]') }}">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium {{ $item->target_badge_color }}">
                                     {{ $item->target_label }}
                                 </span>
-                                <span class="text-gray-400">{{ $item->created_at->format('d-m-Y') }}</span>
+                                @if($item->target === 'spesifik' && $item->target_karyawan_ids)
+                                    <span class="text-[9px] text-gray-500">
+                                        👤 {{ Str::limit($item->target_karyawan_names, 20) }}
+                                    </span>
+                                @endif
                             </div>
                             <div class="flex items-center justify-between text-[11px] text-gray-500">
                                 <span>{{ $item->creator ? $item->creator->nama_lengkap : '-' }}</span>
+                                <span>{{ $item->created_at->format('d-m-Y') }}</span>
                             </div>
                             <div class="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1">
                                 <a href="{{ route('hr.pengumuman.show', $item->id) }}" class="text-[#00a2e9] text-xs">Detail</a>
