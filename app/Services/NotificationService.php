@@ -121,7 +121,14 @@ class NotificationService
     // ==========================================================
 
     /**
-     * Pengumuman yang relevan untuk role user (target: semua / hr / karyawan).
+     * Pengumuman yang relevan untuk user, mengikuti target aslinya di tabel
+     * `pengumuman` yaitu "semua" (semua karyawan) atau "spesifik" (hanya
+     * karyawan yang dipilih HR lewat target_karyawan_ids).
+     *
+     * - HR selalu melihat notifikasi untuk SEMUA pengumuman (baik target semua
+     *   maupun spesifik), supaya bisa memantau publikasi & siapa yang dituju.
+     * - Karyawan hanya melihat notifikasi untuk pengumuman yang memang
+     *   ditujukan untuknya (lihat pengumumanVisibleFor()).
      *
      * Sumber data langsung dari tabel `pengumuman` yang sudah ada (tidak ada
      * tabel/log tambahan). Satu baris pengumuman menghasilkan SATU notifikasi
@@ -138,14 +145,25 @@ class NotificationService
     private function pengumuman(Karyawan $user, Carbon $since): Collection
     {
         $isHr = $user->posisi === 'hr';
-        $targets = $isHr ? ['semua', 'hr'] : ['semua', 'karyawan'];
 
-        return Pengumuman::withTrashed()
-            ->whereIn('target', $targets)
+        $pengumuman = Pengumuman::withTrashed()
+            ->whereIn('target', ['semua', 'spesifik'])
             ->where('updated_at', '>=', $since)
             ->orderByDesc('updated_at')
             ->limit(30)
-            ->get()
+            ->get();
+
+        // Karyawan hanya boleh menerima notifikasi untuk pengumuman yang memang
+        // ditujukan untuknya: target "semua", atau target "spesifik" dan id-nya
+        // termasuk di dalam target_karyawan_ids. HR tetap melihat semua pengumuman
+        // (termasuk yang bertarget spesifik) supaya bisa memantau publikasinya.
+        if (!$isHr) {
+            $pengumuman = $pengumuman
+                ->filter(fn ($p) => $this->pengumumanVisibleFor($p, $user))
+                ->values();
+        }
+
+        return $pengumuman
             ->map(function ($p) use ($isHr) {
                 // Kasus 1: pengumuman sudah dihapus (soft deleted).
                 if ($p->trashed()) {
@@ -190,6 +208,28 @@ class NotificationService
                     $p->created_at,
                 );
             });
+    }
+
+    /**
+     * Cek apakah sebuah pengumuman boleh memicu notifikasi untuk karyawan
+     * tertentu. Berlaku untuk target "semua" (semua karyawan) dan target
+     * "spesifik" (hanya karyawan yang id-nya ada di target_karyawan_ids).
+     */
+    private function pengumumanVisibleFor(Pengumuman $pengumuman, Karyawan $user): bool
+    {
+        if ($pengumuman->target === 'semua') {
+            return true;
+        }
+
+        if ($pengumuman->target === 'spesifik') {
+            $ids = is_array($pengumuman->target_karyawan_ids)
+                ? $pengumuman->target_karyawan_ids
+                : (array) json_decode($pengumuman->target_karyawan_ids ?? '[]', true);
+
+            return in_array((string) $user->id, array_map('strval', $ids), true);
+        }
+
+        return false;
     }
 
     /**
