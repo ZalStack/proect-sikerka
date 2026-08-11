@@ -430,12 +430,7 @@ class AbsensiController extends Controller
      */
     private function withDefaultMonthFilter(Request $request): Request
     {
-        $hasExplicitFilter = $request->filled('start_date')
-            || $request->filled('end_date')
-            || $request->filled('month')
-            || $request->filled('year')
-            || $request->filled('karyawan_id')
-            || ($request->filled('status') && $request->status !== 'semua');
+        $hasExplicitFilter = $request->filled('start_date') || $request->filled('end_date') || $request->filled('month') || $request->filled('year') || $request->filled('karyawan_id') || ($request->filled('status') && $request->status !== 'semua');
 
         if (!$hasExplicitFilter) {
             $request->merge([
@@ -485,7 +480,6 @@ class AbsensiController extends Controller
         return view('hr.absensi.index', compact('absensis', 'karyawans', 'chartData', 'selectedMonth', 'selectedYear'));
     }
 
-
     /**
      * Get riwayat absensi karyawan dengan filter dan pagination
      * Untuk halaman dashboard karyawan
@@ -511,19 +505,16 @@ class AbsensiController extends Controller
         $riwayat = $query->orderBy('tanggal', 'desc')->paginate($perPage);
 
         // Format data untuk ditampilkan
-        $riwayatData = $riwayat->map(function($absensi) {
+        $riwayatData = $riwayat->map(function ($absensi) {
             $locations = $this->getOfficeLocations();
             $minDist = null;
             if ($absensi->latitude && $absensi->longitude) {
                 $minDist = PHP_FLOAT_MAX;
                 foreach ($locations as $coords) {
-                    $d = $this->haversineDistance(
-                        $absensi->latitude,
-                        $absensi->longitude,
-                        $coords['latitude'],
-                        $coords['longitude']
-                    );
-                    if ($d < $minDist) $minDist = $d;
+                    $d = $this->haversineDistance($absensi->latitude, $absensi->longitude, $coords['latitude'], $coords['longitude']);
+                    if ($d < $minDist) {
+                        $minDist = $d;
+                    }
                 }
                 $minDist = $minDist < PHP_FLOAT_MAX ? round($minDist, 1) : null;
             }
@@ -556,7 +547,7 @@ class AbsensiController extends Controller
                 'has_next' => $riwayat->nextPageUrl() !== null,
                 'previous_page_url' => $riwayat->previousPageUrl(),
                 'next_page_url' => $riwayat->nextPageUrl(),
-            ]
+            ],
         ]);
     }
 
@@ -568,9 +559,7 @@ class AbsensiController extends Controller
         $user = Auth::user();
         $today = Carbon::today($this->officeTimezone);
 
-        $todayAbsensi = Absensi::where('karyawan_id', $user->id)
-            ->whereDate('tanggal', $today)
-            ->first();
+        $todayAbsensi = Absensi::where('karyawan_id', $user->id)->whereDate('tanggal', $today)->first();
 
         // Ambil riwayat dengan filter dan pagination
         $query = Absensi::where('karyawan_id', $user->id);
@@ -586,19 +575,16 @@ class AbsensiController extends Controller
         $riwayat = $query->orderBy('tanggal', 'desc')->paginate(7);
 
         // Format riwayat
-        $formattedRiwayat = $riwayat->map(function($absensi) {
+        $formattedRiwayat = $riwayat->map(function ($absensi) {
             $locations = $this->getOfficeLocations();
             $minDist = null;
             if ($absensi->latitude && $absensi->longitude) {
                 $minDist = PHP_FLOAT_MAX;
                 foreach ($locations as $coords) {
-                    $d = $this->haversineDistance(
-                        $absensi->latitude,
-                        $absensi->longitude,
-                        $coords['latitude'],
-                        $coords['longitude']
-                    );
-                    if ($d < $minDist) $minDist = $d;
+                    $d = $this->haversineDistance($absensi->latitude, $absensi->longitude, $coords['latitude'], $coords['longitude']);
+                    if ($d < $minDist) {
+                        $minDist = $d;
+                    }
                 }
                 $minDist = $minDist < PHP_FLOAT_MAX ? round($minDist, 1) : null;
             }
@@ -627,16 +613,7 @@ class AbsensiController extends Controller
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
-        return view('karyawan.absensi', compact(
-            'todayAbsensi',
-            'formattedRiwayat',
-            'riwayat',
-            'officeLocations',
-            'statuses',
-            'selectedStatus',
-            'startDate',
-            'endDate'
-        ));
+        return view('karyawan.absensi', compact('todayAbsensi', 'formattedRiwayat', 'riwayat', 'officeLocations', 'statuses', 'selectedStatus', 'startDate', 'endDate'));
     }
 
     public function exportExcel(Request $request)
@@ -665,440 +642,448 @@ class AbsensiController extends Controller
      * jelas dipisahkan dari tabel data.
      */
     private function generateExcel($absensis)
-{
-    $spreadsheet = new Spreadsheet();
-    $sheet = $spreadsheet->getActiveSheet();
-    $sheet->setTitle('Laporan Absensi');
-
-    // ==========================================================
-    // PALET WARNA
-    // ==========================================================
-    $colorPrimary   = '1F4E78';
-    $colorSecondary = '2E75B6';
-    $colorHeader    = '4472C4';
-    $colorBandA     = 'FFFFFF';
-    $colorBandB     = 'DCE6F1';
-    $colorBorder    = 'B7B7B7';
-    $colorSummaryBg = 'F2F2F2';
-    $colorGrandBg   = 'BDD7EE';
-
-    $statusFill = [
-        'Hadir'            => 'C6EFCE',
-        'Izin'             => 'FFEB9C',
-        'Sakit'            => 'FCE4D6',
-        'Alpha'            => 'F8CBAD',
-        'Perjalanan Dinas' => 'D9D2E9',
-        'Cuti'             => 'BDD7EE',
-    ];
-    $statusFont = [
-        'Hadir'            => '1E7B34',
-        'Izin'             => '9C6500',
-        'Sakit'            => 'C55A11',
-        'Alpha'            => 'C00000',
-        'Perjalanan Dinas' => '5B2C87',
-        'Cuti'             => '1F4E78',
-    ];
-
-    // ==========================================================
-    // KOLOM
-    // ==========================================================
-    $columns = ['No', 'Tanggal', 'Hari', 'Check In', 'Check Out', 'Status', 'Terlambat (menit)', 'Total Jam Kerja (menit)', 'Lembur (menit)', 'Keterangan'];
-    $lastCol = 'J';
-    $colWidths = ['A' => 5, 'B' => 13, 'C' => 12, 'D' => 12, 'E' => 12, 'F' => 17, 'G' => 16, 'H' => 18, 'I' => 16, 'J' => 34];
-
-    foreach ($colWidths as $col => $width) {
-        $sheet->getColumnDimension($col)->setWidth($width);
-    }
-
-    $thinBorder = [
-        'borders' => [
-            'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => $colorBorder]],
-        ],
-    ];
-
-    $row = 1;
-
-    // ==========================================================
-    // JUDUL LAPORAN
-    // ==========================================================
-    $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
-    $sheet->setCellValue("A{$row}", 'LAPORAN ABSENSI KARYAWAN');
-    $sheet->getStyle("A{$row}")->applyFromArray([
-        'font'      => ['bold' => true, 'size' => 16, 'color' => ['rgb' => 'FFFFFF']],
-        'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorPrimary]],
-        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-    ]);
-    $sheet->getRowDimension($row)->setRowHeight(32);
-    $row++;
-
-    $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
-    $sheet->setCellValue("A{$row}", 'Dicetak pada ' . Carbon::now($this->officeTimezone)->translatedFormat('d F Y, H:i') . ' WIB');
-    $sheet->getStyle("A{$row}")->applyFromArray([
-        'font'      => ['italic' => true, 'size' => 10, 'color' => ['rgb' => 'FFFFFF']],
-        'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorPrimary]],
-        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-    ]);
-    $sheet->getRowDimension($row)->setRowHeight(18);
-    $row += 2;
-
-    // Kelompokkan per karyawan
-    $groups = $absensis->groupBy('karyawan_id')->sortBy(function ($items) {
-        return $items->first()->karyawan->nama_lengkap ?? '';
-    });
-
-    $grandTotal = [
-        'hari_kerja'       => 0,
-        'menit_kerja'      => 0,
-        'menit_lembur'     => 0,
-        'menit_terlambat'  => 0,
-        'jumlah_karyawan'  => $groups->count(),
-    ];
-
-    foreach ($groups as $items) {
-        $items    = $items->sortBy(fn ($item) => $item->tanggal->timestamp)->values();
-        $karyawan = $items->first()->karyawan;
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Laporan Absensi');
 
         // ==========================================================
-        // NAMA & KODE KARYAWAN
+        // PALET WARNA
         // ==========================================================
-        $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
-        $sheet->setCellValue("A{$row}", strtoupper($karyawan->nama_lengkap ?? '-') . '   |   Kode Pegawai: ' . ($karyawan->kode_pegawai ?? '-'));
-        $sheet->getStyle("A{$row}")->applyFromArray([
-            'font'      => ['bold' => true, 'size' => 12, 'color' => ['rgb' => 'FFFFFF']],
-            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorSecondary]],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'vertical' => Alignment::VERTICAL_CENTER, 'indent' => 1],
-        ]);
-        $sheet->getRowDimension($row)->setRowHeight(24);
-        $row++;
+        $colorPrimary = '1F4E78';
+        $colorSecondary = '2E75B6';
+        $colorHeader = '4472C4';
+        $colorBandA = 'FFFFFF';
+        $colorBandB = 'DCE6F1';
+        $colorBorder = 'B7B7B7';
+        $colorSummaryBg = 'F2F2F2';
+        $colorGrandBg = 'BDD7EE';
 
-        // ==========================================================
-        // HEADER TABEL
-        // ==========================================================
-        foreach ($columns as $i => $colName) {
-            $col = chr(65 + $i);
-            $sheet->setCellValue("{$col}{$row}", $colName);
-        }
-        $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
-            'font'      => ['bold' => true, 'size' => 10, 'color' => ['rgb' => 'FFFFFF']],
-            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorHeader]],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
-            'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'FFFFFF']]],
-        ]);
-        $sheet->getRowDimension($row)->setRowHeight(22);
-        $row++;
-
-        // ==========================================================
-        // DATA BARIS DENGAN RUMUS EXCEL
-        // ==========================================================
-        $summary = [
-            'hari_kerja'         => 0,
-            'menit_kerja'        => 0,
-            'menit_lembur'       => 0,
-            'menit_terlambat'    => 0,
-            'hadir'              => 0,
-            'izin'               => 0,
-            'sakit'              => 0,
-            'alpha'              => 0,
-            'dinas'              => 0,
-            'cuti'               => 0,
-            'masuk_hari_minggu'  => 0,
+        $statusFill = [
+            'Hadir' => 'C6EFCE',
+            'Izin' => 'FFEB9C',
+            'Sakit' => 'FCE4D6',
+            'Alpha' => 'F8CBAD',
+            'Perjalanan Dinas' => 'D9D2E9',
+            'Cuti' => 'BDD7EE',
+        ];
+        $statusFont = [
+            'Hadir' => '1E7B34',
+            'Izin' => '9C6500',
+            'Sakit' => 'C55A11',
+            'Alpha' => 'C00000',
+            'Perjalanan Dinas' => '5B2C87',
+            'Cuti' => '1F4E78',
         ];
 
-        $no = 1;
-        $dataStartRow = $row;
+        // ==========================================================
+        // KOLOM
+        // ==========================================================
+        $columns = ['No', 'Tanggal', 'Hari', 'Check In', 'Check Out', 'Status', 'Terlambat (menit)', 'Total Jam Kerja (menit)', 'Lembur (menit)', 'Keterangan'];
+        $lastCol = 'J';
+        $colWidths = ['A' => 5, 'B' => 13, 'C' => 12, 'D' => 12, 'E' => 12, 'F' => 17, 'G' => 16, 'H' => 18, 'I' => 16, 'J' => 34];
 
-        foreach ($items as $absen) {
-            // ==========================================================
-            // DATA MENTAH
-            // ==========================================================
-            $sheet->setCellValue("A{$row}", $no);
-            $sheet->setCellValue("B{$row}", $absen->tanggal->format('d-m-Y'));
-            $sheet->setCellValue("C{$row}", $absen->hari);
-
-            // D: Check In (format HH:MM)
-            $checkIn = $absen->check_in ? $absen->check_in->format('H:i') : '';
-            $sheet->setCellValue("D{$row}", $checkIn);
-
-            // E: Check Out (format HH:MM)
-            $checkOut = $absen->check_out ? $absen->check_out->format('H:i') : '';
-            $sheet->setCellValue("E{$row}", $checkOut);
-
-            // F: Status
-            $sheet->setCellValue("F{$row}", $absen->status);
-
-            // ==========================================================
-            // RUMUS EXCEL - PERHITUNGAN DALAM MENIT
-            // ==========================================================
-
-            /**
-             * KONSTANTA WAKTU (dalam menit dari jam 00:00)
-             * - 07:45 = 7*60 + 45 = 465 menit
-             * - 16:00 = 16*60 = 960 menit
-             */
-            $startMinute = 465; // 07:45
-            $endMinute = 960;   // 16:00
-
-            $colD = "D{$row}";
-            $colE = "E{$row}";
-            $colG = "G{$row}";
-            $colH = "H{$row}";
-            $colI = "I{$row}";
-
-            // ==========================================================
-            // RUMUS 1: TERLAMBAT (Kolom G) - dalam MENIT
-            // ==========================================================
-            /**
-             * Logika:
-             * 1. Cek apakah Check In tidak kosong
-             * 2. Konversi waktu Check In ke menit dari jam 00:00
-             * 3. Jika Check In > 07:45, hitung selisih menit
-             * 4. Jika tidak, hasil 0
-             */
-            $formulaTerlambat = "=IF(AND({$colD}<>\"\", (HOUR({$colD})*60+MINUTE({$colD}))>{$startMinute}), (HOUR({$colD})*60+MINUTE({$colD}))-{$startMinute}, 0)";
-            $sheet->setCellValue($colG, $formulaTerlambat);
-
-            // ==========================================================
-            // RUMUS 2: TOTAL JAM KERJA (Kolom H) - dalam MENIT
-            // ==========================================================
-            /**
-             * Logika:
-             * 1. Cek apakah Check In dan Check Out tidak kosong
-             * 2. Konversi kedua waktu ke menit dari jam 00:00
-             * 3. Hitung selisih: Check Out - Check In
-             * 4. Jika salah satu kosong, hasil 0
-             */
-            $formulaTotalJam = "=IF(AND({$colD}<>\"\", {$colE}<>\"\"), (HOUR({$colE})*60+MINUTE({$colE})) - (HOUR({$colD})*60+MINUTE({$colD})), 0)";
-            $sheet->setCellValue($colH, $formulaTotalJam);
-
-            // ==========================================================
-            // RUMUS 3: LEMBUR (Kolom I) - dalam MENIT
-            // ==========================================================
-            /**
-             * Logika:
-             * 1. Cek apakah Check Out tidak kosong
-             * 2. Konversi waktu Check Out ke menit dari jam 00:00
-             * 3. Jika Check Out > 16:00, hitung selisih menit
-             * 4. Jika tidak, hasil 0
-             */
-            $formulaLembur = "=IF(AND({$colE}<>\"\", (HOUR({$colE})*60+MINUTE({$colE}))>{$endMinute}), (HOUR({$colE})*60+MINUTE({$colE}))-{$endMinute}, 0)";
-            $sheet->setCellValue($colI, $formulaLembur);
-
-            // J: Keterangan
-            $sheet->setCellValue("J{$row}", $absen->keterangan ?? '-');
-
-            // ==========================================================
-            // STYLING
-            // ==========================================================
-            $bandColor = ($no % 2 === 0) ? $colorBandB : $colorBandA;
-            $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
-                'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $bandColor]],
-                'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => $colorBorder]]],
-                'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
-                'font'      => ['size' => 10],
-            ]);
-
-            // Alignment center untuk kolom tertentu
-            $sheet->getStyle("A{$row}:E{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle("G{$row}:I{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-            // Format angka untuk kolom G, H, I (tanpa desimal)
-            $sheet->getStyle("G{$row}:I{$row}")->getNumberFormat()->setFormatCode('0');
-
-            // Tandai hari Minggu
-            if ($absen->is_hari_minggu) {
-                $sheet->getStyle("C{$row}")->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFC00000'));
-            }
-
-            // Warna badge status
-            $fillColor = $statusFill[$absen->status] ?? 'FFFFFF';
-            $fontColor = $statusFont[$absen->status] ?? '000000';
-            $sheet->getStyle("F{$row}")->applyFromArray([
-                'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $fillColor]],
-                'font'      => ['bold' => true, 'size' => 10, 'color' => ['rgb' => $fontColor]],
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-            ]);
-
-            // ==========================================================
-            // SUMMARY (untuk ringkasan per karyawan)
-            // ==========================================================
-            $terlambat = $absen->terlambat_menit ?? 0;
-            $lembur = $absen->lembur_menit ?? 0;
-            $totalMenit = $absen->check_in && $absen->check_out
-                ? $absen->check_in->diffInMinutes($absen->check_out)
-                : 0;
-
-            $summary['menit_kerja']     += $totalMenit;
-            $summary['menit_lembur']    += $lembur;
-            $summary['menit_terlambat'] += $terlambat;
-
-            switch ($absen->status) {
-                case 'Hadir':
-                    $summary['hadir']++;
-                    $summary['hari_kerja']++;
-                    break;
-                case 'Izin':
-                    $summary['izin']++;
-                    break;
-                case 'Sakit':
-                    $summary['sakit']++;
-                    break;
-                case 'Alpha':
-                    $summary['alpha']++;
-                    break;
-                case 'Perjalanan Dinas':
-                    $summary['dinas']++;
-                    $summary['hari_kerja']++;
-                    break;
-                case 'Cuti':
-                    $summary['cuti']++;
-                    break;
-            }
-
-            if ($absen->is_hari_minggu && $absen->check_in) {
-                $summary['masuk_hari_minggu']++;
-            }
-
-            $no++;
-            $row++;
+        foreach ($colWidths as $col => $width) {
+            $sheet->getColumnDimension($col)->setWidth($width);
         }
 
-        $dataEndRow = $row - 1;
-
-        // ==========================================================
-        // BARIS TOTAL PER KARYAWAN (MENGGUNAKAN RUMUS SUM)
-        // ==========================================================
-        if ($dataStartRow <= $dataEndRow) {
-            $sheet->setCellValue("A{$row}", '');
-            $sheet->setCellValue("B{$row}", '');
-            $sheet->setCellValue("C{$row}", '');
-            $sheet->setCellValue("D{$row}", '');
-            $sheet->setCellValue("E{$row}", '');
-            $sheet->setCellValue("F{$row}", 'TOTAL');
-
-            // Rumus SUM untuk kolom G, H, I
-            $sheet->setCellValue("G{$row}", "=SUM(G{$dataStartRow}:G{$dataEndRow})");
-            $sheet->setCellValue("H{$row}", "=SUM(H{$dataStartRow}:H{$dataEndRow})");
-            $sheet->setCellValue("I{$row}", "=SUM(I{$dataStartRow}:I{$dataEndRow})");
-            $sheet->setCellValue("J{$row}", '');
-
-            // Style baris total
-            $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
-                'font'      => ['bold' => true, 'size' => 10],
-                'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E6E6E6']],
-                'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => $colorBorder]]],
-            ]);
-            $sheet->getStyle("A{$row}:F{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle("G{$row}:I{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle("G{$row}:I{$row}")->getNumberFormat()->setFormatCode('0');
-
-            $row++;
-        }
-
-        $row++; // spasi
-
-        // ==========================================================
-        // RINGKASAN PER KARYAWAN
-        // ==========================================================
-        $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
-        $sheet->setCellValue("A{$row}", 'RINGKASAN — ' . strtoupper($karyawan->nama_lengkap ?? '-'));
-        $sheet->getStyle("A{$row}")->applyFromArray([
-            'font'      => ['bold' => true, 'size' => 11, 'color' => ['rgb' => 'FFFFFF']],
-            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '808080']],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'vertical' => Alignment::VERTICAL_CENTER, 'indent' => 1],
-        ]);
-        $sheet->getRowDimension($row)->setRowHeight(20);
-        $row++;
-
-        $totalJamKerjaLabel = intdiv($summary['menit_kerja'], 60) . ' jam ' . str_pad($summary['menit_kerja'] % 60, 2, '0', STR_PAD_LEFT) . ' menit';
-
-        $summaryPairs = [
-            ['Jumlah Hari Kerja (Hadir + Perjalanan Dinas)', $summary['hari_kerja']],
-            ['Total Jam Kerja (menit)', $summary['menit_kerja']],
-            ['Total Jam Kerja (jam:menit)', $totalJamKerjaLabel],
-            ['Total Lembur (menit)', $summary['menit_lembur']],
-            ['Total Keterlambatan (menit)', $summary['menit_terlambat']],
-            ['Jumlah Hadir', $summary['hadir']],
-            ['Jumlah Izin', $summary['izin']],
-            ['Jumlah Sakit', $summary['sakit']],
-            ['Jumlah Alpha', $summary['alpha']],
-            ['Jumlah Perjalanan Dinas', $summary['dinas']],
-            ['Jumlah Cuti', $summary['cuti']],
-            ['Jumlah Masuk di Hari Minggu (hari libur)', $summary['masuk_hari_minggu']],
+        $thinBorder = [
+            'borders' => [
+                'allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => $colorBorder]],
+            ],
         ];
 
-        foreach ($summaryPairs as [$label, $value]) {
+        $row = 1;
+
+        // ==========================================================
+        // JUDUL LAPORAN
+        // ==========================================================
+        $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
+        $sheet->setCellValue("A{$row}", 'LAPORAN ABSENSI KARYAWAN');
+        $sheet->getStyle("A{$row}")->applyFromArray([
+            'font' => ['bold' => true, 'size' => 16, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorPrimary]],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+        ]);
+        $sheet->getRowDimension($row)->setRowHeight(32);
+        $row++;
+
+        $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
+        $sheet->setCellValue("A{$row}", 'Dicetak pada ' . Carbon::now($this->officeTimezone)->translatedFormat('d F Y, H:i') . ' WIB');
+        $sheet->getStyle("A{$row}")->applyFromArray([
+            'font' => ['italic' => true, 'size' => 10, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorPrimary]],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+        ]);
+        $sheet->getRowDimension($row)->setRowHeight(18);
+        $row += 2;
+
+        // Kelompokkan per karyawan
+        $groups = $absensis->groupBy('karyawan_id')->sortBy(function ($items) {
+            return $items->first()->karyawan->nama_lengkap ?? '';
+        });
+
+        $grandTotal = [
+            'hari_kerja' => 0,
+            'menit_kerja' => 0,
+            'menit_lembur' => 0,
+            'menit_terlambat' => 0,
+            'jumlah_karyawan' => $groups->count(),
+        ];
+
+        foreach ($groups as $items) {
+            $items = $items->sortBy(fn($item) => $item->tanggal->timestamp)->values();
+            $karyawan = $items->first()->karyawan;
+
+            // ==========================================================
+            // NAMA & KODE KARYAWAN
+            // ==========================================================
+            $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
+            $sheet->setCellValue("A{$row}", strtoupper($karyawan->nama_lengkap ?? '-') . '   |   Kode Pegawai: ' . ($karyawan->kode_pegawai ?? '-'));
+            $sheet->getStyle("A{$row}")->applyFromArray([
+                'font' => ['bold' => true, 'size' => 12, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorSecondary]],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'vertical' => Alignment::VERTICAL_CENTER, 'indent' => 1],
+            ]);
+            $sheet->getRowDimension($row)->setRowHeight(24);
+            $row++;
+
+            // ==========================================================
+            // HEADER TABEL
+            // ==========================================================
+            foreach ($columns as $i => $colName) {
+                $col = chr(65 + $i);
+                $sheet->setCellValue("{$col}{$row}", $colName);
+            }
+            $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
+                'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorHeader]],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'FFFFFF']]],
+            ]);
+            $sheet->getRowDimension($row)->setRowHeight(22);
+            $row++;
+
+            // ==========================================================
+            // DATA BARIS DENGAN RUMUS EXCEL
+            // ==========================================================
+            $summary = [
+                'hari_kerja' => 0,
+                'menit_kerja' => 0,
+                'menit_lembur' => 0,
+                'menit_terlambat' => 0,
+                'hadir' => 0,
+                'izin' => 0,
+                'sakit' => 0,
+                'alpha' => 0,
+                'dinas' => 0,
+                'cuti' => 0,
+                'masuk_hari_minggu' => 0,
+            ];
+
+            $no = 1;
+            $dataStartRow = $row;
+
+            foreach ($items as $absen) {
+                // ==========================================================
+                // DATA MENTAH
+                // ==========================================================
+                $sheet->setCellValue("A{$row}", $no);
+                $sheet->setCellValue("B{$row}", $absen->tanggal->format('d-m-Y'));
+                $sheet->setCellValue("C{$row}", $absen->hari);
+
+                // D: Check In (format HH:MM)
+                $checkIn = $absen->check_in ? $absen->check_in->format('H:i') : '';
+                $sheet->setCellValue("D{$row}", $checkIn);
+
+                // E: Check Out (format HH:MM)
+                $checkOut = $absen->check_out ? $absen->check_out->format('H:i') : '';
+                $sheet->setCellValue("E{$row}", $checkOut);
+
+                // F: Status
+                $sheet->setCellValue("F{$row}", $absen->status);
+
+                // ==========================================================
+                // RUMUS EXCEL - PERHITUNGAN DALAM MENIT
+                // ==========================================================
+
+                /**
+                 * KONSTANTA WAKTU (dalam menit dari jam 00:00)
+                 * - 07:45 = 7*60 + 45 = 465 menit
+                 * - 16:00 = 16*60 = 960 menit
+                 */
+                $startMinute = 465; // 07:45
+                $endMinute = 960; // 16:00
+
+                $colD = "D{$row}";
+                $colE = "E{$row}";
+                $colG = "G{$row}";
+                $colH = "H{$row}";
+                $colI = "I{$row}";
+
+                // ==========================================================
+                // RUMUS 1: TERLAMBAT (Kolom G) - dalam MENIT
+                // ==========================================================
+                /**
+                 * Logika:
+                 * 1. Cek apakah Check In tidak kosong
+                 * 2. Konversi waktu Check In ke menit dari jam 00:00
+                 * 3. Jika Check In > 07:45, hitung selisih menit
+                 * 4. Jika tidak, hasil 0
+                 */
+                $formulaTerlambat = "=IF(AND({$colD}<>\"\", (HOUR({$colD})*60+MINUTE({$colD}))>{$startMinute}), (HOUR({$colD})*60+MINUTE({$colD}))-{$startMinute}, 0)";
+                $sheet->setCellValue($colG, $formulaTerlambat);
+
+                // ==========================================================
+                // RUMUS 2: TOTAL JAM KERJA (Kolom H) - dalam MENIT
+                // ==========================================================
+                /**
+                 * Logika:
+                 * 1. Cek apakah Check In dan Check Out tidak kosong
+                 * 2. Konversi kedua waktu ke menit dari jam 00:00
+                 * 3. Hitung selisih: Check Out - Check In
+                 * 4. Jika salah satu kosong, hasil 0
+                 */
+                $formulaTotalJam = "=IF(AND({$colD}<>\"\", {$colE}<>\"\"), (HOUR({$colE})*60+MINUTE({$colE})) - (HOUR({$colD})*60+MINUTE({$colD})), 0)";
+                $sheet->setCellValue($colH, $formulaTotalJam);
+
+                // ==========================================================
+                // RUMUS 3: LEMBUR (Kolom I) - dalam MENIT
+                // ==========================================================
+                /**
+                 * Logika:
+                 * 1. Cek apakah Check Out tidak kosong
+                 * 2. Konversi waktu Check Out ke menit dari jam 00:00
+                 * 3. Jika Check Out > 16:00, hitung selisih menit
+                 * 4. Jika tidak, hasil 0
+                 */
+                $formulaLembur = "=IF(AND({$colE}<>\"\", (HOUR({$colE})*60+MINUTE({$colE}))>{$endMinute}), (HOUR({$colE})*60+MINUTE({$colE}))-{$endMinute}, 0)";
+                $sheet->setCellValue($colI, $formulaLembur);
+
+                // J: Keterangan
+                $sheet->setCellValue("J{$row}", $absen->keterangan ?? '-');
+
+                // ==========================================================
+                // STYLING
+                // ==========================================================
+                $bandColor = $no % 2 === 0 ? $colorBandB : $colorBandA;
+                $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $bandColor]],
+                    'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => $colorBorder]]],
+                    'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
+                    'font' => ['size' => 10],
+                ]);
+
+                // Alignment center untuk kolom tertentu
+                $sheet
+                    ->getStyle("A{$row}:E{$row}")
+                    ->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet
+                    ->getStyle("G{$row}:I{$row}")
+                    ->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+                // Format angka untuk kolom G, H, I (tanpa desimal)
+                $sheet
+                    ->getStyle("G{$row}:I{$row}")
+                    ->getNumberFormat()
+                    ->setFormatCode('0');
+
+                // Tandai hari Minggu
+                if ($absen->is_hari_minggu) {
+                    $sheet
+                        ->getStyle("C{$row}")
+                        ->getFont()
+                        ->setBold(true)
+                        ->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFC00000'));
+                }
+
+                // Warna badge status
+                $fillColor = $statusFill[$absen->status] ?? 'FFFFFF';
+                $fontColor = $statusFont[$absen->status] ?? '000000';
+                $sheet->getStyle("F{$row}")->applyFromArray([
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $fillColor]],
+                    'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => $fontColor]],
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                ]);
+
+                // ==========================================================
+                // SUMMARY (untuk ringkasan per karyawan)
+                // ==========================================================
+                $terlambat = $absen->terlambat_menit ?? 0;
+                $lembur = $absen->lembur_menit ?? 0;
+                $totalMenit = $absen->check_in && $absen->check_out ? $absen->check_in->diffInMinutes($absen->check_out) : 0;
+
+                $summary['menit_kerja'] += $totalMenit;
+                $summary['menit_lembur'] += $lembur;
+                $summary['menit_terlambat'] += $terlambat;
+
+                switch ($absen->status) {
+                    case 'Hadir':
+                        $summary['hadir']++;
+                        $summary['hari_kerja']++;
+                        break;
+                    case 'Izin':
+                        $summary['izin']++;
+                        break;
+                    case 'Sakit':
+                        $summary['sakit']++;
+                        break;
+                    case 'Alpha':
+                        $summary['alpha']++;
+                        break;
+                    case 'Perjalanan Dinas':
+                        $summary['dinas']++;
+                        $summary['hari_kerja']++;
+                        break;
+                    case 'Cuti':
+                        $summary['cuti']++;
+                        break;
+                }
+
+                if ($absen->is_hari_minggu && $absen->check_in) {
+                    $summary['masuk_hari_minggu']++;
+                }
+
+                $no++;
+                $row++;
+            }
+
+            $dataEndRow = $row - 1;
+
+            // ==========================================================
+            // BARIS TOTAL PER KARYAWAN (MENGGUNAKAN RUMUS SUM)
+            // ==========================================================
+            if ($dataStartRow <= $dataEndRow) {
+                $sheet->setCellValue("A{$row}", '');
+                $sheet->setCellValue("B{$row}", '');
+                $sheet->setCellValue("C{$row}", '');
+                $sheet->setCellValue("D{$row}", '');
+                $sheet->setCellValue("E{$row}", '');
+                $sheet->setCellValue("F{$row}", 'TOTAL');
+
+                // Rumus SUM untuk kolom G, H, I
+                $sheet->setCellValue("G{$row}", "=SUM(G{$dataStartRow}:G{$dataEndRow})");
+                $sheet->setCellValue("H{$row}", "=SUM(H{$dataStartRow}:H{$dataEndRow})");
+                $sheet->setCellValue("I{$row}", "=SUM(I{$dataStartRow}:I{$dataEndRow})");
+                $sheet->setCellValue("J{$row}", '');
+
+                // Style baris total
+                $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
+                    'font' => ['bold' => true, 'size' => 10],
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E6E6E6']],
+                    'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => $colorBorder]]],
+                ]);
+                $sheet
+                    ->getStyle("A{$row}:F{$row}")
+                    ->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet
+                    ->getStyle("G{$row}:I{$row}")
+                    ->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet
+                    ->getStyle("G{$row}:I{$row}")
+                    ->getNumberFormat()
+                    ->setFormatCode('0');
+
+                $row++;
+            }
+
+            $row++; // spasi
+
+            // ==========================================================
+            // RINGKASAN PER KARYAWAN
+            // ==========================================================
+            $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
+            $sheet->setCellValue("A{$row}", 'RINGKASAN — ' . strtoupper($karyawan->nama_lengkap ?? '-'));
+            $sheet->getStyle("A{$row}")->applyFromArray([
+                'font' => ['bold' => true, 'size' => 11, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '808080']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'vertical' => Alignment::VERTICAL_CENTER, 'indent' => 1],
+            ]);
+            $sheet->getRowDimension($row)->setRowHeight(20);
+            $row++;
+
+            $totalJamKerjaLabel = intdiv($summary['menit_kerja'], 60) . ' jam ' . str_pad($summary['menit_kerja'] % 60, 2, '0', STR_PAD_LEFT) . ' menit';
+
+            $summaryPairs = [['Jumlah Hari Kerja (Hadir + Perjalanan Dinas)', $summary['hari_kerja']], ['Total Jam Kerja (menit)', $summary['menit_kerja']], ['Total Jam Kerja (jam:menit)', $totalJamKerjaLabel], ['Total Lembur (menit)', $summary['menit_lembur']], ['Total Keterlambatan (menit)', $summary['menit_terlambat']], ['Jumlah Hadir', $summary['hadir']], ['Jumlah Izin', $summary['izin']], ['Jumlah Sakit', $summary['sakit']], ['Jumlah Alpha', $summary['alpha']], ['Jumlah Perjalanan Dinas', $summary['dinas']], ['Jumlah Cuti', $summary['cuti']], ['Jumlah Masuk di Hari Minggu (hari libur)', $summary['masuk_hari_minggu']]];
+
+            foreach ($summaryPairs as [$label, $value]) {
+                $sheet->mergeCells("A{$row}:F{$row}");
+                $sheet->mergeCells("G{$row}:{$lastCol}{$row}");
+                $sheet->setCellValue("A{$row}", $label);
+                $sheet->setCellValue("G{$row}", $value);
+                $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorSummaryBg]],
+                    'font' => ['size' => 10],
+                    'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => $colorBorder]]],
+                ]);
+                $sheet->getStyle("G{$row}")->applyFromArray([
+                    'font' => ['bold' => true],
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                ]);
+                $row++;
+            }
+
+            $row += 2;
+
+            $grandTotal['hari_kerja'] += $summary['hari_kerja'];
+            $grandTotal['menit_kerja'] += $summary['menit_kerja'];
+            $grandTotal['menit_lembur'] += $summary['menit_lembur'];
+            $grandTotal['menit_terlambat'] += $summary['menit_terlambat'];
+        }
+
+        // ==========================================================
+        // RINGKASAN TOTAL SELURUH KARYAWAN
+        // ==========================================================
+        $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
+        $sheet->setCellValue("A{$row}", 'RINGKASAN TOTAL SELURUH KARYAWAN');
+        $sheet->getStyle("A{$row}")->applyFromArray([
+            'font' => ['bold' => true, 'size' => 13, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorPrimary]],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+        ]);
+        $sheet->getRowDimension($row)->setRowHeight(26);
+        $row++;
+
+        $grandPairs = [['Jumlah Karyawan', $grandTotal['jumlah_karyawan']], ['Total Hari Kerja', $grandTotal['hari_kerja']], ['Total Jam Kerja (menit)', $grandTotal['menit_kerja']], ['Total Lembur (menit)', $grandTotal['menit_lembur']], ['Total Keterlambatan (menit)', $grandTotal['menit_terlambat']]];
+
+        foreach ($grandPairs as [$label, $value]) {
             $sheet->mergeCells("A{$row}:F{$row}");
             $sheet->mergeCells("G{$row}:{$lastCol}{$row}");
             $sheet->setCellValue("A{$row}", $label);
             $sheet->setCellValue("G{$row}", $value);
             $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
-                'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorSummaryBg]],
-                'font'    => ['size' => 10],
-                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => $colorBorder]]],
+                'font' => ['bold' => true, 'size' => 11],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorGrandBg]],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['rgb' => $colorPrimary]]],
             ]);
-            $sheet->getStyle("G{$row}")->applyFromArray([
-                'font'      => ['bold' => true],
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-            ]);
+            $sheet
+                ->getStyle("G{$row}")
+                ->getAlignment()
+                ->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $row++;
         }
 
-        $row += 2;
+        $sheet->freezePane('A4');
+        $sheet->setSelectedCell('A1');
 
-        $grandTotal['hari_kerja']      += $summary['hari_kerja'];
-        $grandTotal['menit_kerja']     += $summary['menit_kerja'];
-        $grandTotal['menit_lembur']    += $summary['menit_lembur'];
-        $grandTotal['menit_terlambat'] += $summary['menit_terlambat'];
+        $fileName = 'Laporan_Absensi_' . Carbon::now($this->officeTimezone)->format('Ymd_His') . '.xlsx';
+        $writer = new Xlsx($spreadsheet);
+
+        return response()->streamDownload(
+            function () use ($writer) {
+                $writer->save('php://output');
+            },
+            $fileName,
+            [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Cache-Control' => 'max-age=0',
+            ],
+        );
     }
-
-    // ==========================================================
-    // RINGKASAN TOTAL SELURUH KARYAWAN
-    // ==========================================================
-    $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
-    $sheet->setCellValue("A{$row}", 'RINGKASAN TOTAL SELURUH KARYAWAN');
-    $sheet->getStyle("A{$row}")->applyFromArray([
-        'font'      => ['bold' => true, 'size' => 13, 'color' => ['rgb' => 'FFFFFF']],
-        'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorPrimary]],
-        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-    ]);
-    $sheet->getRowDimension($row)->setRowHeight(26);
-    $row++;
-
-    $grandPairs = [
-        ['Jumlah Karyawan', $grandTotal['jumlah_karyawan']],
-        ['Total Hari Kerja', $grandTotal['hari_kerja']],
-        ['Total Jam Kerja (menit)', $grandTotal['menit_kerja']],
-        ['Total Lembur (menit)', $grandTotal['menit_lembur']],
-        ['Total Keterlambatan (menit)', $grandTotal['menit_terlambat']],
-    ];
-
-    foreach ($grandPairs as [$label, $value]) {
-        $sheet->mergeCells("A{$row}:F{$row}");
-        $sheet->mergeCells("G{$row}:{$lastCol}{$row}");
-        $sheet->setCellValue("A{$row}", $label);
-        $sheet->setCellValue("G{$row}", $value);
-        $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
-            'font'    => ['bold' => true, 'size' => 11],
-            'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorGrandBg]],
-            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['rgb' => $colorPrimary]]],
-        ]);
-        $sheet->getStyle("G{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $row++;
-    }
-
-    $sheet->freezePane('A4');
-    $sheet->setSelectedCell('A1');
-
-    $fileName = 'Laporan_Absensi_' . Carbon::now($this->officeTimezone)->format('Ymd_His') . '.xlsx';
-    $writer   = new Xlsx($spreadsheet);
-
-    return response()->streamDownload(function () use ($writer) {
-        $writer->save('php://output');
-    }, $fileName, [
-        'Content-Type'  => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Cache-Control' => 'max-age=0',
-    ]);
-}
 
     private function getChartData($request)
     {
