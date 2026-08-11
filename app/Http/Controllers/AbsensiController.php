@@ -430,12 +430,7 @@ class AbsensiController extends Controller
      */
     private function withDefaultMonthFilter(Request $request): Request
     {
-        $hasExplicitFilter = $request->filled('start_date')
-            || $request->filled('end_date')
-            || $request->filled('month')
-            || $request->filled('year')
-            || $request->filled('karyawan_id')
-            || ($request->filled('status') && $request->status !== 'semua');
+        $hasExplicitFilter = $request->filled('start_date') || $request->filled('end_date') || $request->filled('month') || $request->filled('year') || $request->filled('karyawan_id') || ($request->filled('status') && $request->status !== 'semua');
 
         if (!$hasExplicitFilter) {
             $request->merge([
@@ -485,7 +480,6 @@ class AbsensiController extends Controller
         return view('hr.absensi.index', compact('absensis', 'karyawans', 'chartData', 'selectedMonth', 'selectedYear'));
     }
 
-
     /**
      * Get riwayat absensi karyawan dengan filter dan pagination
      * Untuk halaman dashboard karyawan
@@ -511,19 +505,16 @@ class AbsensiController extends Controller
         $riwayat = $query->orderBy('tanggal', 'desc')->paginate($perPage);
 
         // Format data untuk ditampilkan
-        $riwayatData = $riwayat->map(function($absensi) {
+        $riwayatData = $riwayat->map(function ($absensi) {
             $locations = $this->getOfficeLocations();
             $minDist = null;
             if ($absensi->latitude && $absensi->longitude) {
                 $minDist = PHP_FLOAT_MAX;
                 foreach ($locations as $coords) {
-                    $d = $this->haversineDistance(
-                        $absensi->latitude,
-                        $absensi->longitude,
-                        $coords['latitude'],
-                        $coords['longitude']
-                    );
-                    if ($d < $minDist) $minDist = $d;
+                    $d = $this->haversineDistance($absensi->latitude, $absensi->longitude, $coords['latitude'], $coords['longitude']);
+                    if ($d < $minDist) {
+                        $minDist = $d;
+                    }
                 }
                 $minDist = $minDist < PHP_FLOAT_MAX ? round($minDist, 1) : null;
             }
@@ -556,7 +547,7 @@ class AbsensiController extends Controller
                 'has_next' => $riwayat->nextPageUrl() !== null,
                 'previous_page_url' => $riwayat->previousPageUrl(),
                 'next_page_url' => $riwayat->nextPageUrl(),
-            ]
+            ],
         ]);
     }
 
@@ -568,9 +559,7 @@ class AbsensiController extends Controller
         $user = Auth::user();
         $today = Carbon::today($this->officeTimezone);
 
-        $todayAbsensi = Absensi::where('karyawan_id', $user->id)
-            ->whereDate('tanggal', $today)
-            ->first();
+        $todayAbsensi = Absensi::where('karyawan_id', $user->id)->whereDate('tanggal', $today)->first();
 
         // Ambil riwayat dengan filter dan pagination
         $query = Absensi::where('karyawan_id', $user->id);
@@ -586,19 +575,16 @@ class AbsensiController extends Controller
         $riwayat = $query->orderBy('tanggal', 'desc')->paginate(7);
 
         // Format riwayat
-        $formattedRiwayat = $riwayat->map(function($absensi) {
+        $formattedRiwayat = $riwayat->map(function ($absensi) {
             $locations = $this->getOfficeLocations();
             $minDist = null;
             if ($absensi->latitude && $absensi->longitude) {
                 $minDist = PHP_FLOAT_MAX;
                 foreach ($locations as $coords) {
-                    $d = $this->haversineDistance(
-                        $absensi->latitude,
-                        $absensi->longitude,
-                        $coords['latitude'],
-                        $coords['longitude']
-                    );
-                    if ($d < $minDist) $minDist = $d;
+                    $d = $this->haversineDistance($absensi->latitude, $absensi->longitude, $coords['latitude'], $coords['longitude']);
+                    if ($d < $minDist) {
+                        $minDist = $d;
+                    }
                 }
                 $minDist = $minDist < PHP_FLOAT_MAX ? round($minDist, 1) : null;
             }
@@ -627,16 +613,7 @@ class AbsensiController extends Controller
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
-        return view('karyawan.absensi', compact(
-            'todayAbsensi',
-            'formattedRiwayat',
-            'riwayat',
-            'officeLocations',
-            'statuses',
-            'selectedStatus',
-            'startDate',
-            'endDate'
-        ));
+        return view('karyawan.absensi', compact('todayAbsensi', 'formattedRiwayat', 'riwayat', 'officeLocations', 'statuses', 'selectedStatus', 'startDate', 'endDate'));
     }
 
     public function exportExcel(Request $request)
@@ -673,34 +650,44 @@ class AbsensiController extends Controller
         // ==========================================================
         // PALET WARNA (nuansa biru korporat, konsisten & profesional)
         // ==========================================================
-        $colorPrimary   = '1F4E78'; // biru tua - judul utama & ringkasan total
-        $colorSecondary = '2E75B6'; // biru sedang - blok nama karyawan
-        $colorHeader    = '4472C4'; // biru header tabel
-        $colorBandA     = 'FFFFFF'; // baris data terang
-        $colorBandB     = 'DCE6F1'; // baris data selang-seling
-        $colorBorder    = 'B7B7B7'; // garis tabel
-        $colorSummaryBg = 'F2F2F2'; // latar ringkasan per karyawan
-        $colorGrandBg   = 'BDD7EE'; // latar ringkasan total
+        $colorPrimary = '1F4E78';
+        $colorSecondary = '2E75B6';
+        $colorHeader = '4472C4';
+        $colorBandA = 'FFFFFF';
+        $colorBandB = 'DCE6F1';
+        $colorBorder = 'B7B7B7';
+        $colorSummaryBg = 'F2F2F2';
+        $colorGrandBg = 'BDD7EE';
 
         $statusFill = [
-            'Hadir'            => 'C6EFCE',
-            'Izin'             => 'FFEB9C',
-            'Sakit'            => 'FCE4D6',
-            'Alpha'            => 'F8CBAD',
+            'Hadir' => 'C6EFCE',
+            'Izin' => 'FFEB9C',
+            'Sakit' => 'FCE4D6',
+            'Alpha' => 'F8CBAD',
             'Perjalanan Dinas' => 'D9D2E9',
-            'Cuti'             => 'BDD7EE',
+            'Cuti' => 'BDD7EE',
         ];
         $statusFont = [
-            'Hadir'            => '1E7B34',
-            'Izin'             => '9C6500',
-            'Sakit'            => 'C55A11',
-            'Alpha'            => 'C00000',
+            'Hadir' => '1E7B34',
+            'Izin' => '9C6500',
+            'Sakit' => 'C55A11',
+            'Alpha' => 'C00000',
             'Perjalanan Dinas' => '5B2C87',
-            'Cuti'             => '1F4E78',
+            'Cuti' => '1F4E78',
         ];
 
-        $columns   = ['No', 'Tanggal', 'Hari', 'Check In', 'Check Out', 'Status', 'Terlambat (menit)', 'Total Jam Kerja (menit)', 'Lembur (menit)', 'Keterangan'];
-        $lastCol   = 'J';
+        // ==========================================================
+        // KOLOM: Tambahkan kolom untuk data mentah yang dipakai rumus
+        // ==========================================================
+        // D - Check In (string waktu)
+        // E - Check Out (string waktu)
+        // F - Status
+        // G - Terlambat (menit) -> RUMUS
+        // H - Total Jam Kerja (menit) -> RUMUS
+        // I - Lembur (menit) -> RUMUS
+        // J - Keterangan
+        $columns = ['No', 'Tanggal', 'Hari', 'Check In', 'Check Out', 'Status', 'Terlambat (menit)', 'Total Jam Kerja (menit)', 'Lembur (menit)', 'Keterangan'];
+        $lastCol = 'J';
         $colWidths = ['A' => 5, 'B' => 13, 'C' => 12, 'D' => 10, 'E' => 10, 'F' => 17, 'G' => 13, 'H' => 16, 'I' => 12, 'J' => 34];
 
         foreach ($colWidths as $col => $width) {
@@ -721,8 +708,8 @@ class AbsensiController extends Controller
         $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
         $sheet->setCellValue("A{$row}", 'LAPORAN ABSENSI KARYAWAN');
         $sheet->getStyle("A{$row}")->applyFromArray([
-            'font'      => ['bold' => true, 'size' => 16, 'color' => ['rgb' => 'FFFFFF']],
-            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorPrimary]],
+            'font' => ['bold' => true, 'size' => 16, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorPrimary]],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
         ]);
         $sheet->getRowDimension($row)->setRowHeight(32);
@@ -731,29 +718,31 @@ class AbsensiController extends Controller
         $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
         $sheet->setCellValue("A{$row}", 'Dicetak pada ' . Carbon::now($this->officeTimezone)->translatedFormat('d F Y, H:i') . ' WIB');
         $sheet->getStyle("A{$row}")->applyFromArray([
-            'font'      => ['italic' => true, 'size' => 10, 'color' => ['rgb' => 'FFFFFF']],
-            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorPrimary]],
+            'font' => ['italic' => true, 'size' => 10, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorPrimary]],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
         ]);
         $sheet->getRowDimension($row)->setRowHeight(18);
         $row += 2;
 
-        // Kelompokkan per karyawan (bukan tercampur semua orang jadi satu tabel),
-        // lalu urutkan kelompok berdasarkan nama karyawan supaya rapi dibaca.
+        // Kelompokkan per karyawan
         $groups = $absensis->groupBy('karyawan_id')->sortBy(function ($items) {
             return $items->first()->karyawan->nama_lengkap ?? '';
         });
 
         $grandTotal = [
-            'hari_kerja'       => 0,
-            'menit_kerja'      => 0,
-            'menit_lembur'     => 0,
-            'menit_terlambat'  => 0,
-            'jumlah_karyawan'  => $groups->count(),
+            'hari_kerja' => 0,
+            'menit_kerja' => 0,
+            'menit_lembur' => 0,
+            'menit_terlambat' => 0,
+            'jumlah_karyawan' => $groups->count(),
         ];
 
+        // Counter untuk nomor baris global
+        $globalRowNum = 0;
+
         foreach ($groups as $items) {
-            $items    = $items->sortBy(fn ($item) => $item->tanggal->timestamp)->values();
+            $items = $items->sortBy(fn($item) => $item->tanggal->timestamp)->values();
             $karyawan = $items->first()->karyawan;
 
             // ==========================================================
@@ -762,12 +751,15 @@ class AbsensiController extends Controller
             $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
             $sheet->setCellValue("A{$row}", strtoupper($karyawan->nama_lengkap ?? '-') . '   |   Kode Pegawai: ' . ($karyawan->kode_pegawai ?? '-'));
             $sheet->getStyle("A{$row}")->applyFromArray([
-                'font'      => ['bold' => true, 'size' => 12, 'color' => ['rgb' => 'FFFFFF']],
-                'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorSecondary]],
+                'font' => ['bold' => true, 'size' => 12, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorSecondary]],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'vertical' => Alignment::VERTICAL_CENTER, 'indent' => 1],
             ]);
             $sheet->getRowDimension($row)->setRowHeight(24);
             $row++;
+
+            // Simpan baris header tabel untuk referensi rumus
+            $headerRow = $row;
 
             // ==========================================================
             // HEADER TABEL
@@ -777,84 +769,159 @@ class AbsensiController extends Controller
                 $sheet->setCellValue("{$col}{$row}", $colName);
             }
             $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
-                'font'      => ['bold' => true, 'size' => 10, 'color' => ['rgb' => 'FFFFFF']],
-                'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorHeader]],
+                'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorHeader]],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
-                'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'FFFFFF']]],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'FFFFFF']]],
             ]);
             $sheet->getRowDimension($row)->setRowHeight(22);
-            $headerRowForFreeze = $row;
             $row++;
 
+            // ==========================================================
+            // DATA BARIS DENGAN RUMUS EXCEL
+            // ==========================================================
             $summary = [
-                'hari_kerja'         => 0,
-                'menit_kerja'        => 0,
-                'menit_lembur'       => 0,
-                'menit_terlambat'    => 0,
-                'hadir'              => 0,
-                'izin'               => 0,
-                'sakit'              => 0,
-                'alpha'              => 0,
-                'dinas'              => 0,
-                'cuti'               => 0,
-                'masuk_hari_minggu'  => 0,
+                'hari_kerja' => 0,
+                'menit_kerja' => 0,
+                'menit_lembur' => 0,
+                'menit_terlambat' => 0,
+                'hadir' => 0,
+                'izin' => 0,
+                'sakit' => 0,
+                'alpha' => 0,
+                'dinas' => 0,
+                'cuti' => 0,
+                'masuk_hari_minggu' => 0,
             ];
 
             $no = 1;
-            foreach ($items as $absen) {
-                $totalMenit = $absen->total_menit_kerja;
-                $terlambat  = $absen->terlambat_menit;
-                $lembur     = $absen->lembur_menit;
+            $dataStartRow = $row;
 
-                // Tetap tampilkan jam check-in/check-out apa adanya untuk
-                // SEMUA hari, termasuk kalau karyawan masuk di hari Minggu
-                // atau Senin -- bukan cuma hari kerja "biasa".
+            foreach ($items as $absen) {
+                // ==========================================================
+                // DATA MENTAH YANG DITULIS
+                // ==========================================================
+                // A: No
                 $sheet->setCellValue("A{$row}", $no);
+
+                // B: Tanggal
                 $sheet->setCellValue("B{$row}", $absen->tanggal->format('d-m-Y'));
+
+                // C: Hari
                 $sheet->setCellValue("C{$row}", $absen->hari);
-                $sheet->setCellValue("D{$row}", $absen->check_in ? $absen->check_in->format('H:i') : '-');
-                $sheet->setCellValue("E{$row}", $absen->check_out ? $absen->check_out->format('H:i') : '-');
+
+                // D: Check In (waktu string)
+                $checkIn = $absen->check_in ? $absen->check_in->format('H:i') : '';
+                $sheet->setCellValue("D{$row}", $checkIn);
+
+                // E: Check Out (waktu string)
+                $checkOut = $absen->check_out ? $absen->check_out->format('H:i') : '';
+                $sheet->setCellValue("E{$row}", $checkOut);
+
+                // F: Status
                 $sheet->setCellValue("F{$row}", $absen->status);
-                $sheet->setCellValue("G{$row}", $terlambat);
-                $sheet->setCellValue("H{$row}", $totalMenit);
-                $sheet->setCellValue("I{$row}", $lembur);
+
+                // ==========================================================
+                // RUMUS EXCEL UNTUK KOLOM G, H, I
+                // ==========================================================
+
+                // KONSTANTA: Jam masuk standar 07:45:00 & jam pulang 16:00:00
+                // Dikonversi ke menit dari jam 00:00
+                $startMinute = 7 * 60 + 45; // 07:45 = 465 menit
+                $endMinute = 16 * 60; // 16:00 = 960 menit
+
+                /**
+                 * RUMUS TERLAMBAT (Kolom G):
+                 * = IF(AND(D4<>"", (HOUR(D4)*60 + MINUTE(D4)) > 465), (HOUR(D4)*60 + MINUTE(D4)) - 465, 0)
+                 *
+                 * Penjelasan:
+                 * - D4 = cell Check In
+                 * - (HOUR(D4)*60 + MINUTE(D4)) mengubah waktu HH:MM menjadi menit dari jam 00:00
+                 * - Jika Check In tidak kosong DAN jam > 07:45, hitung selisihnya
+                 */
+                $colD = "D{$row}";
+                $colG = "G{$row}";
+                $colH = "H{$row}";
+                $colI = "I{$row}";
+
+                // Rumus Terlambat (Kolom G)
+                $formulaTerlambat = "=IF(AND({$colD}<>\"\", (HOUR({$colD})*60+MINUTE({$colD}))>{$startMinute}), (HOUR({$colD})*60+MINUTE({$colD}))-{$startMinute}, 0)";
+                $sheet->setCellValue($colG, $formulaTerlambat);
+
+                /**
+                 * RUMUS TOTAL JAM KERJA (Kolom H):
+                 * = IF(AND(D4<>"", E4<>""), (HOUR(E4)*60 + MINUTE(E4)) - (HOUR(D4)*60 + MINUTE(D4)), 0)
+                 *
+                 * Penjelasan:
+                 * - D4 = Check In, E4 = Check Out
+                 * - Hitung selisih menit antara Check Out dan Check In
+                 * - Kalau salah satu kosong, hasil 0
+                 */
+                $formulaTotalJam = "=IF(AND({$colD}<>\"\", E{$row}<>\"\"), (HOUR(E{$row})*60+MINUTE(E{$row})) - (HOUR({$colD})*60+MINUTE({$colD})), 0)";
+                $sheet->setCellValue($colH, $formulaTotalJam);
+
+                /**
+                 * RUMUS LEMBUR (Kolom I):
+                 * = IF(AND(E4<>"", (HOUR(E4)*60 + MINUTE(E4)) > 960), (HOUR(E4)*60 + MINUTE(E4)) - 960, 0)
+                 *
+                 * Penjelasan:
+                 * - E4 = Check Out
+                 * - Jika Check Out tidak kosong DAN jam > 16:00, hitung selisihnya
+                 */
+                $formulaLembur = "=IF(AND(E{$row}<>\"\", (HOUR(E{$row})*60+MINUTE(E{$row}))>{$endMinute}), (HOUR(E{$row})*60+MINUTE(E{$row}))-{$endMinute}, 0)";
+                $sheet->setCellValue($colI, $formulaLembur);
+
+                // J: Keterangan
                 $sheet->setCellValue("J{$row}", $absen->keterangan ?? '-');
 
-                // Baris selang-seling (banded rows) supaya mudah dibaca
-                $bandColor = ($no % 2 === 0) ? $colorBandB : $colorBandA;
+                // ==========================================================
+                // STYLING BARIS
+                // ==========================================================
+                $bandColor = $no % 2 === 0 ? $colorBandB : $colorBandA;
                 $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
-                    'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $bandColor]],
-                    'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => $colorBorder]]],
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $bandColor]],
+                    'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => $colorBorder]]],
                     'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
-                    'font'      => ['size' => 10],
+                    'font' => ['size' => 10],
                 ]);
-                $sheet->getStyle("A{$row}:E{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                $sheet->getStyle("G{$row}:I{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet
+                    ->getStyle("A{$row}:E{$row}")
+                    ->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                // Tandai hari Minggu (masuk di hari libur kantor)
+                // Kolom G, H, I format angka
+                $sheet->getStyle("G{$row}:I{$row}")->applyFromArray([
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                    'font' => ['size' => 10],
+                ]);
+
+                // Tandai hari Minggu
                 if ($absen->is_hari_minggu) {
-                    $sheet->getStyle("C{$row}")->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFC00000'));
+                    $sheet
+                        ->getStyle("C{$row}")
+                        ->getFont()
+                        ->setBold(true)
+                        ->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFC00000'));
                 }
 
                 // Warna badge status
                 $fillColor = $statusFill[$absen->status] ?? 'FFFFFF';
                 $fontColor = $statusFont[$absen->status] ?? '000000';
                 $sheet->getStyle("F{$row}")->applyFromArray([
-                    'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $fillColor]],
-                    'font'      => ['bold' => true, 'size' => 10, 'color' => ['rgb' => $fontColor]],
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $fillColor]],
+                    'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => $fontColor]],
                     'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
                 ]);
 
-                // Tonjolkan keterlambatan & lembur kalau > 0
-                if ($terlambat > 0) {
-                    $sheet->getStyle("G{$row}")->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FFC00000'));
-                }
-                if ($lembur > 0) {
-                    $sheet->getStyle("I{$row}")->getFont()->setBold(true)->setColor(new \PhpOffice\PhpSpreadsheet\Style\Color('FF1F4E78'));
-                }
+                // ==========================================================
+                // SUMMARY (tetap menggunakan PHP, bukan rumus)
+                // ==========================================================
+                $terlambat = $absen->terlambat_menit ?? 0;
+                $lembur = $absen->lembur_menit ?? 0;
+                $totalMenit = $absen->check_in && $absen->check_out ? $absen->check_in->diffInMinutes($absen->check_out) : 0;
 
-                $summary['menit_kerja']     += $totalMenit;
-                $summary['menit_lembur']    += $lembur;
+                $summary['menit_kerja'] += $totalMenit;
+                $summary['menit_lembur'] += $lembur;
                 $summary['menit_terlambat'] += $terlambat;
 
                 switch ($absen->status) {
@@ -886,6 +953,45 @@ class AbsensiController extends Controller
 
                 $no++;
                 $row++;
+                $globalRowNum++;
+            }
+
+            $dataEndRow = $row - 1;
+
+            // ==========================================================
+            // SETELAH SEMUA DATA, TAMBAHKAN BARIS TOTAL PER KARYAWAN
+            // MENGGUNAKAN RUMUS SUM() DI EXCEL
+            // ==========================================================
+            if ($dataStartRow <= $dataEndRow) {
+                // Baris Total dengan rumus SUM
+                $sheet->setCellValue("A{$row}", '');
+                $sheet->setCellValue("B{$row}", '');
+                $sheet->setCellValue("C{$row}", '');
+                $sheet->setCellValue("D{$row}", '');
+                $sheet->setCellValue("E{$row}", '');
+                $sheet->setCellValue("F{$row}", 'TOTAL');
+
+                // Rumus SUM untuk kolom G, H, I
+                $sheet->setCellValue("G{$row}", "=SUM(G{$dataStartRow}:G{$dataEndRow})");
+                $sheet->setCellValue("H{$row}", "=SUM(H{$dataStartRow}:H{$dataEndRow})");
+                $sheet->setCellValue("I{$row}", "=SUM(I{$dataStartRow}:I{$dataEndRow})");
+                $sheet->setCellValue("J{$row}", '');
+
+                $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
+                    'font' => ['bold' => true, 'size' => 10],
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E6E6E6']],
+                    'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => $colorBorder]]],
+                ]);
+                $sheet
+                    ->getStyle("A{$row}:F{$row}")
+                    ->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet
+                    ->getStyle("G{$row}:I{$row}")
+                    ->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+                $row++;
             }
 
             $row++; // spasi sebelum ringkasan
@@ -896,8 +1002,8 @@ class AbsensiController extends Controller
             $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
             $sheet->setCellValue("A{$row}", 'RINGKASAN — ' . strtoupper($karyawan->nama_lengkap ?? '-'));
             $sheet->getStyle("A{$row}")->applyFromArray([
-                'font'      => ['bold' => true, 'size' => 11, 'color' => ['rgb' => 'FFFFFF']],
-                'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '808080']],
+                'font' => ['bold' => true, 'size' => 11, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '808080']],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'vertical' => Alignment::VERTICAL_CENTER, 'indent' => 1],
             ]);
             $sheet->getRowDimension($row)->setRowHeight(20);
@@ -905,20 +1011,7 @@ class AbsensiController extends Controller
 
             $totalJamKerjaLabel = intdiv($summary['menit_kerja'], 60) . ' jam ' . str_pad($summary['menit_kerja'] % 60, 2, '0', STR_PAD_LEFT) . ' menit';
 
-            $summaryPairs = [
-                ['Jumlah Hari Kerja (Hadir + Perjalanan Dinas)', $summary['hari_kerja']],
-                ['Total Jam Kerja (menit)', $summary['menit_kerja']],
-                ['Total Jam Kerja (jam:menit)', $totalJamKerjaLabel],
-                ['Total Lembur (menit)', $summary['menit_lembur']],
-                ['Total Keterlambatan (menit)', $summary['menit_terlambat']],
-                ['Jumlah Hadir', $summary['hadir']],
-                ['Jumlah Izin', $summary['izin']],
-                ['Jumlah Sakit', $summary['sakit']],
-                ['Jumlah Alpha', $summary['alpha']],
-                ['Jumlah Perjalanan Dinas', $summary['dinas']],
-                ['Jumlah Cuti', $summary['cuti']],
-                ['Jumlah Masuk di Hari Minggu (hari libur)', $summary['masuk_hari_minggu']],
-            ];
+            $summaryPairs = [['Jumlah Hari Kerja (Hadir + Perjalanan Dinas)', $summary['hari_kerja']], ['Total Jam Kerja (menit)', $summary['menit_kerja']], ['Total Jam Kerja (jam:menit)', $totalJamKerjaLabel], ['Total Lembur (menit)', $summary['menit_lembur']], ['Total Keterlambatan (menit)', $summary['menit_terlambat']], ['Jumlah Hadir', $summary['hadir']], ['Jumlah Izin', $summary['izin']], ['Jumlah Sakit', $summary['sakit']], ['Jumlah Alpha', $summary['alpha']], ['Jumlah Perjalanan Dinas', $summary['dinas']], ['Jumlah Cuti', $summary['cuti']], ['Jumlah Masuk di Hari Minggu (hari libur)', $summary['masuk_hari_minggu']]];
 
             foreach ($summaryPairs as [$label, $value]) {
                 $sheet->mergeCells("A{$row}:F{$row}");
@@ -926,22 +1019,22 @@ class AbsensiController extends Controller
                 $sheet->setCellValue("A{$row}", $label);
                 $sheet->setCellValue("G{$row}", $value);
                 $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
-                    'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorSummaryBg]],
-                    'font'    => ['size' => 10],
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorSummaryBg]],
+                    'font' => ['size' => 10],
                     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => $colorBorder]]],
                 ]);
                 $sheet->getStyle("G{$row}")->applyFromArray([
-                    'font'      => ['bold' => true],
+                    'font' => ['bold' => true],
                     'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
                 ]);
                 $row++;
             }
 
-            $row += 2; // spasi antar blok karyawan
+            $row += 2;
 
-            $grandTotal['hari_kerja']      += $summary['hari_kerja'];
-            $grandTotal['menit_kerja']     += $summary['menit_kerja'];
-            $grandTotal['menit_lembur']    += $summary['menit_lembur'];
+            $grandTotal['hari_kerja'] += $summary['hari_kerja'];
+            $grandTotal['menit_kerja'] += $summary['menit_kerja'];
+            $grandTotal['menit_lembur'] += $summary['menit_lembur'];
             $grandTotal['menit_terlambat'] += $summary['menit_terlambat'];
         }
 
@@ -951,20 +1044,14 @@ class AbsensiController extends Controller
         $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
         $sheet->setCellValue("A{$row}", 'RINGKASAN TOTAL SELURUH KARYAWAN');
         $sheet->getStyle("A{$row}")->applyFromArray([
-            'font'      => ['bold' => true, 'size' => 13, 'color' => ['rgb' => 'FFFFFF']],
-            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorPrimary]],
+            'font' => ['bold' => true, 'size' => 13, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorPrimary]],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
         ]);
         $sheet->getRowDimension($row)->setRowHeight(26);
         $row++;
 
-        $grandPairs = [
-            ['Jumlah Karyawan', $grandTotal['jumlah_karyawan']],
-            ['Total Hari Kerja', $grandTotal['hari_kerja']],
-            ['Total Jam Kerja (menit)', $grandTotal['menit_kerja']],
-            ['Total Lembur (menit)', $grandTotal['menit_lembur']],
-            ['Total Keterlambatan (menit)', $grandTotal['menit_terlambat']],
-        ];
+        $grandPairs = [['Jumlah Karyawan', $grandTotal['jumlah_karyawan']], ['Total Hari Kerja', $grandTotal['hari_kerja']], ['Total Jam Kerja (menit)', $grandTotal['menit_kerja']], ['Total Lembur (menit)', $grandTotal['menit_lembur']], ['Total Keterlambatan (menit)', $grandTotal['menit_terlambat']]];
 
         foreach ($grandPairs as [$label, $value]) {
             $sheet->mergeCells("A{$row}:F{$row}");
@@ -972,32 +1059,34 @@ class AbsensiController extends Controller
             $sheet->setCellValue("A{$row}", $label);
             $sheet->setCellValue("G{$row}", $value);
             $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
-                'font'    => ['bold' => true, 'size' => 11],
-                'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorGrandBg]],
+                'font' => ['bold' => true, 'size' => 11],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorGrandBg]],
                 'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['rgb' => $colorPrimary]]],
             ]);
-            $sheet->getStyle("G{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet
+                ->getStyle("G{$row}")
+                ->getAlignment()
+                ->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $row++;
         }
 
-        // Bekukan baris judul supaya tetap kelihatan saat scroll ke bawah
         $sheet->freezePane('A4');
         $sheet->setSelectedCell('A1');
 
-        // ==========================================================
-        // OUTPUT FILE .xlsx
-        // ==========================================================
         $fileName = 'Laporan_Absensi_' . Carbon::now($this->officeTimezone)->format('Ymd_His') . '.xlsx';
-        $writer   = new Xlsx($spreadsheet);
+        $writer = new Xlsx($spreadsheet);
 
-        return response()->streamDownload(function () use ($writer) {
-            $writer->save('php://output');
-        }, $fileName, [
-            'Content-Type'  => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Cache-Control' => 'max-age=0',
-        ]);
+        return response()->streamDownload(
+            function () use ($writer) {
+                $writer->save('php://output');
+            },
+            $fileName,
+            [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Cache-Control' => 'max-age=0',
+            ],
+        );
     }
-
 
     private function getChartData($request)
     {
