@@ -60,7 +60,7 @@
                                             </td>
                                             <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
                                                 <div class="space-y-1">
-                                                    <span class="text-neutral-950 inline-block px-2 py-1 rounded-full text-[10px] sm:text-xs font-medium {{ $item->target_badge_color }}">
+                                                    <span class="text-black inline-block px-2 py-1 rounded-full text-[10px] sm:text-xs font-medium {{ $item->target_badge_color }}">
                                                         {{ $item->target_label }}
                                                     </span>
                                                     @if($item->target === 'spesifik' && $item->target_karyawan_ids)
