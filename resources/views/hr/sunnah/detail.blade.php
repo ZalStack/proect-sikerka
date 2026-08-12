@@ -2,30 +2,32 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="flex min-h-screen">
+<div class="flex min-h-screen bg-gray-50">
     @include('layouts.sidebar')
-    <div class="flex-1 transition-all duration-300 md:ml-64 pt-6">
-        <div class="p-4 sm:p-6">
-            <div class="mb-6">
-                <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">Detail 7SPS</h1>
-                <p class="text-sm sm:text-base text-[#27438D]">Detail kegiatan 7 Sunnah Plus Suprasional</p>
+    <div class="flex-1 transition-all duration-300 md:ml-64 pt-4 sm:pt-6">
+        <div class="p-3 sm:p-4 md:p-6">
+            <!-- Header -->
+            <div class="mb-4 sm:mb-6">
+                <h1 class="text-lg sm:text-xl md:text-2xl font-bold font-['Montserrat'] text-[#161758]">Detail 7SPS</h1>
+                <p class="text-xs sm:text-sm md:text-base text-[#27438D]">Detail kegiatan 7 Sunnah Plus Suprasional</p>
             </div>
 
             @if(!$sunnah->isWithinApprovalPeriod())
-                <div class="bg-[#ec1d1d] text-white p-3 sm:p-4 rounded-lg mb-4 text-sm">
-                    <strong>⚠️ Perhatian:</strong> Data ini sudah melewati batas waktu approval (1 minggu terakhir). Tanggal: {{ $sunnah->tanggal->format('d-m-Y') }}
+                <div class="bg-[#ec1d1d] text-white p-3 sm:p-4 rounded-lg mb-4 text-xs sm:text-sm">
+                    <strong>⚠️ Perhatian:</strong> Data ini sudah melewati batas waktu approval (1 bulan terakhir). Tanggal: {{ $sunnah->tanggal->format('d-m-Y') }}
                 </div>
             @else
-                <div class="bg-[#2E7D3E] text-white p-3 sm:p-4 rounded-lg mb-4 text-sm">
-                    <strong>✅ Informasi:</strong> Data ini masih dalam periode approval (1 minggu terakhir).
+                <div class="bg-[#2E7D3E] text-white p-3 sm:p-4 rounded-lg mb-4 text-xs sm:text-sm">
+                    <strong>✅ Informasi:</strong> Data ini masih dalam periode approval (1 bulan terakhir).
                 </div>
             @endif
 
             <div class="bg-white rounded-lg shadow-md overflow-hidden">
-                <div class="p-4 sm:p-6">
+                <div class="p-3 sm:p-4 md:p-6">
+                    <!-- Grid Informasi -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                         <div>
-                            <h3 class="text-base sm:text-lg font-semibold text-[#161758] border-b border-gray-200 pb-2 mb-4">Informasi Karyawan</h3>
+                            <h3 class="text-sm sm:text-base md:text-lg font-semibold text-[#161758] border-b border-gray-200 pb-2 mb-3 sm:mb-4">Informasi Karyawan</h3>
                             <div class="space-y-2 sm:space-y-3">
                                 <div>
                                     <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Nama Lengkap</label>
@@ -43,7 +45,7 @@
                         </div>
 
                         <div>
-                            <h3 class="text-base sm:text-lg font-semibold text-[#161758] border-b border-gray-200 pb-2 mb-4">Detail Kegiatan</h3>
+                            <h3 class="text-sm sm:text-base md:text-lg font-semibold text-[#161758] border-b border-gray-200 pb-2 mb-3 sm:mb-4">Detail Kegiatan</h3>
                             <div class="space-y-2 sm:space-y-3">
                                 <div>
                                     <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Tanggal</label>
@@ -56,7 +58,7 @@
                                 <div>
                                     <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Status</label>
                                     <p>
-                                        <span class="px-2 py-1 rounded-full text-xs font-medium {{ $sunnah->status_badge }}">
+                                        <span class="px-2 py-1 rounded-full text-[10px] sm:text-xs font-medium {{ $sunnah->status_badge }}">
                                             {{ $sunnah->status_label }}
                                         </span>
                                     </p>
@@ -65,9 +67,9 @@
                                     <label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Periode Approval</label>
                                     <p class="text-xs sm:text-sm text-[#27438D]">
                                         @if($sunnah->isWithinApprovalPeriod())
-                                            <span class="text-[#2E7D3E] font-medium">✅ Masih dalam periode approval (1 minggu terakhir)</span>
+                                            <span class="text-[#2E7D3E] font-medium">✅ Masih dalam periode approval (1 bulan terakhir)</span>
                                         @else
-                                            <span class="text-[#ec1d1d] font-medium">❌ Melewati batas approval (1 minggu terakhir)</span>
+                                            <span class="text-[#ec1d1d] font-medium">❌ Melewati batas approval (1 bulan terakhir)</span>
                                         @endif
                                     </p>
                                 </div>
@@ -76,20 +78,20 @@
                     </div>
 
                     <!-- Kelompok Sholat Wajib -->
-                    <div class="mt-6 pt-6 border-t border-gray-200">
-                        <h3 class="text-base sm:text-lg font-semibold text-[#161758] mb-2">🕌 Sholat Wajib &amp; Berjamaah</h3>
-                        <p class="text-[10px] sm:text-xs text-[#27438D] mb-4">
+                    <div class="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-200">
+                        <h3 class="text-sm sm:text-base md:text-lg font-semibold text-[#161758] mb-2">🕌 Sholat Wajib &amp; Berjamaah</h3>
+                        <p class="text-[10px] sm:text-xs text-[#27438D] mb-3 sm:mb-4">
                             <strong>Ketentuan poin:</strong><br>
                             • 5/5 berjamaah (lengkap) = <strong>20 poin</strong> (5 × 4)<br>
                             • 1-4/5 berjamaah = <strong>jumlah berjamaah × 1 poin</strong><br>
                             • 0/5 berjamaah = <strong>0 poin</strong>
                         </p>
 
-                        <div class="flex flex-wrap items-center gap-3 sm:gap-4 mb-4">
-                            <span class="px-3 sm:px-4 py-2 rounded-lg bg-[#F5F5F5] text-xs sm:text-sm font-medium text-[#1B1B1B]">
+                        <div class="flex flex-wrap items-center gap-2 sm:gap-4 mb-3 sm:mb-4">
+                            <span class="px-2 sm:px-4 py-1 sm:py-2 rounded-lg bg-[#F5F5F5] text-xs sm:text-sm font-medium text-[#1B1B1B]">
                                 Berjamaah: {{ $sunnah->jumlah_sholat_berjamaah }}/5
                             </span>
-                            <span class="px-3 sm:px-4 py-2 rounded-lg bg-[#161758] text-white text-xs sm:text-sm font-bold">
+                            <span class="px-2 sm:px-4 py-1 sm:py-2 rounded-lg bg-[#161758] text-white text-xs sm:text-sm font-bold">
                                 Poin Kelompok: {{ $sunnah->poin_sholat_wajib }}
                             </span>
                         </div>
@@ -97,16 +99,16 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                             @foreach($sholatWajibKeys as $key)
                                 @php $config = $poinConfig[$key]; @endphp
-                                <div class="flex items-center space-x-3 p-2 sm:p-3 bg-[#F5F5F5] rounded-lg">
-                                    <span class="text-lg sm:text-xl">{{ $config['icon'] }}</span>
+                                <div class="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 bg-[#F5F5F5] rounded-lg">
+                                    <span class="text-base sm:text-lg md:text-xl">{{ $config['icon'] }}</span>
                                     <div class="flex-1 min-w-0">
                                         <p class="text-xs sm:text-sm font-medium text-[#1B1B1B]">{{ $config['label'] }}</p>
-                                        <p class="text-[10px] sm:text-xs text-[#27438D]">
+                                        <p class="text-[10px] sm:text-xs text-[#27438D] truncate">
                                             @if($sunnah->$key)
                                                 @if($sunnah->{$key . '_berjamaah'})
-                                                    Dikerjakan &middot; Berjamaah 🕌
+                                                    Dikerjakan · Berjamaah 🕌
                                                 @else
-                                                    Dikerjakan &middot; Sendiri
+                                                    Dikerjakan · Sendiri
                                                 @endif
                                             @else
                                                 Belum dikerjakan
@@ -115,12 +117,12 @@
                                     </div>
                                     <div class="text-right flex-shrink-0">
                                         @if($sunnah->$key)
-                                            <span class="text-[#2E7D3E] text-lg sm:text-xl">✅</span>
+                                            <span class="text-[#2E7D3E] text-base sm:text-lg md:text-xl">✅</span>
                                             @if($sunnah->{$key . '_berjamaah'})
                                                 <span class="text-[10px] sm:text-xs text-[#27438D] block">🕌</span>
                                             @endif
                                         @else
-                                            <span class="text-gray-300 text-lg sm:text-xl">⬜</span>
+                                            <span class="text-gray-300 text-base sm:text-lg md:text-xl">⬜</span>
                                         @endif
                                     </div>
                                 </div>
@@ -129,22 +131,22 @@
                     </div>
 
                     <!-- Kegiatan Sunnah Lainnya -->
-                    <div class="mt-6 pt-6 border-t border-gray-200">
-                        <h3 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">📋 Kegiatan Sunnah Lainnya</h3>
+                    <div class="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-200">
+                        <h3 class="text-sm sm:text-base md:text-lg font-semibold text-[#161758] mb-3 sm:mb-4">📋 Kegiatan Sunnah Lainnya</h3>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                             @foreach($poinConfig as $key => $config)
                                 @continue(in_array($key, $sholatWajibKeys, true))
-                                <div class="flex items-center space-x-3 p-2 sm:p-3 bg-[#F5F5F5] rounded-lg">
-                                    <span class="text-lg sm:text-xl">{{ $config['icon'] }}</span>
+                                <div class="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 bg-[#F5F5F5] rounded-lg">
+                                    <span class="text-base sm:text-lg md:text-xl">{{ $config['icon'] }}</span>
                                     <div class="flex-1 min-w-0">
                                         <p class="text-xs sm:text-sm font-medium text-[#1B1B1B]">{{ $config['label'] }}</p>
                                         <p class="text-[10px] sm:text-xs text-[#27438D]">{{ $config['poin'] }} poin</p>
                                     </div>
                                     <div class="text-right flex-shrink-0">
                                         @if($sunnah->$key)
-                                            <span class="text-[#2E7D3E] text-lg sm:text-xl">✅</span>
+                                            <span class="text-[#2E7D3E] text-base sm:text-lg md:text-xl">✅</span>
                                         @else
-                                            <span class="text-gray-300 text-lg sm:text-xl">⬜</span>
+                                            <span class="text-gray-300 text-base sm:text-lg md:text-xl">⬜</span>
                                         @endif
                                     </div>
                                 </div>
@@ -153,16 +155,16 @@
                     </div>
 
                     <!-- Approval Form -->
-                    <div class="mt-6 pt-6 border-t border-gray-200">
-                        <h3 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">✏️ Approval / Assessment</h3>
+                    <div class="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-200">
+                        <h3 class="text-sm sm:text-base md:text-lg font-semibold text-[#161758] mb-3 sm:mb-4">✏️ Approval / Assessment</h3>
 
                         @if(!$sunnah->isWithinApprovalPeriod())
-                            <div class="bg-[#ec1d1d] text-white p-3 sm:p-4 rounded-lg mb-4 text-sm">
-                                <strong>⚠️ Approval Tidak Tersedia:</strong> Data ini sudah melewati batas waktu approval (1 minggu terakhir).
+                            <div class="bg-[#ec1d1d] text-white p-3 sm:p-4 rounded-lg mb-3 sm:mb-4 text-xs sm:text-sm">
+                                <strong>⚠️ Approval Tidak Tersedia:</strong> Data ini sudah melewati batas waktu approval (1 bulan terakhir).
                             </div>
                         @endif
 
-                        <form action="{{ route('hr.sunnah.approve', $sunnah->id) }}" method="POST" class="space-y-4">
+                        <form action="{{ route('hr.sunnah.approve', $sunnah->id) }}" method="POST" class="space-y-3 sm:space-y-4">
                             @csrf
                             <div>
                                 <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Status</label>
@@ -183,19 +185,18 @@
                                           class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9] {{ !$sunnah->isWithinApprovalPeriod() ? 'bg-gray-100 cursor-not-allowed' : '' }}"
                                           {{ !$sunnah->isWithinApprovalPeriod() ? 'disabled' : '' }}>{{ old('catatan_hr', $sunnah->catatan_hr) }}</textarea>
                             </div>
-                            <button type="submit"
-                                    class="w-full sm:w-auto bg-[#27438D] text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-[#161758] transition-colors duration-200 text-sm sm:text-base {{ !$sunnah->isWithinApprovalPeriod() ? 'opacity-50 cursor-not-allowed' : '' }}"
-                                    {{ !$sunnah->isWithinApprovalPeriod() ? 'disabled' : '' }}>
-                                Simpan Approval
-                            </button>
+                            <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                                <button type="submit"
+                                        class="w-full sm:w-auto bg-[#27438D] text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-[#161758] transition-colors duration-200 text-sm sm:text-base {{ !$sunnah->isWithinApprovalPeriod() ? 'opacity-50 cursor-not-allowed' : '' }}"
+                                        {{ !$sunnah->isWithinApprovalPeriod() ? 'disabled' : '' }}>
+                                    Simpan Approval
+                                </button>
+                                <a href="{{ route('hr.sunnah.index') }}"
+                                   class="w-full sm:w-auto text-center bg-gray-500 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors duration-200 text-sm sm:text-base">
+                                    Kembali
+                                </a>
+                            </div>
                         </form>
-                    </div>
-
-                    <div class="mt-6">
-                        <a href="{{ route('hr.sunnah.index') }}"
-                           class="inline-block w-full sm:w-auto text-center bg-gray-500 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors duration-200 text-sm sm:text-base">
-                            Kembali
-                        </a>
                     </div>
                 </div>
             </div>

@@ -183,7 +183,8 @@ class SunnahDaily extends Model
     public function isWithinApprovalPeriod()
     {
         $tanggalData = Carbon::parse($this->tanggal);
-        $batasWaktu = Carbon::today()->subDays(6)->startOfDay();
+        // Diubah dari 6 hari menjadi 29 hari (1 bulan)
+        $batasWaktu = Carbon::today()->subDays(29)->startOfDay();
         return $tanggalData->greaterThanOrEqualTo($batasWaktu);
     }
 

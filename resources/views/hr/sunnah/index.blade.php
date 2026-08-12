@@ -2,54 +2,55 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="flex min-h-screen">
+<div class="flex min-h-screen bg-gray-50">
     @include('layouts.sidebar')
-    <div class="flex-1 transition-all duration-300 md:ml-64 pt-6">
-        <div class="p-3 sm:p-6">
-            <div class="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+    <div class="flex-1 transition-all duration-300 md:ml-64 pt-4 sm:pt-6">
+        <div class="p-3 sm:p-4 md:p-6">
+            <!-- Header -->
+            <div class="mb-4 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
                 <div>
-                    <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">📋 Monitoring 7SPS</h1>
-                    <p class="text-sm sm:text-base text-[#27438D]">Monitoring kegiatan 7 Sunnah Plus Suprasional karyawan</p>
+                    <h1 class="text-lg sm:text-xl md:text-2xl font-bold font-['Montserrat'] text-[#161758]">📋 Monitoring 7SPS</h1>
+                    <p class="text-xs sm:text-sm md:text-base text-[#27438D]">Monitoring kegiatan 7 Sunnah Plus Suprasional karyawan</p>
                 </div>
                 <div class="flex flex-wrap gap-2 w-full sm:w-auto">
                     <a href="{{ route('hr.sunnah.rekap') }}"
-                       class="flex-1 sm:flex-none text-center bg-[#00a2e9] text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-[#27438D] transition-colors duration-200 text-xs sm:text-sm font-medium">
+                       class="flex-1 sm:flex-none text-center bg-[#00a2e9] text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-[#27438D] transition-colors duration-200 text-xs sm:text-sm font-medium">
                         📊 Rekap Karyawan
                     </a>
                     <a href="{{ route('hr.sunnah.rekap-divisi') }}"
-                       class="flex-1 sm:flex-none text-center bg-[#2E7D3E] text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-[#1a5a2a] transition-colors duration-200 text-xs sm:text-sm font-medium">
+                       class="flex-1 sm:flex-none text-center bg-[#2E7D3E] text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-[#1a5a2a] transition-colors duration-200 text-xs sm:text-sm font-medium">
                         🏆 Rekap Divisi
                     </a>
                 </div>
             </div>
 
-            <!-- Info Periode Approval -->
-            <div class="bg-[#161758] text-white p-3 sm:p-4 rounded-lg mb-6 text-sm">
+            <!-- Info Periode Approval - UBAH KE 1 BULAN -->
+            <div class="bg-[#161758] text-white p-3 sm:p-4 rounded-lg mb-4 sm:mb-6 text-xs sm:text-sm">
                 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                     <div>
-                        <strong>📋 Periode Approval:</strong> HR hanya dapat melakukan approve/reject untuk data <strong>1 minggu terakhir</strong> (termasuk hari ini).
+                        <strong>📋 Periode Approval:</strong> HR hanya dapat melakukan approve/reject untuk data <strong>1 bulan terakhir</strong> (30 hari termasuk hari ini).
                     </div>
                     <span class="text-[10px] sm:text-xs bg-white/20 px-2 sm:px-3 py-1 rounded-full whitespace-nowrap">
-                        Periode: {{ \Carbon\Carbon::today()->subDays(6)->format('d/m/Y') }} - {{ \Carbon\Carbon::today()->format('d/m/Y') }}
+                        Periode: {{ \Carbon\Carbon::today()->subDays(29)->format('d/m/Y') }} - {{ \Carbon\Carbon::today()->format('d/m/Y') }}
                     </span>
                 </div>
             </div>
 
             @if(session('success'))
-                <div class="bg-[#2E7D3E] text-white p-3 sm:p-4 rounded-lg mb-4 text-sm">
+                <div class="bg-[#2E7D3E] text-white p-3 sm:p-4 rounded-lg mb-4 text-xs sm:text-sm">
                     {{ session('success') }}
                 </div>
             @endif
 
             @if(session('error'))
-                <div class="bg-[#ec1d1d] text-white p-3 sm:p-4 rounded-lg mb-4 text-sm">
+                <div class="bg-[#ec1d1d] text-white p-3 sm:p-4 rounded-lg mb-4 text-xs sm:text-sm">
                     {{ session('error') }}
                 </div>
             @endif
 
-            <!-- Filter dengan Date Picker -->
-            <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
-                <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">Filter Laporan</h2>
+            <!-- Filter -->
+            <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 md:p-6 mb-4 sm:mb-6">
+                <h2 class="text-sm sm:text-base md:text-lg font-semibold text-[#161758] mb-3 sm:mb-4">Filter Laporan</h2>
                 <form action="{{ route('hr.sunnah.index') }}" method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
                     <div>
                         <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Tanggal Mulai</label>
@@ -99,26 +100,26 @@
             </div>
 
             <!-- Statistik -->
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4 mb-6">
-                <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 text-center">
-                    <p class="text-lg sm:text-2xl font-bold text-[#161758]">{{ $statistik['total'] }}</p>
-                    <p class="text-[10px] sm:text-sm text-[#1B1B1B]">Total</p>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6">
+                <div class="bg-white rounded-lg shadow-md p-2 sm:p-3 md:p-4 text-center">
+                    <p class="text-base sm:text-lg md:text-2xl font-bold text-[#161758]">{{ $statistik['total'] }}</p>
+                    <p class="text-[10px] sm:text-xs md:text-sm text-[#1B1B1B]">Total</p>
                 </div>
-                <div class="bg-[#FCC626] text-[#1B1B1B] rounded-lg shadow-md p-3 sm:p-4 text-center">
-                    <p class="text-lg sm:text-2xl font-bold">{{ $statistik['pending'] }}</p>
-                    <p class="text-[10px] sm:text-sm">Menunggu</p>
+                <div class="bg-[#FCC626] text-[#1B1B1B] rounded-lg shadow-md p-2 sm:p-3 md:p-4 text-center">
+                    <p class="text-base sm:text-lg md:text-2xl font-bold">{{ $statistik['pending'] }}</p>
+                    <p class="text-[10px] sm:text-xs md:text-sm">Menunggu</p>
                 </div>
-                <div class="bg-[#2E7D3E] text-white rounded-lg shadow-md p-3 sm:p-4 text-center">
-                    <p class="text-lg sm:text-2xl font-bold">{{ $statistik['approved'] }}</p>
-                    <p class="text-[10px] sm:text-sm">Disetujui</p>
+                <div class="bg-[#2E7D3E] text-white rounded-lg shadow-md p-2 sm:p-3 md:p-4 text-center">
+                    <p class="text-base sm:text-lg md:text-2xl font-bold">{{ $statistik['approved'] }}</p>
+                    <p class="text-[10px] sm:text-xs md:text-sm">Disetujui</p>
                 </div>
-                <div class="bg-[#ec1d1d] text-white rounded-lg shadow-md p-3 sm:p-4 text-center">
-                    <p class="text-lg sm:text-2xl font-bold">{{ $statistik['rejected'] }}</p>
-                    <p class="text-[10px] sm:text-sm">Ditolak</p>
+                <div class="bg-[#ec1d1d] text-white rounded-lg shadow-md p-2 sm:p-3 md:p-4 text-center">
+                    <p class="text-base sm:text-lg md:text-2xl font-bold">{{ $statistik['rejected'] }}</p>
+                    <p class="text-[10px] sm:text-xs md:text-sm">Ditolak</p>
                 </div>
-                <div class="bg-[#00a2e9] text-white rounded-lg shadow-md p-3 sm:p-4 text-center col-span-2 md:col-span-1">
-                    <p class="text-lg sm:text-2xl font-bold">{{ $statistik['total_poin'] }}</p>
-                    <p class="text-[10px] sm:text-sm">Total Poin</p>
+                <div class="bg-[#00a2e9] text-white rounded-lg shadow-md p-2 sm:p-3 md:p-4 text-center col-span-2 sm:col-span-1">
+                    <p class="text-base sm:text-lg md:text-2xl font-bold">{{ $statistik['total_poin'] }}</p>
+                    <p class="text-[10px] sm:text-xs md:text-sm">Total Poin</p>
                 </div>
             </div>
 
@@ -134,95 +135,97 @@
                 <div id="bulk-ids-container"></div>
 
                 <!-- Toolbar Bulk Action -->
-                <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 mb-3 sm:mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div class="text-xs sm:text-sm text-[#1B1B1B]">
                         <span id="bulk-selected-count">0</span> data dipilih
                         <span class="text-[10px] sm:text-xs text-[#27438D] ml-2 hidden sm:inline">
-                            (Hanya data dalam periode 1 minggu terakhir yang dapat di-approve)
+                            (Hanya data dalam periode 1 bulan terakhir yang dapat di-approve)
                         </span>
                     </div>
-                    <div class="flex flex-wrap gap-2">
+                    <div class="flex flex-wrap gap-2 w-full sm:w-auto">
                         <button type="button" onclick="submitBulk('approved')"
-                                class="flex-1 sm:flex-none bg-[#2E7D3E] text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:opacity-90 transition-opacity duration-200 disabled:opacity-40"
+                                class="flex-1 sm:flex-none bg-[#2E7D3E] text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium hover:opacity-90 transition-opacity duration-200 disabled:opacity-40"
                                 id="btn-bulk-approve" disabled>
                             ✅ Setujui
                         </button>
                         <button type="button" onclick="submitBulk('rejected')"
-                                class="flex-1 sm:flex-none bg-[#ec1d1d] text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:opacity-90 transition-opacity duration-200 disabled:opacity-40"
+                                class="flex-1 sm:flex-none bg-[#ec1d1d] text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium hover:opacity-90 transition-opacity duration-200 disabled:opacity-40"
                                 id="btn-bulk-reject" disabled>
                             ❌ Tolak
                         </button>
                         <button type="button" onclick="submitBulk('pending')"
-                                class="flex-1 sm:flex-none bg-[#FCC626] text-[#1B1B1B] px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:opacity-90 transition-opacity duration-200 disabled:opacity-40"
+                                class="flex-1 sm:flex-none bg-[#FCC626] text-[#1B1B1B] px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium hover:opacity-90 transition-opacity duration-200 disabled:opacity-40"
                                 id="btn-bulk-pending" disabled>
                             ⏳ Kembalikan
                         </button>
                     </div>
                 </div>
 
-                <!-- Tabel Data dikelompokkan per Divisi -->
+                <!-- Tabel Data -->
                 @forelse($groupedData as $divisi => $items)
-                    <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden mb-4 sm:mb-6">
                         <div class="bg-[#161758] text-white px-3 sm:px-4 py-2 sm:py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                             <h3 class="font-semibold text-sm sm:text-base">🏢 Divisi: {{ $divisi }}</h3>
                             <span class="text-[10px] sm:text-xs bg-white/20 px-2 sm:px-3 py-1 rounded-full">{{ $items->count() }} data</span>
                         </div>
-                        <div class="overflow-x-auto -mx-4 sm:mx-0">
-                            <div class="inline-block min-w-full align-middle">
-                                <table class="min-w-[900px] sm:min-w-full">
-                                    <thead class="bg-[#F5F5F5]">
-                                        <tr>
-                                            <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">
-                                                <input type="checkbox" class="divisi-check-all w-3 h-3 sm:w-4 sm:h-4" data-divisi="{{ \Illuminate\Support\Str::slug($divisi) }}">
-                                            </th>
-                                            <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Karyawan</th>
-                                            <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Tanggal</th>
-                                            <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Total Poin</th>
-                                            <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Status</th>
-                                            <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden lg:table-cell">Periode Approval</th>
-                                            <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden md:table-cell">Catatan HR</th>
-                                            <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($items as $item)
-                                        <tr class="border-b border-gray-200 hover:bg-[#F5F5F5]">
-                                            <td class="px-3 sm:px-4 py-2 sm:py-3">
-                                                <input type="checkbox"
-                                                       class="row-check divisi-{{ \Illuminate\Support\Str::slug($divisi) }} w-3 h-3 sm:w-4 sm:h-4"
-                                                       value="{{ $item->id }}"
-                                                       {{ !$item->isWithinApprovalPeriod() ? 'disabled' : '' }}>
-                                                @if(!$item->isWithinApprovalPeriod())
-                                                    <span class="text-[8px] sm:text-[10px] text-[#ec1d1d] block">expired</span>
-                                                @endif
-                                            </td>
-                                            <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">{{ $item->karyawan->nama_lengkap }}</td>
-                                            <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">{{ $item->tanggal->format('d-m-Y') }}</td>
-                                            <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-semibold text-[#161758]">{{ $item->total_poin }}</td>
-                                            <td class="px-3 sm:px-4 py-2 sm:py-3">
-                                                <span class="px-2 py-1 rounded-full text-[10px] sm:text-xs font-medium {{ $item->status_badge }}">
-                                                    {{ $item->status_label }}
-                                                </span>
-                                            </td>
-                                            <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm hidden lg:table-cell">
-                                                @if($item->isWithinApprovalPeriod())
-                                                    <span class="text-[#2E7D3E] text-xs font-medium">✅ Aktif</span>
-                                                @else
-                                                    <span class="text-[#ec1d1d] text-xs font-medium">❌ Expired</span>
-                                                @endif
-                                            </td>
-                                            <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm hidden md:table-cell">{{ $item->catatan_hr ?? '-' }}</td>
-                                            <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
-                                                <a href="{{ route('hr.sunnah.detail', $item->id) }}"
-                                                   class="text-[#00a2e9] hover:text-[#27438D] text-xs sm:text-sm">
-                                                    Detail
-                                                </a>
-                                            </td>
-                                        </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs sm:text-sm">
+                                <thead class="bg-[#F5F5F5]">
+                                    <tr>
+                                        <th class="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-3 text-left font-semibold text-[#1B1B1B] w-8 sm:w-10">
+                                            <input type="checkbox" class="divisi-check-all w-3 h-3 sm:w-4 sm:h-4" data-divisi="{{ \Illuminate\Support\Str::slug($divisi) }}">
+                                        </th>
+                                        <th class="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-3 text-left font-semibold text-[#1B1B1B]">Karyawan</th>
+                                        <th class="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-3 text-left font-semibold text-[#1B1B1B] hidden sm:table-cell">Tanggal</th>
+                                        <th class="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-3 text-left font-semibold text-[#1B1B1B]">Poin</th>
+                                        <th class="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-3 text-left font-semibold text-[#1B1B1B] hidden md:table-cell">Status</th>
+                                        <th class="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-3 text-left font-semibold text-[#1B1B1B] hidden lg:table-cell">Periode</th>
+                                        <th class="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-3 text-left font-semibold text-[#1B1B1B]">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($items as $item)
+                                    <tr class="border-b border-gray-200 hover:bg-[#F5F5F5]">
+                                        <td class="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-3">
+                                            <input type="checkbox"
+                                                   class="row-check divisi-{{ \Illuminate\Support\Str::slug($divisi) }} w-3 h-3 sm:w-4 sm:h-4"
+                                                   value="{{ $item->id }}"
+                                                   {{ !$item->isWithinApprovalPeriod() ? 'disabled' : '' }}>
+                                            @if(!$item->isWithinApprovalPeriod())
+                                                <span class="text-[8px] sm:text-[10px] text-[#ec1d1d] block">exp</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-3 text-xs sm:text-sm break-words max-w-[80px] sm:max-w-none">
+                                            {{ $item->karyawan->nama_lengkap }}
+                                        </td>
+                                        <td class="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-3 text-xs sm:text-sm hidden sm:table-cell">
+                                            {{ $item->tanggal->format('d-m-Y') }}
+                                        </td>
+                                        <td class="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-3 text-xs sm:text-sm font-semibold text-[#161758]">
+                                            {{ $item->total_poin }}
+                                        </td>
+                                        <td class="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-3 hidden md:table-cell">
+                                            <span class="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] md:text-xs font-medium {{ $item->status_badge }}">
+                                                {{ $item->status_label }}
+                                            </span>
+                                        </td>
+                                        <td class="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-3 text-xs sm:text-sm hidden lg:table-cell">
+                                            @if($item->isWithinApprovalPeriod())
+                                                <span class="text-[#2E7D3E] text-[10px] sm:text-xs font-medium">✅ Aktif</span>
+                                            @else
+                                                <span class="text-[#ec1d1d] text-[10px] sm:text-xs font-medium">❌ Expired</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-3">
+                                            <a href="{{ route('hr.sunnah.detail', $item->id) }}"
+                                               class="text-[#00a2e9] hover:text-[#27438D] text-xs sm:text-sm">
+                                                Detail
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 @empty
@@ -230,7 +233,7 @@
                         <svg class="w-12 sm:w-16 h-12 sm:h-16 text-gray-400 mb-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
-                        <p class="text-base sm:text-lg font-semibold">Belum ada data 7SPS untuk filter ini</p>
+                        <p class="text-sm sm:text-base md:text-lg font-semibold">Belum ada data 7SPS untuk filter ini</p>
                     </div>
                 @endforelse
 

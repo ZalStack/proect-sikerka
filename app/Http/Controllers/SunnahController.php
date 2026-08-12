@@ -372,13 +372,13 @@ class SunnahController extends Controller
 
         $sunnah = SunnahDaily::findOrFail($id);
 
-        // Cek apakah data masih dalam periode 1 minggu terakhir
+        // Cek apakah data masih dalam periode 1 BULAN terakhir (diubah dari 1 minggu)
         $tanggalData = Carbon::parse($sunnah->tanggal);
-        $batasWaktu = Carbon::today()->subDays(6)->startOfDay();
+        $batasWaktu = Carbon::today()->subDays(29)->startOfDay(); // 30 hari (1 bulan)
 
         if ($tanggalData->lessThan($batasWaktu)) {
             return redirect()->route('hr.sunnah.index')
-                ->with('error', 'Approval hanya dapat dilakukan untuk data 1 minggu terakhir! Data tanggal ' . $tanggalData->format('d-m-Y') . ' sudah melewati batas waktu approval.');
+                ->with('error', 'Approval hanya dapat dilakukan untuk data 1 bulan terakhir! Data tanggal ' . $tanggalData->format('d-m-Y') . ' sudah melewati batas waktu approval.');
         }
 
         $sunnah->status_approval = $request->status;
@@ -404,7 +404,7 @@ class SunnahController extends Controller
         $ids = $request->input('ids');
 
         $dataToUpdate = SunnahDaily::whereIn('id', $ids)->get();
-        $batasWaktu = Carbon::today()->subDays(6)->startOfDay();
+        $batasWaktu = Carbon::today()->subDays(29)->startOfDay(); // 30 hari (1 bulan)
 
         $validIds = [];
         $expiredTanggal = [];
@@ -420,7 +420,7 @@ class SunnahController extends Controller
 
         if (empty($validIds)) {
             return redirect()->route('hr.sunnah.index')
-                ->with('error', 'Tidak ada data yang dapat di-approve karena semua data sudah melewati batas waktu approval (1 minggu terakhir).');
+                ->with('error', 'Tidak ada data yang dapat di-approve karena semua data sudah melewati batas waktu approval (1 bulan terakhir).');
         }
 
         $warningMessage = '';
