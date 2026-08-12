@@ -181,8 +181,9 @@ class NotificationService
                 // Kasus 2: pengumuman pernah diedit (updated_at jauh dari created_at).
                 $isUpdated = $p->updated_at->gt($p->created_at->copy()->addMinute());
 
-                $detailUrl = $isHr
-                    ? route('hr.pengumuman.show', $p->id)
+                // PERBAIKAN: Gunakan route yang benar untuk karyawan
+                $detailUrl = $isHr 
+                    ? route('hr.pengumuman.show', $p->id) 
                     : route('karyawan.pengumuman.show', $p->id);
 
                 if ($isUpdated) {

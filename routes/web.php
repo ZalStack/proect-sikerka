@@ -114,7 +114,9 @@ Route::middleware('auth')->group(function () {
         ->group(function () {
             Route::get('/dashboard', [KaryawanDashboardController::class, 'index'])->name('dashboard');
 
-            Route::get('/pengumuman/{id}', [PengumumanController::class, 'showKaryawan'])->name('pengumuman.show');
+            // PERBAIKAN: Tambahkan route name yang benar untuk karyawan
+            Route::get('/pengumuman/{id}', [PengumumanController::class, 'showKaryawan'])
+                ->name('pengumuman.show');  // <-- NAMA ROUTE YANG DIPAKAI
 
             Route::get('/absensi', [AbsensiController::class, 'dashboard'])->name('absensi');
 

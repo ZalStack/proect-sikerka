@@ -31,7 +31,7 @@
 
         <div class="p-4 sm:p-6 lg:p-8">
             <div class="flex flex-wrap items-center gap-2 mb-3">
-                <span class="inline-flex items-center gap-1 text-[10px] sm:text-xs font-semibold px-2 sm:px-2.5 py-1 rounded-full {{ $pengumuman->target_badge_color ?? 'bg-blue-100 text-blue-700' }}">
+                <span class="text-neutral-900 font-medium inline-flex items-center gap-1 text-[10px] sm:text-xs font-semibold px-2 sm:px-2.5 py-1 rounded-full {{ $pengumuman->target_badge_color ?? 'bg-blue-100 text-blue-700' }}">
                     📌 {{ $pengumuman->target_label ?? 'Pengumuman' }}
                 </span>
                 <span class="text-[10px] sm:text-xs text-gray-400">

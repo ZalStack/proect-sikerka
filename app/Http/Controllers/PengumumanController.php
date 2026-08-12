@@ -50,9 +50,14 @@ class PengumumanController extends Controller
             'created_by' => Auth::id(),
         ];
 
-        // Jika target spesifik, simpan sebagai JSON
+        // Jika target spesifik, simpan sebagai array
+        // (JANGAN json_encode() manual di sini — kolom sudah di-cast 'array'
+        // pada model Pengumuman, jadi Eloquent yang akan meng-encode-nya
+        // otomatis saat disimpan. Meng-encode manual di sini menyebabkan
+        // double-encoding, sehingga query JSON_CONTAINS() di showKaryawan()
+        // gagal mencocokkan data dan berujung 404 saat karyawan klik Detail).
         if ($request->target === 'spesifik' && $request->has('target_karyawan')) {
-            $data['target_karyawan_ids'] = json_encode($request->target_karyawan);
+            $data['target_karyawan_ids'] = $request->target_karyawan;
         } else {
             $data['target_karyawan_ids'] = null;
         }
@@ -152,9 +157,9 @@ class PengumumanController extends Controller
             'target' => $request->target,
         ];
 
-        // Jika target spesifik, simpan sebagai JSON
+        // Jika target spesifik, simpan sebagai array (lihat catatan di method store())
         if ($request->target === 'spesifik' && $request->has('target_karyawan')) {
-            $data['target_karyawan_ids'] = json_encode($request->target_karyawan);
+            $data['target_karyawan_ids'] = $request->target_karyawan;
         } else {
             $data['target_karyawan_ids'] = null;
         }
