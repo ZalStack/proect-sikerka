@@ -87,6 +87,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/khataman', [KhatamanController::class, 'index'])->name('khataman.index');
             Route::post('/khataman/generate-kode', [KhatamanController::class, 'generateKode'])->name('khataman.generate-kode');
             Route::get('/khataman/detail/{id}', [KhatamanController::class, 'detail'])->name('khataman.detail');
+            Route::get('/khataman/config', [KhatamanController::class, 'config'])->name('khataman.config');
+            Route::post('/khataman/config', [KhatamanController::class, 'config'])->name('khataman.config.update');
 
             Route::get('/sunnah', [SunnahController::class, 'index'])->name('sunnah.index');
             Route::get('/sunnah/rekap', [SunnahController::class, 'rekapBulanan'])->name('sunnah.rekap');

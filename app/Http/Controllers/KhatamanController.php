@@ -22,26 +22,47 @@ class KhatamanController extends Controller
 
         $todayAbsensi = KhatamanAbsensi::where('karyawan_id', $user->id)->whereDate('tanggal', $today)->first();
 
-        $absensiBulanIni = KhatamanAbsensi::where('karyawan_id', $user->id)->whereMonth('tanggal', $month)->whereYear('tanggal', $year)->orderBy('tanggal', 'desc')->get();
+        $absensiBulanIni = KhatamanAbsensi::where('karyawan_id', $user->id)
+            ->whereMonth('tanggal', $month)
+            ->whereYear('tanggal', $year)
+            ->orderBy('tanggal', 'desc')
+            ->get();
+
+        // Konfigurasi dari session (jika ada)
+        $config = $this->getConfigFromSession();
 
         $statistik = [
             'total' => $absensiBulanIni->count(),
             'hadir' => $absensiBulanIni->where('status', 'Hadir')->count(),
-            'total_hari_aktif' => $this->countActiveDaysInMonth($month, $year),
+            'total_hari_aktif' => KhatamanAbsensi::countActiveDaysInMonth($month, $year),
         ];
 
-        // Daftar hari aktif (Kamis) dalam bulan ini
-        $activeDays = $this->getActiveDaysInMonth($month, $year);
+        $activeDays = KhatamanAbsensi::getActiveDaysInMonth($month, $year);
         $isActiveDay = KhatamanAbsensi::isActiveDay();
+        $isWithinTime = KhatamanAbsensi::isWithinAbsensiTime();
+        $endTime = KhatamanAbsensi::getEndTime();
+        $activeDayName = KhatamanAbsensi::getActiveDayName();
 
         $absensi = $absensiBulanIni->keyBy(function ($item) {
             return $item->tanggal->format('Y-m-d');
         });
 
-        return view('karyawan.khataman.dashboard', compact('todayAbsensi', 'absensi', 'statistik', 'activeDays', 'isActiveDay', 'month', 'year'));
+        return view('karyawan.khataman.dashboard', compact(
+            'todayAbsensi',
+            'absensi',
+            'statistik',
+            'activeDays',
+            'isActiveDay',
+            'isWithinTime',
+            'endTime',
+            'activeDayName',
+            'month',
+            'year',
+            'config'
+        ));
     }
 
-    // Check-in (tanpa batas jam, hanya validasi kode)
+    // Check-in (dengan validasi hari dan jam)
     public function checkIn(Request $request)
     {
         $request->validate([
@@ -52,47 +73,45 @@ class KhatamanController extends Controller
         $today = Carbon::today();
         $now = Carbon::now();
 
-        // Hanya validasi hari aktif (Kamis)
+        // Validasi hari aktif
         if (!KhatamanAbsensi::isActiveDay()) {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'Khataman hanya dilaksanakan pada hari Kamis!',
-                ],
-                400,
-            );
+            return response()->json([
+                'success' => false,
+                'message' => 'Khataman hanya dilaksanakan pada hari ' . KhatamanAbsensi::getActiveDayName() . '!',
+            ], 400);
+        }
+
+        // Validasi jam absensi
+        if (!KhatamanAbsensi::isWithinAbsensiTime()) {
+            $endTime = KhatamanAbsensi::getEndTime();
+            return response()->json([
+                'success' => false,
+                'message' => 'Waktu absensi Khataman telah berakhir. Batas akhir pukul ' .
+                    sprintf('%02d:%02d', $endTime['hour'], $endTime['minute']) . ' WIB.',
+            ], 400);
         }
 
         if (KhatamanAbsensi::hasCheckedInToday($user->id)) {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'Anda sudah melakukan absen Khataman hari ini!',
-                ],
-                400,
-            );
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda sudah melakukan absen Khataman hari ini!',
+            ], 400);
         }
 
         $kodeBenar = KhatamanKode::getKodeForDate($today);
         if (!$kodeBenar) {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'Kode kegiatan belum dibuat oleh HR untuk hari ini.',
-                ],
-                400,
-            );
+            return response()->json([
+                'success' => false,
+                'message' => 'Kode kegiatan belum dibuat oleh HR untuk hari ini.',
+            ], 400);
         }
 
         $kodeInput = $request->input('kode_absensi');
         if (strtoupper($kodeInput) !== strtoupper($kodeBenar)) {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'Kode kegiatan yang Anda masukkan salah!',
-                ],
-                400,
-            );
+            return response()->json([
+                'success' => false,
+                'message' => 'Kode kegiatan yang Anda masukkan salah!',
+            ], 400);
         }
 
         $absensi = KhatamanAbsensi::create([
@@ -114,17 +133,20 @@ class KhatamanController extends Controller
         ]);
     }
 
-    // Kirim waktu server saat ini ke client, dipakai untuk sinkronisasi jam
-    // real-time di dashboard supaya tidak bergantung pada jam device karyawan.
+    // Kirim waktu server
     public function serverTime()
     {
         $now = Carbon::now();
+        $endTime = KhatamanAbsensi::getEndTime();
 
         return response()->json([
             'success' => true,
             'server_time' => $now->format('Y-m-d H:i:s'),
-            'timestamp_ms' => $now->valueOf(), // epoch ms, dipakai JS
+            'timestamp_ms' => $now->valueOf(),
             'is_active_day' => KhatamanAbsensi::isActiveDay(),
+            'is_within_time' => KhatamanAbsensi::isWithinAbsensiTime(),
+            'end_time' => sprintf('%02d:%02d', $endTime['hour'], $endTime['minute']),
+            'active_day' => KhatamanAbsensi::getActiveDayName(),
             'has_checked_in' => Auth::check() ? KhatamanAbsensi::hasCheckedInToday(Auth::id()) : null,
         ]);
     }
@@ -156,10 +178,13 @@ class KhatamanController extends Controller
         $statistik = [
             'total' => $absensis->total(),
             'hadir' => $query->get()->where('status', 'Hadir')->count(),
-            'total_hari_aktif' => $this->countActiveDaysInMonth($month, $year),
+            'total_hari_aktif' => KhatamanAbsensi::countActiveDaysInMonth($month, $year),
         ];
 
-        return view('hr.khataman.index', compact('absensis', 'karyawans', 'statistik', 'month', 'year'));
+        // Konfigurasi dari session
+        $config = $this->getConfigFromSession();
+
+        return view('hr.khataman.index', compact('absensis', 'karyawans', 'statistik', 'month', 'year', 'config'));
     }
 
     // HR: Detail
@@ -169,26 +194,25 @@ class KhatamanController extends Controller
         return view('hr.khataman.detail', compact('absensi'));
     }
 
+    // HR: Generate kode
     public function generateKode(Request $request)
     {
         $user = Auth::user();
         $today = Carbon::today();
 
-        // Hanya boleh generate pada hari Kamis
         if (!KhatamanAbsensi::isActiveDay()) {
-            return redirect()->back()->with('error', 'Kode hanya bisa dibuat pada hari Kamis!');
+            return redirect()->back()->with('error', 'Kode hanya bisa dibuat pada hari ' . KhatamanAbsensi::getActiveDayName() . '!');
         }
 
         if (KhatamanKode::hasKodeForDate($today)) {
             return redirect()->back()->with('error', 'Kode untuk hari ini sudah dibuat.');
         }
 
-        // Validasi input kode
         $request->validate([
             'kode' => 'required|string|max:20',
         ]);
 
-        $kode = strtoupper(trim($request->kode)); // opsional uppercase
+        $kode = strtoupper(trim($request->kode));
 
         KhatamanKode::create([
             'tanggal' => $today,
@@ -201,31 +225,54 @@ class KhatamanController extends Controller
             ->with('success', "Kode Khataman berhasil dibuat: <strong>{$kode}</strong>");
     }
 
-    // Helpers: Hitung jumlah hari aktif (default: Kamis) dalam bulan
-    private function countActiveDaysInMonth($month, $year)
+    // HR: Konfigurasi jadwal Khataman
+    public function config(Request $request)
     {
-        $count = 0;
-        $date = Carbon::create($year, $month, 1);
-        while ($date->month == $month) {
-            if ($date->dayOfWeekIso == KhatamanAbsensi::ACTIVE_DAY) {
-                $count++;
-            }
-            $date->addDay();
+        if ($request->isMethod('post')) {
+            $request->validate([
+                'active_day' => 'required|integer|min:1|max:7',
+                'end_hour' => 'required|integer|min:0|max:23',
+                'end_minute' => 'required|integer|min:0|max:59',
+            ]);
+
+            // Simpan di session
+            session([
+                'khataman_active_day' => $request->active_day,
+                'khataman_end_hour' => $request->end_hour,
+                'khataman_end_minute' => $request->end_minute,
+            ]);
+
+            // Terapkan ke model
+            KhatamanAbsensi::setActiveDay($request->active_day);
+            KhatamanAbsensi::setEndTime($request->end_hour, $request->end_minute);
+
+            return redirect()
+                ->route('hr.khataman.index')
+                ->with('success', 'Konfigurasi jadwal Khataman berhasil diperbarui!');
         }
-        return $count;
+
+        // GET: Tampilkan form konfigurasi
+        $config = $this->getConfigFromSession();
+        $days = [
+            1 => 'Senin',
+            2 => 'Selasa',
+            3 => 'Rabu',
+            4 => 'Kamis',
+            5 => 'Jumat',
+            6 => 'Sabtu',
+            7 => 'Minggu',
+        ];
+
+        return view('hr.khataman.config', compact('config', 'days'));
     }
 
-    // Helper: Dapatkan daftar tanggal hari aktif (default: Kamis) dalam bulan
-    private function getActiveDaysInMonth($month, $year)
+    // Helper: Ambil konfigurasi dari session
+    private function getConfigFromSession()
     {
-        $days = [];
-        $date = Carbon::create($year, $month, 1);
-        while ($date->month == $month) {
-            if ($date->dayOfWeekIso == KhatamanAbsensi::ACTIVE_DAY) {
-                $days[] = $date->copy();
-            }
-            $date->addDay();
-        }
-        return $days;
+        return [
+            'active_day' => session('khataman_active_day', KhatamanAbsensi::ACTIVE_DAY),
+            'end_hour' => session('khataman_end_hour', KhatamanAbsensi::DEFAULT_END_HOUR),
+            'end_minute' => session('khataman_end_minute', KhatamanAbsensi::DEFAULT_END_MINUTE),
+        ];
     }
 }

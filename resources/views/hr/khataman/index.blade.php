@@ -7,8 +7,37 @@
         <div class="flex-1 transition-all duration-300 md:ml-64 pt-6">
             <div class="p-3 sm:p-6">
                 <div class="mb-6">
-                    <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">Khataman</h1>
-                    <p class="text-sm sm:text-base text-[#27438D]">Monitoring absensi kegiatan Khataman (Kamis)</p>
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">Khataman</h1>
+                            <p class="text-sm sm:text-base text-[#27438D]">Monitoring absensi kegiatan Khataman</p>
+                        </div>
+                        <a href="{{ route('hr.khataman.config') }}"
+                           class="inline-flex items-center px-4 py-2 bg-[#00a2e9] text-white rounded-lg hover:bg-[#0088c4] transition-colors duration-200 text-sm sm:text-base">
+                            ⚙️ Pengaturan Jadwal
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Informasi Konfigurasi -->
+                <div class="bg-blue-50 border-l-4 border-[#00a2e9] p-3 sm:p-4 rounded-lg mb-6">
+                    <div class="flex flex-wrap gap-4 text-sm">
+                        <div>
+                            <span class="font-semibold text-[#161758]">Hari Aktif:</span>
+                            <span class="text-[#27438D]">
+                                @php
+                                    $days = [1=>'Senin',2=>'Selasa',3=>'Rabu',4=>'Kamis',5=>'Jumat',6=>'Sabtu',7=>'Minggu'];
+                                @endphp
+                                {{ $days[$config['active_day']] ?? 'Kamis' }}
+                            </span>
+                        </div>
+                        <div>
+                            <span class="font-semibold text-[#161758]">Batas Akhir Absensi:</span>
+                            <span class="text-[#27438D]">
+                                {{ sprintf('%02d:%02d', $config['end_hour'], $config['end_minute']) }} WIB
+                            </span>
+                        </div>
+                    </div>
                 </div>
 
                 @if (session('success'))
@@ -41,7 +70,7 @@
                             @endif
                         </div>
                         <form action="{{ route('hr.khataman.generate-kode') }}" method="POST"
-                            class="inline-flex items-center gap-2">
+                            class="inline-flex flex-wrap items-center gap-2">
                             @csrf
                             <input type="text" name="kode" placeholder="Masukkan kode baru"
                                 class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9] text-sm"
@@ -52,7 +81,7 @@
                             </button>
                         </form>
                     </div>
-                    <p class="text-xs text-gray-500 mt-2">* Kode hanya bisa dibuat pada hari Kamis.</p>
+                    <p class="text-xs text-gray-500 mt-2">* Kode hanya bisa dibuat pada hari aktif.</p>
                 </div>
 
                 <!-- Filter -->
@@ -112,7 +141,7 @@
                         <div class="bg-[#F5F5F5] rounded-lg p-3 sm:p-4 text-center">
                             <p class="text-xl sm:text-2xl font-bold text-[#161758]">{{ $statistik['total_hari_aktif'] }}
                             </p>
-                            <p class="text-xs sm:text-sm text-[#1B1B1B]">Total Hari Kamis</p>
+                            <p class="text-xs sm:text-sm text-[#1B1B1B]">Total Hari Aktif</p>
                         </div>
                         <div class="bg-[#2E7D3E] text-white rounded-lg p-3 sm:p-4 text-center">
                             <p class="text-xl sm:text-2xl font-bold">{{ $statistik['hadir'] }}</p>
@@ -208,9 +237,7 @@
                     <div class="p-3 sm:p-4">
                         @if ($absensis->hasPages())
                             <div class="px-4 py-4 border-t border-gray-200 bg-white">
-
                                 <div class="flex flex-col md:flex-row items-center justify-between gap-4">
-
                                     <div class="text-sm text-gray-600">
                                         Menampilkan
                                         <span class="font-semibold">{{ $absensis->firstItem() }}</span>
@@ -220,10 +247,7 @@
                                         <span class="font-semibold">{{ $absensis->total() }}</span>
                                         data
                                     </div>
-
                                     <div class="flex items-center gap-2 flex-wrap">
-
-                                        {{-- Previous --}}
                                         @if ($absensis->onFirstPage())
                                             <span
                                                 class="px-4 py-2 rounded-lg bg-gray-200 text-gray-400 cursor-not-allowed">
@@ -236,8 +260,6 @@
                                             </a>
                                         @endif
 
-
-                                        {{-- Nomor Halaman --}}
                                         @foreach ($absensis->getUrlRange(1, $absensis->lastPage()) as $page => $url)
                                             @if ($page == $absensis->currentPage())
                                                 <span class="px-4 py-2 rounded-lg bg-[#00a2e9] text-white">
@@ -251,8 +273,6 @@
                                             @endif
                                         @endforeach
 
-
-                                        {{-- Next --}}
                                         @if ($absensis->hasMorePages())
                                             <a href="{{ $absensis->nextPageUrl() }}"
                                                 class="px-4 py-2 rounded-lg bg-[#161758] text-white hover:bg-[#0f1045] transition">
@@ -264,11 +284,8 @@
                                                 Next →
                                             </span>
                                         @endif
-
                                     </div>
-
                                 </div>
-
                             </div>
                         @endif
                     </div>

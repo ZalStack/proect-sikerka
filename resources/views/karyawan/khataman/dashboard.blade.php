@@ -8,7 +8,21 @@
         <div class="p-4 sm:p-6">
             <div class="mb-6">
                 <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">Khataman</h1>
-                <p class="text-sm sm:text-base text-[#27438D]">Absensi kegiatan Khataman (Kamis)</p>
+                <p class="text-sm sm:text-base text-[#27438D]">Absensi kegiatan Khataman ({{ $activeDayName }})</p>
+            </div>
+
+            <!-- Informasi Jadwal -->
+            <div class="bg-blue-50 border-l-4 border-[#00a2e9] p-3 sm:p-4 rounded-lg mb-4">
+                <div class="flex flex-wrap gap-4 text-sm">
+                    <div>
+                        <span class="font-semibold text-[#161758]">Hari:</span>
+                        <span class="text-[#27438D]">{{ $activeDayName }}</span>
+                    </div>
+                    <div>
+                        <span class="font-semibold text-[#161758]">Batas Akhir Absensi:</span>
+                        <span class="text-[#27438D]">{{ sprintf('%02d:%02d', $endTime['hour'], $endTime['minute']) }} WIB</span>
+                    </div>
+                </div>
             </div>
 
             @if(session('success'))
@@ -39,9 +53,13 @@
                             <span class="px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium bg-[#2E7D3E] text-white">
                                 ✅ Sudah Absen
                             </span>
-                        @elseif($isActiveDay)
+                        @elseif($isActiveDay && $isWithinTime)
                             <span class="px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium bg-[#FCC626] text-[#1B1B1B]">
                                 ⏳ Belum Absen
+                            </span>
+                        @elseif($isActiveDay && !$isWithinTime)
+                            <span class="px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium bg-[#ec1d1d] text-white">
+                                ⛔ Waktu Habis
                             </span>
                         @else
                             <span class="px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium bg-gray-300 text-gray-600">
@@ -49,16 +67,27 @@
                             </span>
                         @endif
                         <p class="text-xs text-gray-500 mt-1">
-                            {{ $isActiveDay ? '📅 Hari ini Kamis (aktif)' : '📅 Hari ini bukan Kamis' }}
+                            @if($isActiveDay)
+                                📅 Hari ini {{ $activeDayName }} (aktif)
+                                @if(!$isWithinTime)
+                                    <br>⏰ Absensi ditutup pukul {{ sprintf('%02d:%02d', $endTime['hour'], $endTime['minute']) }} WIB
+                                @endif
+                            @else
+                                📅 Hari ini bukan {{ $activeDayName }}
+                            @endif
                         </p>
                     </div>
                 </div>
             </div>
 
-            <!-- Form Absen (hanya jika hari Kamis dan belum absen) -->
-            @if($isActiveDay && !$todayAbsensi)
+            <!-- Form Absen (hanya jika hari aktif, masih dalam waktu, dan belum absen) -->
+            @if($isActiveDay && $isWithinTime && !$todayAbsensi)
             <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
                 <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">📝 Absen Khataman</h2>
+                <p class="text-sm text-gray-600 mb-4">
+                    Masukkan kode kegiatan yang diumumkan oleh HR. 
+                    Batas akhir absensi pukul <strong>{{ sprintf('%02d:%02d', $endTime['hour'], $endTime['minute']) }} WIB</strong>.
+                </p>
                 <form id="khatamanForm" class="space-y-4">
                     @csrf
                     <div>
@@ -84,7 +113,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                     <div class="bg-[#F5F5F5] rounded-lg p-3 sm:p-4 text-center">
                         <p class="text-xl sm:text-2xl font-bold text-[#161758]">{{ $statistik['total_hari_aktif'] }}</p>
-                        <p class="text-xs sm:text-sm text-[#1B1B1B]">Total Hari Kamis</p>
+                        <p class="text-xs sm:text-sm text-[#1B1B1B]">Total Hari {{ $activeDayName }}</p>
                     </div>
                     <div class="bg-[#2E7D3E] text-white rounded-lg p-3 sm:p-4 text-center">
                         <p class="text-xl sm:text-2xl font-bold">{{ $statistik['hadir'] }}</p>
@@ -97,9 +126,9 @@
                 </div>
             </div>
 
-            <!-- Daftar Hari Kamis dan Absensi -->
+            <!-- Daftar Hari Aktif dan Absensi -->
             <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
-                <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">📋 Daftar Absensi Khataman Bulan Ini (Kamis)</h2>
+                <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">📋 Daftar Absensi Khataman Bulan Ini ({{ $activeDayName }})</h2>
                 <div class="overflow-x-auto -mx-4 sm:mx-0">
                     <div class="inline-block min-w-full align-middle">
                         <table class="min-w-full">
@@ -137,7 +166,7 @@
                                 @empty
                                     <tr>
                                         <td colspan="4" class="px-4 py-4 text-center text-xs sm:text-sm text-[#1B1B1B]">
-                                            Tidak ada hari Kamis di bulan ini
+                                            Tidak ada hari {{ $activeDayName }} di bulan ini
                                         </td>
                                     </tr>
                                 @endforelse
@@ -156,10 +185,6 @@
 <script>
     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
-    // --- Sinkronisasi jam ke SERVER (bukan jam device karyawan) ---
-    // serverOffsetMs = selisih antara waktu server dan waktu device saat sinkronisasi.
-    // Jam yang ditampilkan = waktu device + offset, sehingga tetap "real-time"
-    // per detik tanpa perlu request tiap detik, tapi tetap akurat sesuai server.
     let serverOffsetMs = 0;
     let lastSyncFailed = false;
 
@@ -174,23 +199,19 @@
                 lastSyncFailed = false;
             }
         } catch (error) {
-            // Kalau gagal sync, tetap pakai offset terakhir yang diketahui
             lastSyncFailed = true;
             console.error('Gagal sinkronisasi jam server:', error);
         }
     }
 
-    // Fungsi update jam real-time (setiap 1 detik), berbasis waktu server
     function updateClock() {
         const now = new Date(Date.now() + serverOffsetMs);
 
-        // Update elemen jam (paksa zona WIB)
         const clockElem = document.getElementById('serverClock');
         if (clockElem) {
             clockElem.textContent = now.toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour12: false });
         }
 
-        // Update tanggal (paksa zona WIB)
         const dateElem = document.getElementById('serverDate');
         if (dateElem) {
             const options = {
@@ -204,14 +225,10 @@
         }
     }
 
-    // Sinkronisasi awal saat halaman dimuat, lalu jalankan jam
     syncServerTime().then(updateClock);
-    // Perbarui tampilan jam setiap 1 detik (berbasis offset server)
     setInterval(updateClock, 1000);
-    // Sinkronisasi ulang ke server tiap 60 detik untuk menghindari drift
     setInterval(syncServerTime, 60000);
 
-    // Submit form absen
     document.getElementById('khatamanForm')?.addEventListener('submit', function(e) {
         e.preventDefault();
 
