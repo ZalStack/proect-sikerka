@@ -6,11 +6,22 @@
         @include('layouts.sidebar')
         <div class="flex-1 transition-all duration-300 md:ml-64">
             <div class="p-3 sm:p-4 lg:p-6">
-                <div class="mb-6">
-                    <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">Absensi Karyawan</h1>
-                    <p class="text-sm sm:text-base text-[#27438D]">Check-in / Check-out dengan lokasi GPS</p>
-                    <p class="text-xs text-gray-500 mt-1">📍 Radius absensi: 50 meter dari kantor KPM</p>
-                    <p class="text-xs text-gray-500">⏰ Batas keterlambatan: 07:45</p>
+                <div class="mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div>
+                        <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">Absensi Karyawan
+                        </h1>
+                        <p class="text-sm sm:text-base text-[#27438D]">Check-in / Check-out dengan lokasi GPS</p>
+                        <p class="text-xs text-gray-500 mt-1">📍 Radius absensi: 50 meter dari kantor KPM</p>
+                        <p class="text-xs text-gray-500">⏰ Batas keterlambatan: 07:45</p>
+                    </div>
+                    <a href="{{ route('karyawan.absensi.perizinan') }}"
+                        class="inline-flex items-center justify-center gap-2 bg-[#FCC626] text-[#1B1B1B] px-4 py-2.5 rounded-lg hover:bg-[#e6b420] transition-colors duration-200 text-sm font-semibold shadow-sm w-full sm:w-auto">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Perizinan (Izin/Sakit)
+                    </a>
                 </div>
 
                 <!-- Jam Realtime -->

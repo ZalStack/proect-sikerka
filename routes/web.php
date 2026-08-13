@@ -129,6 +129,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/absensi/status', [AbsensiController::class, 'status'])->name('absensi.status');
             Route::get('/absensi/server-time', [AbsensiController::class, 'serverTime'])->name('absensi.server-time');
             Route::get('/absensi/riwayat', [AbsensiController::class, 'getRiwayat'])->name('absensi.riwayat');
+            Route::get('/absensi/perizinan', [AbsensiController::class, 'perizinan'])->name('absensi.perizinan');
 
             Route::get('/fhl', [FhlController::class, 'dashboard'])->name('fhl.dashboard');
             Route::post('/fhl/checkin', [FhlController::class, 'checkIn'])->name('fhl.checkin');
