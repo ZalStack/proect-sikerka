@@ -83,6 +83,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/fhl', [FhlController::class, 'index'])->name('fhl.index');
             Route::post('/fhl/generate-kode', [FhlController::class, 'generateKode'])->name('fhl.generate-kode');
             Route::get('/fhl/detail/{id}', [FhlController::class, 'detail'])->name('fhl.detail');
+            Route::get('/fhl/config', [FhlController::class, 'config'])->name('fhl.config');
+            Route::post('/fhl/config', [FhlController::class, 'config'])->name('fhl.config.update');
 
             Route::get('/khataman', [KhatamanController::class, 'index'])->name('khataman.index');
             Route::post('/khataman/generate-kode', [KhatamanController::class, 'generateKode'])->name('khataman.generate-kode');
@@ -143,6 +145,7 @@ Route::middleware('auth')->group(function () {
 
             Route::get('/fhl', [FhlController::class, 'dashboard'])->name('fhl.dashboard');
             Route::post('/fhl/checkin', [FhlController::class, 'checkIn'])->name('fhl.checkin');
+            Route::get('/fhl/server-time', [FhlController::class, 'serverTime'])->name('fhl.server-time');
 
             Route::get('/khataman', [KhatamanController::class, 'dashboard'])->name('khataman.dashboard');
             Route::post('/khataman/checkin', [KhatamanController::class, 'checkIn'])->name('khataman.checkin');

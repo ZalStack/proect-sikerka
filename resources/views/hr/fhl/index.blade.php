@@ -8,9 +8,32 @@
             <div class="p-3 sm:p-6">
                 <!-- Header -->
                 <div class="mb-6">
-                    <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">FHL - Friday Healthy
-                        Lifestyle</h1>
-                    <p class="text-sm sm:text-base text-[#27438D]">Monitoring absensi kegiatan FHL</p>
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">FHL - Friday Healthy Lifestyle</h1>
+                            <p class="text-sm sm:text-base text-[#27438D]">Monitoring absensi kegiatan FHL</p>
+                        </div>
+                        <a href="{{ route('hr.fhl.config') }}"
+                           class="inline-flex items-center px-4 py-2 bg-[#00a2e9] text-white rounded-lg hover:bg-[#0088c4] transition-colors duration-200 text-sm sm:text-base">
+                            ⚙️ Pengaturan Jadwal
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Informasi Konfigurasi -->
+                <div class="bg-blue-50 border-l-4 border-[#00a2e9] p-3 sm:p-4 rounded-lg mb-6">
+                    <div class="flex flex-wrap gap-4 text-sm">
+                        <div>
+                            <span class="font-semibold text-[#161758]">Hari Aktif:</span>
+                            <span class="text-[#27438D]">{{ $config['active_day_name'] ?? 'Jumat' }}</span>
+                        </div>
+                        <div>
+                            <span class="font-semibold text-[#161758]">Batas Akhir Absensi:</span>
+                            <span class="text-[#27438D]">
+                                {{ sprintf('%02d:%02d', $config['end_hour'] ?? 23, $config['end_minute'] ?? 59) }} WIB
+                            </span>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Notifikasi -->
@@ -57,8 +80,7 @@
                             </button>
                         </form>
                     @endif
-                    <p class="text-xs text-gray-500 mt-2">* Kode dibuat manual oleh HR, hanya bisa dibuat pada hari Jumat,
-                        dan berlaku untuk hari itu saja.</p>
+                    <p class="text-xs text-gray-500 mt-2">* Kode dibuat manual oleh HR, hanya bisa dibuat pada hari aktif, dan berlaku untuk hari itu saja.</p>
                 </div>
 
                 <!-- Filter -->
@@ -117,7 +139,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                         <div class="bg-[#F5F5F5] rounded-lg p-3 sm:p-4 text-center">
                             <p class="text-xl sm:text-2xl font-bold text-[#161758]">{{ $statistik['total_jumat'] }}</p>
-                            <p class="text-xs sm:text-sm text-[#1B1B1B]">Total Jumat</p>
+                            <p class="text-xs sm:text-sm text-[#1B1B1B]">Total Hari Aktif</p>
                         </div>
                         <div class="bg-[#2E7D3E] text-white rounded-lg p-3 sm:p-4 text-center">
                             <p class="text-xl sm:text-2xl font-bold">{{ $statistik['hadir'] }}</p>
@@ -138,30 +160,14 @@
                             <table class="min-w-full">
                                 <thead class="bg-[#F5F5F5]">
                                     <tr>
-                                        <th
-                                            class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">
-                                            No</th>
-                                        <th
-                                            class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">
-                                            Karyawan</th>
-                                        <th
-                                            class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden sm:table-cell">
-                                            Tanggal</th>
-                                        <th
-                                            class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden sm:table-cell">
-                                            Check-in</th>
-                                        <th
-                                            class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">
-                                            Status</th>
-                                        <th
-                                            class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden md:table-cell">
-                                            Kode</th>
-                                        <th
-                                            class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden md:table-cell">
-                                            Bukti</th>
-                                        <th
-                                            class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">
-                                            Aksi</th>
+                                        <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">No</th>
+                                        <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Karyawan</th>
+                                        <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden sm:table-cell">Tanggal</th>
+                                        <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden sm:table-cell">Check-in</th>
+                                        <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Status</th>
+                                        <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden md:table-cell">Kode</th>
+                                        <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B] hidden md:table-cell">Bukti</th>
+                                        <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -178,8 +184,7 @@
                                                 {{ $absen->check_in ? Carbon\Carbon::parse($absen->check_in)->format('H:i:s') : '-' }}
                                             </td>
                                             <td class="px-3 sm:px-4 py-2 sm:py-3">
-                                                <span
-                                                    class="px-2 py-1 rounded-full text-[10px] sm:text-xs font-medium bg-[#2E7D3E] text-white">
+                                                <span class="px-2 py-1 rounded-full text-[10px] sm:text-xs font-medium bg-[#2E7D3E] text-white">
                                                     {{ $absen->status }}
                                                 </span>
                                             </td>
@@ -206,15 +211,10 @@
                                         <tr>
                                             <td colspan="8" class="px-4 py-8 text-center text-[#1B1B1B]">
                                                 <div class="flex flex-col items-center">
-                                                    <svg class="w-12 sm:w-16 h-12 sm:h-16 text-gray-400 mb-4" fill="none"
-                                                        stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                                                        </path>
+                                                    <svg class="w-12 sm:w-16 h-12 sm:h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                                     </svg>
-                                                    <p class="text-base sm:text-lg font-semibold">Belum ada data absensi FHL
-                                                    </p>
+                                                    <p class="text-base sm:text-lg font-semibold">Belum ada data absensi FHL</p>
                                                 </div>
                                             </td>
                                         </tr>
@@ -226,9 +226,7 @@
                     <div class="p-3 sm:p-4">
                         @if ($absensis->hasPages())
                             <div class="px-4 py-4 border-t border-gray-200 bg-white">
-
                                 <div class="flex flex-col md:flex-row items-center justify-between gap-4">
-
                                     <div class="text-sm text-gray-600">
                                         Menampilkan
                                         <span class="font-semibold">{{ $absensis->firstItem() }}</span>
@@ -238,53 +236,28 @@
                                         <span class="font-semibold">{{ $absensis->total() }}</span>
                                         data
                                     </div>
-
                                     <div class="flex items-center gap-2 flex-wrap">
-
-                                        {{-- Previous --}}
                                         @if ($absensis->onFirstPage())
-                                            <span
-                                                class="px-4 py-2 rounded-lg bg-gray-200 text-gray-400 cursor-not-allowed">
-                                                ← Previous
-                                            </span>
+                                            <span class="px-4 py-2 rounded-lg bg-gray-200 text-gray-400 cursor-not-allowed">← Previous</span>
                                         @else
-                                            <a href="{{ $absensis->previousPageUrl() }}"
-                                                class="px-4 py-2 rounded-lg bg-[#161758] text-white hover:bg-[#0f1045] transition">
-                                                ← Previous
-                                            </a>
+                                            <a href="{{ $absensis->previousPageUrl() }}" class="px-4 py-2 rounded-lg bg-[#161758] text-white hover:bg-[#0f1045] transition">← Previous</a>
                                         @endif
 
-                                        {{-- Nomor Halaman --}}
                                         @foreach ($absensis->getUrlRange(1, $absensis->lastPage()) as $page => $url)
                                             @if ($page == $absensis->currentPage())
-                                                <span class="px-4 py-2 rounded-lg bg-[#00a2e9] text-white">
-                                                    {{ $page }}
-                                                </span>
+                                                <span class="px-4 py-2 rounded-lg bg-[#00a2e9] text-white">{{ $page }}</span>
                                             @else
-                                                <a href="{{ $url }}"
-                                                    class="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 transition">
-                                                    {{ $page }}
-                                                </a>
+                                                <a href="{{ $url }}" class="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 transition">{{ $page }}</a>
                                             @endif
                                         @endforeach
 
-                                        {{-- Next --}}
                                         @if ($absensis->hasMorePages())
-                                            <a href="{{ $absensis->nextPageUrl() }}"
-                                                class="px-4 py-2 rounded-lg bg-[#161758] text-white hover:bg-[#0f1045] transition">
-                                                Next →
-                                            </a>
+                                            <a href="{{ $absensis->nextPageUrl() }}" class="px-4 py-2 rounded-lg bg-[#161758] text-white hover:bg-[#0f1045] transition">Next →</a>
                                         @else
-                                            <span
-                                                class="px-4 py-2 rounded-lg bg-gray-200 text-gray-400 cursor-not-allowed">
-                                                Next →
-                                            </span>
+                                            <span class="px-4 py-2 rounded-lg bg-gray-200 text-gray-400 cursor-not-allowed">Next →</span>
                                         @endif
-
                                     </div>
-
                                 </div>
-
                             </div>
                         @endif
                     </div>

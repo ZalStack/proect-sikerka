@@ -8,7 +8,21 @@
         <div class="p-4 sm:p-6">
             <div class="mb-6">
                 <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">FHL - Friday Healthy Lifestyle</h1>
-                <p class="text-sm sm:text-base text-[#27438D]">Absensi kegiatan FHL</p>
+                <p class="text-sm sm:text-base text-[#27438D]">Absensi kegiatan FHL ({{ $activeDayName }})</p>
+            </div>
+
+            <!-- Informasi Jadwal -->
+            <div class="bg-blue-50 border-l-4 border-[#00a2e9] p-3 sm:p-4 rounded-lg mb-4">
+                <div class="flex flex-wrap gap-4 text-sm">
+                    <div>
+                        <span class="font-semibold text-[#161758]">Hari:</span>
+                        <span class="text-[#27438D]">{{ $activeDayName }}</span>
+                    </div>
+                    <div>
+                        <span class="font-semibold text-[#161758]">Batas Akhir Absensi:</span>
+                        <span class="text-[#27438D]">{{ sprintf('%02d:%02d', $endTime['hour'], $endTime['minute']) }} WIB</span>
+                    </div>
+                </div>
             </div>
 
             @if(session('success'))
@@ -28,8 +42,8 @@
                 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div>
                         <h2 class="text-sm sm:text-lg font-semibold text-[#161758] leading-tight">
-                            <span class="sm:hidden">📅 {{ $isFriday ? 'Hari Jumat' : 'Bukan Jumat' }}</span>
-                            <span class="hidden sm:inline">{{ $isFriday ? '📅 Hari ini adalah Jumat!' : '📅 Hari ini bukan Jumat' }}</span>
+                            <span class="sm:hidden">📅 {{ $isActiveDay ? 'Hari ' . $activeDayName : 'Bukan ' . $activeDayName }}</span>
+                            <span class="hidden sm:inline">{{ $isActiveDay ? '📅 Hari ini adalah ' . $activeDayName . '!' : '📅 Hari ini bukan ' . $activeDayName }}</span>
                         </h2>
                         <p id="currentDateTime" class="text-xs sm:text-sm text-[#1B1B1B] mt-2">
                             {{ Carbon\Carbon::now()->locale('id')->isoFormat('dddd, D MMMM YYYY') }}
@@ -40,9 +54,13 @@
                             <span class="px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium bg-[#2E7D3E] text-white">
                                 ✅ Sudah Absen
                             </span>
-                        @elseif($isFriday)
+                        @elseif($isActiveDay && $isWithinTime)
                             <span class="px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium bg-[#FCC626] text-[#1B1B1B]">
                                 ⏳ Belum Absen
+                            </span>
+                        @elseif($isActiveDay && !$isWithinTime)
+                            <span class="px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium bg-[#ec1d1d] text-white">
+                                ⛔ Waktu Habis
                             </span>
                         @else
                             <span class="px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium bg-gray-300 text-gray-600">
@@ -51,12 +69,21 @@
                         @endif
                     </div>
                 </div>
+                @if($isActiveDay && !$isWithinTime)
+                    <p class="text-xs text-[#ec1d1d] mt-2">
+                        ⏰ Absensi ditutup pukul {{ sprintf('%02d:%02d', $endTime['hour'], $endTime['minute']) }} WIB
+                    </p>
+                @endif
             </div>
 
             <!-- Form Absen FHL -->
-            @if($isFriday && !$todayAbsensi)
+            @if($isActiveDay && $isWithinTime && !$todayAbsensi)
             <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
                 <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">📸 Absen FHL</h2>
+                <p class="text-sm text-gray-600 mb-4">
+                    Masukkan kode kegiatan dan upload foto bukti. 
+                    Batas akhir absensi pukul <strong>{{ sprintf('%02d:%02d', $endTime['hour'], $endTime['minute']) }} WIB</strong>.
+                </p>
                 <form id="fhlForm" enctype="multipart/form-data" class="space-y-4">
                     @csrf
                     <!-- Input Kode Kegiatan -->
@@ -109,7 +136,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                     <div class="bg-[#F5F5F5] rounded-lg p-3 sm:p-4 text-center">
                         <p class="text-xl sm:text-2xl font-bold text-[#161758]">{{ $statistik['total_jumat'] }}</p>
-                        <p class="text-xs sm:text-sm text-[#1B1B1B]">Total Jumat</p>
+                        <p class="text-xs sm:text-sm text-[#1B1B1B]">Total Hari {{ $activeDayName }}</p>
                     </div>
                     <div class="bg-[#2E7D3E] text-white rounded-lg p-3 sm:p-4 text-center">
                         <p class="text-xl sm:text-2xl font-bold">{{ $statistik['hadir'] }}</p>
@@ -122,9 +149,9 @@
                 </div>
             </div>
 
-            <!-- Daftar Hari Jumat dan Absensi -->
+            <!-- Daftar Hari Aktif dan Absensi -->
             <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
-                <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">📋 Daftar Absensi FHL Bulan Ini</h2>
+                <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">📋 Daftar Absensi FHL Bulan Ini ({{ $activeDayName }})</h2>
                 <div class="overflow-x-auto -mx-4 sm:mx-0">
                     <div class="inline-block min-w-full align-middle">
                         <table class="min-w-full">
@@ -138,13 +165,13 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($fridays as $friday)
+                                @forelse($activeDays as $day)
                                     @php
-                                        $absen = $absensi->get($friday->format('Y-m-d'));
+                                        $absen = $absensi->get($day->format('Y-m-d'));
                                     @endphp
                                     <tr class="border-b border-gray-200">
-                                        <td class="px-3 sm:px-4 py-2 text-xs sm:text-sm whitespace-nowrap">{{ $friday->format('d-m-Y') }}</td>
-                                        <td class="px-3 sm:px-4 py-2 text-xs sm:text-sm hidden sm:table-cell">Jumat</td>
+                                        <td class="px-3 sm:px-4 py-2 text-xs sm:text-sm whitespace-nowrap">{{ $day->format('d-m-Y') }}</td>
+                                        <td class="px-3 sm:px-4 py-2 text-xs sm:text-sm hidden sm:table-cell">{{ $activeDayName }}</td>
                                         <td class="px-3 sm:px-4 py-2 text-xs sm:text-sm">
                                             {{ $absen && $absen->check_in ? Carbon\Carbon::parse($absen->check_in)->format('H:i:s') : '-' }}
                                         </td>
@@ -173,7 +200,7 @@
                                 @empty
                                     <tr>
                                         <td colspan="5" class="px-4 py-4 text-center text-xs sm:text-sm text-[#1B1B1B]">
-                                            Tidak ada hari Jumat di bulan ini
+                                            Tidak ada hari {{ $activeDayName }} di bulan ini
                                         </td>
                                     </tr>
                                 @endforelse
