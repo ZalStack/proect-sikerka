@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 
 use App\Models\KhatamanAbsensi;
 use App\Models\KhatamanKode;
+use App\Models\KhatamanConfig;
 use App\Models\Karyawan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,7 +21,9 @@ class KhatamanController extends Controller
         $month = Carbon::now()->month;
         $year = Carbon::now()->year;
 
-        $todayAbsensi = KhatamanAbsensi::where('karyawan_id', $user->id)->whereDate('tanggal', $today)->first();
+        $todayAbsensi = KhatamanAbsensi::where('karyawan_id', $user->id)
+            ->whereDate('tanggal', $today)
+            ->first();
 
         $absensiBulanIni = KhatamanAbsensi::where('karyawan_id', $user->id)
             ->whereMonth('tanggal', $month)
@@ -28,8 +31,8 @@ class KhatamanController extends Controller
             ->orderBy('tanggal', 'desc')
             ->get();
 
-        // Konfigurasi dari session (jika ada)
-        $config = $this->getConfigFromSession();
+        $endTime = KhatamanAbsensi::getEndTime();
+        $activeDayName = KhatamanAbsensi::getActiveDayName();
 
         $statistik = [
             'total' => $absensiBulanIni->count(),
@@ -40,8 +43,6 @@ class KhatamanController extends Controller
         $activeDays = KhatamanAbsensi::getActiveDaysInMonth($month, $year);
         $isActiveDay = KhatamanAbsensi::isActiveDay();
         $isWithinTime = KhatamanAbsensi::isWithinAbsensiTime();
-        $endTime = KhatamanAbsensi::getEndTime();
-        $activeDayName = KhatamanAbsensi::getActiveDayName();
 
         $absensi = $absensiBulanIni->keyBy(function ($item) {
             return $item->tanggal->format('Y-m-d');
@@ -57,12 +58,11 @@ class KhatamanController extends Controller
             'endTime',
             'activeDayName',
             'month',
-            'year',
-            'config'
+            'year'
         ));
     }
 
-    // Check-in (dengan validasi hari dan jam)
+    // Check-in
     public function checkIn(Request $request)
     {
         $request->validate([
@@ -86,7 +86,7 @@ class KhatamanController extends Controller
             $endTime = KhatamanAbsensi::getEndTime();
             return response()->json([
                 'success' => false,
-                'message' => 'Waktu absensi Khataman telah berakhir. Batas akhir pukul ' .
+                'message' => 'Waktu absensi Khataman telah berakhir. Batas akhir pukul ' . 
                     sprintf('%02d:%02d', $endTime['hour'], $endTime['minute']) . ' WIB.',
             ], 400);
         }
@@ -133,7 +133,7 @@ class KhatamanController extends Controller
         ]);
     }
 
-    // Kirim waktu server
+    // Server time
     public function serverTime()
     {
         $now = Carbon::now();
@@ -181,10 +181,20 @@ class KhatamanController extends Controller
             'total_hari_aktif' => KhatamanAbsensi::countActiveDaysInMonth($month, $year),
         ];
 
-        // Konfigurasi dari session
-        $config = $this->getConfigFromSession();
+        // Get config from database
+        $config = KhatamanConfig::getAll();
+        $days = [
+            1 => 'Senin',
+            2 => 'Selasa',
+            3 => 'Rabu',
+            4 => 'Kamis',
+            5 => 'Jumat',
+            6 => 'Sabtu',
+            7 => 'Minggu',
+        ];
+        $config['active_day_name'] = $days[$config['active_day'] ?? 4] ?? 'Kamis';
 
-        return view('hr.khataman.index', compact('absensis', 'karyawans', 'statistik', 'month', 'year', 'config'));
+        return view('hr.khataman.index', compact('absensis', 'karyawans', 'statistik', 'month', 'year', 'config', 'days'));
     }
 
     // HR: Detail
@@ -225,34 +235,9 @@ class KhatamanController extends Controller
             ->with('success', "Kode Khataman berhasil dibuat: <strong>{$kode}</strong>");
     }
 
-    // HR: Konfigurasi jadwal Khataman
+    // HR: Konfigurasi
     public function config(Request $request)
     {
-        if ($request->isMethod('post')) {
-            $request->validate([
-                'active_day' => 'required|integer|min:1|max:7',
-                'end_hour' => 'required|integer|min:0|max:23',
-                'end_minute' => 'required|integer|min:0|max:59',
-            ]);
-
-            // Simpan di session
-            session([
-                'khataman_active_day' => $request->active_day,
-                'khataman_end_hour' => $request->end_hour,
-                'khataman_end_minute' => $request->end_minute,
-            ]);
-
-            // Terapkan ke model
-            KhatamanAbsensi::setActiveDay($request->active_day);
-            KhatamanAbsensi::setEndTime($request->end_hour, $request->end_minute);
-
-            return redirect()
-                ->route('hr.khataman.index')
-                ->with('success', 'Konfigurasi jadwal Khataman berhasil diperbarui!');
-        }
-
-        // GET: Tampilkan form konfigurasi
-        $config = $this->getConfigFromSession();
         $days = [
             1 => 'Senin',
             2 => 'Selasa',
@@ -263,16 +248,29 @@ class KhatamanController extends Controller
             7 => 'Minggu',
         ];
 
-        return view('hr.khataman.config', compact('config', 'days'));
-    }
+        if ($request->isMethod('post')) {
+            $request->validate([
+                'active_day' => 'required|integer|min:1|max:7',
+                'end_hour' => 'required|integer|min:0|max:23',
+                'end_minute' => 'required|integer|min:0|max:59',
+            ]);
 
-    // Helper: Ambil konfigurasi dari session
-    private function getConfigFromSession()
-    {
-        return [
-            'active_day' => session('khataman_active_day', KhatamanAbsensi::ACTIVE_DAY),
-            'end_hour' => session('khataman_end_hour', KhatamanAbsensi::DEFAULT_END_HOUR),
-            'end_minute' => session('khataman_end_minute', KhatamanAbsensi::DEFAULT_END_MINUTE),
-        ];
+            // Save to database
+            KhatamanConfig::setValue('active_day', $request->active_day);
+            KhatamanConfig::setValue('end_hour', $request->end_hour);
+            KhatamanConfig::setValue('end_minute', $request->end_minute);
+
+            return redirect()
+                ->route('hr.khataman.index')
+                ->with('success', 'Konfigurasi jadwal Khataman berhasil diperbarui!');
+        }
+
+        // GET: Tampilkan form
+        $config = KhatamanConfig::getAll();
+        $config['active_day'] = $config['active_day'] ?? 4;
+        $config['end_hour'] = $config['end_hour'] ?? 23;
+        $config['end_minute'] = $config['end_minute'] ?? 59;
+
+        return view('hr.khataman.config', compact('config', 'days'));
     }
 }

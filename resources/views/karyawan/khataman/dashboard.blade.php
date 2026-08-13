@@ -80,7 +80,7 @@
                 </div>
             </div>
 
-            <!-- Form Absen (hanya jika hari aktif, masih dalam waktu, dan belum absen) -->
+            <!-- Form Absen -->
             @if($isActiveDay && $isWithinTime && !$todayAbsensi)
             <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
                 <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">📝 Absen Khataman</h2>
@@ -107,7 +107,7 @@
             </div>
             @endif
 
-            <!-- Statistik Bulan Ini -->
+            <!-- Statistik -->
             <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
                 <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">Statistik Bulan Ini</h2>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
@@ -126,7 +126,7 @@
                 </div>
             </div>
 
-            <!-- Daftar Hari Aktif dan Absensi -->
+            <!-- Daftar Hari Aktif -->
             <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
                 <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">📋 Daftar Absensi Khataman Bulan Ini ({{ $activeDayName }})</h2>
                 <div class="overflow-x-auto -mx-4 sm:mx-0">
@@ -186,7 +186,6 @@
     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
     let serverOffsetMs = 0;
-    let lastSyncFailed = false;
 
     async function syncServerTime() {
         try {
@@ -196,10 +195,8 @@
             const data = await res.json();
             if (data.success) {
                 serverOffsetMs = data.timestamp_ms - Date.now();
-                lastSyncFailed = false;
             }
         } catch (error) {
-            lastSyncFailed = true;
             console.error('Gagal sinkronisasi jam server:', error);
         }
     }
