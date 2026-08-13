@@ -72,6 +72,12 @@ Route::middleware('auth')->group(function () {
             Route::post('/absensi/{id}/verifikasi-checkin', [AbsensiController::class, 'manualCheckIn'])->name('absensi.verifikasi-checkin');
             Route::post('/absensi/{id}/verifikasi-checkout', [AbsensiController::class, 'manualCheckOut'])->name('absensi.verifikasi-checkout');
 
+            // Perizinan (review & approval pengajuan izin/sakit karyawan)
+            Route::get('/perizinan', [AbsensiController::class, 'perizinanIndex'])->name('perizinan.index');
+            Route::post('/perizinan/{id}/approve', [AbsensiController::class, 'perizinanApprove'])->name('perizinan.approve');
+            Route::post('/perizinan/{id}/reject', [AbsensiController::class, 'perizinanReject'])->name('perizinan.reject');
+            Route::post('/perizinan/{id}/reset', [AbsensiController::class, 'perizinanReset'])->name('perizinan.reset');
+
             Route::resource('pengumuman', PengumumanController::class);
 
             Route::get('/fhl', [FhlController::class, 'index'])->name('fhl.index');
@@ -130,6 +136,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/absensi/server-time', [AbsensiController::class, 'serverTime'])->name('absensi.server-time');
             Route::get('/absensi/riwayat', [AbsensiController::class, 'getRiwayat'])->name('absensi.riwayat');
             Route::get('/absensi/perizinan', [AbsensiController::class, 'perizinan'])->name('absensi.perizinan');
+            Route::post('/absensi/perizinan', [AbsensiController::class, 'perizinanStore'])->name('absensi.perizinan.store');
+            Route::delete('/absensi/perizinan/{id}', [AbsensiController::class, 'perizinanCancel'])->name('absensi.perizinan.cancel');
 
             Route::get('/fhl', [FhlController::class, 'dashboard'])->name('fhl.dashboard');
             Route::post('/fhl/checkin', [FhlController::class, 'checkIn'])->name('fhl.checkin');

@@ -618,34 +618,240 @@ class AbsensiController extends Controller
 
     /**
      * ==========================================================
-     * PERIZINAN (KARYAWAN)
+     * PERIZINAN (KARYAWAN) — PENGAJUAN IZIN / SAKIT
      * ==========================================================
-     * Halaman riwayat izin/sakit milik karyawan yang sedang login.
-     * Data diambil dari tabel absensi yang sudah ada (status Izin/Sakit),
-     * jadi tidak perlu tabel/migration baru -- data izin/sakit yang
-     * diinput/diupdate HR akan langsung muncul di sini.
+     * Karyawan mengajukan izin/sakit lewat tabel `perizinans` (status awal
+     * selalu 'pending'). Pengajuan BELUM masuk ke rekap absensi sebelum
+     * disetujui HRD. Begitu HRD approve, baris absensi (Izin/Sakit) dibuat
+     * otomatis lewat Perizinan::syncToAbsensi() -- lihat method
+     * perizinanApprove() di bawah -- sehingga langsung tercermin di rekap
+     * absensi karyawan (halaman karyawan sendiri maupun halaman HR).
+     */
+
+    /**
+     * Halaman riwayat + form pengajuan izin/sakit milik karyawan yang sedang login.
      */
     public function perizinan(Request $request)
     {
         $user = Auth::user();
 
-        $query = Absensi::where('karyawan_id', $user->id)->whereIn('status', ['Izin', 'Sakit']);
+        $query = \App\Models\Perizinan::where('karyawan_id', $user->id);
 
-        if ($request->filled('status') && in_array($request->status, ['Izin', 'Sakit'], true)) {
+        if ($request->filled('jenis') && in_array($request->jenis, \App\Models\Perizinan::JENIS, true)) {
+            $query->where('jenis', $request->jenis);
+        }
+
+        if ($request->filled('status') && in_array($request->status, \App\Models\Perizinan::STATUSES, true)) {
             $query->where('status', $request->status);
         }
 
         if ($request->filled('start_date') && $request->filled('end_date')) {
-            $query->whereBetween('tanggal', [$request->start_date, $request->end_date]);
+            $query->whereBetween('tanggal_mulai', [$request->start_date, $request->end_date]);
         }
 
-        $perizinan = $query->orderBy('tanggal', 'desc')->paginate(10)->withQueryString();
+        $perizinan = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
 
+        $selectedJenis = $request->input('jenis', 'semua');
         $selectedStatus = $request->input('status', 'semua');
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
-        return view('karyawan.perizinan', compact('perizinan', 'selectedStatus', 'startDate', 'endDate'));
+        return view('karyawan.perizinan', compact('perizinan', 'selectedJenis', 'selectedStatus', 'startDate', 'endDate'));
+    }
+
+    /**
+     * [KARYAWAN] Ajukan izin/sakit baru. Status awal selalu 'pending'
+     * (menunggu review HRD) -- TIDAK langsung tercatat di absensi.
+     */
+    public function perizinanStore(Request $request)
+    {
+        $request->validate(
+            [
+                'jenis' => 'required|in:Izin,Sakit',
+                'tanggal_mulai' => 'required|date',
+                'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
+                'keterangan' => 'required|string|min:5|max:1000',
+            ],
+            [
+                'jenis.required' => 'Silakan pilih jenis pengajuan (Izin/Sakit).',
+                'tanggal_mulai.required' => 'Tanggal mulai wajib diisi.',
+                'tanggal_selesai.required' => 'Tanggal selesai wajib diisi.',
+                'tanggal_selesai.after_or_equal' => 'Tanggal selesai tidak boleh sebelum tanggal mulai.',
+                'keterangan.required' => 'Keterangan/alasan wajib diisi.',
+                'keterangan.min' => 'Keterangan minimal 5 karakter, mohon dijelaskan lebih lengkap.',
+            ],
+        );
+
+        $user = Auth::user();
+
+        if (\App\Models\Perizinan::hasOverlap($user->id, $request->tanggal_mulai, $request->tanggal_selesai)) {
+            return back()
+                ->withInput()
+                ->with('error', 'Anda sudah punya pengajuan izin/sakit (menunggu atau disetujui) yang tanggalnya bertabrakan dengan rentang ini.');
+        }
+
+        \App\Models\Perizinan::create([
+            'karyawan_id' => $user->id,
+            'jenis' => $request->jenis,
+            'tanggal_mulai' => $request->tanggal_mulai,
+            'tanggal_selesai' => $request->tanggal_selesai,
+            'keterangan' => trim($request->keterangan),
+            'status' => 'pending',
+        ]);
+
+        return redirect()
+            ->route('karyawan.absensi.perizinan')
+            ->with('success', 'Pengajuan ' . $request->jenis . ' berhasil dikirim dan menunggu persetujuan HRD.');
+    }
+
+    /**
+     * [KARYAWAN] Batalkan pengajuan izin/sakit milik sendiri -- hanya boleh
+     * selagi masih 'pending' (belum diproses HRD).
+     */
+    public function perizinanCancel($id)
+    {
+        $perizinan = \App\Models\Perizinan::findOrFail($id);
+
+        if ($perizinan->karyawan_id !== Auth::id()) {
+            return back()->with('error', 'Akses ditolak!');
+        }
+
+        if ($perizinan->status !== 'pending') {
+            return back()->with('error', 'Pengajuan yang sudah diproses HRD tidak bisa dibatalkan.');
+        }
+
+        $perizinan->delete();
+
+        return back()->with('success', 'Pengajuan berhasil dibatalkan.');
+    }
+
+    /**
+     * ==========================================================
+     * PERIZINAN (HRD) — REVIEW & APPROVAL
+     * ==========================================================
+     */
+
+    /**
+     * [HR] Daftar seluruh pengajuan izin/sakit untuk direview, dengan filter status/jenis/karyawan.
+     */
+    public function perizinanIndex(Request $request)
+    {
+        $query = \App\Models\Perizinan::with(['karyawan', 'approver'])->orderBy('created_at', 'desc');
+
+        $status = $request->input('status', 'pending');
+        if (in_array($status, \App\Models\Perizinan::STATUSES, true)) {
+            $query->where('status', $status);
+        }
+
+        if ($request->filled('jenis') && in_array($request->jenis, \App\Models\Perizinan::JENIS, true)) {
+            $query->where('jenis', $request->jenis);
+        }
+
+        if ($request->filled('karyawan_id')) {
+            $query->where('karyawan_id', $request->karyawan_id);
+        }
+
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereBetween('tanggal_mulai', [$request->start_date, $request->end_date]);
+        }
+
+        $perizinan = $query->paginate(10)->withQueryString();
+
+        $counts = [
+            'pending' => \App\Models\Perizinan::where('status', 'pending')->count(),
+            'approved' => \App\Models\Perizinan::where('status', 'approved')->count(),
+            'rejected' => \App\Models\Perizinan::where('status', 'rejected')->count(),
+        ];
+
+        $karyawans = Karyawan::orderBy('nama_lengkap')->get();
+
+        return view('hr.perizinan.index', compact('perizinan', 'counts', 'status', 'karyawans'));
+    }
+
+    /**
+     * [HR] Setujui pengajuan -> otomatis tercatat sebagai Izin/Sakit di
+     * tabel absensi karyawan yang bersangkutan untuk seluruh rentang tanggalnya.
+     */
+    public function perizinanApprove(Request $request, $id)
+    {
+        $request->validate([
+            'catatan_hr' => 'nullable|string|max:1000',
+        ]);
+
+        $perizinan = \App\Models\Perizinan::with('karyawan')->findOrFail($id);
+
+        if ($perizinan->status !== 'pending') {
+            return back()->with('error', 'Pengajuan ini sudah pernah diproses sebelumnya.');
+        }
+
+        $perizinan->update([
+            'status' => 'approved',
+            'catatan_hr' => $request->catatan_hr,
+            'approved_by' => Auth::id(),
+            'approved_at' => now($this->officeTimezone),
+        ]);
+
+        // Terapkan ke tabel absensi karyawan (lihat Perizinan::syncToAbsensi())
+        $perizinan->syncToAbsensi();
+
+        return back()->with(
+            'success',
+            'Pengajuan ' . $perizinan->jenis . ' atas nama ' . ($perizinan->karyawan->nama_lengkap ?? 'karyawan') . ' berhasil disetujui dan tercatat di absensi.',
+        );
+    }
+
+    /**
+     * [HR] Tolak pengajuan -- WAJIB disertai catatan/alasan penolakan untuk karyawan.
+     */
+    public function perizinanReject(Request $request, $id)
+    {
+        $request->validate(
+            [
+                'catatan_hr' => 'required|string|min:3|max:1000',
+            ],
+            [
+                'catatan_hr.required' => 'Mohon isi alasan penolakan supaya karyawan tahu penyebabnya.',
+            ],
+        );
+
+        $perizinan = \App\Models\Perizinan::with('karyawan')->findOrFail($id);
+
+        if ($perizinan->status !== 'pending') {
+            return back()->with('error', 'Pengajuan ini sudah pernah diproses sebelumnya.');
+        }
+
+        $perizinan->update([
+            'status' => 'rejected',
+            'catatan_hr' => $request->catatan_hr,
+            'approved_by' => Auth::id(),
+            'approved_at' => now($this->officeTimezone),
+        ]);
+
+        return back()->with('success', 'Pengajuan ' . $perizinan->jenis . ' atas nama ' . ($perizinan->karyawan->nama_lengkap ?? 'karyawan') . ' berhasil ditolak.');
+    }
+
+    /**
+     * [HR] Kembalikan pengajuan yang sudah diproses (approved/rejected) ke
+     * status 'pending' lagi -- dipakai untuk membatalkan keputusan yang keliru.
+     * Kalau sebelumnya 'approved', baris absensi yang sempat dibuat otomatis
+     * juga akan dikembalikan (lihat Perizinan::revertAbsensi()).
+     */
+    public function perizinanReset($id)
+    {
+        $perizinan = \App\Models\Perizinan::findOrFail($id);
+
+        if ($perizinan->status === 'approved') {
+            $perizinan->revertAbsensi();
+        }
+
+        $perizinan->update([
+            'status' => 'pending',
+            'catatan_hr' => null,
+            'approved_by' => null,
+            'approved_at' => null,
+        ]);
+
+        return back()->with('success', 'Status pengajuan dikembalikan ke "Menunggu Persetujuan".');
     }
 
     public function exportExcel(Request $request)
