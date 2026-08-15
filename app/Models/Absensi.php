@@ -297,9 +297,10 @@ class Absensi extends Model
                 'longitude' => 106.8071259,
             ],
             'YAPI AL AZHAR RAWAMANGUN' => [
-                'latitude' => -6.19530173446925,
-                'longitude' => 106.88405384978994,
+                'latitude' => -6.195928,
+                'longitude' => 106.883809,
             ],
+            // -6.195928,106.883809
         ];
     }
 
