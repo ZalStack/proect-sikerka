@@ -36,7 +36,7 @@
                     {{ $user->nama_lengkap ?? $user->email }}
                 </span>
 
-                {{-- Notifikasi --}}
+                {{-- ============ NOTIFIKASI ============ --}}
                 <div class="relative"
                      x-data="notificationHandler()"
                      x-init="init()"
@@ -55,7 +55,7 @@
                         <!-- Badge -->
                         <span x-show="unreadCount > 0"
                             x-text="unreadCount > 99 ? '99+' : unreadCount"
-                            class="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] sm:text-[10px] font-bold rounded-full min-w-[16px] sm:min-w-[18px] h-[16px] sm:h-[18px] flex items-center justify-center leading-none px-1 shadow-md animate-pulse"
+                            class="absolute -top-1 -right-1 bg-gradient-to-br from-[#ec1d1d] to-[#b31414] text-white text-[8px] sm:text-[10px] font-bold rounded-full min-w-[16px] sm:min-w-[18px] h-[16px] sm:h-[18px] flex items-center justify-center leading-none px-1 shadow-md ring-2 ring-[#161758] animate-pulse"
                             style="display: none;"></span>
                     </button>
 
@@ -63,78 +63,121 @@
                     <div x-show="open"
                         @click.away="open = false"
                         x-transition:enter="transition ease-out duration-200"
-                        x-transition:enter-start="opacity-0 translate-y-1"
-                        x-transition:enter-end="opacity-100 translate-y-0"
+                        x-transition:enter-start="opacity-0 translate-y-1 scale-95"
+                        x-transition:enter-end="opacity-100 translate-y-0 scale-100"
                         x-transition:leave="transition ease-in duration-150"
-                        x-transition:leave-start="opacity-100 translate-y-0"
-                        x-transition:leave-end="opacity-0 translate-y-1"
-                        class="fixed inset-x-2 sm:inset-x-auto sm:right-0 top-12 sm:top-full sm:mt-2 w-[calc(100%-16px)] sm:w-[360px] md:w-[400px] lg:w-[420px] bg-white rounded-xl shadow-2xl z-50 border border-gray-100 overflow-hidden"
+                        x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                        x-transition:leave-end="opacity-0 translate-y-1 scale-95"
+                        class="fixed inset-x-2 sm:inset-x-auto sm:right-0 top-12 sm:top-full sm:mt-2.5 w-[calc(100%-16px)] sm:w-[380px] md:w-[420px] bg-white rounded-2xl shadow-2xl z-50 border border-gray-100 overflow-hidden"
                         style="display: none; max-height: calc(100vh - 80px);">
 
                         <!-- Header -->
-                        <div class="px-3 sm:px-5 py-2.5 sm:py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white flex items-center justify-between">
-                            <h3 class="text-xs sm:text-sm font-bold text-gray-800">Notifikasi</h3>
-                            <span x-show="unreadCount > 0"
-                                x-text="unreadCount + ' baru'"
-                                class="text-[10px] sm:text-xs text-[#00a2e9] font-semibold bg-[#E9F5FC] px-2 py-0.5 sm:py-1 rounded-full"
-                                style="display: none;"></span>
+                        <div class="px-4 sm:px-5 py-3 sm:py-4 bg-gradient-to-r from-[#161758] to-[#27438D] flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-base sm:text-lg">🔔</span>
+                                <h3 class="text-xs sm:text-sm font-bold text-white">Notifikasi</h3>
+                                <span x-show="unreadCount > 0"
+                                    x-text="(unreadCount > 99 ? '99+' : unreadCount) + ' baru'"
+                                    class="text-[9px] sm:text-[10px] font-semibold bg-white/20 text-white px-2 py-0.5 rounded-full"
+                                    style="display: none;"></span>
+                            </div>
+                            <button type="button" @click="markRead()" x-show="unreadCount > 0"
+                                class="text-[9px] sm:text-[10px] font-medium text-white/80 hover:text-white underline underline-offset-2 transition-colors"
+                                style="display: none;">
+                                Tandai dibaca
+                            </button>
                         </div>
 
                         <!-- Content -->
-                        <div class="overflow-y-auto" style="max-height: calc(80vh - 140px);">
+                        <div class="overflow-y-auto" style="max-height: calc(80vh - 150px);">
                             <!-- Loading -->
                             <template x-if="loading">
-                                <div class="p-6 sm:p-8 text-center">
-                                    <div class="animate-spin w-5 h-5 sm:w-6 sm:h-6 border-2 border-[#00a2e9] border-t-transparent rounded-full mx-auto mb-2"></div>
-                                    <p class="text-[10px] sm:text-xs text-gray-400">Memuat notifikasi...</p>
+                                <div class="p-3 sm:p-4 space-y-2 sm:space-y-3">
+                                    <template x-for="n in 3" :key="n">
+                                        <div class="flex items-start gap-3 px-2 py-2 animate-pulse">
+                                            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-200 shrink-0"></div>
+                                            <div class="flex-1 space-y-1.5 pt-1">
+                                                <div class="h-2.5 bg-gray-200 rounded w-3/4"></div>
+                                                <div class="h-2 bg-gray-100 rounded w-full"></div>
+                                                <div class="h-2 bg-gray-100 rounded w-1/3"></div>
+                                            </div>
+                                        </div>
+                                    </template>
                                 </div>
                             </template>
 
                             <!-- Empty -->
                             <template x-if="!loading && items.length === 0">
-                                <div class="p-6 sm:p-8 text-center">
-                                    <div class="text-2xl sm:text-3xl mb-2">🔔</div>
-                                    <p class="text-xs sm:text-sm text-gray-500 font-medium">Belum ada notifikasi</p>
-                                    <p class="text-[10px] sm:text-xs text-gray-400 mt-1">Notifikasi akan muncul di sini</p>
+                                <div class="p-8 sm:p-10 text-center">
+                                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gray-50 flex items-center justify-center text-2xl sm:text-3xl mx-auto mb-3">🔔</div>
+                                    <p class="text-xs sm:text-sm text-gray-600 font-semibold">Belum ada notifikasi</p>
+                                    <p class="text-[10px] sm:text-xs text-gray-400 mt-1">Notifikasi terbaru akan muncul di sini</p>
                                 </div>
                             </template>
 
-                            <!-- Notification List -->
-                            <template x-for="item in items" :key="item.id">
-                                <a :href="item.url"
-                                    class="flex items-start gap-2 sm:gap-3 px-3 sm:px-5 py-2.5 sm:py-4 border-b border-gray-50 hover:bg-gray-50/80 transition-colors duration-150 cursor-pointer"
-                                    :class="item.is_new ? 'bg-blue-50/50 border-l-2 border-l-[#00a2e9]' : ''">
+                            <!-- Group: Baru -->
+                            <template x-if="!loading && itemsNew.length > 0">
+                                <div>
+                                    <p class="px-4 sm:px-5 pt-3 pb-1 text-[9px] sm:text-[10px] font-bold text-[#00a2e9] uppercase tracking-wider">Baru</p>
+                                    <template x-for="item in itemsNew" :key="item.id">
+                                        <a :href="item.url"
+                                            class="flex items-start gap-2.5 sm:gap-3 px-4 sm:px-5 py-2.5 sm:py-3 border-l-[3px] border-l-[#00a2e9] bg-[#F0F9FF] hover:bg-[#E4F4FE] transition-colors duration-150 cursor-pointer">
+                                            <div class="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm sm:text-lg shadow-sm"
+                                                :class="notifColorClass(item.color)">
+                                                <span x-text="notifIcon(item.type)"></span>
+                                            </div>
+                                            <div class="min-w-0 flex-1">
+                                                <div class="flex items-start justify-between gap-2">
+                                                    <p class="text-[11px] sm:text-sm font-semibold text-gray-800 leading-snug" x-text="item.title"></p>
+                                                    <span class="flex-shrink-0 w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#00a2e9] mt-1.5"></span>
+                                                </div>
+                                                <p class="text-[10px] sm:text-xs text-gray-600 mt-0.5 sm:mt-1 line-clamp-2 leading-relaxed" x-text="item.message"></p>
+                                                <p class="text-[9px] sm:text-[11px] text-gray-400 mt-1 sm:mt-1.5 flex items-center gap-1">
+                                                    <svg class="w-2.5 h-2.5 sm:w-3 sm:h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
+                                                    <span x-text="item.time_ago"></span>
+                                                </p>
+                                            </div>
+                                        </a>
+                                    </template>
+                                </div>
+                            </template>
 
-                                    <!-- Icon -->
-                                    <div class="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm sm:text-lg shadow-sm"
-                                        :class="notifColorClass(item.color)">
-                                        <span x-text="notifIcon(item.type)"></span>
-                                    </div>
-
-                                    <!-- Content -->
-                                    <div class="min-w-0 flex-1">
-                                        <div class="flex items-start justify-between gap-2">
-                                            <p class="text-[11px] sm:text-sm font-semibold text-gray-800 truncate" x-text="item.title"></p>
-                                            <span x-show="item.is_new"
-                                                class="flex-shrink-0 w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#00a2e9] mt-1.5 animate-pulse"
-                                                style="display: none;"></span>
-                                        </div>
-                                        <p class="text-[10px] sm:text-xs text-gray-600 mt-0.5 sm:mt-1 line-clamp-2 leading-relaxed" x-text="item.message"></p>
-                                        <p class="text-[9px] sm:text-[11px] text-gray-400 mt-1 sm:mt-2 flex items-center gap-1">
-                                            <svg class="w-2.5 h-2.5 sm:w-3 sm:h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                            </svg>
-                                            <span x-text="item.time_ago"></span>
-                                        </p>
-                                    </div>
-                                </a>
+                            <!-- Group: Sebelumnya -->
+                            <template x-if="!loading && itemsOlder.length > 0">
+                                <div>
+                                    <p class="px-4 sm:px-5 pt-3 pb-1 text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wider" x-show="itemsNew.length > 0">Sebelumnya</p>
+                                    <template x-for="item in itemsOlder" :key="item.id">
+                                        <a :href="item.url"
+                                            class="flex items-start gap-2.5 sm:gap-3 px-4 sm:px-5 py-2.5 sm:py-3 border-b border-gray-50 last:border-b-0 hover:bg-gray-50/80 transition-colors duration-150 cursor-pointer">
+                                            <div class="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm sm:text-lg shadow-sm opacity-90"
+                                                :class="notifColorClass(item.color)">
+                                                <span x-text="notifIcon(item.type)"></span>
+                                            </div>
+                                            <div class="min-w-0 flex-1">
+                                                <p class="text-[11px] sm:text-sm font-semibold text-gray-700 leading-snug" x-text="item.title"></p>
+                                                <p class="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1 line-clamp-2 leading-relaxed" x-text="item.message"></p>
+                                                <p class="text-[9px] sm:text-[11px] text-gray-400 mt-1 sm:mt-1.5 flex items-center gap-1">
+                                                    <svg class="w-2.5 h-2.5 sm:w-3 sm:h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
+                                                    <span x-text="item.time_ago"></span>
+                                                </p>
+                                            </div>
+                                        </a>
+                                    </template>
+                                </div>
                             </template>
                         </div>
 
                         <!-- Footer -->
                         <a href="{{ route('notifications.index') }}"
-                            class="block text-center text-[11px] sm:text-sm font-semibold text-[#00a2e9] py-2.5 sm:py-3.5 border-t border-gray-100 hover:bg-blue-50/50 transition-colors duration-150">
+                            class="flex items-center justify-center gap-1.5 text-center text-[11px] sm:text-sm font-semibold text-[#27438D] py-2.5 sm:py-3.5 border-t border-gray-100 bg-gray-50/50 hover:bg-gray-100 transition-colors duration-150">
                             Lihat Semua Notifikasi
+                            <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
                         </a>
                     </div>
                 </div>
@@ -226,6 +269,14 @@ function notificationHandler() {
             teal: 'bg-teal-100 text-teal-700',
             indigo: 'bg-indigo-100 text-indigo-700',
             cyan: 'bg-cyan-100 text-cyan-700',
+        },
+
+        get itemsNew() {
+            return this.items.filter(i => i.is_new);
+        },
+
+        get itemsOlder() {
+            return this.items.filter(i => !i.is_new);
         },
 
         notifIcon(type) {
