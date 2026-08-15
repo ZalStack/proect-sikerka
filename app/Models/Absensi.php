@@ -300,7 +300,6 @@ class Absensi extends Model
                 'latitude' => -6.195928,
                 'longitude' => 106.883809,
             ],
-            // -6.195928,106.883809
         ];
     }
 

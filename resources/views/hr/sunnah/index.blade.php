@@ -60,7 +60,8 @@
                 <h2 class="text-sm sm:text-base md:text-lg font-semibold text-[#161758] mb-3 sm:mb-4 flex items-center gap-2">
                     <span>🔎</span> Filter Laporan
                 </h2>
-                <form action="{{ route('hr.sunnah.index') }}" method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+                <form id="filter-form" action="{{ route('hr.sunnah.index') }}" method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+                <div id="filter-fields" class="contents">
                     <div>
                         <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Tanggal Mulai</label>
                         <input type="date" name="start_date" value="{{ $startDate ? $startDate->format('Y-m-d') : $defaultStartDate }}"
@@ -107,11 +108,28 @@
                                 Reset
                             </a>
                         @endif
-                        <button type="submit" class="w-full sm:w-auto bg-[#27438D] text-white px-4 sm:px-6 py-2 rounded-xl hover:bg-[#161758] active:scale-95 transition-all duration-200 text-sm sm:text-base font-medium shadow-sm">
-                            Terapkan Filter
+                        <button type="submit" id="filter-submit-btn" class="w-full sm:w-auto bg-[#27438D] text-white px-4 sm:px-6 py-2 rounded-xl hover:bg-[#161758] active:scale-95 transition-all duration-200 text-sm sm:text-base font-medium shadow-sm inline-flex items-center justify-center gap-2">
+                            <svg id="filter-submit-spinner" class="hidden animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                            <span>Terapkan Filter</span>
                         </button>
                     </div>
+                </div>
                 </form>
+            </div>
+
+            {{-- ============ AJAX CONTENT (statistik, toolbar, data, pagination) ============ --}}
+            <div id="ajax-content" class="relative">
+            <div id="ajax-loading-overlay" class="hidden absolute inset-0 z-40 bg-white/60 backdrop-blur-[1px] items-center justify-center rounded-2xl">
+                <div class="flex items-center gap-2 bg-white shadow-lg rounded-full px-4 py-2 border border-gray-100">
+                    <svg class="animate-spin h-4 w-4 text-[#27438D]" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    <span class="text-xs sm:text-sm font-medium text-[#161758]">Memuat data...</span>
+                </div>
             </div>
 
             {{-- ============ STATISTIK ============ --}}
@@ -306,11 +324,13 @@
                 @endforelse
 
                 @if($sunnahData->total() > 0)
-                    <div class="bg-white rounded-2xl shadow-md p-3 sm:p-4 mt-2 border border-gray-100">
+                    <div id="pagination-wrapper" class="bg-white rounded-2xl shadow-md p-3 sm:p-4 mt-2 border border-gray-100">
                         {{ $sunnahData->onEachSide(1)->links() }}
                     </div>
                 @endif
             </form>
+            </div>
+            {{-- ============ /AJAX CONTENT ============ --}}
         </div>
     </div>
 </div>
@@ -369,15 +389,24 @@
 </style>
 
 <script>
-const bulkForm = document.getElementById('bulk-approve-form');
-const bulkTargetStatus = document.getElementById('bulk-target-status');
-const bulkCatatanHr = document.getElementById('bulk-catatan-hr');
-const bulkIdsContainer = document.getElementById('bulk-ids-container');
-const bulkSelectedCount = document.getElementById('bulk-selected-count');
-const btnBulkApprove = document.getElementById('btn-bulk-approve');
-const btnBulkReject = document.getElementById('btn-bulk-reject');
-const btnBulkPending = document.getElementById('btn-bulk-pending');
-const selectAllGlobal = document.getElementById('select-all-global');
+// Referensi elemen di dalam #ajax-content. Elemen ini DIGANTI setiap kali
+// filter/pagination di-refresh via AJAX, jadi harus di-rebind (bukan const)
+// supaya tidak menunjuk ke node lama yang sudah lepas dari DOM.
+let bulkForm, bulkTargetStatus, bulkCatatanHr, bulkIdsContainer, bulkSelectedCount;
+let btnBulkApprove, btnBulkReject, btnBulkPending, selectAllGlobal;
+
+function bindBulkRefs() {
+    bulkForm = document.getElementById('bulk-approve-form');
+    bulkTargetStatus = document.getElementById('bulk-target-status');
+    bulkCatatanHr = document.getElementById('bulk-catatan-hr');
+    bulkIdsContainer = document.getElementById('bulk-ids-container');
+    bulkSelectedCount = document.getElementById('bulk-selected-count');
+    btnBulkApprove = document.getElementById('btn-bulk-approve');
+    btnBulkReject = document.getElementById('btn-bulk-reject');
+    btnBulkPending = document.getElementById('btn-bulk-pending');
+    selectAllGlobal = document.getElementById('select-all-global');
+}
+bindBulkRefs();
 
 const commentModal = document.getElementById('comment-modal');
 const commentModalBackdrop = document.getElementById('comment-modal-backdrop');
@@ -399,55 +428,84 @@ const statusConfig = {
     pending:  { title: 'Kembalikan ke Menunggu', icon: '⏳', headerClass: 'bg-gradient-to-r from-[#FCC626] to-[#e0ab00]', btnClass: 'bg-[#FCC626] text-[#1B1B1B]', required: false },
 };
 
-function getCheckedRows() {
-    return Array.from(document.querySelectorAll('.row-check:checked'));
+// PENTING: setiap baris data punya DUA checkbox dengan value (id) yang sama —
+// satu di tabel desktop (hidden di mobile), satu lagi di kartu mobile (hidden
+// di desktop) — supaya tampilan tetap responsive. Karena itu, jumlah "data
+// dipilih" HARUS dihitung berdasarkan id yang UNIK (bukan jumlah elemen
+// checkbox), dan setiap kali satu checkbox dicentang, checkbox kembarannya
+// (dengan id yang sama) ikut disamakan. Ini memastikan jumlah data yang
+// tercentang selalu sama persis dengan jumlah data yang benar-benar terpilih,
+// di layar ukuran apa pun.
+function setRowChecked(value, checked) {
+    document.querySelectorAll(`.row-check[value="${CSS.escape(String(value))}"]`).forEach(cb => {
+        if (!cb.disabled) cb.checked = checked;
+    });
 }
 
-function getAllSelectableRows() {
-    return Array.from(document.querySelectorAll('.row-check:not(:disabled)'));
+function getUniqueCheckedIds() {
+    const ids = new Set();
+    document.querySelectorAll('.row-check:checked').forEach(cb => ids.add(cb.value));
+    return Array.from(ids);
+}
+
+function getUniqueSelectableIds() {
+    const ids = new Set();
+    document.querySelectorAll('.row-check:not(:disabled)').forEach(cb => ids.add(cb.value));
+    return Array.from(ids);
 }
 
 function refreshBulkToolbar() {
-    const checked = getCheckedRows();
-    bulkSelectedCount.textContent = checked.length;
-    btnBulkApprove.disabled = checked.length === 0;
-    btnBulkReject.disabled = checked.length === 0;
-    btnBulkPending.disabled = checked.length === 0;
+    const checkedIds = getUniqueCheckedIds();
+    bulkSelectedCount.textContent = checkedIds.length;
+    btnBulkApprove.disabled = checkedIds.length === 0;
+    btnBulkReject.disabled = checkedIds.length === 0;
+    btnBulkPending.disabled = checkedIds.length === 0;
 
-    const all = getAllSelectableRows();
-    selectAllGlobal.checked = all.length > 0 && checked.length === all.length;
+    const allIds = getUniqueSelectableIds();
+    selectAllGlobal.checked = allIds.length > 0 && checkedIds.length === allIds.length;
+
+    // Sinkronkan juga status "pilih semua di divisi ini" per grup.
+    document.querySelectorAll('.divisi-check-all').forEach(groupCb => {
+        const slug = groupCb.dataset.divisi;
+        const groupIds = new Set();
+        document.querySelectorAll(`.row-check.divisi-${slug}:not(:disabled)`).forEach(cb => groupIds.add(cb.value));
+        const groupCheckedIds = new Set();
+        document.querySelectorAll(`.row-check.divisi-${slug}:checked`).forEach(cb => groupCheckedIds.add(cb.value));
+        groupCb.checked = groupIds.size > 0 && groupCheckedIds.size === groupIds.size;
+    });
 }
 
 document.addEventListener('change', function (event) {
     if (event.target.classList.contains('row-check')) {
+        // Samakan checkbox kembarannya (desktop <-> mobile) untuk id yang sama.
+        setRowChecked(event.target.value, event.target.checked);
         refreshBulkToolbar();
     }
 
     if (event.target.classList.contains('divisi-check-all')) {
         const divisiSlug = event.target.dataset.divisi;
-        document.querySelectorAll(`.row-check.divisi-${divisiSlug}`).forEach(cb => {
-            if (!cb.disabled) cb.checked = event.target.checked;
-        });
+        const ids = new Set();
+        document.querySelectorAll(`.row-check.divisi-${divisiSlug}`).forEach(cb => ids.add(cb.value));
+        ids.forEach(id => setRowChecked(id, event.target.checked));
         refreshBulkToolbar();
     }
 
     if (event.target === selectAllGlobal) {
-        getAllSelectableRows().forEach(cb => { cb.checked = selectAllGlobal.checked; });
-        document.querySelectorAll('.divisi-check-all').forEach(cb => { cb.checked = selectAllGlobal.checked; });
+        getUniqueSelectableIds().forEach(id => setRowChecked(id, selectAllGlobal.checked));
         refreshBulkToolbar();
     }
 });
 
 function openCommentModal(status) {
-    const checked = getCheckedRows();
-    if (checked.length === 0) return;
+    const checkedIds = getUniqueCheckedIds();
+    if (checkedIds.length === 0) return;
 
     pendingStatus = status;
     const cfg = statusConfig[status];
 
     commentModalTitleText.textContent = cfg.title;
     commentModalIcon.textContent = cfg.icon;
-    commentModalCount.textContent = checked.length;
+    commentModalCount.textContent = checkedIds.length;
     commentModalTextarea.value = '';
     commentModalCharcount.textContent = '0';
 
@@ -500,18 +558,18 @@ function confirmBulkSubmit() {
         return;
     }
 
-    const checked = getCheckedRows();
-    if (checked.length === 0) {
+    const checkedIds = getUniqueCheckedIds();
+    if (checkedIds.length === 0) {
         closeCommentModal();
         return;
     }
 
     bulkIdsContainer.innerHTML = '';
-    checked.forEach(cb => {
+    checkedIds.forEach(id => {
         const input = document.createElement('input');
         input.type = 'hidden';
         input.name = 'ids[]';
-        input.value = cb.value;
+        input.value = id;
         bulkIdsContainer.appendChild(input);
     });
 
@@ -521,5 +579,101 @@ function confirmBulkSubmit() {
     closeCommentModal();
     bulkForm.submit();
 }
+
+// ============ AJAX FILTER & PAGINATION (stay on the same page) ============
+// Supaya filter/pindah halaman data TIDAK reload seluruh halaman (state
+// scroll & komponen lain tetap terjaga), form filter + link pagination
+// di-intercept dan datanya diambil via fetch(), lalu hanya bagian
+// #ajax-content (statistik, toolbar, daftar data, pagination) yang diganti.
+// Modal keterangan/komentar tetap wajib muncul dulu sebelum bulk approve
+// dikirim, karena tombol aksi bulk selalu memanggil openCommentModal()
+// terlebih dahulu (lihat di atas) — perilaku ini tidak berubah walau data
+// sedang difilter, karena hidden input filter di dalam form bulk selalu
+// ikut ter-refresh bersama #ajax-content.
+const filterForm = document.getElementById('filter-form');
+// #ajax-content sendiri (wrapper-nya) tidak pernah diganti -- hanya
+// innerHTML-nya -- jadi aman di-cache. Tapi elemen DI DALAMNYA (overlay,
+// tombol, dsb) ikut diganti setiap refresh, jadi harus selalu di-query ulang
+// (jangan di-cache) supaya tidak menunjuk ke node lama yang sudah lepas.
+const ajaxContent = document.getElementById('ajax-content');
+const filterSubmitBtn = document.getElementById('filter-submit-btn');
+const filterSubmitSpinner = document.getElementById('filter-submit-spinner');
+
+function setAjaxLoading(isLoading) {
+    const overlay = document.getElementById('ajax-loading-overlay');
+    if (overlay) {
+        overlay.classList.toggle('hidden', !isLoading);
+        overlay.classList.toggle('flex', isLoading);
+    }
+    if (ajaxContent) {
+        ajaxContent.classList.toggle('pointer-events-none', isLoading);
+    }
+    if (filterSubmitBtn) filterSubmitBtn.disabled = isLoading;
+    if (filterSubmitSpinner) filterSubmitSpinner.classList.toggle('hidden', !isLoading);
+}
+
+async function loadFilteredData(url, { pushState = true } = {}) {
+    setAjaxLoading(true);
+    try {
+        const res = await fetch(url, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        });
+        if (!res.ok) throw new Error('Gagal memuat data (' + res.status + ')');
+
+        const html = await res.text();
+        const parsed = new DOMParser().parseFromString(html, 'text/html');
+
+        const newAjaxContent = parsed.getElementById('ajax-content');
+        const newFilterFields = parsed.getElementById('filter-fields');
+
+        if (newAjaxContent) {
+            ajaxContent.innerHTML = newAjaxContent.innerHTML;
+        }
+        if (newFilterFields) {
+            document.getElementById('filter-fields').innerHTML = newFilterFields.innerHTML;
+        }
+
+        // Elemen di dalam #ajax-content baru saja diganti total -> rebind referensi JS.
+        bindBulkRefs();
+        refreshBulkToolbar();
+
+        if (pushState) {
+            window.history.pushState({ ajaxUrl: url }, '', url);
+        }
+    } catch (err) {
+        // Fallback aman: kalau AJAX gagal (mis. jaringan bermasalah), tetap
+        // navigasi normal supaya user tidak "stuck" tanpa hasil.
+        window.location.href = url;
+    } finally {
+        setAjaxLoading(false);
+    }
+}
+
+// Submit form filter via AJAX (tetap di halaman yang sama).
+if (filterForm) {
+    filterForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        const params = new URLSearchParams(new FormData(filterForm)).toString();
+        const url = filterForm.action + (params ? '?' + params : '');
+        loadFilteredData(url);
+    });
+}
+
+// Intercept klik pada link pagination & tombol "Reset" filter supaya juga
+// tetap di halaman yang sama (tidak full reload). Link "Detail" pada setiap
+// baris data SENGAJA tidak di-intercept karena memang harus membuka halaman
+// detail seperti biasa.
+document.addEventListener('click', function (event) {
+    const link = event.target.closest('#pagination-wrapper a[href], #filter-fields a[href]');
+    if (!link) return;
+
+    event.preventDefault();
+    loadFilteredData(link.getAttribute('href'));
+});
+
+// Dukungan tombol back/forward browser.
+window.addEventListener('popstate', function () {
+    loadFilteredData(window.location.href, { pushState: false });
+});
 </script>
 @endsection
