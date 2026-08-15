@@ -6,10 +6,20 @@
     @include('layouts.sidebar')
     <div class="flex-1 transition-all duration-300 md:ml-64 pt-6">
         <div class="p-3 sm:p-6">
-            <div class="mb-6">
-                <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">7SPS - 7 Sunnah Plus Suprasional</h1>
-                <p class="text-sm sm:text-base text-[#27438D]">Kelola kegiatan sunnah harian Anda. Langsung centang, tidak perlu konfirmasi tambahan.</p>
+            <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">7SPS - 7 Sunnah Plus Suprasional</h1>
+                    <p class="text-sm sm:text-base text-[#27438D]">Kelola kegiatan sunnah harian Anda. Langsung centang, tidak perlu konfirmasi tambahan.</p>
+                </div>
+                <button type="button" id="toggle-view-btn" onclick="toggleSunnahView()"
+                        class="inline-flex items-center justify-center gap-2 bg-[#161758] text-white px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold shadow-md hover:bg-[#27438D] active:scale-95 transition-all duration-200 w-full sm:w-auto shrink-0">
+                    <span id="toggle-view-btn-icon">📋</span>
+                    <span id="toggle-view-btn-text">Riwayat &amp; Keterangan HR</span>
+                </button>
             </div>
+
+            {{-- ============ VIEW: CHECKLIST HARIAN ============ --}}
+            <div id="view-checklist">
 
             @if(session('success'))
                 <div class="bg-[#2E7D3E] text-white p-3 sm:p-4 rounded-lg mb-4 text-sm">
@@ -208,6 +218,116 @@
                     </div>
                 </div>
             </div>
+
+            </div>
+            {{-- ============ /VIEW: CHECKLIST HARIAN ============ --}}
+
+            {{-- ============ VIEW: RIWAYAT & KETERANGAN HR ============ --}}
+            <div id="view-riwayat" class="hidden">
+                @php
+                    $poinConfigKeys = array_keys($poinConfig);
+                @endphp
+
+                <div class="bg-gradient-to-r from-[#161758] to-[#27438D] text-white rounded-xl p-4 sm:p-5 mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 shadow-md">
+                    <div>
+                        <h2 class="text-base sm:text-lg font-bold flex items-center gap-2">📋 Riwayat Checklist &amp; Keterangan HR</h2>
+                        <p class="text-[11px] sm:text-xs text-white/80 mt-0.5">
+                            Bulan {{ \Carbon\Carbon::createFromDate($year, $month, 1)->locale('id')->isoFormat('MMMM YYYY') }} &middot; {{ $monthlyData->count() }} data
+                        </p>
+                    </div>
+                    <span class="text-[10px] sm:text-xs bg-white/15 px-3 py-1.5 rounded-full font-medium w-fit">
+                        Total Poin: {{ $statistik['total_poin'] }}
+                    </span>
+                </div>
+
+                @if($monthlyData->count() > 0)
+                    <div class="bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100">
+                        {{-- ---- Desktop / tablet table (>= md) ---- --}}
+                        <div class="hidden md:block overflow-x-auto">
+                            <table class="w-full text-xs sm:text-sm">
+                                <thead class="bg-[#F5F5F5]">
+                                    <tr>
+                                        <th class="px-3 sm:px-4 py-2.5 sm:py-3 text-left font-semibold text-[#1B1B1B]">Tanggal</th>
+                                        <th class="px-3 sm:px-4 py-2.5 sm:py-3 text-left font-semibold text-[#1B1B1B]">Kegiatan Dikerjakan</th>
+                                        <th class="px-3 sm:px-4 py-2.5 sm:py-3 text-left font-semibold text-[#1B1B1B]">Poin</th>
+                                        <th class="px-3 sm:px-4 py-2.5 sm:py-3 text-left font-semibold text-[#1B1B1B]">Status</th>
+                                        <th class="px-3 sm:px-4 py-2.5 sm:py-3 text-left font-semibold text-[#1B1B1B]">Keterangan HR</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    @foreach($monthlyData as $item)
+                                        @php
+                                            $checkedCount = collect($poinConfigKeys)->filter(fn($k) => (bool) $item->$k)->count();
+                                        @endphp
+                                        <tr class="hover:bg-[#F5F5F5] transition-colors duration-150 align-top">
+                                            <td class="px-3 sm:px-4 py-2.5 sm:py-3 font-medium text-[#1B1B1B] whitespace-nowrap">
+                                                {{ $item->tanggal->translatedFormat('d M Y') }}
+                                            </td>
+                                            <td class="px-3 sm:px-4 py-2.5 sm:py-3 text-[#1B1B1B]">
+                                                <span class="font-semibold text-[#161758]">{{ $checkedCount }}</span>/{{ count($poinConfigKeys) }} kegiatan
+                                                <span class="text-gray-400">&middot;</span>
+                                                <span class="text-[#27438D]">{{ $item->jumlah_sholat_berjamaah }}/5 berjamaah</span>
+                                            </td>
+                                            <td class="px-3 sm:px-4 py-2.5 sm:py-3 font-bold text-[#161758]">
+                                                {{ $item->total_poin }}
+                                            </td>
+                                            <td class="px-3 sm:px-4 py-2.5 sm:py-3">
+                                                <span class="px-2 py-1 rounded-full text-[9px] sm:text-[10px] font-medium {{ $item->status_badge }}">
+                                                    {{ $item->status_label }}
+                                                </span>
+                                            </td>
+                                            <td class="px-3 sm:px-4 py-2.5 sm:py-3 max-w-[260px]">
+                                                @if($item->catatan_hr)
+                                                    <p class="text-[#1B1B1B] italic">📝 "{{ $item->catatan_hr }}"</p>
+                                                @else
+                                                    <span class="text-gray-400 italic">Belum ada catatan</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {{-- ---- Mobile card list (< md) ---- --}}
+                        <div class="md:hidden divide-y divide-gray-100">
+                            @foreach($monthlyData as $item)
+                                @php
+                                    $checkedCount = collect($poinConfigKeys)->filter(fn($k) => (bool) $item->$k)->count();
+                                @endphp
+                                <div class="p-3 sm:p-4">
+                                    <div class="flex items-start justify-between gap-2 mb-1.5">
+                                        <p class="text-xs sm:text-sm font-semibold text-[#1B1B1B]">{{ $item->tanggal->translatedFormat('d MMMM Y') }}</p>
+                                        <span class="px-2 py-1 rounded-full text-[9px] font-medium shrink-0 {{ $item->status_badge }}">
+                                            {{ $item->status_label }}
+                                        </span>
+                                    </div>
+                                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] sm:text-xs text-[#27438D] mb-2">
+                                        <span class="font-bold text-[#161758]">⭐ {{ $item->total_poin }} poin</span>
+                                        <span>{{ $checkedCount }}/{{ count($poinConfigKeys) }} kegiatan</span>
+                                        <span>🕌 {{ $item->jumlah_sholat_berjamaah }}/5 berjamaah</span>
+                                    </div>
+                                    <div class="bg-[#F5F5F5] rounded-lg px-2.5 py-2 text-[11px] sm:text-xs text-[#1B1B1B]">
+                                        @if($item->catatan_hr)
+                                            <span class="font-medium text-[#27438D]">📝 Keterangan HR:</span> <span class="italic">"{{ $item->catatan_hr }}"</span>
+                                        @else
+                                            <span class="text-gray-400 italic">Belum ada catatan dari HR</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @else
+                    <div class="bg-white rounded-2xl shadow-md p-8 sm:p-10 text-center border border-gray-100">
+                        <div class="text-3xl sm:text-4xl mb-3">🗒️</div>
+                        <p class="text-sm sm:text-base font-semibold text-[#1B1B1B]">Belum ada riwayat checklist bulan ini</p>
+                        <p class="text-xs sm:text-sm text-gray-400 mt-1">Mulai centang kegiatan sunnah harian Anda di tab Checklist.</p>
+                    </div>
+                @endif
+            </div>
+            {{-- ============ /VIEW: RIWAYAT & KETERANGAN HR ============ --}}
+
         </div>
     </div>
 </div>
@@ -320,6 +440,27 @@
 </style>
 
 <script>
+function toggleSunnahView() {
+    const checklistView = document.getElementById('view-checklist');
+    const riwayatView = document.getElementById('view-riwayat');
+    const btnIcon = document.getElementById('toggle-view-btn-icon');
+    const btnText = document.getElementById('toggle-view-btn-text');
+
+    const showingChecklist = !checklistView.classList.contains('hidden');
+
+    if (showingChecklist) {
+        checklistView.classList.add('hidden');
+        riwayatView.classList.remove('hidden');
+        btnIcon.textContent = '✅';
+        btnText.textContent = 'Kembali ke Checklist';
+    } else {
+        riwayatView.classList.add('hidden');
+        checklistView.classList.remove('hidden');
+        btnIcon.textContent = '📋';
+        btnText.textContent = 'Riwayat & Keterangan HR';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
     const isLocked = @json($isLocked);
