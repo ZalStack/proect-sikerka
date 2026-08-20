@@ -67,6 +67,8 @@ Route::middleware('auth')->group(function () {
 
             Route::get('/absensi', [AbsensiController::class, 'index'])->name('absensi.index');
             Route::get('/absensi/export', [AbsensiController::class, 'exportExcel'])->name('absensi.export');
+            Route::get('/absensi/verifikasi', [AbsensiController::class, 'verifikasiIndex'])->name('absensi.verifikasi');
+            Route::post('/absensi/verifikasi/store', [AbsensiController::class, 'verifikasiStore'])->name('absensi.verifikasi.store');
             Route::get('/absensi/{id}', [AbsensiController::class, 'detail'])->name('absensi.detail');
             Route::put('/absensi/{id}/status', [AbsensiController::class, 'updateStatus'])->name('absensi.update-status');
             Route::post('/absensi/{id}/verifikasi-checkin', [AbsensiController::class, 'manualCheckIn'])->name('absensi.verifikasi-checkin');

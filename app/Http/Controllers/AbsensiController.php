@@ -1862,4 +1862,164 @@ class AbsensiController extends Controller
             ],
         ]);
     }
+
+    /**
+     * ==========================================================
+     * VERIFIKASI ABSEN - HALAMAN HR
+     * ==========================================================
+     * HR dapat melihat seluruh data absensi karyawan hari ini dan
+     * melakukan verifikasi check-in / check-out secara manual.
+     * Lokasi diambil dari device HR (latitude & longitude).
+     */
+
+    /**
+     * Halaman verifikasi absen - menampilkan semua karyawan dengan status absensi hari ini.
+     */
+    public function verifikasiIndex(Request $request)
+    {
+        $today = Carbon::today($this->officeTimezone);
+        $now = Carbon::now($this->officeTimezone);
+
+        $selectedDate = $request->filled('tanggal') ? Carbon::parse($request->tanggal, $this->officeTimezone)->startOfDay() : $today;
+
+        $karyawans = Karyawan::orderBy('nama_lengkap')->get();
+
+        $absensiToday = Absensi::whereDate('tanggal', $selectedDate)->get()->keyBy('karyawan_id');
+
+        $employeesData = $karyawans->map(function ($karyawan) use ($absensiToday) {
+            $absensi = $absensiToday->get($karyawan->id);
+            return [
+                'id' => $karyawan->id,
+                'nama' => $karyawan->nama_lengkap ?? '-',
+                'kode_pegawai' => $karyawan->kode_pegawai ?? '-',
+                'jabatan' => $karyawan->jabatan ?? '-',
+                'divisi' => $karyawan->divisi ?? '-',
+                'absensi_id' => $absensi ? $absensi->id : null,
+                'check_in' => $absensi && $absensi->check_in ? Carbon::parse($absensi->check_in)->format('H:i') : null,
+                'check_out' => $absensi && $absensi->check_out ? Carbon::parse($absensi->check_out)->format('H:i') : null,
+                'status' => $absensi ? $absensi->status : 'Alpha',
+                'kantor_cabang' => $absensi ? ($absensi->kantor_cabang ?? '-') : '-',
+            ];
+        });
+
+        $stats = [
+            'total' => $karyawans->count(),
+            'sudah_checkin' => $employeesData->where('check_in', '!=', null)->count(),
+            'sudah_checkout' => $employeesData->where('check_out', '!=', null)->count(),
+            'belum_absen' => $employeesData->where('check_in', null)->count(),
+        ];
+
+        return view('hr.absensi.verifikasi', compact('employeesData', 'selectedDate', 'stats'));
+    }
+
+    /**
+     * Simpan verifikasi absen manual (check-in / check-out) dari halaman verifikasi.
+     * Menerima JSON request via AJAX.
+     */
+    public function verifikasiStore(Request $request)
+    {
+        $request->validate([
+            'karyawan_id' => 'required|exists:karyawans,id',
+            'type' => 'required|in:checkin,checkout',
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+            'tanggal' => 'required|date',
+        ]);
+
+        $karyawanId = $request->karyawan_id;
+        $type = $request->type;
+        $lat = (float) $request->latitude;
+        $lng = (float) $request->longitude;
+        $selectedDate = Carbon::parse($request->tanggal, $this->officeTimezone)->startOfDay();
+        $now = Carbon::now($this->officeTimezone);
+        $hrName = Auth::user()->nama_lengkap ?? 'HR';
+
+        $absensi = Absensi::where('karyawan_id', $karyawanId)->whereDate('tanggal', $selectedDate)->first();
+
+        if ($type === 'checkin') {
+            if ($absensi && $absensi->check_in) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Karyawan ini sudah memiliki data check-in pada tanggal tersebut.',
+                ], 400);
+            }
+
+            $locationCheck = $this->isValidLocation($lat, $lng, $this->maxRadius, null, $karyawanId);
+
+            if ($absensi) {
+                $absensi->check_in = $now;
+                $absensi->kantor_cabang = $locationCheck['location_name'] ?? $locationCheck['nearest'];
+                $absensi->latitude = $lat;
+                $absensi->longitude = $lng;
+                $absensi->is_valid_location = true;
+                if (!$absensi->status || $absensi->status === 'Alpha') {
+                    $absensi->status = 'Hadir';
+                }
+            } else {
+                $absensi = Absensi::create([
+                    'karyawan_id' => $karyawanId,
+                    'tanggal' => $selectedDate,
+                    'check_in' => $now,
+                    'kantor_cabang' => $locationCheck['location_name'] ?? $locationCheck['nearest'],
+                    'latitude' => $lat,
+                    'longitude' => $lng,
+                    'is_valid_location' => true,
+                    'status' => 'Hadir',
+                ]);
+            }
+
+            $catatanVerifikasi = 'Check-in diverifikasi manual oleh HR (' . $hrName . ') pada ' . $now->format('d-m-Y H:i');
+            $absensi->keterangan = $absensi->keterangan ? $absensi->keterangan . ' | ' . $catatanVerifikasi : $catatanVerifikasi;
+            $absensi->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Check-in untuk ' . ($absensi->karyawan->nama_lengkap ?? 'karyawan') . ' berhasil diverifikasi.',
+                'data' => [
+                    'check_in' => $now->format('H:i'),
+                    'kantor_cabang' => $absensi->kantor_cabang,
+                ],
+            ]);
+        }
+
+        // Checkout
+        if (!$absensi || !$absensi->check_in) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Karyawan ini belum check-in pada tanggal tersebut. Check-in harus dilakukan terlebih dahulu.',
+            ], 400);
+        }
+
+        if ($absensi->check_out) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Karyawan ini sudah memiliki data check-out pada tanggal tersebut.',
+            ], 400);
+        }
+
+        $locationCheck = $this->isValidLocation($lat, $lng, $this->maxRadius, null, $karyawanId);
+
+        $checkInTime = Carbon::parse($absensi->check_in);
+        $totalJamKerja = max(0, (int) round($checkInTime->diffInMinutes($now) / 60));
+
+        $absensi->check_out = $now;
+        $absensi->total_jam_kerja = $totalJamKerja;
+
+        if (!$absensi->kantor_cabang) {
+            $absensi->kantor_cabang = $locationCheck['location_name'] ?? $locationCheck['nearest'];
+        }
+
+        $catatanVerifikasi = 'Check-out diverifikasi manual oleh HR (' . $hrName . ') pada ' . $now->format('d-m-Y H:i');
+        $absensi->keterangan = $absensi->keterangan ? $absensi->keterangan . ' | ' . $catatanVerifikasi : $catatanVerifikasi;
+        $absensi->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Check-out untuk ' . ($absensi->karyawan->nama_lengkap ?? 'karyawan') . ' berhasil diverifikasi.',
+            'data' => [
+                'check_out' => $now->format('H:i'),
+                'total_jam_kerja' => $totalJamKerja,
+            ],
+        ]);
+    }
 }
