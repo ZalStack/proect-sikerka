@@ -21,7 +21,7 @@
         </div>
     @endif
 
-    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 overflow-hidden">
 
         @if ($pengumuman->gambar)
             <img src="{{ Storage::url($pengumuman->gambar) }}"

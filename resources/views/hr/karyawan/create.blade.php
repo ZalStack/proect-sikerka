@@ -2,7 +2,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="flex min-h-screen">
+<div class="flex min-h">
     @include('layouts.sidebar')
     <div class="flex-1 transition-all duration-300 md:ml-64 pt-6">
         <div class="p-4 sm:p-6">

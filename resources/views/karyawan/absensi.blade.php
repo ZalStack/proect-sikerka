@@ -2,7 +2,7 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="flex min-h-screen bg-gray-50">
+    <div class="flex min-h">
         @include('layouts.sidebar')
         <div class="flex-1 transition-all duration-300 md:ml-64">
             <div class="p-3 sm:p-4 lg:p-6">
@@ -25,7 +25,7 @@
                 </div>
 
                 <!-- Jam Realtime -->
-                <div class="bg-[#161758] rounded-lg shadow-md p-4 sm:p-6 mb-4 text-center">
+                <div class="bg-[#161758] rounded-2xl shadow-sm p-4 sm:p-6 mb-4 text-center">
                     <p class="text-sm text-white/70 mb-1">Jam Sekarang (Realtime Server)</p>
                     <p id="liveClock" class="text-2xl sm:text-4xl font-bold text-white font-mono tracking-widest">--:--:--
                     </p>
@@ -34,7 +34,7 @@
 
                 <!-- Status Lokasi - AUTO DETECT -->
                 <div id="locationStatus"
-                    class="bg-white rounded-lg shadow-md p-4 mb-4 border-2 {{ session('location_valid', false) ? 'border-[#2E7D3E]' : 'border-gray-200' }}">
+                    class="bg-white rounded-2xl shadow-sm p-4 mb-4 border-2 {{ session('location_valid', false) ? 'border-[#2E7D3E]' : 'border-gray-200' }}">
                     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         <div class="flex items-center space-x-3">
                             <svg class="w-6 h-6 {{ session('location_valid', false) ? 'text-[#2E7D3E]' : 'text-[#27438D]' }}"
@@ -69,7 +69,7 @@
                 </div>
 
                 <!-- Tombol Absensi -->
-                <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 sm:p-6 mb-6">
                     <h2 class="text-lg font-semibold text-[#161758] mb-4">Absensi Hari Ini</h2>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <button id="btnCheckIn" onclick="handleCheckIn()"
@@ -95,7 +95,7 @@
                 </div>
 
                 <!-- Status Absensi Hari Ini -->
-                <div id="statusContainer" class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
+                <div id="statusContainer" class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 sm:p-6 mb-6">
                     <h2 class="text-lg font-semibold text-[#161758] mb-4">Status Absensi Hari Ini</h2>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <div class="bg-[#F5F5F5] rounded-lg p-3">
@@ -130,7 +130,7 @@
 
                 <!-- Lokasi Kantor -->
                 @if (!empty($officeLocations))
-                    <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 sm:p-6 mb-6">
                         <h2 class="text-lg font-semibold text-[#161758] mb-4">📍 Lokasi Kantor KPM</h2>
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-sm">
                             @foreach ($officeLocations as $name => $coords)
@@ -145,7 +145,7 @@
                 @endif
 
                 <!-- Riwayat dengan Filter & Pagination -->
-                <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 sm:p-6">
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                         <h2 class="text-lg font-semibold text-[#161758]">Riwayat Absensi</h2>
                         <button onclick="resetFilters()"
@@ -614,7 +614,7 @@
                 statusText.textContent = '✅ Lokasi VALID - ' + nearest + ' (' + nearestDist.toFixed(1) + 'm)';
                 statusText.className = 'font-semibold text-[#2E7D3E]';
                 dot.className = 'w-3 h-3 rounded-full bg-[#2E7D3E]';
-                container.className = 'bg-white rounded-lg shadow-md p-4 mb-4 border-2 border-[#2E7D3E]';
+                container.className = 'bg-white rounded-2xl shadow-sm p-4 mb-4 border-2 border-[#2E7D3E]';
                 distanceText.textContent = `✅ Dalam radius ${MAX_RADIUS}m dari ${nearest} (${nearestDist.toFixed(1)}m)`;
                 distanceText.className = 'text-xs text-[#2E7D3E] font-semibold';
                 isLocationValid = true;
@@ -622,7 +622,7 @@
                 statusText.textContent = '❌ Di LUAR radius kantor (terdekat: ' + nearestDist.toFixed(1) + 'm)';
                 statusText.className = 'font-semibold text-[#ec1d1d]';
                 dot.className = 'w-3 h-3 rounded-full bg-[#ec1d1d]';
-                container.className = 'bg-white rounded-lg shadow-md p-4 mb-4 border-2 border-[#ec1d1d]';
+                container.className = 'bg-white rounded-2xl shadow-sm p-4 mb-4 border-2 border-[#ec1d1d]';
                 distanceText.textContent =
                     `❌ Jarak terdekat ${nearestDist.toFixed(1)}m dari ${nearest} (maks ${MAX_RADIUS}m)`;
                 distanceText.className = 'text-xs text-[#ec1d1d] font-semibold';

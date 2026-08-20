@@ -2,7 +2,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="flex min-h-screen">
+<div class="flex min-h">
     @include('layouts.sidebar')
     <div class="flex-1 transition-all duration-300 md:ml-64 pt-6">
         <div class="p-4 sm:p-6">
@@ -37,7 +37,7 @@
             @endif
 
             <!-- Jam Real-Time -->
-            <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 sm:p-6 mb-6">
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
                     <div>
                         <p class="text-xs sm:text-sm text-[#1B1B1B] font-medium">⏰ Waktu Server (Real-Time)</p>
@@ -82,7 +82,7 @@
 
             <!-- Form Absen -->
             @if($isActiveDay && $isWithinTime && !$todayAbsensi)
-            <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 sm:p-6 mb-6">
                 <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">📝 Absen Khataman</h2>
                 <p class="text-sm text-gray-600 mb-4">
                     Masukkan kode kegiatan yang diumumkan oleh HR. 
@@ -108,7 +108,7 @@
             @endif
 
             <!-- Statistik -->
-            <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 sm:p-6 mb-6">
                 <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">Statistik Bulan Ini</h2>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                     <div class="bg-[#F5F5F5] rounded-lg p-3 sm:p-4 text-center">
@@ -127,7 +127,7 @@
             </div>
 
             <!-- Daftar Hari Aktif -->
-            <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 sm:p-6">
                 <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">📋 Daftar Absensi Khataman Bulan Ini ({{ $activeDayName }})</h2>
                 <div class="overflow-x-auto -mx-4 sm:mx-0">
                     <div class="inline-block min-w-full align-middle">

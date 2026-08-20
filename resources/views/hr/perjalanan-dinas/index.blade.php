@@ -2,7 +2,7 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="flex min-h-screen bg-gray-50">
+    <div class="flex min-h">
         @include('layouts.sidebar')
         <div class="flex-1 transition-all duration-300 md:ml-64">
             <div class="p-4 sm:p-6 lg:p-8">
@@ -58,7 +58,7 @@
                     @endphp
                     @foreach ($cards as $card)
                         <div
-                            class="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow p-4 border-l-4 {{ $card['color'] }} flex items-center justify-between">
+                            class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 border-l-4 {{ $card['color'] }} flex items-center justify-between">
                             <div>
                                 <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">{{ $card['label'] }}
                                 </p>
@@ -70,7 +70,7 @@
                 </div>
 
                 <!-- Filter -->
-                <div class="bg-white rounded-2xl shadow-sm p-5 sm:p-6 mb-8 border border-gray-100">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-5 sm:p-6 mb-8">
                     <form action="{{ route('hr.perjalanan-dinas.index') }}" method="GET"
                         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
                         <div class="lg:col-span-2">
@@ -128,7 +128,7 @@
                 </div>
 
                 <!-- Table -->
-                <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-100">
                             <thead class="bg-gray-50/80">

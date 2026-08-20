@@ -2,7 +2,7 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="flex min-h-screen">
+    <div class="flex min-h">
         @include('layouts.sidebar')
         <div class="flex-1 transition-all duration-300 md:ml-64 pt-6">
             <div class="p-3 sm:p-6">
@@ -47,7 +47,7 @@
                 @endif
 
                 <!-- Generate Kode -->
-                <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 sm:p-6 mb-6">
                     <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">🔐 Kode Kegiatan Khataman</h2>
                     <div class="flex flex-wrap items-center gap-4">
                         <div>
@@ -80,7 +80,7 @@
                 </div>
 
                 <!-- Filter -->
-                <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 sm:p-6 mb-6">
                     <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">Filter Laporan</h2>
                     <form action="{{ route('hr.khataman.index') }}" method="GET"
                         class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
@@ -130,7 +130,7 @@
                 </div>
 
                 <!-- Statistik -->
-                <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 sm:p-6 mb-6">
                     <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">Statistik Khataman</h2>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                         <div class="bg-[#F5F5F5] rounded-lg p-3 sm:p-4 text-center">
@@ -150,7 +150,7 @@
                 </div>
 
                 <!-- Tabel Absensi -->
-                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 overflow-hidden">
                     <div class="overflow-x-auto -mx-4 sm:mx-0">
                         <div class="inline-block min-w-full align-middle">
                             <table class="min-w-full">

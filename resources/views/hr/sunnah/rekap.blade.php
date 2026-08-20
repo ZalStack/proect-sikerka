@@ -2,7 +2,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="flex min-h-screen bg-gray-50">
+<div class="flex min-h">
     @include('layouts.sidebar')
     <div class="flex-1 transition-all duration-300 md:ml-64 pt-4 sm:pt-6">
         <div class="p-3 sm:p-4 md:p-6">
@@ -25,7 +25,7 @@
             </div>
 
             <!-- Filter -->
-            <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 md:p-6 mb-4 sm:mb-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-3 sm:p-4 md:p-6 mb-4 sm:mb-6">
                 <form action="{{ route('hr.sunnah.rekap') }}" method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                     <div>
                         <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Bulan</label>
@@ -62,7 +62,7 @@
 
             <!-- Ringkasan -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
-                <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 text-center">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-3 sm:p-4 text-center">
                     <p class="text-base sm:text-lg md:text-2xl font-bold text-[#161758]">{{ $totalKaryawan }}</p>
                     <p class="text-[10px] sm:text-xs md:text-sm text-[#1B1B1B]">Total Karyawan</p>
                 </div>
@@ -77,7 +77,7 @@
             </div>
 
             <!-- Tabel Rekap -->
-            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-xs sm:text-sm">
                         <thead class="bg-[#F5F5F5]">
@@ -145,7 +145,7 @@
             </div>
 
             @if($rekap->total() > 0)
-                <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 mt-3 sm:mt-4">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-3 sm:p-4 mt-3 sm:mt-4">
                     {{ $rekap->onEachSide(1)->links() }}
                 </div>
             @endif

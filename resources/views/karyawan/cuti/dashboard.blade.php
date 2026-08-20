@@ -2,7 +2,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="flex min-h-screen">
+<div class="flex min-h">
     @include('layouts.sidebar')
     <div class="flex-1 transition-all duration-300 md:ml-64 pt-6">
         <div class="p-3 sm:p-6">
@@ -34,22 +34,22 @@
 
             <!-- Sisa Cuti -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 mb-6">
-                <div class="bg-white rounded-lg shadow-md p-3 sm:p-6 text-center border-l-4 border-[#00a2e9]">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-3 sm:p-6 text-center border-l-4 border-[#00a2e9]">
                     <p class="text-xs sm:text-sm text-[#1B1B1B]">Jatah Cuti Tahunan</p>
                     <p class="text-xl sm:text-2xl font-bold text-[#161758]">{{ $cutiTahunan->jatah_cuti ?? 12 }} hari</p>
                 </div>
-                <div class="bg-white rounded-lg shadow-md p-3 sm:p-6 text-center border-l-4 border-[#2E7D3E]">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-3 sm:p-6 text-center border-l-4 border-[#2E7D3E]">
                     <p class="text-xs sm:text-sm text-[#1B1B1B]">Cuti Digunakan</p>
                     <p class="text-xl sm:text-2xl font-bold text-[#161758]">{{ $cutiTahunan->cuti_digunakan ?? 0 }} hari</p>
                 </div>
-                <div class="bg-white rounded-lg shadow-md p-3 sm:p-6 text-center border-l-4 border-[#FCC626]">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-3 sm:p-6 text-center border-l-4 border-[#FCC626]">
                     <p class="text-xs sm:text-sm text-[#1B1B1B]">Sisa Cuti</p>
                     <p class="text-xl sm:text-2xl font-bold text-[#161758]">{{ $cutiTahunan->sisa_cuti ?? 0 }} hari</p>
                 </div>
             </div>
 
             <!-- Riwayat Cuti -->
-            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 overflow-hidden">
                 <div class="p-3 sm:p-4 border-b border-gray-200">
                     <h2 class="text-base sm:text-lg font-semibold text-[#161758]">Riwayat Pengajuan Cuti</h2>
                 </div>

@@ -2,7 +2,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="flex min-h-screen bg-gray-50">
+<div class="flex min-h">
     @include('layouts.sidebar')
     <div class="flex-1 transition-all duration-300 md:ml-64 pt-4 sm:pt-6">
         <div class="p-3 sm:p-4 md:p-6">
@@ -56,7 +56,7 @@
             @endif
 
             {{-- ============ FILTER ============ --}}
-            <div class="bg-white rounded-2xl shadow-md p-3 sm:p-4 md:p-6 mb-4 sm:mb-6 border border-gray-100">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-3 sm:p-4 md:p-6 mb-4 sm:mb-6">
                 <h2 class="text-sm sm:text-base md:text-lg font-semibold text-[#161758] mb-3 sm:mb-4 flex items-center gap-2">
                     <span>🔎</span> Filter Laporan
                 </h2>
@@ -134,7 +134,7 @@
 
             {{-- ============ STATISTIK ============ --}}
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6">
-                <div class="bg-white rounded-2xl shadow-md p-3 sm:p-4 text-center border border-gray-100 hover:shadow-lg transition-shadow duration-200">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-3 sm:p-4 text-center">
                     <p class="text-base sm:text-lg md:text-2xl font-bold text-[#161758]">{{ $statistik['total'] }}</p>
                     <p class="text-[10px] sm:text-xs md:text-sm text-[#1B1B1B] mt-0.5">📁 Total</p>
                 </div>
@@ -205,7 +205,7 @@
                 {{-- ============ DATA (grouped per divisi) ============ --}}
                 @forelse($groupedData as $divisi => $items)
                     @php $divisiSlug = \Illuminate\Support\Str::slug($divisi); @endphp
-                    <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-4 sm:mb-6 border border-gray-100">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 overflow-hidden mb-4 sm:mb-6">
                         <div class="bg-gradient-to-r from-[#161758] to-[#27438D] text-white px-3 sm:px-4 py-2.5 sm:py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                             <label class="font-semibold text-sm sm:text-base flex items-center gap-2 cursor-pointer select-none">
                                 <input type="checkbox" class="divisi-check-all w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border-white/50 text-[#27438D] focus:ring-[#00a2e9]" data-divisi="{{ $divisiSlug }}">
@@ -315,7 +315,7 @@
                         </div>
                     </div>
                 @empty
-                    <div class="bg-white rounded-2xl shadow-md p-6 sm:p-8 text-center text-[#1B1B1B] border border-gray-100">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-6 sm:p-8 text-center text-[#1B1B1B]">
                         <svg class="w-12 sm:w-16 h-12 sm:h-16 text-gray-400 mb-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
@@ -324,7 +324,7 @@
                 @endforelse
 
                 @if($sunnahData->total() > 0)
-                    <div id="pagination-wrapper" class="bg-white rounded-2xl shadow-md p-3 sm:p-4 mt-2 border border-gray-100">
+                    <div id="pagination-wrapper" class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-3 sm:p-4 mt-2">
                         {{ $sunnahData->onEachSide(1)->links() }}
                     </div>
                 @endif

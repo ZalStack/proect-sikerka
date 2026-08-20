@@ -2,7 +2,7 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="flex min-h-screen bg-gray-50">
+    <div class="flex min-h">
         @include('layouts.sidebar')
         <div class="flex-1 transition-all duration-300 md:ml-64">
             <div class="p-3 sm:p-4 lg:p-6">
@@ -50,7 +50,7 @@
                 {{-- ============================== --}}
                 {{-- FORM PENGAJUAN IZIN / SAKIT     --}}
                 {{-- ============================== --}}
-                <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 sm:p-6 mb-6">
                     <h2 class="text-lg font-semibold text-[#161758] mb-1">📝 Ajukan Izin / Sakit</h2>
                     <p class="text-xs sm:text-sm text-gray-500 mb-4">
                         Pengajuan akan dikirim ke HRD untuk disetujui. Setelah disetujui, tanggal yang diajukan
@@ -109,7 +109,7 @@
                 {{-- ============================== --}}
                 {{-- RIWAYAT PENGAJUAN                --}}
                 {{-- ============================== --}}
-                <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 sm:p-6">
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                         <h2 class="text-lg font-semibold text-[#161758]">Riwayat Pengajuan Saya</h2>
                     </div>

@@ -2,7 +2,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="flex min-h-screen bg-gray-50">
+<div class="flex min-h">
     @include('layouts.sidebar')
     <div class="flex-1 transition-all duration-300 md:ml-64 pt-4 sm:pt-6">
         <div class="p-3 sm:p-4 md:p-6">
@@ -25,7 +25,7 @@
             </div>
 
             <!-- Filter -->
-            <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 md:p-6 mb-4 sm:mb-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-3 sm:p-4 md:p-6 mb-4 sm:mb-6">
                 <form action="{{ route('hr.sunnah.rekap-divisi') }}" method="GET" class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                     <div>
                         <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Tanggal Mulai</label>
@@ -51,7 +51,7 @@
             </div>
 
             <!-- Tabel Rekap Divisi -->
-            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-xs sm:text-sm">
                         <thead class="bg-[#161758] text-white">

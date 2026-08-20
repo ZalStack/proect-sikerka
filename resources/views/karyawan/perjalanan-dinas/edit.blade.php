@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="flex min-h-screen">
+<div class="flex min-h">
     @include('layouts.sidebar')
     <div class="flex-1 transition-all duration-300 md:ml-64 pt-6">
         <div class="p-4 sm:p-6">
@@ -16,7 +16,7 @@
                 <p class="text-[#27438D] text-sm sm:text-base">Perbarui data pengajuan Anda (hanya bisa diedit jika status menunggu)</p>
             </div>
 
-            <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 sm:p-6">
                 <form action="{{ route('karyawan.perjalanan-dinas.update', $perjalananDinas->id) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')

@@ -2,7 +2,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="flex min-h-screen">
+<div class="flex min-h">
     @include('layouts.sidebar')
     <div class="flex-1 transition-all duration-300 md:ml-64 pt-6">
         <div class="p-3 sm:p-6">
@@ -39,7 +39,7 @@
                 </div>
             @endif
 
-            <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 sm:p-6">
                 <form action="{{ route('hr.cuti.update-hr', $cuti->id) }}" method="POST">
                     @csrf
                     @method('PUT')

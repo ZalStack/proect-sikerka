@@ -1,38 +1,39 @@
-{{-- views/layouts/navigation.blade.php --}}
 @php
     $user = Auth::user();
     $isHr = $user && $user->posisi === 'hr';
     $dashboardRoute = $isHr ? 'hr.dashboard' : 'karyawan.dashboard';
     $employeeRoute = $isHr ? 'hr.karyawan.index' : '#';
 
-    // Get user photo
     $userPhoto = $user->foto_profil ? Storage::url($user->foto_profil) : null;
     $userInitial = strtoupper(substr($user->nama_lengkap ?? 'U', 0, 1));
 @endphp
 
-<nav class="bg-gradient-to-r from-[#0F1245] via-[#161758] to-[#0F1245] border-b border-[#27438D]/50 fixed top-0 left-0 right-0 z-50 shadow-lg backdrop-blur-sm">
+<nav class="bg-gradient-to-r from-[#0F1245] via-[#161758] to-[#0F1245] border-b border-white/10 fixed top-0 left-0 right-0 z-50 shadow-xl shadow-[#161758]/20 backdrop-blur-sm">
     <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
         <div class="flex justify-between items-center h-12 sm:h-14 md:h-16">
             <!-- Logo & Menu -->
             <div class="flex items-center gap-2 sm:gap-3">
                 <!-- Mobile menu button -->
-                <button id="mobile-menu-toggle" class="md:hidden text-white hover:text-[#00a2e9] focus:outline-none transition-colors p-1">
+                <button id="mobile-menu-toggle" class="md:hidden text-white/80 hover:text-[#00a2e9] focus:outline-none transition-all duration-200 p-1.5 rounded-lg hover:bg-white/10">
                     <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                     </svg>
                 </button>
 
-                <a href="{{ route($dashboardRoute) }}" class="flex items-center gap-1.5 sm:gap-2">
-                    <span class="text-[#FCC626] text-base sm:text-lg md:text-xl font-bold font-['Montserrat'] tracking-wide">
+                <a href="{{ route($dashboardRoute) }}" class="flex items-center gap-1.5 sm:gap-2 group">
+                    <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-[#FCC626] to-[#f0a500] flex items-center justify-center shadow-lg shadow-[#FCC626]/30 group-hover:scale-110 transition-transform duration-200">
+                        <span class="text-[#0F1245] text-xs sm:text-sm font-bold font-['Montserrat']">S</span>
+                    </div>
+                    <span class="text-[#FCC626] text-base sm:text-lg md:text-xl font-bold font-['Montserrat'] tracking-wide group-hover:text-white transition-colors">
                         SIKEKAR
                     </span>
                 </a>
             </div>
 
             <!-- Right Section -->
-            <div class="flex items-center gap-1 sm:gap-2 md:gap-4">
+            <div class="flex items-center gap-1 sm:gap-2 md:gap-3">
                 <!-- User Name -->
-                <span class="text-white/90 text-xs sm:text-sm hidden sm:block truncate max-w-[100px] md:max-w-[200px] font-medium">
+                <span class="text-white/80 text-xs sm:text-sm hidden sm:block truncate max-w-[100px] md:max-w-[200px] font-medium">
                     {{ $user->nama_lengkap ?? $user->email }}
                 </span>
 
@@ -44,7 +45,7 @@
 
                     <!-- Bell Button -->
                     <button @click="toggle()" type="button"
-                        class="relative text-white/90 hover:text-white focus:outline-none p-1.5 sm:p-2 rounded-full hover:bg-white/10 transition-all duration-200 transform hover:scale-105"
+                        class="relative text-white/80 hover:text-white focus:outline-none p-1.5 sm:p-2 rounded-xl hover:bg-white/10 transition-all duration-200"
                         aria-label="Notifikasi">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                             stroke="currentColor" class="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6">
@@ -55,7 +56,7 @@
                         <!-- Badge -->
                         <span x-show="unreadCount > 0"
                             x-text="unreadCount > 99 ? '99+' : unreadCount"
-                            class="absolute -top-1 -right-1 bg-gradient-to-br from-[#ec1d1d] to-[#b31414] text-white text-[8px] sm:text-[10px] font-bold rounded-full min-w-[16px] sm:min-w-[18px] h-[16px] sm:h-[18px] flex items-center justify-center leading-none px-1 shadow-md ring-2 ring-[#161758] animate-pulse"
+                            class="absolute -top-1 -right-1 bg-gradient-to-br from-[#ec1d1d] to-[#b31414] text-white text-[8px] sm:text-[10px] font-bold rounded-full min-w-[16px] sm:min-w-[18px] h-[16px] sm:h-[18px] flex items-center justify-center leading-none px-1 shadow-lg ring-2 ring-[#161758]"
                             style="display: none;"></span>
                     </button>
 
@@ -186,14 +187,14 @@
                 <div class="relative" x-data="{ open: false }">
                     <button @click="open = !open"
                         class="flex items-center gap-1 sm:gap-2 focus:outline-none group">
-                        <div class="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full bg-gradient-to-br from-[#00a2e9] to-[#0077b6] flex items-center justify-center text-white font-bold overflow-hidden text-[10px] sm:text-xs md:text-sm shadow-md group-hover:shadow-lg transition-all duration-200 ring-2 ring-transparent group-hover:ring-[#FCC626]/50">
+                        <div class="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full bg-gradient-to-br from-[#00a2e9] to-[#0077b6] flex items-center justify-center text-white font-bold overflow-hidden text-[10px] sm:text-xs md:text-sm shadow-lg shadow-[#00a2e9]/30 group-hover:shadow-xl transition-all duration-200 ring-2 ring-transparent group-hover:ring-[#FCC626]/50">
                             @if($userPhoto)
                                 <img src="{{ $userPhoto }}" alt="{{ $user->nama_lengkap }}" class="w-full h-full object-cover">
                             @else
                                 {{ $userInitial }}
                             @endif
                         </div>
-                        <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 text-white/70 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 text-white/60 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
                     </button>

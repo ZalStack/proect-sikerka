@@ -2,7 +2,7 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="flex min-h-screen">
+    <div class="flex min-h">
         @include('layouts.sidebar')
         <div class="flex-1 transition-all duration-300 md:ml-64 pt-6 w-full">
             <div class="p-3 sm:p-6">
@@ -51,7 +51,7 @@
                     </div>
                 </div>
 
-                <div class="bg-white rounded-lg shadow-md p-3 sm:p-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-3 sm:p-6">
                     @if ($absensi->status === 'Perjalanan Dinas' && isset($perjalananDinas) && $perjalananDinas)
                         <div class="mb-6 bg-purple-50 border border-purple-300 rounded-lg p-3 sm:p-4">
                             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -194,22 +194,22 @@
                     <div class="mt-6 pt-6 border-t border-gray-200">
                         <h3 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">📍 Lokasi Absensi</h3>
                         <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                            <div class="bg-[#F5F5F5] rounded-lg p-3">
+                            <div class="bg-slate-50 border border-slate-100 rounded-xl p-3">
                                 <p class="text-xs text-[#1B1B1B]">Latitude</p>
                                 <p class="text-sm font-semibold text-[#161758] break-all">{{ $absensi->latitude ?? '-' }}
                                 </p>
                             </div>
-                            <div class="bg-[#F5F5F5] rounded-lg p-3">
+                            <div class="bg-slate-50 border border-slate-100 rounded-xl p-3">
                                 <p class="text-xs text-[#1B1B1B]">Longitude</p>
                                 <p class="text-sm font-semibold text-[#161758] break-all">{{ $absensi->longitude ?? '-' }}
                                 </p>
                             </div>
-                            <div class="bg-[#F5F5F5] rounded-lg p-3">
+                            <div class="bg-slate-50 border border-slate-100 rounded-xl p-3">
                                 <p class="text-xs text-[#1B1B1B]">Akurasi</p>
                                 <p class="text-sm font-semibold text-[#161758]">
                                     {{ $absensi->location_accuracy ? $absensi->location_accuracy . ' meter' : '-' }}</p>
                             </div>
-                            <div class="bg-[#F5F5F5] rounded-lg p-3">
+                            <div class="bg-slate-50 border border-slate-100 rounded-xl p-3">
                                 <p class="text-xs text-[#1B1B1B]">Valid Lokasi</p>
                                 <p
                                     class="text-sm font-semibold {{ $absensi->is_valid_location ? 'text-[#2E7D3E]' : 'text-[#ec1d1d]' }}">
@@ -221,7 +221,7 @@
                         @if (isset($distances) && count($distances) > 0)
                             <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                                 @foreach ($distances as $name => $distance)
-                                    <div class="bg-[#F5F5F5] rounded-lg p-2 text-xs">
+                                    <div class="bg-slate-50 border border-slate-100 rounded-xl p-2 text-xs">
                                         <span class="font-medium">{{ $name }}:</span>
                                         <span
                                             class="{{ $distance <= 50 ? 'text-[#2E7D3E] font-bold' : 'text-[#ec1d1d]' }}">
@@ -247,12 +247,12 @@
                         <h3 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">🔒 Jejak Audit (Anti-Manipulasi)
                         </h3>
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                            <div class="bg-[#F5F5F5] rounded-lg p-3">
+                            <div class="bg-slate-50 border border-slate-100 rounded-xl p-3">
                                 <p class="text-xs text-[#1B1B1B]">Alamat IP</p>
                                 <p class="text-sm font-semibold text-[#161758] break-all">{{ $absensi->ip_address ?? '-' }}
                                 </p>
                             </div>
-                            <div class="bg-[#F5F5F5] rounded-lg p-3 sm:col-span-2 lg:col-span-2">
+                            <div class="bg-slate-50 border border-slate-100 rounded-xl p-3 sm:col-span-2 lg:col-span-2">
                                 <p class="text-xs text-[#1B1B1B]">Perangkat / Browser</p>
                                 <p class="text-xs font-semibold text-[#161758] break-all">
                                     {{ $absensi->user_agent ?? '-' }}</p>

@@ -2,7 +2,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="flex min-h-screen">
+<div class="flex min-h">
     @include('layouts.sidebar')
     <div class="flex-1 transition-all duration-300 md:ml-64 pt-6">
         <div class="p-3 sm:p-6">
@@ -31,26 +31,26 @@
 
             <!-- Statistik -->
             <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-                <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 text-center border-l-4 border-[#00a2e9] hover:shadow-lg transition-shadow">
+                <div class="bg-gradient-to-r from-[#00a2e9]/5 to-white rounded-2xl shadow-sm border border-slate-100 p-3 sm:p-4 text-center hover:shadow-lg transition-all duration-300 border-l-4 border-l-[#00a2e9]">
                     <p class="text-xl sm:text-2xl font-bold text-[#161758]">{{ $statistik['total'] }}</p>
                     <p class="text-xs sm:text-sm text-[#1B1B1B]">Total Pengajuan</p>
                 </div>
-                <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 text-center border-l-4 border-[#FCC626] hover:shadow-lg transition-shadow">
+                <div class="bg-gradient-to-r from-[#FCC626]/5 to-white rounded-2xl shadow-sm border border-slate-100 p-3 sm:p-4 text-center hover:shadow-lg transition-all duration-300 border-l-4 border-l-[#FCC626]">
                     <p class="text-xl sm:text-2xl font-bold text-[#161758]">{{ $statistik['pending'] }}</p>
                     <p class="text-xs sm:text-sm text-[#1B1B1B]">Menunggu</p>
                 </div>
-                <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 text-center border-l-4 border-[#2E7D3E] hover:shadow-lg transition-shadow">
+                <div class="bg-gradient-to-r from-[#2E7D3E]/5 to-white rounded-2xl shadow-sm border border-slate-100 p-3 sm:p-4 text-center hover:shadow-lg transition-all duration-300 border-l-4 border-l-[#2E7D3E]">
                     <p class="text-xl sm:text-2xl font-bold text-[#161758]">{{ $statistik['approved'] }}</p>
                     <p class="text-xs sm:text-sm text-[#1B1B1B]">Disetujui</p>
                 </div>
-                <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 text-center border-l-4 border-[#ec1d1d] hover:shadow-lg transition-shadow">
+                <div class="bg-gradient-to-r from-[#ec1d1d]/5 to-white rounded-2xl shadow-sm border border-slate-100 p-3 sm:p-4 text-center hover:shadow-lg transition-all duration-300 border-l-4 border-l-[#ec1d1d]">
                     <p class="text-xl sm:text-2xl font-bold text-[#161758]">{{ $statistik['rejected'] }}</p>
                     <p class="text-xs sm:text-sm text-[#1B1B1B]">Ditolak</p>
                 </div>
             </div>
 
             <!-- Filter -->
-            <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 sm:p-6 mb-6">
                 <form action="{{ route('hr.cuti.index') }}" method="GET" class="flex flex-wrap gap-3 sm:gap-4">
                     <div class="flex-1 min-w-[140px] sm:min-w-[150px]">
                         <select name="status" class="w-full px-3 sm:px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9] bg-white">
@@ -88,7 +88,7 @@
             </div>
 
             <!-- Table -->
-            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 overflow-hidden">
                 <div class="p-3 sm:p-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                     <h2 class="text-base sm:text-lg font-semibold text-[#161758]">Daftar Pengajuan Cuti</h2>
                     <span class="text-xs text-gray-500">Total: {{ $cuti->total() }} data</span>

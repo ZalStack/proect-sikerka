@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="flex min-h-screen">
+<div class="flex min-h">
     @include('layouts.sidebar')
     <div class="flex-1 transition-all duration-300 md:ml-64">
         <div class="p-4 sm:p-6">
@@ -68,7 +68,7 @@
             </div>
 
             <!-- Detail Card -->
-            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 overflow-hidden">
                 <div class="p-6 border-b border-gray-200">
                     <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                         <div>

@@ -2,7 +2,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="flex min-h-screen">
+<div class="flex min-h">
     @include('layouts.sidebar')
     <div class="flex-1 transition-all duration-300 md:ml-64 pt-6">
         <div class="p-3 sm:p-6">
@@ -29,26 +29,26 @@
 
             <!-- Statistik -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
-                <div class="bg-white rounded-lg shadow-md p-3 sm:p-4 text-center hover:shadow-lg transition-all duration-300 transform hover:scale-105">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-3 sm:p-4 text-center hover:shadow-lg transition-all duration-300 transform hover:scale-105">
                     <p id="stat-total-hari" class="text-lg sm:text-2xl font-bold text-[#161758]">{{ $statistik['total_hari'] }}</p>
                     <p class="text-[10px] sm:text-sm text-[#1B1B1B]">Total Hari</p>
                 </div>
-                <div class="bg-[#2E7D3E] text-white rounded-lg shadow-md p-3 sm:p-4 text-center hover:shadow-lg transition-all duration-300 transform hover:scale-105">
+                <div class="bg-[#2E7D3E] text-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-3 sm:p-4 text-center hover:shadow-lg transition-all duration-300 transform hover:scale-105">
                     <p id="stat-total-poin" class="text-lg sm:text-2xl font-bold">{{ $statistik['total_poin'] }}</p>
                     <p class="text-[10px] sm:text-sm">Total Poin</p>
                 </div>
-                <div class="bg-[#FCC626] text-[#1B1B1B] rounded-lg shadow-md p-3 sm:p-4 text-center hover:shadow-lg transition-all duration-300 transform hover:scale-105">
+                <div class="bg-[#FCC626] text-[#1B1B1B] rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-3 sm:p-4 text-center hover:shadow-lg transition-all duration-300 transform hover:scale-105">
                     <p id="stat-rata-rata" class="text-lg sm:text-2xl font-bold">{{ $statistik['rata_rata'] }}</p>
                     <p class="text-[10px] sm:text-sm">Rata-rata Poin</p>
                 </div>
-                <div class="bg-[#00a2e9] text-white rounded-lg shadow-md p-3 sm:p-4 text-center hover:shadow-lg transition-all duration-300 transform hover:scale-105">
+                <div class="bg-[#00a2e9] text-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-3 sm:p-4 text-center hover:shadow-lg transition-all duration-300 transform hover:scale-105">
                     <p id="stat-tertinggi" class="text-lg sm:text-2xl font-bold">{{ $statistik['tertinggi'] }}</p>
                     <p class="text-[10px] sm:text-sm">Poin Tertinggi</p>
                 </div>
             </div>
 
             <!-- Pemilih Tanggal: Hari Ini / Kemarin (H-1) -->
-            <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 sm:p-6 mb-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
                     <div>
                         <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-2">
@@ -98,7 +98,7 @@
             @endif
 
             <!-- Progress Bar dengan Animasi 4 Warna -->
-            <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 sm:p-6 mb-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 gap-2">
                     <h2 class="text-base sm:text-lg font-semibold text-[#161758]">🎯 Progress Poin Hari Ini</h2>
                     <span id="poin-counter" class="text-xl sm:text-2xl font-bold text-[#2E7D3E]">{{ $todayData->total_poin ?? 0 }}</span>
@@ -145,7 +145,7 @@
             </div>
 
             <!-- Sholat Berjamaah & Kegiatan Sunnah Lainnya (digabung dalam satu grid) -->
-            <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 sm:p-6 mb-6">
                 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2">
                     <h2 class="text-base sm:text-lg font-semibold text-[#161758]">🕌 Kegiatan Sunnah </h2>
                     <div class="text-xs sm:text-sm text-[#1B1B1B]">
@@ -201,7 +201,7 @@
             </div>
 
             <!-- Riwayat 30 Hari -->
-            <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 sm:p-6">
                 <h2 class="text-base sm:text-lg font-semibold text-[#161758] mb-4">📊 Riwayat 30 Hari Terakhir</h2>
                 <div class="overflow-x-auto -mx-4 sm:mx-0">
                     <div class="grid grid-cols-5 sm:grid-cols-10 lg:grid-cols-15 gap-1 sm:gap-2 min-w-[300px]">
@@ -241,7 +241,7 @@
                 </div>
 
                 @if($monthlyData->count() > 0)
-                    <div class="bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 overflow-hidden">
                         {{-- ---- Desktop / tablet table (>= md) ---- --}}
                         <div class="hidden md:block overflow-x-auto">
                             <table class="w-full text-xs sm:text-sm">
@@ -319,7 +319,7 @@
                         </div>
                     </div>
                 @else
-                    <div class="bg-white rounded-2xl shadow-md p-8 sm:p-10 text-center border border-gray-100">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-8 sm:p-10 text-center">
                         <div class="text-3xl sm:text-4xl mb-3">🗒️</div>
                         <p class="text-sm sm:text-base font-semibold text-[#1B1B1B]">Belum ada riwayat checklist bulan ini</p>
                         <p class="text-xs sm:text-sm text-gray-400 mt-1">Mulai centang kegiatan sunnah harian Anda di tab Checklist.</p>

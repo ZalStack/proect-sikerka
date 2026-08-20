@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="flex min-h-screen">
+<div class="flex min-h">
     @include('layouts.sidebar')
     <div class="flex-1 transition-all duration-300 md:ml-64">
         <div class="p-4 sm:p-6">
@@ -22,30 +22,30 @@
 
             <!-- Stats -->
             <div class="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4 mb-6">
-                <div class="bg-white rounded-xl shadow-sm p-3 sm:p-4 border-l-4 border-[#161758]">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-3 sm:p-4 border-l-4 border-[#161758]">
                     <p class="text-xs text-gray-500">Total</p>
                     <p class="text-xl sm:text-2xl font-bold text-[#161758]">{{ $stats['total'] }}</p>
                 </div>
-                <div class="bg-white rounded-xl shadow-sm p-3 sm:p-4 border-l-4 border-yellow-500">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-3 sm:p-4 border-l-4 border-yellow-500">
                     <p class="text-xs text-gray-500">Menunggu</p>
                     <p class="text-xl sm:text-2xl font-bold text-yellow-500">{{ $stats['pending'] }}</p>
                 </div>
-                <div class="bg-white rounded-xl shadow-sm p-3 sm:p-4 border-l-4 border-green-500">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-3 sm:p-4 border-l-4 border-green-500">
                     <p class="text-xs text-gray-500">Disetujui</p>
                     <p class="text-xl sm:text-2xl font-bold text-green-500">{{ $stats['approved'] }}</p>
                 </div>
-                <div class="bg-white rounded-xl shadow-sm p-3 sm:p-4 border-l-4 border-red-500">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-3 sm:p-4 border-l-4 border-red-500">
                     <p class="text-xs text-gray-500">Ditolak</p>
                     <p class="text-xl sm:text-2xl font-bold text-red-500">{{ $stats['rejected'] }}</p>
                 </div>
-                <div class="bg-white rounded-xl shadow-sm p-3 sm:p-4 border-l-4 border-blue-500">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-3 sm:p-4 border-l-4 border-blue-500">
                     <p class="text-xs text-gray-500">Selesai</p>
                     <p class="text-xl sm:text-2xl font-bold text-blue-500">{{ $stats['selesai'] }}</p>
                 </div>
             </div>
 
             <!-- Filter -->
-            <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 mb-6">
                 <form action="{{ route('karyawan.perjalanan-dinas.index') }}" method="GET" class="flex flex-col sm:flex-row gap-3">
                     <select name="status" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent text-sm bg-white">
                         <option value="semua">Semua Status</option>
@@ -60,7 +60,7 @@
             </div>
 
             <!-- Table -->
-            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 overflow-hidden">
                 <div class="overflow-x-auto -mx-4 sm:mx-0">
                     <div class="inline-block min-w-full align-middle">
                     <table class="min-w-full divide-y divide-gray-200">

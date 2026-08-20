@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="flex min-h-screen bg-gray-50">
+<div class="flex min-h">
     @include('layouts.sidebar')
     <div class="flex-1 transition-all duration-300 md:ml-64">
         <div class="p-4 sm:p-6 lg:p-8">
@@ -22,7 +22,7 @@
             </div>
 
             {{-- GPS Status Card --}}
-            <div id="gpsCard" class="bg-white rounded-2xl shadow-sm p-5 sm:p-6 mb-6 border-2 border-gray-200">
+            <div id="gpsCard" class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-5 sm:p-6 mb-6">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div class="flex items-center gap-3">
                         <div id="gpsIcon" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
@@ -66,26 +66,26 @@
 
             {{-- Stats Cards --}}
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
-                <div class="bg-white rounded-2xl shadow-sm p-4 border-l-4 border-[#161758]">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 border-l-4 border-[#161758]">
                     <p class="text-[10px] sm:text-xs font-medium text-gray-400 uppercase tracking-wider">Total Karyawan</p>
                     <p class="text-xl sm:text-2xl font-bold text-[#161758] mt-1">{{ $stats['total'] }}</p>
                 </div>
-                <div class="bg-white rounded-2xl shadow-sm p-4 border-l-4 border-[#2E7D3E]">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 border-l-4 border-[#2E7D3E]">
                     <p class="text-[10px] sm:text-xs font-medium text-gray-400 uppercase tracking-wider">Sudah Check-in</p>
                     <p class="text-xl sm:text-2xl font-bold text-[#2E7D3E] mt-1">{{ $stats['sudah_checkin'] }}</p>
                 </div>
-                <div class="bg-white rounded-2xl shadow-sm p-4 border-l-4 border-[#00a2e9]">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 border-l-4 border-[#00a2e9]">
                     <p class="text-[10px] sm:text-xs font-medium text-gray-400 uppercase tracking-wider">Sudah Check-out</p>
                     <p class="text-xl sm:text-2xl font-bold text-[#00a2e9] mt-1">{{ $stats['sudah_checkout'] }}</p>
                 </div>
-                <div class="bg-white rounded-2xl shadow-sm p-4 border-l-4 border-[#ec1d1d]">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 border-l-4 border-[#ec1d1d]">
                     <p class="text-[10px] sm:text-xs font-medium text-gray-400 uppercase tracking-wider">Belum Absen</p>
                     <p class="text-xl sm:text-2xl font-bold text-[#ec1d1d] mt-1">{{ $stats['belum_absen'] }}</p>
                 </div>
             </div>
 
             {{-- Filter & Tanggal --}}
-            <div class="bg-white rounded-2xl shadow-sm p-5 sm:p-6 mb-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-5 sm:p-6 mb-6">
                 <form action="{{ route('hr.absensi.verifikasi') }}" method="GET" class="flex flex-col sm:flex-row gap-3 sm:items-end">
                     <div class="flex-1 sm:max-w-xs">
                         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Tanggal Absensi</label>
@@ -105,7 +105,7 @@
             </div>
 
             {{-- Table --}}
-            <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-100" id="employeeTable">
                         <thead class="bg-gray-50/80">
@@ -237,7 +237,7 @@
             </div>
 
             {{-- Keterangan --}}
-            <div class="mt-6 bg-white rounded-2xl shadow-sm p-5 sm:p-6">
+            <div class="mt-6 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-5 sm:p-6">
                 <h3 class="text-sm font-semibold text-[#161758] mb-2">Keterangan</h3>
                 <ul class="text-xs text-gray-500 space-y-1">
                     <li>• GPS device HR akan digunakan sebagai lokasi absensi karyawan.</li>
@@ -407,7 +407,7 @@ function getHrLocation(force = false) {
         icon.className          = 'w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0';
         validEl.textContent     = 'Tidak tersedia';
         validEl.className       = 'font-semibold text-red-600';
-        card.className          = 'bg-white rounded-2xl shadow-sm p-5 sm:p-6 mb-6 border-2 border-red-300';
+        card.className          = 'bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-5 sm:p-6 mb-6 border-t-red-300 border-t-4';
         return;
     }
 
@@ -428,7 +428,7 @@ function getHrLocation(force = false) {
             statusText.className    = 'text-sm font-semibold text-[#2E7D3E]';
             detailText.textContent  = 'Lokasi device HR akan digunakan sebagai lokasi absensi karyawan';
             icon.className          = 'w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0';
-            card.className          = 'bg-white rounded-2xl shadow-sm p-5 sm:p-6 mb-6 border-2 border-[#2E7D3E]';
+            card.className          = 'bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-5 sm:p-6 mb-6 border-t-[#2E7D3E] border-t-4';
 
             updateModalGpsBadge(true);
         },
@@ -444,7 +444,7 @@ function getHrLocation(force = false) {
             icon.className          = 'w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0';
             validEl.textContent     = 'Error';
             validEl.className       = 'font-semibold text-red-600';
-            card.className          = 'bg-white rounded-2xl shadow-sm p-5 sm:p-6 mb-6 border-2 border-red-300';
+            card.className          = 'bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-5 sm:p-6 mb-6 border-t-red-300 border-t-4';
 
             updateModalGpsBadge(false);
         },
