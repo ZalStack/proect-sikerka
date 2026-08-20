@@ -531,7 +531,7 @@ class NotificationService
      */
     private function karyawanFhlReminder(Karyawan $user): Collection
     {
-        if (!FhlAbsensi::isFriday()) {
+        if (!FhlAbsensi::isActiveDay()) {
             return collect();
         }
 
