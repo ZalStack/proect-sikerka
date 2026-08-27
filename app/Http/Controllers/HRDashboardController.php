@@ -10,14 +10,21 @@ use App\Models\PerjalananDinas;
 use App\Models\SunnahDaily;
 use App\Models\KhatamanAbsensi;
 use App\Models\Pengumuman;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class HRDashboardController extends Controller
 {
+    public function __construct(private NotificationService $notificationService)
+    {
+    }
+
     public function index()
     {
+        $user = Auth::user();
+
         // ==================== STATISTIK DASAR ====================
         $totalKaryawan = Karyawan::count();
         $totalHr = Karyawan::where('posisi', 'hr')->count();
@@ -94,6 +101,9 @@ class HRDashboardController extends Controller
         $cutiTerbaru = Cuti::with('karyawan')->latest('tanggal_pengajuan')->take(5)->get();
         $perjalananDinasTerbaru = PerjalananDinas::with('karyawan')->latest('created_at')->take(6)->get();
 
+        // ==================== CALENDAR EVENTS ====================
+        $calendarEvents = $this->buildCalendarEvents($user);
+
         return view('hr.dashboard', compact(
             'totalKaryawan',
             'totalHr',
@@ -126,7 +136,8 @@ class HRDashboardController extends Controller
             'karyawanTerbaru',
             'absensiTerbaru',
             'cutiTerbaru',
-            'perjalananDinasTerbaru'
+            'perjalananDinasTerbaru',
+            'calendarEvents'
         ));
     }
 
@@ -241,5 +252,39 @@ class HRDashboardController extends Controller
             ->orderByDesc('total_poin')
             ->take(5)
             ->get();
+    }
+
+    private function buildCalendarEvents(Karyawan $user): array
+    {
+        $notifications = $this->notificationService->getAll($user);
+        $events = [];
+
+        $typeIcons = [
+            'pengumuman' => 'fa-bullhorn',
+            'cuti' => 'fa-umbrella-beach',
+            'dinas' => 'fa-suitcase-rolling',
+            'sunnah' => 'fa-star',
+            'absensi' => 'fa-exclamation-triangle',
+            'profile' => 'fa-user',
+            'fhl' => 'fa-mosque',
+            'khataman' => 'fa-book',
+        ];
+
+        foreach ($notifications as $n) {
+            $dateKey = $n['created_at']->format('Y-m-d');
+            $events[$dateKey][] = [
+                'id' => $n['id'],
+                'type' => $n['type'],
+                'title' => $n['title'],
+                'message' => $n['message'],
+                'color' => $n['color'],
+                'url' => $n['url'],
+                'time' => $n['created_at']->format('H:i'),
+                'time_ago' => $n['created_at']->diffForHumans(),
+                'icon' => $typeIcons[$n['type']] ?? 'fa-bell',
+            ];
+        }
+
+        return $events;
     }
 }
