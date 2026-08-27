@@ -132,6 +132,14 @@ class KaryawanDashboardController extends Controller
             ->take(6)
             ->get();
 
+        // ==================== ULANG TAHUN HARI INI (USER SAJA) ====================
+        $isBirthdayToday = false;
+        if ($user->tanggal_lahir) {
+            $today = Carbon::now();
+            $dob = Carbon::parse($user->tanggal_lahir);
+            $isBirthdayToday = ($today->day === $dob->day && $today->month === $dob->month);
+        }
+
         // ==================== CALENDAR EVENTS ====================
         $calendarEvents = $this->buildCalendarEvents($user);
 
@@ -163,7 +171,8 @@ class KaryawanDashboardController extends Controller
             'absensiTerbaru',
             'cutiTerbaru',
             'perjalananDinasTerbaru',
-            'calendarEvents'
+            'calendarEvents',
+            'isBirthdayToday'
         ));
     }
 

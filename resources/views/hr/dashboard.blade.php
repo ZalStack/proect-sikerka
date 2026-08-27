@@ -86,6 +86,49 @@
                 @endforeach
             </div>
 
+            {{-- ---------- ULANG TAHUN HARI INI ---------- --}}
+            @if($isBirthdayToday)
+            <div class="birthday-section" x-data="{ show: true }" x-show="show" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
+                <div class="relative overflow-hidden rounded-2xl shadow-lg bg-white border border-amber-200">
+                    <div class="h-2 bg-gradient-to-r from-amber-400 via-rose-400 to-pink-500 animate-gradient-x"></div>
+                    <div class="absolute top-4 left-6 text-3xl animate-float-slow opacity-25" style="animation-delay: 0s;">🎂</div>
+                    <div class="absolute top-4 right-6 text-2xl animate-float opacity-25" style="animation-delay: 0.5s;">🎁</div>
+                    <div class="absolute bottom-3 left-10 text-xl animate-float opacity-25" style="animation-delay: 1s;">🎈</div>
+                    <div class="absolute bottom-3 right-10 text-2xl animate-float-slow opacity-25" style="animation-delay: 1.5s;">🎉</div>
+                    <div class="absolute top-1/2 left-1/4 text-lg animate-pulse-slow opacity-10">✨</div>
+                    <div class="absolute top-1/2 right-1/4 text-lg animate-pulse-slow opacity-10" style="animation-delay: 1s;">✨</div>
+
+                    <div class="relative z-10 px-5 py-6 sm:px-8 sm:py-8 flex flex-col items-center text-center">
+                        <button @click="show = false" class="absolute top-3 right-3 w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-all duration-200 hover:scale-110">
+                            <i class="fas fa-times text-slate-400 text-xs"></i>
+                        </button>
+
+                        <div class="mb-4">
+                            <span class="text-5xl sm:text-6xl block mb-2 animate-bounce-slow">🎂</span>
+                            <h3 class="text-lg sm:text-xl font-extrabold text-slate-800">Selamat Ulang Tahun!</h3>
+                            <p class="text-xs text-slate-400 mt-1">{{ \Carbon\Carbon::now()->translatedFormat('l, d F Y') }}</p>
+                        </div>
+
+                        <div class="w-full max-w-2xl">
+                            <div class="inline-block bg-gradient-to-r from-amber-50 via-rose-50 to-pink-50 rounded-xl px-5 py-3.5 border border-amber-100 shadow-sm">
+                                <p class="text-sm sm:text-base text-slate-700 leading-relaxed font-medium">
+                                    <span class="text-amber-600 font-bold">Barakallahu fii umrik, {{ auth()->user()->nama_lengkap }}</span>,<br class="hidden sm:block">
+                                    <span class="text-slate-600">Semoga Allah SWT limpahkan umur yang berkah, rezeki yang lapang, dan langkah yang selalu dalam ridha-Nya.</span><br class="hidden sm:block">
+                                    <span class="text-slate-500 text-sm">Terima kasih sudah menjadi bagian dari keluarga besar KPM.</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-center gap-1.5 mt-3">
+                            <span class="text-sm">🎊</span>
+                            <span class="text-sm font-bold text-rose-500">Happy Birthday!</span>
+                            <span class="text-sm">🎊</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
             {{-- ---------- PERLU DITINDAKLANJUTI (approval queue) ---------- --}}
             <div>
                 <h2 class="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">

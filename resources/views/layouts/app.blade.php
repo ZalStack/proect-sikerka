@@ -26,6 +26,40 @@
         html { scroll-behavior: smooth; }
         * { -webkit-tap-highlight-color: transparent; }
         ::selection { background: rgba(0,162,233,0.2); }
+
+        /* Birthday Animations */
+        @keyframes gradient-x {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-12px) rotate(5deg); }
+        }
+        @keyframes float-slow {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(-3deg); }
+        }
+        @keyframes pulse-slow {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.2; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.3; }
+        }
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-gradient-x {
+            background-size: 200% 200%;
+            animation: gradient-x 4s ease infinite;
+        }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        .animate-float-slow { animation: float-slow 4s ease-in-out infinite; }
+        .animate-pulse-slow { animation: pulse-slow 3s ease-in-out infinite; }
+        @keyframes bounce-slow {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        .animate-bounce-slow { animation: bounce-slow 2s ease-in-out infinite; }
     </style>
     @stack('scripts')
 </body>

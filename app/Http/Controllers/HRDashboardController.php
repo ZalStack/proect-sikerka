@@ -101,6 +101,14 @@ class HRDashboardController extends Controller
         $cutiTerbaru = Cuti::with('karyawan')->latest('tanggal_pengajuan')->take(5)->get();
         $perjalananDinasTerbaru = PerjalananDinas::with('karyawan')->latest('created_at')->take(6)->get();
 
+        // ==================== ULANG TAHUN HARI INI (USER SAJA) ====================
+        $isBirthdayToday = false;
+        if ($user->tanggal_lahir) {
+            $today = Carbon::now();
+            $dob = Carbon::parse($user->tanggal_lahir);
+            $isBirthdayToday = ($today->day === $dob->day && $today->month === $dob->month);
+        }
+
         // ==================== CALENDAR EVENTS ====================
         $calendarEvents = $this->buildCalendarEvents($user);
 
@@ -137,7 +145,8 @@ class HRDashboardController extends Controller
             'absensiTerbaru',
             'cutiTerbaru',
             'perjalananDinasTerbaru',
-            'calendarEvents'
+            'calendarEvents',
+            'isBirthdayToday'
         ));
     }
 
