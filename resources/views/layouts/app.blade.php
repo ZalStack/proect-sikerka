@@ -10,6 +10,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.css">
 </head>
 <body class="font-['Poppins'] antialiased bg-gradient-to-br from-[#f0f4ff] via-[#f5f5f5] to-[#e8f0fe] overflow-x-hidden">
     <div class="min-h-screen flex flex-col">
@@ -25,5 +27,6 @@
         * { -webkit-tap-highlight-color: transparent; }
         ::selection { background: rgba(0,162,233,0.2); }
     </style>
+    @stack('scripts')
 </body>
 </html>
