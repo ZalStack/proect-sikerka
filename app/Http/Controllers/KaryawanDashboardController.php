@@ -7,6 +7,7 @@ use App\Models\Cuti;
 use App\Models\FhlAbsensi;
 use App\Models\PerjalananDinas;
 use App\Models\SunnahDaily;
+use App\Models\Karyawan;
 use App\Models\KhatamanAbsensi;
 use App\Models\Pengumuman;
 use App\Services\NotificationService;
