@@ -208,7 +208,7 @@
                             </div>
                             <div>
                                 <h3 class="text-sm font-semibold text-white">Kalender Aktivitas</h3>
-                                <p class="text-xs text-white/70">Klik tanggal untuk melihat detail</p>
+                                <p class="text-xs text-white/70">Klik tanggal untuk melihat detail tanggal</p>
                             </div>
                         </div>
                         <a href="{{ route('notifications.index') }}" class="text-xs text-white/80 hover:text-white font-medium flex items-center gap-1 transition-colors">
