@@ -1,3 +1,60 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply text-sm sm:text-base;
+  }
+
+  h1 { @apply text-xl sm:text-2xl lg:text-3xl font-bold; }
+  h2 { @apply text-lg sm:text-xl lg:text-2xl font-semibold; }
+  h3 { @apply text-base sm:text-lg lg:text-xl font-semibold; }
+}
+
+@layer components {
+  /* Responsive table wrapper */
+  .table-responsive {
+    @apply w-full overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0;
+  }
+
+  /* Responsive card grid */
+  .card-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6;
+  }
+
+  /* Responsive page container */
+  .page-container {
+    @apply px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8;
+  }
+
+  /* Responsive stat card */
+  .stat-card {
+    @apply p-4 sm:p-5 lg:p-6 rounded-xl shadow-md;
+  }
+
+  /* Responsive form container */
+  .form-container {
+    @apply p-4 sm:p-6 lg:p-8;
+  }
+
+  /* Responsive action buttons */
+  .btn-group {
+    @apply flex flex-col sm:flex-row gap-2 sm:gap-3;
+  }
+
+  /* Prevent table overflow on mobile */
+  .table-wrapper {
+    @apply overflow-x-auto rounded-lg border border-gray-200;
+  }
+
+  /* Responsive sidebar main content offset */
+  .sidebar-offset {
+    @apply ml-0 md:ml-64 transition-all duration-300;
+  }
+}
