@@ -11,13 +11,25 @@
                         <h1 class="text-2xl sm:text-3xl font-bold text-[#161758] tracking-tight">Resume Absensi</h1>
                         <p class="text-sm text-gray-500 mt-1">Ringkasan performa karyawan berdasarkan data absensi</p>
                     </div>
-                    <a href="{{ route('hr.absensi.index', request()->query()) }}"
-                        class="inline-flex items-center justify-center px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                        </svg>
-                        <span>Kembali ke Absensi</span>
-                    </a>
+                    <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                        <button type="button" id="btnSalinTeks"
+                            class="inline-flex items-center justify-center px-4 py-2.5 bg-[#27438D] text-white rounded-xl hover:bg-[#161758] transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                            </svg>
+                            <span class="hidden sm:inline">Salin ke Teks</span>
+                            <span class="sm:hidden">Salin</span>
+                        </button>
+                        <a href="{{ route('hr.absensi.index', request()->query()) }}"
+                            class="inline-flex items-center justify-center px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                            </svg>
+                            <span class="hidden sm:inline">Kembali ke Absensi</span>
+                            <span class="sm:hidden">Kembali</span>
+                        </a>
+                    </div>
                 </div>
 
                 <!-- Filter -->
@@ -87,7 +99,7 @@
                 </div>
 
                 <!-- Statistik Ringkas -->
-                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4 mb-8">
+                <div id="statistikRingkas" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4 mb-8">
                     @php
                         $stats = [
                             ['label' => 'Total Absensi', 'value' => $totalAbsensi, 'color' => 'border-[#161758]', 'text' => 'text-[#161758]'],
@@ -100,15 +112,15 @@
                         ];
                     @endphp
                     @foreach ($stats as $stat)
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 border-l-4 {{ $stat['color'] }}">
-                            <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">{{ $stat['label'] }}</p>
-                            <p class="text-xl font-bold {{ $stat['text'] }} mt-1">{{ $stat['value'] }}</p>
+                        <div class="stat-card bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 border-l-4 {{ $stat['color'] }}">
+                            <p class="stat-label text-xs font-medium text-gray-400 uppercase tracking-wider">{{ $stat['label'] }}</p>
+                            <p class="stat-value text-xl font-bold {{ $stat['text'] }} mt-1">{{ $stat['value'] }}</p>
                         </div>
                     @endforeach
                 </div>
 
                 <!-- Top 10 Jam Kerja -->
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 overflow-hidden mb-8">
+                <div id="topJamKerja" class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 overflow-hidden mb-8">
                     <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-3">
                         <div class="w-10 h-10 rounded-xl bg-[#2E7D3E]/10 flex items-center justify-center">
                             <svg class="w-5 h-5 text-[#2E7D3E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -184,7 +196,7 @@
                 </div>
 
                 <!-- Bottom 5 Paling Sering Telat -->
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 overflow-hidden mb-8">
+                <div id="bottomTelat" class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 overflow-hidden mb-8">
                     <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-3">
                         <div class="w-10 h-10 rounded-xl bg-[#ec1d1d]/10 flex items-center justify-center">
                             <svg class="w-5 h-5 text-[#ec1d1d]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -289,4 +301,127 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var btn = document.getElementById('btnSalinTeks');
+            if (!btn) return;
+
+            btn.addEventListener('click', function () {
+                var lines = [];
+
+                lines.push('RESUME ABSENSI KARYAWAN');
+                lines.push('Dicetak pada ' + new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB');
+                lines.push('');
+
+                // Statistik Ringkas
+                lines.push('=== STATISTIK RINGKAS ===');
+                var statCards = document.querySelectorAll('#statistikRingkas .stat-card');
+                statCards.forEach(function (card) {
+                    var label = card.querySelector('.stat-label');
+                    var value = card.querySelector('.stat-value');
+                    if (label && value) {
+                        lines.push(label.textContent.trim() + ': ' + value.textContent.trim());
+                    }
+                });
+                lines.push('');
+
+                // Top 10 Jam Kerja
+                lines.push('=== TOP 10 — PALING BANYAK JAM KERJA ===');
+                var topRows = document.querySelectorAll('#topJamKerja tbody tr');
+                if (topRows.length === 0 || (topRows.length === 1 && topRows[0].querySelector('td[colspan]'))) {
+                    lines.push('(Tidak ada data)');
+                } else {
+                    topRows.forEach(function (row) {
+                        var cells = row.querySelectorAll('td');
+                        if (cells.length >= 4) {
+                            var ranking = cells[0].textContent.trim();
+                            var nama = cells[1].querySelector('p:first-child') ? cells[1].querySelector('p:first-child').textContent.trim() : cells[1].textContent.trim();
+                            var kode = cells[1].querySelector('p:last-child') ? cells[1].querySelector('p:last-child').textContent.trim() : '';
+                            var divisi = cells[2] ? cells[2].textContent.trim() : '-';
+                            var jamKerja = cells[3].textContent.trim();
+                            var hari = cells[4] ? cells[4].textContent.trim() : '';
+                            lines.push(ranking + '. ' + nama + ' (' + kode + ') — ' + divisi + ' — ' + jamKerja + ' — ' + hari);
+                        }
+                    });
+                }
+                lines.push('');
+
+                // Bottom 5 Telat
+                lines.push('=== BOTTOM 5 — PALING SERING TELAT ===');
+                var bottomRows = document.querySelectorAll('#bottomTelat tbody tr');
+                if (bottomRows.length === 0 || (bottomRows.length === 1 && bottomRows[0].querySelector('td[colspan]'))) {
+                    lines.push('(Tidak ada data)');
+                } else {
+                    bottomRows.forEach(function (row) {
+                        var cells = row.querySelectorAll('td');
+                        if (cells.length >= 5) {
+                            var ranking = cells[0].textContent.trim();
+                            var nama = cells[1].querySelector('p:first-child') ? cells[1].querySelector('p:first-child').textContent.trim() : cells[1].textContent.trim();
+                            var kode = cells[1].querySelector('p:last-child') ? cells[1].querySelector('p:last-child').textContent.trim() : '';
+                            var divisi = cells[2] ? cells[2].textContent.trim() : '-';
+                            var hariTelat = cells[3].textContent.trim();
+                            var totalTelat = cells[4] ? cells[4].textContent.trim() : '';
+                            var rata2 = cells[5] ? cells[5].textContent.trim() : '';
+                            var terparah = cells[6] ? cells[6].textContent.trim() : '';
+                            var keterangan = cells[7] ? cells[7].textContent.trim() : '';
+                            lines.push(ranking + '. ' + nama + ' (' + kode + ') — ' + divisi + ' — ' + hariTelat + ' — ' + totalTelat + ' — ' + rata2 + ' — ' + terparah + ' — ' + keterangan);
+                        }
+                    });
+                }
+
+                var text = lines.join('\n');
+
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(function () {
+                        showCopyToast();
+                    }).catch(function () {
+                        fallbackCopy(text);
+                    });
+                } else {
+                    fallbackCopy(text);
+                }
+            });
+
+            function fallbackCopy(text) {
+                var textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.left = '-9999px';
+                textarea.style.top = '-9999px';
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    showCopyToast();
+                } catch (e) {
+                    alert('Gagal menyalin teks. Silakan salin manual.');
+                }
+                document.body.removeChild(textarea);
+            }
+
+            function showCopyToast() {
+                var existing = document.getElementById('copyToast');
+                if (existing) existing.remove();
+
+                var toast = document.createElement('div');
+                toast.id = 'copyToast';
+                toast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] px-5 py-3 bg-[#2E7D3E] text-white text-sm font-medium rounded-xl shadow-lg transition-all duration-300 opacity-0 translate-y-2';
+                toast.innerHTML = '<div class="flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg><span>Berhasil disalin ke clipboard!</span></div>';
+                document.body.appendChild(toast);
+
+                requestAnimationFrame(function () {
+                    toast.classList.remove('opacity-0', 'translate-y-2');
+                    toast.classList.add('opacity-100', 'translate-y-0');
+                });
+
+                setTimeout(function () {
+                    toast.classList.remove('opacity-100', 'translate-y-0');
+                    toast.classList.add('opacity-0', 'translate-y-2');
+                    setTimeout(function () { toast.remove(); }, 300);
+                }, 2500);
+            }
+        });
+    </script>
 @endsection
