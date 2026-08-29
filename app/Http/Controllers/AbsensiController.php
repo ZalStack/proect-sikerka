@@ -1895,7 +1895,7 @@ class AbsensiController extends Controller
 
         $absensis = $query->get();
 
-        $workStart = Carbon::parse(self::WORK_START_TIME, $this->officeTimezone);
+        $workStart = Carbon::parse(Absensi::WORK_START_TIME, $this->officeTimezone);
         $terlambatCount = $absensis->filter(function ($item) use ($workStart) {
             if ($item->status !== 'Hadir' || !$item->check_in || !$item->tanggal) {
                 return false;
