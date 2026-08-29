@@ -50,6 +50,12 @@
                                     'text' => 'text-[#2E7D3E]',
                                 ],
                                 [
+                                    'label' => 'Terlambat',
+                                    'value' => $chartData['terlambat'] ?? 0,
+                                    'color' => 'border-[#ec1d1d]',
+                                    'text' => 'text-[#ec1d1d]',
+                                ],
+                                [
                                     'label' => 'Izin',
                                     'value' => $chartData['izin'],
                                     'color' => 'border-[#FCC626]',
@@ -79,12 +85,6 @@
                                     'color' => 'border-[#27438D]',
                                     'text' => 'text-[#27438D]',
                                 ],
-                                [
-                                    'label' => 'Lokasi Invalid',
-                                    'value' => $chartData['invalid_location'],
-                                    'color' => 'border-gray-400',
-                                    'text' => 'text-gray-600',
-                                ],
                             ];
                         @endphp
                         @foreach ($cards as $card)
@@ -101,7 +101,7 @@
                 <!-- Filter -->
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-5 sm:p-6 mb-8">
                     <form action="{{ route('hr.absensi.index') }}" method="GET"
-                        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+                        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4">
                         <div>
                             <label
                                 class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Karyawan</label>
@@ -133,6 +133,22 @@
                                 </option>
                                 <option value="Cuti" {{ request('status') == 'Cuti' ? 'selected' : '' }}>Cuti
                                 </option>
+                            </select>
+                        </div>
+                        <div>
+                            <label
+                                class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Urutan</label>
+                            <select name="sort_by"
+                                class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent transition">
+                                <option value="tanggal_desc"
+                                    {{ ($sortBy ?? 'tanggal_desc') == 'tanggal_desc' ? 'selected' : '' }}>
+                                    Tanggal Terbaru</option>
+                                <option value="nama"
+                                    {{ ($sortBy ?? '') == 'nama' ? 'selected' : '' }}>
+                                    Nama A-Z</option>
+                                <option value="paling_telat"
+                                    {{ ($sortBy ?? '') == 'paling_telat' ? 'selected' : '' }}>
+                                    🔴 Paling Banyak Telat</option>
                             </select>
                         </div>
                         <div>
@@ -185,8 +201,11 @@
                             <input type="date" name="end_date" value="{{ request('end_date') }}"
                                 class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent transition">
                         </div>
-                        <p class="text-xs text-gray-400 sm:col-span-2 lg:col-span-6 -mt-1">
+                        <p class="text-xs text-gray-400 sm:col-span-2 lg:col-span-7 -mt-1">
                             * Kalau "Dari Tanggal" &amp; "Sampai Tanggal" diisi, filter Bulan/Tahun akan diabaikan.
+                            @if (($sortBy ?? '') === 'paling_telat')
+                                <span class="text-[#ec1d1d] font-medium"> • Data diurutkan berdasarkan total keterlambatan terbanyak.</span>
+                            @endif
                         </p>
                         <div class="flex items-end gap-2 sm:col-span-2 lg:col-span-2">
                             <button type="submit"
@@ -447,6 +466,9 @@
                     * Baris berlabel <span class="font-semibold text-purple-600">Periode</span> merupakan gabungan tampilan
                     dari beberapa hari Perjalanan Dinas yang berturut-turut untuk karyawan yang sama. Data harian aslinya
                     tetap tersimpan lengkap di database untuk keperluan rekap/audit.
+                    <br>
+                    * Export Excel otomatis menyertakan sheet <span class="font-semibold text-[#ec1d1d]">Rekap Keterlambatan</span>
+                    yang menampilkan ranking karyawan berdasarkan total keterlambatan check-in.
                 </p>
             </div>
         </div>

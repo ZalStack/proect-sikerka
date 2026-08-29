@@ -430,7 +430,7 @@ class AbsensiController extends Controller
      */
     private function withDefaultMonthFilter(Request $request): Request
     {
-        $hasExplicitFilter = $request->filled('start_date') || $request->filled('end_date') || $request->filled('month') || $request->filled('year') || $request->filled('karyawan_id') || ($request->filled('status') && $request->status !== 'semua');
+        $hasExplicitFilter = $request->filled('start_date') || $request->filled('end_date') || $request->filled('month') || $request->filled('year') || $request->filled('karyawan_id') || ($request->filled('status') && $request->status !== 'semua') || $request->filled('sort_by');
 
         if (!$hasExplicitFilter) {
             $request->merge([
@@ -459,6 +459,24 @@ class AbsensiController extends Controller
 
         $allMatching = $query->orderBy('tanggal', 'desc')->get();
         $displayRows = Absensi::mergeConsecutivePerjalananDinas($allMatching);
+
+        // ==========================================================
+        // SORTING OPSIONAL
+        // ==========================================================
+        $sortBy = $request->input('sort_by', 'tanggal_desc');
+        if ($sortBy === 'paling_telat') {
+            $displayRows = $displayRows->sortByDesc(function ($item) {
+                if ($item->is_periode) {
+                    return -1;
+                }
+                return $item->terlambat_menit ?? 0;
+            })->values();
+        } elseif ($sortBy === 'nama') {
+            $displayRows = $displayRows->sortBy(function ($item) {
+                return $item->karyawan->nama_lengkap ?? '';
+            })->values();
+        }
+
         $total = $displayRows->count();
 
         $results = $displayRows->slice(($page - 1) * $perPage, $perPage)->values();
@@ -477,7 +495,7 @@ class AbsensiController extends Controller
         $selectedMonth = $request->input('month');
         $selectedYear = $request->input('year');
 
-        return view('hr.absensi.index', compact('absensis', 'karyawans', 'chartData', 'selectedMonth', 'selectedYear'));
+        return view('hr.absensi.index', compact('absensis', 'karyawans', 'chartData', 'selectedMonth', 'selectedYear', 'sortBy'));
     }
 
     /**
@@ -889,7 +907,9 @@ class AbsensiController extends Controller
         $perjalananDinasList = $perjalananDinasQuery->orderBy('tanggal_mulai', 'asc')->get();
         $cutiList = $cutiQuery->orderBy('tanggal_mulai', 'asc')->get();
 
-        return $this->generateExcel($absensis, $perjalananDinasList, $cutiList);
+        $sortBy = $request->input('sort_by', 'tanggal_desc');
+
+        return $this->generateExcel($absensis, $perjalananDinasList, $cutiList, $sortBy);
     }
 
     /**
@@ -925,7 +945,7 @@ class AbsensiController extends Controller
      * SEMUA RINGKASAN MENGGUNAKAN RUMUS SUM/COUNT DARI BARIS DATA,
      * sehingga jika user mengedit data di Excel, ringkasan otomatis menyesuaikan.
      */
-    private function generateExcel($absensis, $perjalananDinasList = null, $cutiList = null)
+    private function generateExcel($absensis, $perjalananDinasList = null, $cutiList = null, $sortBy = 'tanggal_desc')
     {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
@@ -1443,6 +1463,12 @@ class AbsensiController extends Controller
         // ==========================================================
         $this->addPerjalananDinasSheet($spreadsheet, $perjalananDinasList ?? collect());
         $this->addCutiSheet($spreadsheet, $cutiList ?? collect());
+
+        // ==========================================================
+        // SHEET REKAP KETERLAMBATAN (otomatis, ranking paling telat)
+        // ==========================================================
+        $this->addRekapKeterlambatanSheet($spreadsheet, $absensis);
+
         $spreadsheet->setActiveSheetIndex(0);
 
         $fileName = 'Laporan_Absensi_' . Carbon::now($this->officeTimezone)->format('Ymd_His') . '.xlsx';
@@ -1654,11 +1680,229 @@ class AbsensiController extends Controller
         $sheet->setSelectedCell('A1');
     }
 
+    /**
+     * Tambahkan sheet "Rekap Keterlambatan" berisi ranking karyawan berdasarkan
+     * total keterlambatan check-in. Otomatis diurutkan dari yang paling banyak
+     * telat. Disertakan juga detail jumlah hari terlambat dan rata-rata telat.
+     */
+    private function addRekapKeterlambatanSheet(Spreadsheet $spreadsheet, $absensis): void
+    {
+        $sheet = $spreadsheet->createSheet();
+        $sheet->setTitle('Rekap Keterlambatan');
+
+        $colorPrimary = 'C00000';
+        $colorHeader = 'D9534F';
+        $colorBandA = 'FFFFFF';
+        $colorBandB = 'FDE8E8';
+        $colorBorder = 'B7B7B7';
+        $colorGold = 'FFD700';
+        $colorSilver = 'C0C0C0';
+        $colorBronze = 'CD7F32';
+
+        $columns = ['Ranking', 'Nama Karyawan', 'Kode Pegawai', 'Divisi', 'Jabatan', 'Total Keterlambatan (menit)', 'Jumlah Hari Telat', 'Rata-rata Telat (menit)', 'Waktu Check-in Terparah', 'Keterangan'];
+        $lastCol = 'J';
+        $colWidths = ['A' => 10, 'B' => 24, 'C' => 14, 'D' => 18, 'E' => 20, 'F' => 22, 'G' => 16, 'H' => 22, 'I' => 20, 'J' => 24];
+        foreach ($colWidths as $col => $width) {
+            $sheet->getColumnDimension($col)->setWidth($width);
+        }
+
+        $row = 1;
+        $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
+        $sheet->setCellValue("A{$row}", 'REKAP KETERLAMBATAN KARYAWAN');
+        $sheet->getStyle("A{$row}")->applyFromArray([
+            'font' => ['bold' => true, 'size' => 16, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorPrimary]],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+        ]);
+        $sheet->getRowDimension($row)->setRowHeight(32);
+        $row++;
+
+        $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
+        $sheet->setCellValue("A{$row}", 'Dicetak pada ' . Carbon::now($this->officeTimezone)->translatedFormat('d F Y, H:i') . ' WIB — Diurutkan berdasarkan total keterlambatan (terbanyak)');
+        $sheet->getStyle("A{$row}")->applyFromArray([
+            'font' => ['italic' => true, 'size' => 10, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorPrimary]],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+        ]);
+        $sheet->getRowDimension($row)->setRowHeight(18);
+        $row += 2;
+
+        // Kelompokkan per karyawan, hitung total keterlambatan
+        $grouped = $absensis->groupBy('karyawan_id');
+        $rekap = collect();
+
+        foreach ($grouped as $karyawanId => $items) {
+            $karyawan = $items->first()->karyawan;
+            $totalTerlambat = 0;
+            $jumlahHariTelat = 0;
+            $terparahCheckin = '';
+            $terparahMenit = 0;
+
+            foreach ($items as $item) {
+                if ($item->check_in && $item->status === 'Hadir') {
+                    $menit = $item->terlambat_menit;
+                    $totalTerlambat += $menit;
+                    if ($menit > 0) {
+                        $jumlahHariTelat++;
+                        if ($menit > $terparahMenit) {
+                            $terparahMenit = $menit;
+                            $terparahCheckin = $item->check_in->format('H:i') . ' (' . $item->tanggal->format('d/m/Y') . ')';
+                        }
+                    }
+                }
+            }
+
+            $rataRata = $jumlahHariTelat > 0 ? round($totalTerlambat / $jumlahHariTelat) : 0;
+
+            $rekap->push([
+                'karyawan' => $karyawan,
+                'total_terlambat' => $totalTerlambat,
+                'jumlah_hari_telat' => $jumlahHariTelat,
+                'rata_rata' => $rataRata,
+                'terparah_checkin' => $terparahCheckin ?: '-',
+                'keterangan' => $totalTerlambat > 60 ? 'Sangat Sering Telat' : ($totalTerlambat > 30 ? 'Sering Telat' : ($totalTerlambat > 0 ? 'Kadang Telat' : 'Tepat Waktu')),
+            ]);
+        }
+
+        // Urutkan dari yang paling banyak telat
+        $rekap = $rekap->sortByDesc('total_terlambat')->values();
+
+        // HEADER TABEL
+        foreach ($columns as $i => $colName) {
+            $col = chr(65 + $i);
+            $sheet->setCellValue("{$col}{$row}", $colName);
+        }
+        $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
+            'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorHeader]],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'FFFFFF']]],
+        ]);
+        $sheet->getRowDimension($row)->setRowHeight(22);
+        $row++;
+
+        $no = 1;
+        $dataRowStart = $row;
+
+        foreach ($rekap as $item) {
+            $k = $item['karyawan'];
+
+            $sheet->setCellValue("A{$row}", $no);
+            $sheet->setCellValue("B{$row}", $k->nama_lengkap ?? '-');
+            $sheet->setCellValue("C{$row}", $k->kode_pegawai ?? '-');
+            $sheet->setCellValue("D{$row}", $k->divisi ?? '-');
+            $sheet->setCellValue("E{$row}", $k->jabatan ?? '-');
+            $sheet->setCellValue("F{$row}", $item['total_terlambat']);
+            $sheet->setCellValue("G{$row}", $item['jumlah_hari_telat']);
+            $sheet->setCellValue("H{$row}", $item['rata_rata']);
+            $sheet->setCellValue("I{$row}", $item['terparah_checkin']);
+            $sheet->setCellValue("J{$row}", $item['keterangan']);
+
+            $bandColor = $no % 2 === 0 ? $colorBandB : $colorBandA;
+            $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $bandColor]],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => $colorBorder]]],
+                'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
+                'font' => ['size' => 10],
+            ]);
+
+            // Ranking badges
+            if ($no === 1) {
+                $sheet->getStyle("A{$row}")->applyFromArray([
+                    'font' => ['bold' => true, 'size' => 11, 'color' => ['rgb' => 'B8860B']],
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorGold]],
+                ]);
+            } elseif ($no === 2) {
+                $sheet->getStyle("A{$row}")->applyFromArray([
+                    'font' => ['bold' => true, 'size' => 11, 'color' => ['rgb' => '555555']],
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorSilver]],
+                ]);
+            } elseif ($no === 3) {
+                $sheet->getStyle("A{$row}")->applyFromArray([
+                    'font' => ['bold' => true, 'size' => 11, 'color' => ['rgb' => '8B4513']],
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorBronze]],
+                ]);
+            }
+
+            // Warna keterangan berdasarkan tingkat keterlambatan
+            $ketColor = match ($item['keterangan']) {
+                'Sangat Sering Telat' => 'F8CBAD',
+                'Sering Telat' => 'FCE4D6',
+                'Kadang Telat' => 'FFEB9C',
+                default => 'C6EFCE',
+            };
+            $ketFontColor = match ($item['keterangan']) {
+                'Sangat Sering Telat' => 'C00000',
+                'Sering Telat' => 'C55A11',
+                'Kadang Telat' => '9C6500',
+                default => '1E7B34',
+            };
+            $sheet->getStyle("J{$row}")->applyFromArray([
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $ketColor]],
+                'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => $ketFontColor]],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            ]);
+
+            $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("F{$row}:H{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("F{$row}:H{$row}")->getNumberFormat()->setFormatCode('0');
+
+            $no++;
+            $row++;
+        }
+
+        $dataRowEnd = $row - 1;
+
+        // BARIS TOTAL
+        if ($dataRowStart <= $dataRowEnd) {
+            $sheet->setCellValue("A{$row}", '');
+            $sheet->setCellValue("B{$row}", '');
+            $sheet->setCellValue("C{$row}", '');
+            $sheet->setCellValue("D{$row}", '');
+            $sheet->setCellValue("E{$row}", 'TOTAL');
+            $sheet->setCellValue("F{$row}", "=SUM(F{$dataRowStart}:F{$dataRowEnd})");
+            $sheet->setCellValue("G{$row}", "=SUM(G{$dataRowStart}:G{$dataRowEnd})");
+            $sheet->setCellValue("H{$row}", "=IF(G{$row}>0, F{$row}/G{$row}, 0)");
+            $sheet->setCellValue("I{$row}", '');
+            $sheet->setCellValue("J{$row}", '');
+
+            $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
+                'font' => ['bold' => true, 'size' => 10],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E6E6E6']],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => $colorBorder]]],
+            ]);
+            $sheet->getStyle("A{$row}:E{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("F{$row}:H{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("F{$row}:H{$row}")->getNumberFormat()->setFormatCode('0');
+        }
+
+        if ($rekap->isEmpty()) {
+            $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
+            $sheet->setCellValue("A{$row}", 'Tidak ada data keterlambatan pada periode ini.');
+            $sheet->getStyle("A{$row}")->applyFromArray([
+                'font' => ['italic' => true, 'color' => ['rgb' => '808080']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            ]);
+        }
+
+        $sheet->freezePane('A5');
+        $sheet->setSelectedCell('A1');
+    }
+
     private function getChartData($request)
     {
         $query = $this->applyAbsensiFilters(Absensi::with('karyawan'), $request);
 
         $absensis = $query->get();
+
+        $workStart = Carbon::parse(self::WORK_START_TIME, $this->officeTimezone);
+        $terlambatCount = $absensis->filter(function ($item) use ($workStart) {
+            if ($item->status !== 'Hadir' || !$item->check_in || !$item->tanggal) {
+                return false;
+            }
+            $checkIn = Carbon::parse($item->tanggal->format('Y-m-d') . ' ' . $item->check_in->format('H:i:s'));
+            return $checkIn->greaterThan($workStart);
+        })->count();
 
         return [
             'hadir' => $absensis->where('status', 'Hadir')->count(),
@@ -1668,6 +1912,7 @@ class AbsensiController extends Controller
             'perjalanan_dinas' => $absensis->where('status', 'Perjalanan Dinas')->count(),
             'cuti' => $absensis->where('status', 'Cuti')->count(),
             'total' => $absensis->count(),
+            'terlambat' => $terlambatCount,
             'valid_location' => $absensis->where('is_valid_location', true)->count(),
             'invalid_location' => $absensis->where('is_valid_location', false)->count(),
         ];
