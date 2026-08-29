@@ -2314,4 +2314,131 @@ class AbsensiController extends Controller
             ],
         ]);
     }
+
+    /**
+     * ==========================================================
+     * RESUME ABSENSI — RINGKASAN PERFORMA KARYAWAN
+     * ==========================================================
+     * Halaman HR yang menampilkan:
+     *   - Statistik ringkas periode yang dipilih
+     *   - Top 10 karyawan paling banyak jam kerja
+     *   - Bottom 5 karyawan paling sering telat
+     *
+     * Menggunakan filter yang sama dengan halaman index absensi.
+     */
+    public function resume(Request $request)
+    {
+        $request = $this->withDefaultMonthFilter($request);
+
+        $query = $this->applyAbsensiFilters(Absensi::with('karyawan'), $request);
+        $absensis = $query->get();
+
+        // ==========================================================
+        // STATISTIK RINGKAS
+        // ==========================================================
+        $totalKaryawanHadir = $absensis->where('status', 'Hadir')->pluck('karyawan_id')->unique()->count();
+        $totalAbsensi = $absensis->count();
+        $totalHadir = $absensis->where('status', 'Hadir')->count();
+        $totalIzin = $absensis->where('status', 'Izin')->count();
+        $totalSakit = $absensis->where('status', 'Sakit')->count();
+        $totalAlpha = $absensis->where('status', 'Alpha')->count();
+        $totalDinas = $absensis->where('status', 'Perjalanan Dinas')->count();
+        $totalCuti = $absensis->where('status', 'Cuti')->count();
+
+        // Rata-rata jam kerja (dari yang hadir & punya check_in & check_out)
+        $rataRataJamKerja = 0;
+        $hadirWithTime = $absensis->filter(fn($a) => $a->status === 'Hadir' && $a->check_in && $a->check_out);
+        if ($hadirWithTime->count() > 0) {
+            $totalMenitAll = $hadirWithTime->sum(fn($a) => $a->check_in->diffInMinutes($a->check_out));
+            $rataRataJamKerja = round($totalMenitAll / $hadirWithTime->count() / 60, 1);
+        }
+
+        // Total hari terlambat
+        $totalHariTerlambat = $absensis->filter(fn($a) => $a->status === 'Hadir' && $a->check_in && $a->terlambat_menit > 0)->count();
+
+        // ==========================================================
+        // TOP 10 — PALING BANYAK JAM KERJA
+        // ==========================================================
+        $grouped = $absensis->where('status', 'Hadir')->where('check_in', '!=', null)->where('check_out', '!=', null)
+            ->groupBy('karyawan_id');
+
+        $topJamKerja = collect();
+        foreach ($grouped as $karyawanId => $items) {
+            $karyawan = $items->first()->karyawan;
+            $totalMenit = $items->sum(fn($a) => $a->check_in->diffInMinutes($a->check_out));
+            $jumlahHari = $items->count();
+
+            $topJamKerja->push([
+                'karyawan' => $karyawan,
+                'total_menit' => $totalMenit,
+                'total_jam' => floor($totalMenit / 60),
+                'total_sisa_menit' => $totalMenit % 60,
+                'jumlah_hari' => $jumlahHari,
+            ]);
+        }
+
+        $topJamKerja = $topJamKerja->sortByDesc('total_menit')->take(10)->values();
+
+        // ==========================================================
+        // BOTTOM 5 — PALING SERING TELAT
+        // ==========================================================
+        $telatGrouped = $absensis->filter(fn($a) => $a->status === 'Hadir' && $a->check_in)
+            ->groupBy('karyawan_id');
+
+        $bottomTelat = collect();
+        foreach ($telatGrouped as $karyawanId => $items) {
+            $karyawan = $items->first()->karyawan;
+            $jumlahHariTelat = 0;
+            $totalMenitTelat = 0;
+            $terparahMenit = 0;
+            $terparahCheckin = '';
+
+            foreach ($items as $item) {
+                $menit = $item->terlambat_menit;
+                if ($menit > 0) {
+                    $jumlahHariTelat++;
+                    $totalMenitTelat += $menit;
+                    if ($menit > $terparahMenit) {
+                        $terparahMenit = $menit;
+                        $terparahCheckin = $item->check_in->format('H:i') . ' (' . $item->tanggal->format('d/m/Y') . ')';
+                    }
+                }
+            }
+
+            if ($jumlahHariTelat > 0) {
+                $bottomTelat->push([
+                    'karyawan' => $karyawan,
+                    'jumlah_hari_telat' => $jumlahHariTelat,
+                    'total_menit_telat' => $totalMenitTelat,
+                    'rata_rata' => round($totalMenitTelat / $jumlahHariTelat),
+                    'terparah_checkin' => $terparahCheckin,
+                    'keterangan' => $totalMenitTelat > 60 ? 'Sangat Sering Telat' : ($totalMenitTelat > 30 ? 'Sering Telat' : 'Kadang Telat'),
+                ]);
+            }
+        }
+
+        $bottomTelat = $bottomTelat->sortByDesc('total_menit_telat')->take(5)->values();
+
+        // Data untuk filter
+        $selectedMonth = $request->input('month');
+        $selectedYear = $request->input('year');
+
+        return view('hr.absensi.resume', compact(
+            'absensis',
+            'topJamKerja',
+            'bottomTelat',
+            'totalKaryawanHadir',
+            'totalAbsensi',
+            'totalHadir',
+            'totalIzin',
+            'totalSakit',
+            'totalAlpha',
+            'totalDinas',
+            'totalCuti',
+            'rataRataJamKerja',
+            'totalHariTerlambat',
+            'selectedMonth',
+            'selectedYear',
+        ));
+    }
 }
