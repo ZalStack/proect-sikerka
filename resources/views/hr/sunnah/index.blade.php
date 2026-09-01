@@ -23,6 +23,10 @@
                        class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 text-center bg-[#00a2e9] text-white px-3 sm:px-4 py-2 rounded-xl hover:bg-[#27438D] active:scale-95 transition-all duration-200 text-xs sm:text-sm font-medium shadow-sm">
                         📊 <span>Rekap Karyawan</span>
                     </a>
+                    <a href="{{ route('hr.sunnah.rekapitulasi-karyawan') }}"
+                       class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 text-center bg-[#161758] text-white px-3 sm:px-4 py-2 rounded-xl hover:bg-[#0F1245] active:scale-95 transition-all duration-200 text-xs sm:text-sm font-medium shadow-sm">
+                        👥 <span>Rekapitulasi</span>
+                    </a>
                     <a href="{{ route('hr.sunnah.rekap-divisi') }}"
                        class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 text-center bg-[#2E7D3E] text-white px-3 sm:px-4 py-2 rounded-xl hover:bg-[#1a5a2a] active:scale-95 transition-all duration-200 text-xs sm:text-sm font-medium shadow-sm">
                         🏆 <span>Rekap Divisi</span>

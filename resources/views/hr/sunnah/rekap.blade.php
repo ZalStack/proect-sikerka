@@ -17,6 +17,10 @@
                        class="flex-1 sm:flex-none text-center bg-gray-500 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-gray-600 transition-colors duration-200 text-xs sm:text-sm">
                         📋 Monitoring
                     </a>
+                    <a href="{{ route('hr.sunnah.rekapitulasi-karyawan') }}"
+                       class="flex-1 sm:flex-none text-center bg-[#161758] text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-[#0F1245] transition-colors duration-200 text-xs sm:text-sm">
+                        👥 Rekapitulasi
+                    </a>
                     <a href="{{ route('hr.sunnah.rekap-divisi') }}"
                        class="flex-1 sm:flex-none text-center bg-[#2E7D3E] text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-[#1a5a2a] transition-colors duration-200 text-xs sm:text-sm">
                         🏆 Rekap Divisi

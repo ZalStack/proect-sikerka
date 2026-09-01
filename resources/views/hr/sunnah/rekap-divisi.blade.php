@@ -21,6 +21,10 @@
                        class="flex-1 sm:flex-none text-center bg-[#00a2e9] text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-[#27438D] transition-colors duration-200 text-xs sm:text-sm">
                         📊 Rekap Karyawan
                     </a>
+                    <a href="{{ route('hr.sunnah.rekapitulasi-karyawan') }}"
+                       class="flex-1 sm:flex-none text-center bg-[#161758] text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-[#0F1245] transition-colors duration-200 text-xs sm:text-sm">
+                        👥 Rekapitulasi
+                    </a>
                 </div>
             </div>
 

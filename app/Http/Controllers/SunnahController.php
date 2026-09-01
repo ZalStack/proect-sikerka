@@ -338,6 +338,63 @@ class SunnahController extends Controller
         ));
     }
 
+    // HR View - Rekapitulasi Karyawan Berdasarkan Jenis Kelamin
+    public function rekapitulasiKaryawan(Request $request)
+    {
+        $month = $request->input('month', date('m'));
+        $year = $request->input('year', date('Y'));
+
+        // Ambil rekap per karyawan
+        $rekapAll = SunnahDaily::rekapPerKaryawan($month, $year);
+
+        // Ambil data karyawan (yang belum resign) dengan join jenis_kelamin
+        $karyawans = Karyawan::where('is_resigned', false)->get();
+        $karyawanGenderMap = $karyawans->pluck('jenis_kelamin', 'id');
+
+        // Gabungkan data rekap dengan jenis kelamin
+        $rekapWithGender = $rekapAll->map(function ($item) use ($karyawanGenderMap) {
+            $item['jenis_kelamin'] = $karyawanGenderMap->get($item['karyawan_id'], 'Tidak Diketahui');
+            return $item;
+        });
+
+        // Filter Laki-laki dan Perempuan
+        $lakiLaki = $rekapWithGender->where('jenis_kelamin', 'Laki-Laki')->values();
+        $perempuan = $rekapWithGender->where('jenis_kelamin', 'Perempuan')->values();
+
+        // Statistik Laki-laki
+        $totalLakiLaki = $lakiLaki->count();
+        $totalPoinLakiLaki = $lakiLaki->sum('total_poin');
+        $rataRataLakiLaki = $totalLakiLaki > 0 ? round($totalPoinLakiLaki / $totalLakiLaki, 1) : 0;
+        $topLakiLaki = $lakiLaki->sortByDesc('total_poin')->first();
+
+        // Statistik Perempuan
+        $totalPerempuan = $perempuan->count();
+        $totalPoinPerempuan = $perempuan->sum('total_poin');
+        $rataRataPerempuan = $totalPerempuan > 0 ? round($totalPoinPerempuan / $totalPerempuan, 1) : 0;
+        $topPerempuan = $perempuan->sortByDesc('total_poin')->first();
+
+        // Statistik Umum
+        $totalKaryawan = $totalLakiLaki + $totalPerempuan;
+        $totalPoinSemua = $totalPoinLakiLaki + $totalPoinPerempuan;
+
+        return view('hr.sunnah.rekapitulasi-karyawan', compact(
+            'month',
+            'year',
+            'lakiLaki',
+            'perempuan',
+            'totalLakiLaki',
+            'totalPoinLakiLaki',
+            'rataRataLakiLaki',
+            'topLakiLaki',
+            'totalPerempuan',
+            'totalPoinPerempuan',
+            'rataRataPerempuan',
+            'topPerempuan',
+            'totalKaryawan',
+            'totalPoinSemua'
+        ));
+    }
+
     // HR View - Rekap Divisi (Menu Terpisah)
     public function rekapDivisi(Request $request)
     {
