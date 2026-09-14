@@ -10,6 +10,16 @@
         strlen($user->nama_lengkap ?? '') > 15
             ? substr($user->nama_lengkap ?? '', 0, 15) . '...'
             : $user->nama_lengkap ?? 'User';
+
+    // Hitung jumlah pengajuan pending untuk notifikasi HR
+    $pendingCuti = 0;
+    $pendingPerjalananDinas = 0;
+    $pendingPerizinan = 0;
+    if ($isHr) {
+        $pendingCuti = \App\Models\Cuti::where('status', 'pending')->count();
+        $pendingPerjalananDinas = \App\Models\PerjalananDinas::where('status', 'pending')->count();
+        $pendingPerizinan = \App\Models\Perizinan::where('status', 'pending')->count();
+    }
 @endphp
 
 <aside id="sidebar"
@@ -98,39 +108,60 @@
 
                     <!-- CUTI -->
                     <a href="{{ route('hr.cuti.index') }}"
-                        class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm {{ $currentRoute === 'hr.cuti.index' || str_starts_with($currentRoute, 'hr.cuti.') ? 'bg-[#00a2e9] text-white shadow-lg shadow-[#00a2e9]/30' : 'text-white/70 hover:bg-white/10 hover:text-white' }}">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
-                            </path>
-                        </svg>
-                        <span class="truncate">Cuti</span>
+                        class="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm {{ $currentRoute === 'hr.cuti.index' || str_starts_with($currentRoute, 'hr.cuti.') ? 'bg-[#00a2e9] text-white shadow-lg shadow-[#00a2e9]/30' : 'text-white/70 hover:bg-white/10 hover:text-white' }}">
+                        <div class="flex items-center space-x-2 sm:space-x-3 min-w-0">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                </path>
+                            </svg>
+                            <span class="truncate">Cuti</span>
+                        </div>
+                        @if($pendingCuti > 0)
+                            <span class="flex-shrink-0 ml-2 bg-[#ec1d1d] text-white text-[9px] sm:text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow-lg animate-pulse">
+                                {{ $pendingCuti > 99 ? '99+' : $pendingCuti }}
+                            </span>
+                        @endif
                     </a>
 
                     <!-- Perjalanan Dinas HR -->
                     <a href="{{ route('hr.perjalanan-dinas.index') }}"
-                        class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm {{ $currentRoute === 'hr.perjalanan-dinas.index' || str_starts_with($currentRoute, 'hr.perjalanan-dinas.') ? 'bg-[#00a2e9] text-white shadow-lg shadow-[#00a2e9]/30' : 'text-white/70 hover:bg-white/10 hover:text-white' }}">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        <span class="truncate">Perjalanan Dinas</span>
+                        class="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm {{ $currentRoute === 'hr.perjalanan-dinas.index' || str_starts_with($currentRoute, 'hr.perjalanan-dinas.') ? 'bg-[#00a2e9] text-white shadow-lg shadow-[#00a2e9]/30' : 'text-white/70 hover:bg-white/10 hover:text-white' }}">
+                        <div class="flex items-center space-x-2 sm:space-x-3 min-w-0">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span class="truncate">Perjalanan Dinas</span>
+                        </div>
+                        @if($pendingPerjalananDinas > 0)
+                            <span class="flex-shrink-0 ml-2 bg-[#ec1d1d] text-white text-[9px] sm:text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow-lg animate-pulse">
+                                {{ $pendingPerjalananDinas > 99 ? '99+' : $pendingPerjalananDinas }}
+                            </span>
+                        @endif
                     </a>
 
                     <a href="{{ route('hr.perizinan.index') }}"
-                        class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm {{ $currentRoute === 'hr.perizinan.index' || str_starts_with($currentRoute, 'hr.perizinan.') ? 'bg-[#00a2e9] text-white shadow-lg shadow-[#00a2e9]/30' : 'text-white/70 hover:bg-white/10 hover:text-white' }}">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M16 9h-4a1 1 0 01-1-1V4" />
-                        </svg>
-                        <span class="truncate">Perizinan Karyawan</span>
+                        class="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm {{ $currentRoute === 'hr.perizinan.index' || str_starts_with($currentRoute, 'hr.perizinan.') ? 'bg-[#00a2e9] text-white shadow-lg shadow-[#00a2e9]/30' : 'text-white/70 hover:bg-white/10 hover:text-white' }}">
+                        <div class="flex items-center space-x-2 sm:space-x-3 min-w-0">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M16 9h-4a1 1 0 01-1-1V4" />
+                            </svg>
+                            <span class="truncate">Perizinan Karyawan</span>
+                        </div>
+                        @if($pendingPerizinan > 0)
+                            <span class="flex-shrink-0 ml-2 bg-[#ec1d1d] text-white text-[9px] sm:text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow-lg animate-pulse">
+                                {{ $pendingPerizinan > 99 ? '99+' : $pendingPerizinan }}
+                            </span>
+                        @endif
                     </a>
 
                     <!-- Menu Lainnya -->
