@@ -64,7 +64,7 @@
                 <h2 class="text-sm sm:text-base md:text-lg font-semibold text-[#161758] mb-3 sm:mb-4 flex items-center gap-2">
                     <span>🔎</span> Filter Laporan
                 </h2>
-                <form id="filter-form" action="{{ route('hr.sunnah.index') }}" method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+                <form id="filter-form" action="{{ route('hr.sunnah.index') }}" method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4">
                 <div id="filter-fields" class="contents">
                     <div>
                         <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Tanggal Mulai</label>
@@ -97,6 +97,14 @@
                         </select>
                     </div>
                     <div>
+                        <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Jenis Kelamin</label>
+                        <select name="jenis_kelamin" class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent transition">
+                            <option value="">Semua</option>
+                            <option value="Laki-laki" {{ request('jenis_kelamin') === 'Laki-laki' ? 'selected' : '' }}>👨 Laki-laki</option>
+                            <option value="Perempuan" {{ request('jenis_kelamin') === 'Perempuan' ? 'selected' : '' }}>👩 Perempuan</option>
+                        </select>
+                    </div>
+                    <div>
                         <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Status</label>
                         <select name="status" class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent transition">
                             <option value="">Semua Status</option>
@@ -105,8 +113,8 @@
                             <option value="rejected" {{ request('status') === 'rejected' ? 'selected' : '' }}>Ditolak</option>
                         </select>
                     </div>
-                    <div class="sm:col-span-2 lg:col-span-5 flex flex-col sm:flex-row justify-end gap-2">
-                        @if(request()->anyFilled(['start_date','end_date','karyawan_id','divisi','status']))
+                    <div class="sm:col-span-2 lg:col-span-6 flex flex-col sm:flex-row justify-end gap-2">
+                        @if(request()->anyFilled(['start_date','end_date','karyawan_id','divisi','status','jenis_kelamin']))
                             <a href="{{ route('hr.sunnah.index') }}"
                                class="w-full sm:w-auto text-center bg-gray-100 text-[#1B1B1B] px-4 sm:px-6 py-2 rounded-xl hover:bg-gray-200 transition-colors duration-200 text-sm sm:text-base font-medium">
                                 Reset
@@ -170,6 +178,7 @@
                 <input type="hidden" name="karyawan_id" value="{{ request('karyawan_id') }}">
                 <input type="hidden" name="status" value="{{ request('status') }}">
                 <input type="hidden" name="divisi" value="{{ request('divisi') }}">
+                <input type="hidden" name="jenis_kelamin" value="{{ request('jenis_kelamin') }}">
                 <div id="bulk-ids-container"></div>
 
                 {{-- Sticky Toolbar Bulk Action --}}

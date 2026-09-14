@@ -35,7 +35,7 @@
 
             {{-- ============ FILTER ============ --}}
             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-3 sm:p-4 md:p-6 mb-4 sm:mb-6">
-                <form action="{{ route('hr.sunnah.rekapitulasi-karyawan') }}" method="GET" class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                <form action="{{ route('hr.sunnah.rekapitulasi-karyawan') }}" method="GET" class="grid grid-cols-1 sm:grid-cols-4 gap-3 sm:gap-4">
                     <div>
                         <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Bulan</label>
                         <select name="month" class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent transition">
@@ -52,6 +52,14 @@
                             @for($y = date('Y'); $y >= date('Y') - 5; $y--)
                                 <option value="{{ $y }}" {{ (int) $year === $y ? 'selected' : '' }}>{{ $y }}</option>
                             @endfor
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Jenis Kelamin</label>
+                        <select name="jenis_kelamin" class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent transition">
+                            <option value="">Semua</option>
+                            <option value="Laki-laki" {{ request('jenis_kelamin') === 'Laki-laki' ? 'selected' : '' }}>👨 Laki-laki</option>
+                            <option value="Perempuan" {{ request('jenis_kelamin') === 'Perempuan' ? 'selected' : '' }}>👩 Perempuan</option>
                         </select>
                     </div>
                     <div class="flex items-end">

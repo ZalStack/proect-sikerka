@@ -240,6 +240,13 @@ class SunnahController extends Controller
             });
         }
 
+        if ($request->filled('jenis_kelamin')) {
+            $jk = $request->input('jenis_kelamin');
+            $query->whereHas('karyawan', function ($q) use ($jk) {
+                $q->whereRaw('LOWER(jenis_kelamin) = ?', [strtolower($jk)]);
+            });
+        }
+
         // Ambil seluruh data (tanpa limit) untuk statistik & ranking divisi
         $allSunnahData = (clone $query)->orderBy('tanggal', 'desc')->get();
 
@@ -351,15 +358,29 @@ class SunnahController extends Controller
         $karyawans = Karyawan::where('is_resigned', false)->get();
         $karyawanGenderMap = $karyawans->pluck('jenis_kelamin', 'id');
 
+        // Filter by gender if requested
+        $filterGender = $request->input('jenis_kelamin', '');
+
         // Gabungkan data rekap dengan jenis kelamin
         $rekapWithGender = $rekapAll->map(function ($item) use ($karyawanGenderMap) {
             $item['jenis_kelamin'] = $karyawanGenderMap->get($item['karyawan_id'], 'Tidak Diketahui');
             return $item;
         });
 
-        // Filter Laki-laki dan Perempuan
-        $lakiLaki = $rekapWithGender->where('jenis_kelamin', 'Laki-Laki')->values();
-        $perempuan = $rekapWithGender->where('jenis_kelamin', 'Perempuan')->values();
+        // Filter Laki-laki dan Perempuan (case-insensitive)
+        $lakiLaki = $rekapWithGender->filter(function ($item) {
+            return strtolower($item['jenis_kelamin'] ?? '') === 'laki-laki';
+        })->values();
+        $perempuan = $rekapWithGender->filter(function ($item) {
+            return strtolower($item['jenis_kelamin'] ?? '') === 'perempuan';
+        })->values();
+
+        // Apply gender filter if requested
+        if ($filterGender === 'Laki-laki') {
+            $perempuan = collect();
+        } elseif ($filterGender === 'Perempuan') {
+            $lakiLaki = collect();
+        }
 
         // Statistik Laki-laki
         $totalLakiLaki = $lakiLaki->count();
