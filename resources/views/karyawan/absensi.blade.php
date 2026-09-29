@@ -83,7 +83,7 @@
                         <p class="font-semibold">ℹ️ Informasi:</p>
                         <ul class="list-disc list-inside mt-1 space-y-1 text-xs sm:text-sm">
                             <li>Absensi dilakukan dengan <strong>deteksi lokasi GPS</strong></li>
-                            <li>Lokasi Anda harus berada dalam <strong>radius 50 meter</strong> dari kantor KPM</li>
+                            <li>Lokasi Anda harus berada dalam <strong>radius kantor</strong> (50 meter, atau lebih luas untuk gedung tertentu)</li>
                             <li>Sinyal GPS harus cukup akurat (akurasi lebih baik dari 75 meter)</li>
                             <li>Check-in hanya 1 kali per hari, Check-out setelah Check-in</li>
                             <li><strong>Keterlambatan:</strong> dihitung jika check-in setelah pukul <strong>07:45</strong>
@@ -594,6 +594,9 @@
             const officeLocations = {!! json_encode($officeLocations ?? []) !!};
             let nearest = null;
             let nearestDist = Infinity;
+            let validLocationName = null;
+            let validLocationDist = Infinity;
+            let validLocationRadius = MAX_RADIUS;
 
             for (const [name, coords] of Object.entries(officeLocations)) {
                 const dist = haversineDistance(
@@ -602,20 +605,26 @@
                     coords.latitude,
                     coords.longitude
                 );
+                const locRadius = coords.radius || MAX_RADIUS;
                 if (dist < nearestDist) {
                     nearestDist = dist;
                     nearest = name;
                 }
+                if (dist <= locRadius && dist < validLocationDist) {
+                    validLocationName = name;
+                    validLocationDist = dist;
+                    validLocationRadius = locRadius;
+                }
             }
 
-            const isValid = nearestDist <= MAX_RADIUS;
+            const isValid = validLocationName !== null;
 
             if (isValid) {
-                statusText.textContent = '✅ Lokasi VALID - ' + nearest + ' (' + nearestDist.toFixed(1) + 'm)';
+                statusText.textContent = '✅ Lokasi VALID - ' + validLocationName + ' (' + validLocationDist.toFixed(1) + 'm)';
                 statusText.className = 'font-semibold text-[#2E7D3E]';
                 dot.className = 'w-3 h-3 rounded-full bg-[#2E7D3E]';
                 container.className = 'bg-white rounded-2xl shadow-sm p-4 mb-4 border-2 border-[#2E7D3E]';
-                distanceText.textContent = `✅ Dalam radius ${MAX_RADIUS}m dari ${nearest} (${nearestDist.toFixed(1)}m)`;
+                distanceText.textContent = `✅ Dalam radius ${validLocationRadius}m dari ${validLocationName} (${validLocationDist.toFixed(1)}m)`;
                 distanceText.className = 'text-xs text-[#2E7D3E] font-semibold';
                 isLocationValid = true;
             } else {
@@ -687,7 +696,7 @@
                 Swal.fire({
                     icon: 'error',
                     title: 'Lokasi Tidak Valid',
-                    text: 'Anda harus berada dalam radius 50 meter dari kantor KPM.',
+                    text: 'Anda harus berada dalam radius kantor KPM.',
                     confirmButtonColor: '#ec1d1d'
                 });
                 return;
@@ -805,8 +814,8 @@
             if (!isLocationValid) {
                 btnCheckIn.disabled = true;
                 btnCheckOut.disabled = true;
-                btnCheckIn.title = 'Harus berada dalam radius 50 meter dari kantor';
-                btnCheckOut.title = 'Harus berada dalam radius 50 meter dari kantor';
+                btnCheckIn.title = 'Harus berada dalam radius kantor';
+                btnCheckOut.title = 'Harus berada dalam radius kantor';
                 return;
             }
 

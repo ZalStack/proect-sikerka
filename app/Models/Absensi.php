@@ -302,11 +302,13 @@ class Absensi extends Model
             ],
             'BISPAR GEDUNG GARUDA' => [
                 'latitude' => -6.388694054109414,
-                'longitude' => 106.74860193541531
+                'longitude' => 106.74860193541531,
+                'radius' => 500,
             ],
             'PPSDM GEDUNG NUSANTARA KEMENDIKDASMEN' => [
                 'latitude' => -6.363410089121492,
-                'longitude' => 106.74352481386025
+                'longitude' => 106.74352481386025,
+                'radius' => 500,
             ]
         ];
     }
@@ -477,10 +479,24 @@ class Absensi extends Model
             ];
         }
 
+        // Tentukan radius efektif per lokasi.
+        // Lokasi dengan radius khusus (mis. gedung luas) memakai radius-nya sendiri,
+        // sisanya memakai radius default ($radius).
+        $radiusByLocation = [];
+        foreach ($locations as $name => $coords) {
+            $radiusByLocation[$name] = $coords['radius'] ?? $radius;
+        }
+
+        // Cek lokasi mana yang berada dalam radius (menggunakan radius masing-masing).
+        $withinRadiusFlags = [];
+        foreach ($distances as $name => $distance) {
+            $withinRadiusFlags[$name] = $distance <= $radiusByLocation[$name];
+        }
+
         asort($distances);
         $nearestLocation = array_key_first($distances);
         $nearestDistance = $distances[$nearestLocation];
-        $withinRadius = $nearestDistance <= $radius;
+        $withinRadius = in_array(true, $withinRadiusFlags, true);
 
         // ==========================================================
         // ANTI "SALAH KANTOR" (lihat docblock di atas)
@@ -488,7 +504,7 @@ class Absensi extends Model
         $matchedLocation = $nearestLocation;
 
         if ($withinRadius) {
-            $candidatesWithinRadius = array_keys(array_filter($distances, fn ($d) => $d <= $radius));
+            $candidatesWithinRadius = array_keys(array_filter($withinRadiusFlags));
 
             if (count($candidatesWithinRadius) > 1 && $karyawanId) {
                 $habitualOffice = self::where('karyawan_id', $karyawanId)
