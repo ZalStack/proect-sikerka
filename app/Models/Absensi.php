@@ -300,13 +300,13 @@ class Absensi extends Model
                 'latitude' => -6.195928,
                 'longitude' => 106.883809,
             ],
-            'BISPAR' => [
-                'latitude' => -6.388210742578509,
-                'longitude' => 106.74867057252393,
+            'BISPAR GEDUNG GARUDA' => [
+                'latitude' => -6.388694054109414,
+                'longitude' => 106.74860193541531
             ],
-            'PPSDM KEMENDIKDASMEN' => [
-                'latitude' => -6.3631844393640185,
-                'longitude' => 106.74567196441818
+            'PPSDM GEDUNG NUSANTARA KEMENDIKDASMEN' => [
+                'latitude' => -6.363410089121492,
+                'longitude' => 106.74352481386025
             ]
         ];
     }
@@ -314,7 +314,7 @@ class Absensi extends Model
     /**
      * Batas akurasi GPS maksimum (meter)
      */
-    const MAX_GPS_ACCURACY = 75;
+    const MAX_GPS_ACCURACY = 200;
 
     /**
      * ==========================================================
