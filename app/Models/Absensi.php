@@ -300,6 +300,14 @@ class Absensi extends Model
                 'latitude' => -6.195928,
                 'longitude' => 106.883809,
             ],
+            'BISPAR' => [
+                'latitude' => -6.388210742578509,
+                'longitude' => 106.74867057252393,
+            ],
+            'PPSDM KEMENDIKDASMEN' => [
+                'latitude' => -6.3631844393640185,
+                'longitude' => 106.74567196441818
+            ]
         ];
     }
 
