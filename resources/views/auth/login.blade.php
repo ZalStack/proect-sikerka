@@ -261,14 +261,25 @@
 
                     <!-- Header -->
                     <div class="mb-8">
-                        <span class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-cyan-700 bg-cyan-50 rounded-full mb-5 tracking-wide uppercase border border-cyan-200">
-                            <span class="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
-                            Selamat Datang
-                        </span>
-                        <h2 class="text-2xl sm:text-3xl font-display font-bold text-slate-800 leading-tight">
-                            Masuk ke Akun
-                        </h2>
-                        <p class="text-gray-500 mt-2 text-sm">Silakan isi kredensial Anda untuk melanjutkan</p>
+                        @if(request()->is('superadmin*'))
+                            <span class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-amber-800 bg-amber-50 rounded-full mb-5 tracking-wide uppercase border border-amber-200">
+                                <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                                Portal Super Admin
+                            </span>
+                            <h2 class="text-2xl sm:text-3xl font-display font-bold text-slate-800 leading-tight">
+                                Super Admin Login
+                            </h2>
+                            <p class="text-gray-500 mt-2 text-sm">Masuk untuk mengelola sistem dan kontrol penuh</p>
+                        @else
+                            <span class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-cyan-700 bg-cyan-50 rounded-full mb-5 tracking-wide uppercase border border-cyan-200">
+                                <span class="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
+                                Selamat Datang
+                            </span>
+                            <h2 class="text-2xl sm:text-3xl font-display font-bold text-slate-800 leading-tight">
+                                Masuk ke Akun
+                            </h2>
+                            <p class="text-gray-500 mt-2 text-sm">Silakan isi kredensial Anda untuk melanjutkan</p>
+                        @endif
                     </div>
 
                     <!-- Error Messages -->
@@ -299,7 +310,7 @@
                     @endif
 
                     <!-- Form -->
-                    <form id="login-form" method="POST" action="{{ route('login') }}" class="space-y-5">
+                    <form id="login-form" method="POST" action="{{ request()->is('superadmin*') ? route('superadmin.login.store') : route('login') }}" class="space-y-5">
                         @csrf
 
                         <!-- Email -->

@@ -29,6 +29,6 @@ class SuperAdminMiddleware
             return redirect()->route('karyawan.dashboard')->with('error', 'Akses khusus Super Admin.');
         }
 
-        return redirect()->route('login');
+        return redirect()->route('superadmin.login');
     }
 }

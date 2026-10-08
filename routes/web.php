@@ -37,6 +37,8 @@ Route::get('/', function () {
 // Login & Authentication routes
 Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
 Route::post('login', [AuthenticatedSessionController::class, 'store']);
+Route::get('superadmin/login', [AuthenticatedSessionController::class, 'create'])->name('superadmin.login');
+Route::post('superadmin/login', [AuthenticatedSessionController::class, 'store'])->name('superadmin.login.store');
 Route::get('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout.get');
 Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
@@ -75,20 +77,20 @@ Route::middleware('auth')->group(function () {
 
             // Kontrol Fitur & Maintenance
             Route::get('/features', [SuperAdminController::class, 'featuresIndex'])->name('features.index');
-            Route::post('/features/toggle-all', [SuperAdminController::class, 'featureToggleAll'])->name('features.toggle-all');
-            Route::post('/features/{feature}/toggle', [SuperAdminController::class, 'featureToggle'])->name('features.toggle');
-            Route::post('/maintenance/toggle', [SuperAdminController::class, 'maintenanceToggle'])->name('maintenance.toggle');
-            Route::post('/maintenance/update', [SuperAdminController::class, 'maintenanceUpdate'])->name('maintenance.update');
+            Route::match(['GET', 'POST'], '/features/toggle-all', [SuperAdminController::class, 'featureToggleAll'])->name('features.toggle-all');
+            Route::match(['GET', 'POST'], '/features/{feature}/toggle', [SuperAdminController::class, 'featureToggle'])->name('features.toggle');
+            Route::match(['GET', 'POST'], '/maintenance/toggle', [SuperAdminController::class, 'maintenanceToggle'])->name('maintenance.toggle');
+            Route::match(['POST', 'PUT'], '/maintenance/update', [SuperAdminController::class, 'maintenanceUpdate'])->name('maintenance.update');
 
             // Kelola & Koreksi Jam Presensi Karyawan
             Route::get('/absensi', [SuperAdminController::class, 'absensiIndex'])->name('absensi.index');
             Route::post('/absensi/store', [SuperAdminController::class, 'absensiStore'])->name('absensi.store');
-            Route::put('/absensi/{id}/update', [SuperAdminController::class, 'absensiUpdate'])->name('absensi.update');
-            Route::delete('/absensi/{id}', [SuperAdminController::class, 'absensiDestroy'])->name('absensi.destroy');
+            Route::match(['PUT', 'POST'], '/absensi/{id}/update', [SuperAdminController::class, 'absensiUpdate'])->name('absensi.update');
+            Route::match(['DELETE', 'POST'], '/absensi/{id}', [SuperAdminController::class, 'absensiDestroy'])->name('absensi.destroy');
 
             // Kelola Role Pengguna
             Route::get('/karyawan', [SuperAdminController::class, 'karyawanIndex'])->name('karyawan.index');
-            Route::put('/karyawan/{id}/role', [SuperAdminController::class, 'karyawanUpdateRole'])->name('karyawan.update-role');
+            Route::match(['PUT', 'POST'], '/karyawan/{id}/role', [SuperAdminController::class, 'karyawanUpdateRole'])->name('karyawan.update-role');
         });
 
     // ==========================================
