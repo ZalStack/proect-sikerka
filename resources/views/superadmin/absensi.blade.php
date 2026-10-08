@@ -241,7 +241,17 @@
                                     <div class="flex items-center justify-end gap-1.5">
                                         <!-- Edit / Koreksi Button -->
                                         <button type="button" 
-                                            onclick='openEditModal(@json($abs), @json($abs->karyawan->nama_lengkap ?? "Karyawan"))'
+                                            onclick="openEditModal({
+                                                id: {{ $abs->id }},
+                                                karyawan_id: {{ $abs->karyawan_id }},
+                                                karyawan_nama: '{{ addslashes($abs->karyawan->nama_lengkap ?? 'Karyawan') }}',
+                                                tanggal: '{{ $abs->tanggal ? $abs->tanggal->format('Y-m-d') : '' }}',
+                                                check_in: '{{ $abs->check_in ? $abs->check_in->format('H:i') : '' }}',
+                                                check_out: '{{ $abs->check_out ? $abs->check_out->format('H:i') : '' }}',
+                                                status: '{{ addslashes($abs->status) }}',
+                                                kantor_cabang: '{{ addslashes($abs->kantor_cabang ?? 'KPM LALADON') }}',
+                                                keterangan: '{{ addslashes(str_replace(["\r", "\n"], ' ', $abs->keterangan ?? '')) }}'
+                                            })"
                                             class="px-3 py-1.5 rounded-lg bg-[#00a2e9]/10 hover:bg-[#00a2e9] text-[#00a2e9] hover:text-white text-xs font-semibold transition-all flex items-center gap-1">
                                             <i class="fa-solid fa-pen-to-square"></i>
                                             <span>Koreksi</span>
@@ -493,32 +503,17 @@
 </div>
 
 <script>
-    function openEditModal(absensi, karyawanNama) {
-        document.getElementById('editKaryawanNama').innerText = karyawanNama + ' (' + absensi.tanggal + ')';
-        document.getElementById('editTanggal').value = absensi.tanggal ? absensi.tanggal.substring(0, 10) : '';
-        
-        let checkInVal = '';
-        if (absensi.check_in) {
-            checkInVal = absensi.check_in.length > 5 && absensi.check_in.includes('T') 
-                ? absensi.check_in.substring(11, 16) 
-                : (absensi.check_in.length >= 5 ? absensi.check_in.substring(0, 5) : '');
-        }
-        document.getElementById('editCheckIn').value = checkInVal;
-
-        let checkOutVal = '';
-        if (absensi.check_out) {
-            checkOutVal = absensi.check_out.length > 5 && absensi.check_out.includes('T') 
-                ? absensi.check_out.substring(11, 16) 
-                : (absensi.check_out.length >= 5 ? absensi.check_out.substring(0, 5) : '');
-        }
-        document.getElementById('editCheckOut').value = checkOutVal;
-
-        document.getElementById('editStatus').value = absensi.status || 'Hadir';
-        document.getElementById('editKantorCabang').value = absensi.kantor_cabang || 'KPM LALADON';
-        document.getElementById('editKeterangan').value = absensi.keterangan || '';
+    function openEditModal(data) {
+        document.getElementById('editKaryawanNama').innerText = (data.karyawan_nama || 'Karyawan') + ' (' + (data.tanggal || '') + ')';
+        document.getElementById('editTanggal').value = data.tanggal || '';
+        document.getElementById('editCheckIn').value = data.check_in || '';
+        document.getElementById('editCheckOut').value = data.check_out || '';
+        document.getElementById('editStatus').value = data.status || 'Hadir';
+        document.getElementById('editKantorCabang').value = data.kantor_cabang || 'KPM LALADON';
+        document.getElementById('editKeterangan').value = data.keterangan || '';
 
         // Form action
-        document.getElementById('editForm').action = '/superadmin/absensi/' + absensi.id + '/update';
+        document.getElementById('editForm').action = '/superadmin/absensi/' + data.id + '/update';
 
         calculateLiveHours();
 

@@ -342,13 +342,9 @@ class SuperAdminController extends Controller
         return redirect()->back()->with('success', 'Data presensi berhasil ditambahkan beserta kalkulasi otomatis jam kerja (' . $totalJamKerja . ' Jam).');
     }
 
-    /**
-     * Update / Ubah Jam Masuk, Jam Pulang, & Data Presensi Karyawan
-     * Otomatis mengkalkulasi dan memasukkan Total Jam Kerja ke database.
-     */
     public function absensiUpdate(Request $request, $id)
     {
-        $absensi = Absensi::findOrFail($id);
+        $absensi = Absensi::with('karyawan')->findOrFail($id);
 
         $request->validate([
             'tanggal' => 'required|date',
@@ -360,60 +356,81 @@ class SuperAdminController extends Controller
         ]);
 
         $tanggalStr = Carbon::parse($request->tanggal)->format('Y-m-d');
-        
-        // Parse jam masuk
-        $checkInDatetime = null;
-        if ($request->filled('check_in')) {
-            $cleanIn = trim($request->check_in);
-            if (strlen($cleanIn) === 5) $cleanIn .= ':00';
-            $checkInDatetime = Carbon::parse($tanggalStr . ' ' . $cleanIn);
+
+        // Validasi Duplikasi: Cegah tabrakan data unik (karyawan_id + tanggal)
+        $conflict = Absensi::where('karyawan_id', $absensi->karyawan_id)
+            ->where('tanggal', $tanggalStr)
+            ->where('id', '!=', $absensi->id)
+            ->first();
+
+        if ($conflict) {
+            $formattedTgl = Carbon::parse($tanggalStr)->translatedFormat('d F Y');
+            $nama = $absensi->karyawan->nama_lengkap ?? 'Karyawan';
+            return redirect()->back()
+                ->withInput()
+                ->with('error', "Gagal update: Karyawan {$nama} sudah memiliki data presensi lain pada tanggal {$formattedTgl}.");
         }
 
-        // Parse jam pulang
-        $checkOutDatetime = null;
-        if ($request->filled('check_out')) {
-            $cleanOut = trim($request->check_out);
-            if (strlen($cleanOut) === 5) $cleanOut .= ':00';
-            $checkOutDatetime = Carbon::parse($tanggalStr . ' ' . $cleanOut);
-        }
+        try {
+            $cleanIn = null;
+            if ($request->filled('check_in')) {
+                $cleanIn = trim($request->check_in);
+                if (strlen($cleanIn) === 5) $cleanIn .= ':00';
+            }
 
-        // OTOMATIS HITUNG TOTAL JAM KERJA
-        $totalJamKerja = 0;
-        $durasiTeks = '0 Jam';
-        if ($checkInDatetime && $checkOutDatetime) {
-            $totalJamKerja = Absensi::calculateTotalJamKerja($checkInDatetime, $checkOutDatetime, $tanggalStr);
-            $durasiTeks = Absensi::formatDurasiKerja($checkInDatetime, $checkOutDatetime, $tanggalStr);
-        }
+            $cleanOut = null;
+            if ($request->filled('check_out')) {
+                $cleanOut = trim($request->check_out);
+                if (strlen($cleanOut) === 5) $cleanOut .= ':00';
+            }
 
-        $absensi->tanggal = $tanggalStr;
-        $absensi->check_in = $checkInDatetime;
-        $absensi->check_out = $checkOutDatetime;
-        $absensi->status = $request->status;
-        if ($request->filled('kantor_cabang')) {
-            $absensi->kantor_cabang = $request->kantor_cabang;
-        }
-        $absensi->keterangan = $request->keterangan;
-        $absensi->total_jam_kerja = $totalJamKerja;
-        $absensi->save();
+            // OTOMATIS HITUNG TOTAL JAM KERJA
+            $totalJamKerja = 0;
+            $durasiTeks = '0 Jam';
+            if ($cleanIn && $cleanOut) {
+                $totalJamKerja = Absensi::calculateTotalJamKerja($cleanIn, $cleanOut, $tanggalStr);
+                $durasiTeks = Absensi::formatDurasiKerja($cleanIn, $cleanOut, $tanggalStr);
+            }
 
-        if ($request->expectsJson() || $request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => "Presensi berhasil diperbarui. Jam Masuk: " . ($checkInDatetime ? $checkInDatetime->format('H:i') : '-') . ", Jam Pulang: " . ($checkOutDatetime ? $checkOutDatetime->format('H:i') : '-') . ", Total Jam Kerja: {$totalJamKerja} Jam ({$durasiTeks}).",
-                'data' => [
-                    'id' => $absensi->id,
-                    'check_in' => $checkInDatetime ? $checkInDatetime->format('H:i') : null,
-                    'check_out' => $checkOutDatetime ? $checkOutDatetime->format('H:i') : null,
-                    'total_jam_kerja' => $totalJamKerja,
-                    'durasi_teks' => $durasiTeks,
-                    'status' => $absensi->status,
-                    'kantor_cabang' => $absensi->kantor_cabang,
-                    'keterangan' => $absensi->keterangan,
-                ],
-            ]);
-        }
+            $absensi->tanggal = $tanggalStr;
+            $absensi->check_in = $cleanIn;
+            $absensi->check_out = $cleanOut;
+            $absensi->status = $request->status;
+            if ($request->filled('kantor_cabang')) {
+                $absensi->kantor_cabang = $request->kantor_cabang;
+            }
+            $absensi->keterangan = $request->keterangan;
+            $absensi->total_jam_kerja = $totalJamKerja;
+            $absensi->save();
 
-        return redirect()->back()->with('success', "Presensi {$absensi->karyawan->nama_lengkap} berhasil diperbarui! Jam Masuk: " . ($checkInDatetime ? $checkInDatetime->format('H:i') : '-') . " | Jam Pulang: " . ($checkOutDatetime ? $checkOutDatetime->format('H:i') : '-') . " | Total Jam Kerja Otomatis: {$totalJamKerja} Jam ({$durasiTeks}).");
+            $namaKaryawan = $absensi->karyawan->nama_lengkap ?? 'Karyawan';
+            $inDisplay = $cleanIn ? substr($cleanIn, 0, 5) : '-';
+            $outDisplay = $cleanOut ? substr($cleanOut, 0, 5) : '-';
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "Presensi {$namaKaryawan} berhasil diperbarui. Jam Masuk: {$inDisplay}, Jam Pulang: {$outDisplay}, Total Jam Kerja: {$totalJamKerja} Jam ({$durasiTeks}).",
+                    'data' => [
+                        'id' => $absensi->id,
+                        'check_in' => $inDisplay,
+                        'check_out' => $outDisplay,
+                        'total_jam_kerja' => $totalJamKerja,
+                        'durasi_teks' => $durasiTeks,
+                        'status' => $absensi->status,
+                        'kantor_cabang' => $absensi->kantor_cabang,
+                        'keterangan' => $absensi->keterangan,
+                    ],
+                ]);
+            }
+
+            return redirect()->back()->with('success', "Presensi {$namaKaryawan} berhasil diperbarui! Jam Masuk: {$inDisplay} | Jam Pulang: {$outDisplay} | Total Jam Kerja Otomatis: {$totalJamKerja} Jam ({$durasiTeks}).");
+        } catch (\Throwable $e) {
+            Log::error('Error updating absensi by superadmin: ' . $e->getMessage());
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Terjadi kesalahan saat menyimpan presensi: ' . $e->getMessage());
+        }
     }
 
     /**
