@@ -2131,8 +2131,12 @@ class AbsensiController extends Controller
 
         $absensiToday = Absensi::whereDate('tanggal', $selectedDate)->get()->keyBy('karyawan_id');
 
-        $allEmployees = $karyawans->map(function ($karyawan) use ($absensiToday) {
+        $allEmployees = $karyawans->map(function ($karyawan) use ($absensiToday, $selectedDate) {
             $absensi = $absensiToday->get($karyawan->id);
+            $durasiTeks = '-';
+            if ($absensi && $absensi->check_in && $absensi->check_out) {
+                $durasiTeks = Absensi::formatDurasiKerja($absensi->check_in, $absensi->check_out, $selectedDate);
+            }
             return [
                 'id' => $karyawan->id,
                 'nama' => $karyawan->nama_lengkap ?? '-',
@@ -2142,6 +2146,8 @@ class AbsensiController extends Controller
                 'absensi_id' => $absensi ? $absensi->id : null,
                 'check_in' => $absensi && $absensi->check_in ? Carbon::parse($absensi->check_in)->format('H:i') : null,
                 'check_out' => $absensi && $absensi->check_out ? Carbon::parse($absensi->check_out)->format('H:i') : null,
+                'total_jam_kerja' => $absensi ? ($absensi->total_jam_kerja ?? 0) : 0,
+                'durasi_teks' => $durasiTeks,
                 'status' => $absensi ? $absensi->status : 'Alpha',
                 'kantor_cabang' => $absensi ? ($absensi->kantor_cabang ?? '-') : '-',
             ];
@@ -2177,140 +2183,117 @@ class AbsensiController extends Controller
     {
         $request->validate([
             'karyawan_id'  => 'required|exists:karyawans,id',
-            'latitude'     => 'required|numeric|between:-90,90',
-            'longitude'    => 'required|numeric|between:-180,180',
+            'latitude'     => 'nullable|numeric|between:-90,90',
+            'longitude'    => 'nullable|numeric|between:-180,180',
             'tanggal'      => 'required|date',
-            'jam_masuk'    => 'nullable|date_format:H:i',
-            'jam_keluar'   => 'nullable|date_format:H:i',
-        ], [
-            'jam_masuk.date_format'  => 'Format jam masuk harus HH:mm (contoh: 07:30).',
-            'jam_keluar.date_format' => 'Format jam keluar harus HH:mm (contoh: 16:00).',
+            'jam_masuk'    => 'nullable|string',
+            'jam_keluar'   => 'nullable|string',
+            'status'       => 'nullable|string|in:Hadir,Izin,Sakit,Alpha,Perjalanan Dinas,Cuti',
         ]);
 
-        if (!$request->filled('jam_masuk') && !$request->filled('jam_keluar')) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Minimal isi salah satu jam (Jam Masuk atau Jam Keluar).',
-            ], 422);
-        }
-
-        $karyawanId = $request->karyawan_id;
-        $lat        = (float) $request->latitude;
-        $lng        = (float) $request->longitude;
+        $karyawanId   = $request->karyawan_id;
         $selectedDate = Carbon::parse($request->tanggal, $this->officeTimezone)->startOfDay();
+        $tanggalStr   = $selectedDate->format('Y-m-d');
         $now          = Carbon::now($this->officeTimezone);
         $hrName       = Auth::user()->nama_lengkap ?? 'HR';
+
+        $cleanIn = null;
+        if ($request->filled('jam_masuk')) {
+            $cleanIn = trim($request->jam_masuk);
+            if (strlen($cleanIn) === 5) $cleanIn .= ':00';
+        }
+
+        $cleanOut = null;
+        if ($request->filled('jam_keluar')) {
+            $cleanOut = trim($request->jam_keluar);
+            if (strlen($cleanOut) === 5) $cleanOut .= ':00';
+        }
+
+        // Otomatis hitung total jam kerja menggunakan helper model Absensi
+        $totalJamKerja = 0;
+        $durasiTeks = '0 Jam';
+        if ($cleanIn && $cleanOut) {
+            $totalJamKerja = Absensi::calculateTotalJamKerja($cleanIn, $cleanOut, $tanggalStr);
+            $durasiTeks = Absensi::formatDurasiKerja($cleanIn, $cleanOut, $tanggalStr);
+        }
+
+        $lat = $request->filled('latitude') ? (float) $request->latitude : null;
+        $lng = $request->filled('longitude') ? (float) $request->longitude : null;
+        $locationCheck = null;
+        if ($lat && $lng) {
+            $locationCheck = $this->isValidLocation($lat, $lng, $this->maxRadius, null, $karyawanId);
+        }
 
         $absensi = Absensi::where('karyawan_id', $karyawanId)
             ->whereDate('tanggal', $selectedDate)
             ->first();
 
-        $doCheckin  = $request->filled('jam_masuk');
-        $doCheckout = $request->filled('jam_keluar');
-
-        // ---------- CHECK-IN ----------
-        if ($doCheckin) {
-            if ($absensi && $absensi->check_in) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Karyawan ini sudah memiliki data check-in pada tanggal tersebut.',
-                ], 400);
-            }
-
-            $jamMasuk = Carbon::parse($selectedDate->format('Y-m-d') . ' ' . $request->jam_masuk, $this->officeTimezone);
-            $locationCheck = $this->isValidLocation($lat, $lng, $this->maxRadius, null, $karyawanId);
-
-            if ($absensi) {
-                $absensi->check_in        = $jamMasuk;
-                $absensi->kantor_cabang   = $locationCheck['location_name'] ?? $locationCheck['nearest'];
-                $absensi->latitude        = $lat;
-                $absensi->longitude       = $lng;
-                $absensi->is_valid_location = true;
-                if (!$absensi->status || $absensi->status === 'Alpha') {
-                    $absensi->status = 'Hadir';
-                }
+        // Tentukan status yang sesuai
+        $statusToSet = $request->input('status');
+        if (!$statusToSet) {
+            if ($cleanIn || $cleanOut) {
+                $statusToSet = 'Hadir';
+            } elseif ($absensi) {
+                $statusToSet = $absensi->status ?? 'Alpha';
             } else {
-                $absensi = Absensi::create([
-                    'karyawan_id'       => $karyawanId,
-                    'tanggal'           => $selectedDate,
-                    'check_in'          => $jamMasuk,
-                    'kantor_cabang'     => $locationCheck['location_name'] ?? $locationCheck['nearest'],
-                    'latitude'          => $lat,
-                    'longitude'         => $lng,
-                    'is_valid_location' => true,
-                    'status'            => 'Hadir',
-                ]);
+                $statusToSet = 'Alpha';
             }
-
-            $catatanVerifikasi = 'Check-in jam ' . $request->jam_masuk . ' diverifikasi manual oleh HR (' . $hrName . ') pada ' . $now->format('d-m-Y H:i');
-            $absensi->keterangan = $absensi->keterangan
-                ? $absensi->keterangan . ' | ' . $catatanVerifikasi
-                : $catatanVerifikasi;
-            $absensi->save();
         }
 
-        // ---------- CHECK-OUT ----------
-        if ($doCheckout) {
-            $absensi = Absensi::where('karyawan_id', $karyawanId)
-                ->whereDate('tanggal', $selectedDate)
-                ->first();
+        // Catatan Verifikasi HR
+        $catatanAksi = [];
+        if ($cleanIn) $catatanAksi[] = 'Check-in ' . substr($cleanIn, 0, 5);
+        if ($cleanOut) $catatanAksi[] = 'Check-out ' . substr($cleanOut, 0, 5);
+        $detailAksi = count($catatanAksi) > 0 ? implode(' & ', $catatanAksi) : 'Presensi';
+        $catatanVerifikasi = "{$detailAksi} diverifikasi/diperbarui manual oleh HR ({$hrName}) pada " . $now->format('d-m-Y H:i');
 
-            if (!$absensi || !$absensi->check_in) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Karyawan ini belum check-in pada tanggal tersebut. Check-in harus dilakukan terlebih dahulu.',
-                ], 400);
-            }
-
-            if ($absensi->check_out) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Karyawan ini sudah memiliki data check-out pada tanggal tersebut.',
-                ], 400);
-            }
-
-            $jamKeluar = Carbon::parse($selectedDate->format('Y-m-d') . ' ' . $request->jam_keluar, $this->officeTimezone);
-
-            // Total jam kerja dihitung dari jam input masuk → jam input keluar
-            $checkInTime  = Carbon::parse($selectedDate->format('Y-m-d') . ' ' . $absensi->check_in->format('H:i'), $this->officeTimezone);
-            $totalJamKerja = max(0, (int) round($checkInTime->diffInMinutes($jamKeluar) / 60));
-
-            $absensi->check_out     = $jamKeluar;
+        if ($absensi) {
+            $absensi->check_in = $cleanIn;
+            $absensi->check_out = $cleanOut;
             $absensi->total_jam_kerja = $totalJamKerja;
-
-            if (!$absensi->kantor_cabang) {
-                $locationCheck = $this->isValidLocation($lat, $lng, $this->maxRadius, null, $karyawanId);
+            $absensi->status = $statusToSet;
+            if ($locationCheck) {
                 $absensi->kantor_cabang = $locationCheck['location_name'] ?? $locationCheck['nearest'];
+                $absensi->latitude = $lat;
+                $absensi->longitude = $lng;
+                $absensi->is_valid_location = true;
             }
-
-            $catatanVerifikasi = 'Check-out jam ' . $request->jam_keluar . ' diverifikasi manual oleh HR (' . $hrName . ') pada ' . $now->format('d-m-Y H:i');
-            $absensi->keterangan = $absensi->keterangan
-                ? $absensi->keterangan . ' | ' . $catatanVerifikasi
-                : $catatanVerifikasi;
+            $absensi->keterangan = $absensi->keterangan ? $absensi->keterangan . ' | ' . $catatanVerifikasi : $catatanVerifikasi;
             $absensi->save();
+        } else {
+            $kantorCabang = $locationCheck ? ($locationCheck['location_name'] ?? $locationCheck['nearest']) : 'Kantor Pusat';
+            $absensi = Absensi::create([
+                'karyawan_id' => $karyawanId,
+                'tanggal' => $selectedDate,
+                'check_in' => $cleanIn,
+                'check_out' => $cleanOut,
+                'total_jam_kerja' => $totalJamKerja,
+                'kantor_cabang' => $kantorCabang,
+                'latitude' => $lat,
+                'longitude' => $lng,
+                'is_valid_location' => ($lat && $lng) ? true : false,
+                'status' => $statusToSet,
+                'keterangan' => $catatanVerifikasi,
+            ]);
         }
 
-        // ---------- RESPONSE ----------
-        $absensi->refresh();
-        $checkInFormatted  = $absensi->check_in  ? $absensi->check_in->format('H:i') : '-';
-        $checkOutFormatted = $absensi->check_out ? $absensi->check_out->format('H:i') : '-';
-
-        $messages = [];
-        if ($doCheckin) {
-            $messages[] = 'Check-in jam ' . $request->jam_masuk;
-        }
-        if ($doCheckout) {
-            $messages[] = 'Check-out jam ' . $request->jam_keluar;
-        }
+        $karyawan = Karyawan::find($karyawanId);
+        $namaKaryawan = $karyawan->nama_lengkap ?? 'Karyawan';
+        $inDisplay = $cleanIn ? substr($cleanIn, 0, 5) : '-';
+        $outDisplay = $cleanOut ? substr($cleanOut, 0, 5) : '-';
 
         return response()->json([
             'success' => true,
-            'message' => implode(' & ', $messages) . ' berhasil diverifikasi untuk ' . ($absensi->karyawan->nama_lengkap ?? 'karyawan') . '.',
+            'message' => "Presensi {$namaKaryawan} berhasil diperbarui. Jam Masuk: {$inDisplay}, Jam Keluar: {$outDisplay}, Total Jam Kerja: {$totalJamKerja} Jam ({$durasiTeks}).",
             'data' => [
-                'check_in'       => $checkInFormatted,
-                'check_out'      => $checkOutFormatted,
-                'total_jam_kerja' => $absensi->total_jam_kerja ?? 0,
-                'kantor_cabang'  => $absensi->kantor_cabang ?? '-',
+                'id' => $absensi->id,
+                'karyawan_id' => $karyawanId,
+                'check_in' => $inDisplay,
+                'check_out' => $outDisplay,
+                'total_jam_kerja' => $totalJamKerja,
+                'durasi_teks' => $durasiTeks,
+                'status' => $absensi->status,
+                'kantor_cabang' => $absensi->kantor_cabang ?? '-',
             ],
         ]);
     }
