@@ -14,12 +14,16 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PengumumanController;
 use App\Http\Controllers\PerjalananDinasController;
 use App\Http\Controllers\SunnahController;
+use App\Http\Controllers\SuperAdminController;
 use Illuminate\Support\Facades\Route;
 
 // Redirect root berdasarkan role
 Route::get('/', function () {
     if (auth()->check()) {
         $user = auth()->user();
+        if ($user->posisi === 'superadmin') {
+            return redirect()->route('superadmin.dashboard');
+        }
         if ($user->posisi === 'hr') {
             return redirect()->route('hr.dashboard');
         }
@@ -30,11 +34,14 @@ Route::get('/', function () {
     return redirect('/login');
 });
 
-// Guest routes
-Route::middleware('guest')->group(function () {
-    Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
-    Route::post('login', [AuthenticatedSessionController::class, 'store']);
+// Login & Authentication routes
+Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
+Route::post('login', [AuthenticatedSessionController::class, 'store']);
+Route::get('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout.get');
+Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
+// Guest password routes
+Route::middleware('guest')->group(function () {
     // Forgot Password Routes
     Route::get('forgot-password', [ForgotPasswordController::class, 'showForgotForm'])->name('password.request');
     Route::post('forgot-password/verify', [ForgotPasswordController::class, 'verifyEmail'])->name('password.verify');
@@ -45,7 +52,6 @@ Route::middleware('guest')->group(function () {
 
 // Auth routes
 Route::middleware('auth')->group(function () {
-    Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -58,6 +64,36 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifications/latest', [NotificationController::class, 'latest'])->name('notifications.latest');
     Route::post('/notifications/mark-read', [NotificationController::class, 'markRead'])->name('notifications.mark-read');
 
+    // ==========================================
+    // SUPER ADMIN ROUTES
+    // ==========================================
+    Route::middleware('superadmin')
+        ->prefix('superadmin')
+        ->name('superadmin.')
+        ->group(function () {
+            Route::get('/dashboard', [SuperAdminController::class, 'dashboard'])->name('dashboard');
+
+            // Kontrol Fitur & Maintenance
+            Route::get('/features', [SuperAdminController::class, 'featuresIndex'])->name('features.index');
+            Route::post('/features/toggle-all', [SuperAdminController::class, 'featureToggleAll'])->name('features.toggle-all');
+            Route::post('/features/{feature}/toggle', [SuperAdminController::class, 'featureToggle'])->name('features.toggle');
+            Route::post('/maintenance/toggle', [SuperAdminController::class, 'maintenanceToggle'])->name('maintenance.toggle');
+            Route::post('/maintenance/update', [SuperAdminController::class, 'maintenanceUpdate'])->name('maintenance.update');
+
+            // Kelola & Koreksi Jam Presensi Karyawan
+            Route::get('/absensi', [SuperAdminController::class, 'absensiIndex'])->name('absensi.index');
+            Route::post('/absensi/store', [SuperAdminController::class, 'absensiStore'])->name('absensi.store');
+            Route::put('/absensi/{id}/update', [SuperAdminController::class, 'absensiUpdate'])->name('absensi.update');
+            Route::delete('/absensi/{id}', [SuperAdminController::class, 'absensiDestroy'])->name('absensi.destroy');
+
+            // Kelola Role Pengguna
+            Route::get('/karyawan', [SuperAdminController::class, 'karyawanIndex'])->name('karyawan.index');
+            Route::put('/karyawan/{id}/role', [SuperAdminController::class, 'karyawanUpdateRole'])->name('karyawan.update-role');
+        });
+
+    // ==========================================
+    // HR ROUTES
+    // ==========================================
     Route::middleware('hr')
         ->prefix('hr')
         ->name('hr.')
@@ -65,112 +101,159 @@ Route::middleware('auth')->group(function () {
             Route::get('/dashboard', [HRDashboardController::class, 'index'])->name('dashboard');
             Route::resource('karyawan', KaryawanController::class);
 
-            Route::get('/absensi', [AbsensiController::class, 'index'])->name('absensi.index');
-            Route::get('/absensi/resume', [AbsensiController::class, 'resume'])->name('absensi.resume');
-            Route::get('/absensi/export', [AbsensiController::class, 'exportExcel'])->name('absensi.export');
-            Route::get('/absensi/verifikasi', [AbsensiController::class, 'verifikasiIndex'])->name('absensi.verifikasi');
-            Route::post('/absensi/verifikasi/store', [AbsensiController::class, 'verifikasiStore'])->name('absensi.verifikasi.store');
-            Route::get('/absensi/{id}', [AbsensiController::class, 'detail'])->name('absensi.detail');
-            Route::put('/absensi/{id}/status', [AbsensiController::class, 'updateStatus'])->name('absensi.update-status');
-            Route::post('/absensi/{id}/verifikasi-checkin', [AbsensiController::class, 'manualCheckIn'])->name('absensi.verifikasi-checkin');
-            Route::post('/absensi/{id}/verifikasi-checkout', [AbsensiController::class, 'manualCheckOut'])->name('absensi.verifikasi-checkout');
+            // Presensi
+            Route::middleware('feature:absensi')->group(function () {
+                Route::get('/absensi', [AbsensiController::class, 'index'])->name('absensi.index');
+                Route::get('/absensi/resume', [AbsensiController::class, 'resume'])->name('absensi.resume');
+                Route::get('/absensi/export', [AbsensiController::class, 'exportExcel'])->name('absensi.export');
+                Route::get('/absensi/verifikasi', [AbsensiController::class, 'verifikasiIndex'])->name('absensi.verifikasi');
+                Route::post('/absensi/verifikasi/store', [AbsensiController::class, 'verifikasiStore'])->name('absensi.verifikasi.store');
+                Route::get('/absensi/{id}', [AbsensiController::class, 'detail'])->name('absensi.detail');
+                Route::put('/absensi/{id}/status', [AbsensiController::class, 'updateStatus'])->name('absensi.update-status');
+                Route::post('/absensi/{id}/verifikasi-checkin', [AbsensiController::class, 'manualCheckIn'])->name('absensi.verifikasi-checkin');
+                Route::post('/absensi/{id}/verifikasi-checkout', [AbsensiController::class, 'manualCheckOut'])->name('absensi.verifikasi-checkout');
+            });
 
             // Perizinan (review & approval pengajuan izin/sakit karyawan)
-            Route::get('/perizinan', [AbsensiController::class, 'perizinanIndex'])->name('perizinan.index');
-            Route::post('/perizinan/{id}/approve', [AbsensiController::class, 'perizinanApprove'])->name('perizinan.approve');
-            Route::post('/perizinan/{id}/reject', [AbsensiController::class, 'perizinanReject'])->name('perizinan.reject');
-            Route::post('/perizinan/{id}/reset', [AbsensiController::class, 'perizinanReset'])->name('perizinan.reset');
+            Route::middleware('feature:perizinan')->group(function () {
+                Route::get('/perizinan', [AbsensiController::class, 'perizinanIndex'])->name('perizinan.index');
+                Route::post('/perizinan/{id}/approve', [AbsensiController::class, 'perizinanApprove'])->name('perizinan.approve');
+                Route::post('/perizinan/{id}/reject', [AbsensiController::class, 'perizinanReject'])->name('perizinan.reject');
+                Route::post('/perizinan/{id}/reset', [AbsensiController::class, 'perizinanReset'])->name('perizinan.reset');
+            });
 
-            Route::resource('pengumuman', PengumumanController::class);
+            // Pengumuman
+            Route::middleware('feature:pengumuman')->group(function () {
+                Route::resource('pengumuman', PengumumanController::class);
+            });
 
-            Route::get('/fhl', [FhlController::class, 'index'])->name('fhl.index');
-            Route::post('/fhl/generate-kode', [FhlController::class, 'generateKode'])->name('fhl.generate-kode');
-            Route::get('/fhl/detail/{id}', [FhlController::class, 'detail'])->name('fhl.detail');
-            Route::get('/fhl/config', [FhlController::class, 'config'])->name('fhl.config');
-            Route::post('/fhl/config', [FhlController::class, 'config'])->name('fhl.config.update');
+            // FHL
+            Route::middleware('feature:fhl')->group(function () {
+                Route::get('/fhl', [FhlController::class, 'index'])->name('fhl.index');
+                Route::post('/fhl/generate-kode', [FhlController::class, 'generateKode'])->name('fhl.generate-kode');
+                Route::get('/fhl/detail/{id}', [FhlController::class, 'detail'])->name('fhl.detail');
+                Route::get('/fhl/config', [FhlController::class, 'config'])->name('fhl.config');
+                Route::post('/fhl/config', [FhlController::class, 'config'])->name('fhl.config.update');
+            });
 
-            Route::get('/khataman', [KhatamanController::class, 'index'])->name('khataman.index');
-            Route::post('/khataman/generate-kode', [KhatamanController::class, 'generateKode'])->name('khataman.generate-kode');
-            Route::get('/khataman/detail/{id}', [KhatamanController::class, 'detail'])->name('khataman.detail');
-            Route::get('/khataman/config', [KhatamanController::class, 'config'])->name('khataman.config');
-            Route::post('/khataman/config', [KhatamanController::class, 'config'])->name('khataman.config.update');
+            // Khataman
+            Route::middleware('feature:khataman')->group(function () {
+                Route::get('/khataman', [KhatamanController::class, 'index'])->name('khataman.index');
+                Route::post('/khataman/generate-kode', [KhatamanController::class, 'generateKode'])->name('khataman.generate-kode');
+                Route::get('/khataman/detail/{id}', [KhatamanController::class, 'detail'])->name('khataman.detail');
+                Route::get('/khataman/config', [KhatamanController::class, 'config'])->name('khataman.config');
+                Route::post('/khataman/config', [KhatamanController::class, 'config'])->name('khataman.config.update');
+            });
 
-            Route::get('/sunnah', [SunnahController::class, 'index'])->name('sunnah.index');
-            Route::get('/sunnah/rekap', [SunnahController::class, 'rekapBulanan'])->name('sunnah.rekap');
-            Route::get('/sunnah/rekapitulasi-karyawan', [SunnahController::class, 'rekapitulasiKaryawan'])->name('sunnah.rekapitulasi-karyawan');
-            Route::get('/sunnah/rekap-divisi', [SunnahController::class, 'rekapDivisi'])->name('sunnah.rekap-divisi');
-            Route::get('/sunnah/detail/{id}', [SunnahController::class, 'detail'])->name('sunnah.detail');
-            Route::post('/sunnah/approve/{id}', [SunnahController::class, 'approve'])->name('sunnah.approve');
-            Route::post('/sunnah/bulk-approve', [SunnahController::class, 'bulkApprove'])->name('sunnah.bulk-approve');
+            // Sunnah / 7SPS
+            Route::middleware('feature:sunnah')->group(function () {
+                Route::get('/sunnah', [SunnahController::class, 'index'])->name('sunnah.index');
+                Route::get('/sunnah/rekap', [SunnahController::class, 'rekapBulanan'])->name('sunnah.rekap');
+                Route::get('/sunnah/rekapitulasi-karyawan', [SunnahController::class, 'rekapitulasiKaryawan'])->name('sunnah.rekapitulasi-karyawan');
+                Route::get('/sunnah/rekap-divisi', [SunnahController::class, 'rekapDivisi'])->name('sunnah.rekap-divisi');
+                Route::get('/sunnah/detail/{id}', [SunnahController::class, 'detail'])->name('sunnah.detail');
+                Route::post('/sunnah/approve/{id}', [SunnahController::class, 'approve'])->name('sunnah.approve');
+                Route::post('/sunnah/bulk-approve', [SunnahController::class, 'bulkApprove'])->name('sunnah.bulk-approve');
+            });
 
-            Route::get('/cuti', [CutiController::class, 'index'])->name('cuti.index');
-            Route::get('/cuti/{id}', [CutiController::class, 'show'])->name('cuti.show');
-            Route::get('/cuti/{id}/edit-hr', [CutiController::class, 'editHr'])->name('cuti.edit-hr');
-            Route::put('/cuti/{id}/update-hr', [CutiController::class, 'updateHr'])->name('cuti.update-hr');
-            Route::post('/cuti/approve/{id}', [CutiController::class, 'approve'])->name('cuti.approve');
-            Route::post('/cuti/bulk-approve', [CutiController::class, 'bulkApprove'])->name('cuti.bulk-approve');
-            Route::delete('/cuti/{id}', [CutiController::class, 'destroy'])->name('cuti.destroy');
+            // Cuti
+            Route::middleware('feature:cuti')->group(function () {
+                Route::get('/cuti', [CutiController::class, 'index'])->name('cuti.index');
+                Route::get('/cuti/{id}', [CutiController::class, 'show'])->name('cuti.show');
+                Route::get('/cuti/{id}/edit-hr', [CutiController::class, 'editHr'])->name('cuti.edit-hr');
+                Route::put('/cuti/{id}/update-hr', [CutiController::class, 'updateHr'])->name('cuti.update-hr');
+                Route::post('/cuti/approve/{id}', [CutiController::class, 'approve'])->name('cuti.approve');
+                Route::post('/cuti/bulk-approve', [CutiController::class, 'bulkApprove'])->name('cuti.bulk-approve');
+                Route::delete('/cuti/{id}', [CutiController::class, 'destroy'])->name('cuti.destroy');
+            });
 
-            Route::get('/perjalanan-dinas', [PerjalananDinasController::class, 'index'])->name('perjalanan-dinas.index');
-            Route::get('/perjalanan-dinas/{id}', [PerjalananDinasController::class, 'show'])->name('perjalanan-dinas.show');
-            Route::post('/perjalanan-dinas/{id}/mark-selesai', [PerjalananDinasController::class, 'markAsSelesai'])->name('perjalanan-dinas.mark-selesai');
-            Route::get('/perjalanan-dinas/{id}/download', [PerjalananDinasController::class, 'downloadSuratTugas'])->name('perjalanan-dinas.download');
-            Route::post('/perjalanan-dinas/{id}/catatan', [PerjalananDinasController::class, 'updateCatatan'])->name('perjalanan-dinas.catatan');
-            Route::post('/perjalanan-dinas/{id}/approve', [PerjalananDinasController::class, 'approve'])->name('perjalanan-dinas.approve');
-            Route::post('/perjalanan-dinas/{id}/reject', [PerjalananDinasController::class, 'reject'])->name('perjalanan-dinas.reject');
-            Route::delete('/perjalanan-dinas/{id}', [PerjalananDinasController::class, 'destroy'])->name('perjalanan-dinas.destroy');
+            // Perjalanan Dinas
+            Route::middleware('feature:perjalanan_dinas')->group(function () {
+                Route::get('/perjalanan-dinas', [PerjalananDinasController::class, 'index'])->name('perjalanan-dinas.index');
+                Route::get('/perjalanan-dinas/{id}', [PerjalananDinasController::class, 'show'])->name('perjalanan-dinas.show');
+                Route::post('/perjalanan-dinas/{id}/mark-selesai', [PerjalananDinasController::class, 'markAsSelesai'])->name('perjalanan-dinas.mark-selesai');
+                Route::get('/perjalanan-dinas/{id}/download', [PerjalananDinasController::class, 'downloadSuratTugas'])->name('perjalanan-dinas.download');
+                Route::post('/perjalanan-dinas/{id}/catatan', [PerjalananDinasController::class, 'updateCatatan'])->name('perjalanan-dinas.catatan');
+                Route::post('/perjalanan-dinas/{id}/approve', [PerjalananDinasController::class, 'approve'])->name('perjalanan-dinas.approve');
+                Route::post('/perjalanan-dinas/{id}/reject', [PerjalananDinasController::class, 'reject'])->name('perjalanan-dinas.reject');
+                Route::delete('/perjalanan-dinas/{id}', [PerjalananDinasController::class, 'destroy'])->name('perjalanan-dinas.destroy');
+            });
         });
 
-    // Karyawan Routes
+    // ==========================================
+    // KARYAWAN ROUTES
+    // ==========================================
     Route::middleware('karyawan')
         ->prefix('karyawan')
         ->name('karyawan.')
         ->group(function () {
             Route::get('/dashboard', [KaryawanDashboardController::class, 'index'])->name('dashboard');
 
-            // PERBAIKAN: Tambahkan route name yang benar untuk karyawan
-            Route::get('/pengumuman/{id}', [PengumumanController::class, 'showKaryawan'])
-                ->name('pengumuman.show');  // <-- NAMA ROUTE YANG DIPAKAI
+            // Pengumuman
+            Route::middleware('feature:pengumuman')->group(function () {
+                Route::get('/pengumuman/{id}', [PengumumanController::class, 'showKaryawan'])->name('pengumuman.show');
+            });
 
-            Route::get('/absensi', [AbsensiController::class, 'dashboard'])->name('absensi');
+            // Presensi
+            Route::middleware('feature:absensi')->group(function () {
+                Route::get('/absensi', [AbsensiController::class, 'dashboard'])->name('absensi');
+                Route::post('/absensi/checkin', [AbsensiController::class, 'checkIn'])
+                    ->name('absensi.checkin')
+                    ->middleware('throttle:10,1');
+                Route::post('/absensi/checkout', [AbsensiController::class, 'checkOut'])
+                    ->name('absensi.checkout')
+                    ->middleware('throttle:10,1');
+                Route::get('/absensi/status', [AbsensiController::class, 'status'])->name('absensi.status');
+                Route::get('/absensi/server-time', [AbsensiController::class, 'serverTime'])->name('absensi.server-time');
+                Route::get('/absensi/riwayat', [AbsensiController::class, 'getRiwayat'])->name('absensi.riwayat');
+            });
 
-            Route::post('/absensi/checkin', [AbsensiController::class, 'checkIn'])
-                ->name('absensi.checkin')
-                ->middleware('throttle:10,1');
-            Route::post('/absensi/checkout', [AbsensiController::class, 'checkOut'])
-                ->name('absensi.checkout')
-                ->middleware('throttle:10,1');
-            Route::get('/absensi/status', [AbsensiController::class, 'status'])->name('absensi.status');
-            Route::get('/absensi/server-time', [AbsensiController::class, 'serverTime'])->name('absensi.server-time');
-            Route::get('/absensi/riwayat', [AbsensiController::class, 'getRiwayat'])->name('absensi.riwayat');
-            Route::get('/absensi/perizinan', [AbsensiController::class, 'perizinan'])->name('absensi.perizinan');
-            Route::post('/absensi/perizinan', [AbsensiController::class, 'perizinanStore'])->name('absensi.perizinan.store');
-            Route::delete('/absensi/perizinan/{id}', [AbsensiController::class, 'perizinanCancel'])->name('absensi.perizinan.cancel');
+            // Perizinan
+            Route::middleware('feature:perizinan')->group(function () {
+                Route::get('/absensi/perizinan', [AbsensiController::class, 'perizinan'])->name('absensi.perizinan');
+                Route::post('/absensi/perizinan', [AbsensiController::class, 'perizinanStore'])->name('absensi.perizinan.store');
+                Route::delete('/absensi/perizinan/{id}', [AbsensiController::class, 'perizinanCancel'])->name('absensi.perizinan.cancel');
+            });
 
-            Route::get('/fhl', [FhlController::class, 'dashboard'])->name('fhl.dashboard');
-            Route::post('/fhl/checkin', [FhlController::class, 'checkIn'])->name('fhl.checkin');
-            Route::get('/fhl/server-time', [FhlController::class, 'serverTime'])->name('fhl.server-time');
+            // FHL
+            Route::middleware('feature:fhl')->group(function () {
+                Route::get('/fhl', [FhlController::class, 'dashboard'])->name('fhl.dashboard');
+                Route::post('/fhl/checkin', [FhlController::class, 'checkIn'])->name('fhl.checkin');
+                Route::get('/fhl/server-time', [FhlController::class, 'serverTime'])->name('fhl.server-time');
+            });
 
-            Route::get('/khataman', [KhatamanController::class, 'dashboard'])->name('khataman.dashboard');
-            Route::post('/khataman/checkin', [KhatamanController::class, 'checkIn'])->name('khataman.checkin');
-            Route::get('/khataman/server-time', [KhatamanController::class, 'serverTime'])->name('khataman.server-time');
+            // Khataman
+            Route::middleware('feature:khataman')->group(function () {
+                Route::get('/khataman', [KhatamanController::class, 'dashboard'])->name('khataman.dashboard');
+                Route::post('/khataman/checkin', [KhatamanController::class, 'checkIn'])->name('khataman.checkin');
+                Route::get('/khataman/server-time', [KhatamanController::class, 'serverTime'])->name('khataman.server-time');
+            });
 
-            Route::get('/sunnah', [SunnahController::class, 'dashboard'])->name('sunnah.dashboard');
-            Route::post('/sunnah/save', [SunnahController::class, 'saveDaily'])->name('sunnah.save');
+            // 7SPS Sunnah
+            Route::middleware('feature:sunnah')->group(function () {
+                Route::get('/sunnah', [SunnahController::class, 'dashboard'])->name('sunnah.dashboard');
+                Route::post('/sunnah/save', [SunnahController::class, 'saveDaily'])->name('sunnah.save');
+            });
 
-            Route::get('/cuti', [CutiController::class, 'dashboard'])->name('cuti.dashboard');
-            Route::get('/cuti/create', [CutiController::class, 'create'])->name('cuti.create');
-            Route::post('/cuti/store', [CutiController::class, 'store'])->name('cuti.store');
-            Route::get('/cuti/{id}/edit', [CutiController::class, 'edit'])->name('cuti.edit');
-            Route::put('/cuti/{id}', [CutiController::class, 'update'])->name('cuti.update');
-            Route::delete('/cuti/{id}/cancel', [CutiController::class, 'cancel'])->name('cuti.cancel');
+            // Cuti
+            Route::middleware('feature:cuti')->group(function () {
+                Route::get('/cuti', [CutiController::class, 'dashboard'])->name('cuti.dashboard');
+                Route::get('/cuti/create', [CutiController::class, 'create'])->name('cuti.create');
+                Route::post('/cuti/store', [CutiController::class, 'store'])->name('cuti.store');
+                Route::get('/cuti/{id}/edit', [CutiController::class, 'edit'])->name('cuti.edit');
+                Route::put('/cuti/{id}', [CutiController::class, 'update'])->name('cuti.update');
+                Route::delete('/cuti/{id}/cancel', [CutiController::class, 'cancel'])->name('cuti.cancel');
+            });
 
-            Route::get('/perjalanan-dinas', [PerjalananDinasController::class, 'dashboard'])->name('perjalanan-dinas.index');
-            Route::get('/perjalanan-dinas/create', [PerjalananDinasController::class, 'create'])->name('perjalanan-dinas.create');
-            Route::post('/perjalanan-dinas/store', [PerjalananDinasController::class, 'store'])->name('perjalanan-dinas.store');
-            Route::get('/perjalanan-dinas/{id}/download', [PerjalananDinasController::class, 'downloadSuratTugas'])->name('perjalanan-dinas.download');
-            Route::get('/perjalanan-dinas/{id}/edit', [PerjalananDinasController::class, 'edit'])->name('perjalanan-dinas.edit');
-            Route::put('/perjalanan-dinas/{id}', [PerjalananDinasController::class, 'update'])->name('perjalanan-dinas.update');
-            Route::get('/perjalanan-dinas/{id}', [PerjalananDinasController::class, 'show'])->name('perjalanan-dinas.show');
+            // Perjalanan Dinas
+            Route::middleware('feature:perjalanan_dinas')->group(function () {
+                Route::get('/perjalanan-dinas', [PerjalananDinasController::class, 'dashboard'])->name('perjalanan-dinas.index');
+                Route::get('/perjalanan-dinas/create', [PerjalananDinasController::class, 'create'])->name('perjalanan-dinas.create');
+                Route::post('/perjalanan-dinas/store', [PerjalananDinasController::class, 'store'])->name('perjalanan-dinas.store');
+                Route::get('/perjalanan-dinas/{id}/download', [PerjalananDinasController::class, 'downloadSuratTugas'])->name('perjalanan-dinas.download');
+                Route::get('/perjalanan-dinas/{id}/edit', [PerjalananDinasController::class, 'edit'])->name('perjalanan-dinas.edit');
+                Route::put('/perjalanan-dinas/{id}', [PerjalananDinasController::class, 'update'])->name('perjalanan-dinas.update');
+                Route::get('/perjalanan-dinas/{id}', [PerjalananDinasController::class, 'show'])->name('perjalanan-dinas.show');
+            });
         });
 });

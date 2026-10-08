@@ -68,6 +68,11 @@ class Karyawan extends Authenticatable
         return $this->kata_sandi;
     }
 
+    public function isSuperAdmin()
+    {
+        return $this->posisi === 'superadmin';
+    }
+
     public function isHr()
     {
         return $this->posisi === 'hr';
@@ -76,6 +81,11 @@ class Karyawan extends Authenticatable
     public function isKaryawan()
     {
         return $this->posisi === 'karyawan';
+    }
+
+    public function isAdminOrHr()
+    {
+        return in_array($this->posisi, ['superadmin', 'hr']);
     }
 
     public function canLogin()

@@ -139,13 +139,87 @@ class Absensi extends Model
      * disimpan dalam satuan jam (dibulatkan), field ini dipakai untuk
      * laporan/export yang butuh akurasi per menit.
      */
+    /**
+     * Hitung total jam kerja (pembulatan dalam jam) dari check-in dan check-out.
+     */
+    public static function calculateTotalJamKerja($checkIn, $checkOut, $tanggal = null): int
+    {
+        if (!$checkIn || !$checkOut) {
+            return 0;
+        }
+
+        try {
+            $tglStr = $tanggal ? (is_string($tanggal) ? $tanggal : $tanggal->format('Y-m-d')) : date('Y-m-d');
+            $cInStr = is_string($checkIn) ? (str_contains($checkIn, ':') && strlen($checkIn) <= 8 ? $tglStr . ' ' . $checkIn : $checkIn) : $checkIn->format('Y-m-d H:i:s');
+            $cOutStr = is_string($checkOut) ? (str_contains($checkOut, ':') && strlen($checkOut) <= 8 ? $tglStr . ' ' . $checkOut : $checkOut) : $checkOut->format('Y-m-d H:i:s');
+
+            $in = Carbon::parse($cInStr);
+            $out = Carbon::parse($cOutStr);
+
+            if ($out->lessThan($in)) {
+                // Kalau check-out lewat tengah malam
+                $out = $out->addDay();
+            }
+
+            $diffMinutes = $in->diffInMinutes($out);
+            return max(0, (int) round($diffMinutes / 60));
+        } catch (\Exception $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Hitung total menit kerja dari check-in dan check-out.
+     */
+    public static function calculateTotalMenitKerja($checkIn, $checkOut, $tanggal = null): int
+    {
+        if (!$checkIn || !$checkOut) {
+            return 0;
+        }
+
+        try {
+            $tglStr = $tanggal ? (is_string($tanggal) ? $tanggal : $tanggal->format('Y-m-d')) : date('Y-m-d');
+            $cInStr = is_string($checkIn) ? (str_contains($checkIn, ':') && strlen($checkIn) <= 8 ? $tglStr . ' ' . $checkIn : $checkIn) : $checkIn->format('Y-m-d H:i:s');
+            $cOutStr = is_string($checkOut) ? (str_contains($checkOut, ':') && strlen($checkOut) <= 8 ? $tglStr . ' ' . $checkOut : $checkOut) : $checkOut->format('Y-m-d H:i:s');
+
+            $in = Carbon::parse($cInStr);
+            $out = Carbon::parse($cOutStr);
+
+            if ($out->lessThan($in)) {
+                $out = $out->addDay();
+            }
+
+            return max(0, (int) $in->diffInMinutes($out));
+        } catch (\Exception $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Format durasi jam dan menit menjadi teks representatif. Contoh: "8 Jam 15 Menit"
+     */
+    public static function formatDurasiKerja($checkIn, $checkOut, $tanggal = null): string
+    {
+        $menit = self::calculateTotalMenitKerja($checkIn, $checkOut, $tanggal);
+        if ($menit <= 0) return '0 Jam';
+        $jam = floor($menit / 60);
+        $sisaMenit = $menit % 60;
+        if ($jam > 0 && $sisaMenit > 0) {
+            return "{$jam} Jam {$sisaMenit} Menit";
+        } elseif ($jam > 0) {
+            return "{$jam} Jam";
+        } else {
+            return "{$sisaMenit} Menit";
+        }
+    }
+
     public function getTotalMenitKerjaAttribute(): int
     {
         if (!$this->check_in || !$this->check_out) {
             return 0;
         }
 
-        return $this->check_in->diffInMinutes($this->check_out);
+        return self::calculateTotalMenitKerja($this->check_in, $this->check_out, $this->tanggal);
     }
 
     /**

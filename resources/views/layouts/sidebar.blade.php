@@ -1,6 +1,8 @@
 @php
     $user = Auth::user();
+    $isSuperAdmin = $user && $user->posisi === 'superadmin';
     $isHr = $user && $user->posisi === 'hr';
+    $isKaryawan = $user && $user->posisi === 'karyawan';
     $currentRoute = Route::currentRouteName();
 
     $userPhoto = $user->foto_profil ? Storage::url($user->foto_profil) : null;
@@ -11,11 +13,11 @@
             ? substr($user->nama_lengkap ?? '', 0, 15) . '...'
             : $user->nama_lengkap ?? 'User';
 
-    // Hitung jumlah pengajuan pending untuk notifikasi HR
+    // Hitung jumlah pengajuan pending untuk notifikasi HR & Superadmin
     $pendingCuti = 0;
     $pendingPerjalananDinas = 0;
     $pendingPerizinan = 0;
-    if ($isHr) {
+    if ($isHr || $isSuperAdmin) {
         $pendingCuti = \App\Models\Cuti::where('status', 'pending')->count();
         $pendingPerjalananDinas = \App\Models\PerjalananDinas::where('status', 'pending')->count();
         $pendingPerizinan = \App\Models\Perizinan::where('status', 'pending')->count();
@@ -25,12 +27,12 @@
 <aside id="sidebar"
     class="fixed inset-y-0 left-0 z-40 w-64 bg-gradient-to-b from-[#0F1245] to-[#161758] transform transition-transform duration-300 ease-in-out -translate-x-full md:translate-x-0 overflow-y-auto shadow-2xl md:shadow-xl">
     <div class="h-full flex flex-col pt-14 sm:pt-16">
-        <div class="p-3 sm:p-4">
+        <div class="p-3 sm:p-4 pb-20">
             <!-- User Profile Card -->
             <div class="bg-white/10 backdrop-blur-sm rounded-xl p-3 sm:p-4 mb-4 sm:mb-6 border border-white/10 hover:bg-white/15 transition-all duration-300">
                 <div class="flex items-center space-x-2 sm:space-x-3">
                     <div
-                        class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#00a2e9] to-[#0077b6] flex items-center justify-center text-white text-base sm:text-xl font-bold overflow-hidden flex-shrink-0 ring-2 ring-white/20 shadow-lg">
+                        class="w-10 h-10 sm:w-12 sm:h-12 rounded-full {{ $isSuperAdmin ? 'bg-gradient-to-br from-[#FCC626] to-[#f0a500] text-[#0F1245]' : 'bg-gradient-to-br from-[#00a2e9] to-[#0077b6] text-white' }} flex items-center justify-center text-base sm:text-xl font-bold overflow-hidden flex-shrink-0 ring-2 ring-white/20 shadow-lg">
                         @if ($userPhoto)
                             <img src="{{ $userPhoto }}" alt="{{ $user->nama_lengkap }}"
                                 class="w-full h-full object-cover">
@@ -43,29 +45,77 @@
                             title="{{ $user->nama_lengkap }}">
                             {{ $shortName }}
                         </p>
-                        <p class="text-[#00a2e9] text-[10px] sm:text-xs font-medium">{{ ucfirst($user->posisi) }}</p>
+                        @if($isSuperAdmin)
+                            <span class="inline-flex items-center gap-1 text-[#FCC626] text-[10px] sm:text-xs font-bold uppercase tracking-wider">
+                                <i class="fa-solid fa-crown text-[9px]"></i>
+                                Super Admin
+                            </span>
+                        @elseif($isHr)
+                            <p class="text-[#00a2e9] text-[10px] sm:text-xs font-medium">HR Administrator</p>
+                        @else
+                            <p class="text-[#00a2e9] text-[10px] sm:text-xs font-medium">Karyawan</p>
+                        @endif
                     </div>
                 </div>
             </div>
 
-            <div class="mb-3 sm:mb-6">
-                <h3 class="text-[#00a2e9]/70 text-[10px] sm:text-[11px] font-bold uppercase tracking-widest px-3 sm:px-4">Menu Utama</h3>
-            </div>
-            <nav class="space-y-1">
-                @if ($isHr)
+            <!-- ============================================== -->
+            <!-- SUPER ADMIN EXCLUSIVE MENUS -->
+            <!-- ============================================== -->
+            @if ($isSuperAdmin)
+                <div class="mb-2 sm:mb-4">
+                    <h3 class="text-[#FCC626] text-[10px] sm:text-[11px] font-bold uppercase tracking-widest px-3 sm:px-4 flex items-center gap-1.5">
+                        <i class="fa-solid fa-crown text-[10px]"></i>
+                        <span>Super Admin Panel</span>
+                    </h3>
+                </div>
+
+                <nav class="space-y-1 mb-5">
+                    <!-- Dashboard Superadmin -->
+                    <a href="{{ route('superadmin.dashboard') }}"
+                        class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm {{ $currentRoute === 'superadmin.dashboard' ? 'bg-[#FCC626] text-[#0F1245] font-bold shadow-lg shadow-[#FCC626]/30' : 'text-white/80 hover:bg-white/10 hover:text-white' }}">
+                        <i class="fa-solid fa-gauge text-sm flex-shrink-0"></i>
+                        <span class="truncate">Dashboard Superadmin</span>
+                    </a>
+
+                    <!-- Kontrol Fitur & Maintenance -->
+                    <a href="{{ route('superadmin.features.index') }}"
+                        class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm {{ $currentRoute === 'superadmin.features.index' ? 'bg-[#00a2e9] text-white font-semibold shadow-lg shadow-[#00a2e9]/30' : 'text-white/80 hover:bg-white/10 hover:text-white' }}">
+                        <i class="fa-solid fa-sliders text-sm flex-shrink-0"></i>
+                        <span class="truncate">Fitur & Maintenance</span>
+                    </a>
+
+                    <!-- Kelola & Koreksi Jam Presensi -->
+                    <a href="{{ route('superadmin.absensi.index') }}"
+                        class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm {{ $currentRoute === 'superadmin.absensi.index' ? 'bg-[#00a2e9] text-white font-semibold shadow-lg shadow-[#00a2e9]/30' : 'text-white/80 hover:bg-white/10 hover:text-white' }}">
+                        <i class="fa-solid fa-clock-rotate-left text-sm flex-shrink-0"></i>
+                        <span class="truncate">Koreksi Presensi Karyawan</span>
+                    </a>
+
+                    <!-- Manajemen Role Pengguna -->
+                    <a href="{{ route('superadmin.karyawan.index') }}"
+                        class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm {{ $currentRoute === 'superadmin.karyawan.index' ? 'bg-[#00a2e9] text-white font-semibold shadow-lg shadow-[#00a2e9]/30' : 'text-white/80 hover:bg-white/10 hover:text-white' }}">
+                        <i class="fa-solid fa-users-gear text-sm flex-shrink-0"></i>
+                        <span class="truncate">Manajemen Role User</span>
+                    </a>
+                </nav>
+
+            @elseif ($isHr)
+                <!-- ============================================== -->
+                <!-- HR EXCLUSIVE MENUS -->
+                <!-- ============================================== -->
+                <div class="mb-3 sm:mb-6">
+                    <h3 class="text-[#00a2e9]/70 text-[10px] sm:text-[11px] font-bold uppercase tracking-widest px-3 sm:px-4">Menu Utama HR</h3>
+                </div>
+                <nav class="space-y-1">
                     <!-- HR Dashboard -->
                     <a href="{{ route('hr.dashboard') }}"
                         class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm {{ $currentRoute === 'hr.dashboard' ? 'bg-[#00a2e9] text-white shadow-lg shadow-[#00a2e9]/30' : 'text-white/70 hover:bg-white/10 hover:text-white' }}">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
                         </svg>
                         <span class="truncate">Dashboard</span>
                     </a>
@@ -73,11 +123,8 @@
                     <!-- Data Karyawan -->
                     <a href="{{ route('hr.karyawan.index') }}"
                         class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm {{ $currentRoute === 'hr.karyawan.index' || str_starts_with($currentRoute, 'hr.karyawan.') ? 'bg-[#00a2e9] text-white shadow-lg shadow-[#00a2e9]/30' : 'text-white/70 hover:bg-white/10 hover:text-white' }}">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
-                            </path>
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                         </svg>
                         <span class="truncate">Data Karyawan</span>
                     </a>
@@ -85,11 +132,8 @@
                     <!-- Absensi HR -->
                     <a href="{{ route('hr.absensi.index') }}"
                         class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm {{ $currentRoute === 'hr.absensi.index' || str_starts_with($currentRoute, 'hr.absensi.') ? 'bg-[#00a2e9] text-white shadow-lg shadow-[#00a2e9]/30' : 'text-white/70 hover:bg-white/10 hover:text-white' }}">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                            </path>
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
                         <span class="truncate">Presensi Karyawan</span>
                     </a>
@@ -97,11 +141,8 @@
                     <!-- Pengumuman HR -->
                     <a href="{{ route('hr.pengumuman.index') }}"
                         class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm {{ $currentRoute === 'hr.pengumuman.index' || str_starts_with($currentRoute, 'hr.pengumuman.') ? 'bg-[#00a2e9] text-white shadow-lg shadow-[#00a2e9]/30' : 'text-white/70 hover:bg-white/10 hover:text-white' }}">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
-                            </path>
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                         </svg>
                         <span class="truncate">Pengumuman</span>
                     </a>
@@ -110,11 +151,8 @@
                     <a href="{{ route('hr.cuti.index') }}"
                         class="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm {{ $currentRoute === 'hr.cuti.index' || str_starts_with($currentRoute, 'hr.cuti.') ? 'bg-[#00a2e9] text-white shadow-lg shadow-[#00a2e9]/30' : 'text-white/70 hover:bg-white/10 hover:text-white' }}">
                         <div class="flex items-center space-x-2 sm:space-x-3 min-w-0">
-                            <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
-                                </path>
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
                             <span class="truncate">Cuti</span>
                         </div>
@@ -129,12 +167,9 @@
                     <a href="{{ route('hr.perjalanan-dinas.index') }}"
                         class="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm {{ $currentRoute === 'hr.perjalanan-dinas.index' || str_starts_with($currentRoute, 'hr.perjalanan-dinas.') ? 'bg-[#00a2e9] text-white shadow-lg shadow-[#00a2e9]/30' : 'text-white/70 hover:bg-white/10 hover:text-white' }}">
                         <div class="flex items-center space-x-2 sm:space-x-3 min-w-0">
-                            <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
                             <span class="truncate">Perjalanan Dinas</span>
                         </div>
@@ -148,12 +183,9 @@
                     <a href="{{ route('hr.perizinan.index') }}"
                         class="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm {{ $currentRoute === 'hr.perizinan.index' || str_starts_with($currentRoute, 'hr.perizinan.') ? 'bg-[#00a2e9] text-white shadow-lg shadow-[#00a2e9]/30' : 'text-white/70 hover:bg-white/10 hover:text-white' }}">
                         <div class="flex items-center space-x-2 sm:space-x-3 min-w-0">
-                            <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M16 9h-4a1 1 0 01-1-1V4" />
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 9h-4a1 1 0 01-1-1V4" />
                             </svg>
                             <span class="truncate">Perizinan Karyawan</span>
                         </div>
@@ -166,78 +198,62 @@
 
                     <!-- Menu Lainnya -->
                     <div class="pt-3 mt-3 border-t border-white/10">
-                        <h4
-                            class="text-white/40 text-[10px] sm:text-[11px] font-bold uppercase tracking-widest px-3 sm:px-4 py-2">
-                            Lainnya</h4>
+                        <h4 class="text-white/40 text-[10px] sm:text-[11px] font-bold uppercase tracking-widest px-3 sm:px-4 py-2">
+                            Lainnya
+                        </h4>
                     </div>
 
                     <!-- Kepala Suku -->
                     <a href="https://pamersuku.read1kpmseikhlasnya.com/login"
                         class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm text-white/70 hover:bg-white/10 hover:text-white">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
-                            </path>
-                        </svg>
+                        <i class="fa-solid fa-people-group text-sm flex-shrink-0"></i>
                         <span class="truncate">Pamer Suku</span>
                     </a>
 
                     <!-- 7SPS -->
                     <a href="{{ route('hr.sunnah.index') }}"
                         class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm {{ $currentRoute === 'hr.sunnah.index' || str_starts_with($currentRoute, 'hr.sunnah.') ? 'bg-[#00a2e9] text-white shadow-lg shadow-[#00a2e9]/30' : 'text-white/70 hover:bg-white/10 hover:text-white' }}">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
+                        <i class="fa-solid fa-kaaba text-sm flex-shrink-0"></i>
                         <span class="truncate">7SPS</span>
                     </a>
 
                     <!-- English Today -->
                     <a href="https://englishtoday.read1kpmseikhlasnya.com/"
                         class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm text-white/70 hover:bg-white/10 hover:text-white">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129">
-                            </path>
-                        </svg>
+                        <i class="fa-solid fa-language text-sm flex-shrink-0"></i>
                         <span class="truncate">English Today</span>
                     </a>
 
                     <!-- FHL -->
                     <a href="{{ route('hr.fhl.index') }}"
                         class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm {{ $currentRoute === 'hr.fhl.index' || str_starts_with($currentRoute, 'hr.fhl.') ? 'bg-[#00a2e9] text-white shadow-lg shadow-[#00a2e9]/30' : 'text-white/70 hover:bg-white/10 hover:text-white' }}">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z">
-                            </path>
-                        </svg>
+                        <i class="fa-solid fa-heart text-sm flex-shrink-0"></i>
                         <span class="truncate">FHL</span>
                     </a>
 
                     <!-- Khataman -->
                     <a href="{{ route('hr.khataman.index') }}"
                         class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm {{ $currentRoute === 'hr.khataman.index' || str_starts_with($currentRoute, 'hr.khataman.') ? 'bg-[#00a2e9] text-white shadow-lg shadow-[#00a2e9]/30' : 'text-white/70 hover:bg-white/10 hover:text-white' }}">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                        </svg>
+                        <i class="fa-solid fa-book-quran text-sm flex-shrink-0"></i>
                         <span class="truncate">Khataman</span>
                     </a>
-                @else
+                </nav>
+            @else
+                <!-- ============================================== -->
+                <!-- KARYAWAN MENUS -->
+                <!-- ============================================== -->
+                <div class="mb-3 sm:mb-6">
+                    <h3 class="text-[#00a2e9]/70 text-[10px] sm:text-[11px] font-bold uppercase tracking-widest px-3 sm:px-4">Menu Karyawan</h3>
+                </div>
+                <nav class="space-y-1">
                     <!-- Karyawan Dashboard -->
                     <a href="{{ route('karyawan.dashboard') }}"
                         class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm {{ $currentRoute === 'karyawan.dashboard' ? 'bg-[#00a2e9] text-white shadow-lg shadow-[#00a2e9]/30' : 'text-white/70 hover:bg-white/10 hover:text-white' }}">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z"></path>
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
                         </svg>
                         <span class="truncate">Dashboard</span>
                     </a>
@@ -245,11 +261,8 @@
                     <!-- Absensi Karyawan -->
                     <a href="{{ route('karyawan.absensi') }}"
                         class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm {{ $currentRoute === 'karyawan.absensi' ? 'bg-[#00a2e9] text-white shadow-lg shadow-[#00a2e9]/30' : 'text-white/70 hover:bg-white/10 hover:text-white' }}">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                            </path>
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
                         <span class="truncate">Presensi Kehadiran</span>
                     </a>
@@ -257,11 +270,8 @@
                     <!-- CUTI -->
                     <a href="{{ route('karyawan.cuti.dashboard') }}"
                         class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm {{ $currentRoute === 'karyawan.cuti.dashboard' || $currentRoute === 'karyawan.cuti.create' ? 'bg-[#00a2e9] text-white shadow-lg shadow-[#00a2e9]/30' : 'text-white/70 hover:bg-white/10 hover:text-white' }}">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
-                            </path>
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                         </svg>
                         <span class="truncate">Cuti</span>
                     </a>
@@ -269,93 +279,65 @@
                     <!-- Perjalanan Dinas -->
                     <a href="{{ route('karyawan.perjalanan-dinas.index') }}"
                         class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm {{ $currentRoute === 'karyawan.perjalanan-dinas.index' || str_starts_with($currentRoute, 'karyawan.perjalanan-dinas.') ? 'bg-[#00a2e9] text-white shadow-lg shadow-[#00a2e9]/30' : 'text-white/70 hover:bg-white/10 hover:text-white' }}">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
                         <span class="truncate">Perjalanan Dinas</span>
                     </a>
 
                     <!-- Menu Lainnya -->
                     <div class="pt-3 mt-3 border-t border-white/10">
-                        <h4
-                            class="text-white/40 text-[10px] sm:text-[11px] font-bold uppercase tracking-widest px-3 sm:px-4 py-2">
-                            Lainnya</h4>
+                        <h4 class="text-white/40 text-[10px] sm:text-[11px] font-bold uppercase tracking-widest px-3 sm:px-4 py-2">
+                            Lainnya
+                        </h4>
                     </div>
 
                     <!-- Kepala Suku -->
                     <a href="https://pamersuku.read1kpmseikhlasnya.com/game"
                         class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm text-white/70 hover:bg-white/10 hover:text-white">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
-                            </path>
-                        </svg>
+                        <i class="fa-solid fa-people-group text-sm flex-shrink-0"></i>
                         <span class="truncate">Pamer Suku</span>
                     </a>
 
                     <!-- 7SPS -->
                     <a href="{{ route('karyawan.sunnah.dashboard') }}"
                         class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm {{ $currentRoute === 'karyawan.sunnah.dashboard' ? 'bg-[#00a2e9] text-white shadow-lg shadow-[#00a2e9]/30' : 'text-white/70 hover:bg-white/10 hover:text-white' }}">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
+                        <i class="fa-solid fa-kaaba text-sm flex-shrink-0"></i>
                         <span class="truncate">7SPS</span>
                     </a>
 
                     <!-- English Today -->
                     <a href="https://englishtoday.read1kpmseikhlasnya.com/"
                         class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm text-white/70 hover:bg-white/10 hover:text-white">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129">
-                            </path>
-                        </svg>
+                        <i class="fa-solid fa-language text-sm flex-shrink-0"></i>
                         <span class="truncate">English Today</span>
                     </a>
 
                     <!-- FHL -->
                     <a href="{{ route('karyawan.fhl.dashboard') }}"
                         class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm {{ $currentRoute === 'karyawan.fhl.dashboard' ? 'bg-[#00a2e9] text-white shadow-lg shadow-[#00a2e9]/30' : 'text-white/70 hover:bg-white/10 hover:text-white' }}">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z">
-                            </path>
-                        </svg>
+                        <i class="fa-solid fa-heart text-sm flex-shrink-0"></i>
                         <span class="truncate">FHL</span>
                     </a>
 
                     <!-- Khataman -->
                     <a href="{{ route('karyawan.khataman.dashboard') }}"
                         class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm {{ $currentRoute === 'karyawan.khataman.dashboard' ? 'bg-[#00a2e9] text-white shadow-lg shadow-[#00a2e9]/30' : 'text-white/70 hover:bg-white/10 hover:text-white' }}">
-                        <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                        </svg>
+                        <i class="fa-solid fa-book-quran text-sm flex-shrink-0"></i>
                         <span class="truncate">Khataman</span>
                     </a>
-                @endif
+                </nav>
+            @endif
 
-                <!-- Profile -->
+            <!-- Profile & Setting for all roles -->
+            <div class="pt-3 mt-3 border-t border-white/10">
                 <a href="{{ route('profile.show') }}"
                     class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all duration-200 text-xs sm:text-sm {{ $currentRoute === 'profile.show' || $currentRoute === 'profile.edit' ? 'bg-[#00a2e9] text-white shadow-lg shadow-[#00a2e9]/30' : 'text-white/70 hover:bg-white/10 hover:text-white' }}">
-                    <svg class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                    </svg>
-                    <span class="truncate">Profile</span>
+                    <i class="fa-solid fa-user-gear text-sm flex-shrink-0"></i>
+                    <span class="truncate">Profil Akun</span>
                 </a>
-            </nav>
+            </div>
         </div>
     </div>
 </aside>

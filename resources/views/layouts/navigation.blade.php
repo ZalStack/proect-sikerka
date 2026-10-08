@@ -1,8 +1,9 @@
 @php
     $user = Auth::user();
+    $isSuperAdmin = $user && $user->posisi === 'superadmin';
     $isHr = $user && $user->posisi === 'hr';
-    $dashboardRoute = $isHr ? 'hr.dashboard' : 'karyawan.dashboard';
-    $employeeRoute = $isHr ? 'hr.karyawan.index' : '#';
+    $dashboardRoute = $isSuperAdmin ? 'superadmin.dashboard' : ($isHr ? 'hr.dashboard' : 'karyawan.dashboard');
+    $employeeRoute = $isHr || $isSuperAdmin ? 'hr.karyawan.index' : '#';
 
     $userPhoto = $user->foto_profil ? Storage::url($user->foto_profil) : null;
     $userInitial = strtoupper(substr($user->nama_lengkap ?? 'U', 0, 1));
@@ -215,9 +216,23 @@
                         <div class="px-3 sm:px-4 py-2 sm:py-3 border-b border-gray-100">
                             <p class="text-xs sm:text-sm font-semibold text-gray-800 truncate">{{ $user->nama_lengkap }}</p>
                             <p class="text-[10px] sm:text-xs text-gray-500 truncate">{{ $user->email }}</p>
+                            @if($isSuperAdmin)
+                                <span class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-extrabold text-[9px] tracking-wider uppercase">
+                                    <i class="fa-solid fa-crown text-[8px]"></i>
+                                    Super Admin
+                                </span>
+                            @endif
                         </div>
 
                         <!-- Menu Items -->
+                        @if($isSuperAdmin)
+                            <a href="{{ route('superadmin.dashboard') }}"
+                                class="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 text-xs sm:text-sm font-semibold text-[#0F1245] hover:bg-amber-50 transition-colors">
+                                <i class="fa-solid fa-crown text-amber-500 text-xs"></i>
+                                <span>Panel Super Admin</span>
+                            </a>
+                        @endif
+
                         <a href="{{ route('profile.show') }}"
                             class="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 text-xs sm:text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                             <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -11,8 +11,30 @@ use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
 {
-    public function create(): View
+    public function create(Request $request): View|RedirectResponse
     {
+        if (Auth::check()) {
+            $user = Auth::user();
+            if ($user->posisi === 'superadmin') {
+                return redirect()->route('superadmin.dashboard');
+            }
+
+            // Jika sistem sedang maintenance atau user ingin ganti akun login, logout sesi lama
+            if (\App\Models\SystemSetting::isMaintenance() || $request->has('switch')) {
+                Auth::guard('web')->logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                return view('auth.login');
+            }
+
+            if ($user->posisi === 'hr') {
+                return redirect()->route('hr.dashboard');
+            }
+            if ($user->posisi === 'karyawan') {
+                return redirect()->route('karyawan.dashboard');
+            }
+        }
+
         return view('auth.login');
     }
 
@@ -36,6 +58,10 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
 
         // Cek posisi user
+        if ($user->posisi === 'superadmin') {
+            return redirect()->intended(route('superadmin.dashboard'));
+        }
+
         if ($user->posisi === 'hr') {
             return redirect()->intended(route('hr.dashboard'));
         }
