@@ -2118,59 +2118,188 @@ class AbsensiController extends Controller
      */
 
     /**
-     * Halaman verifikasi absen - menampilkan semua karyawan dengan status absensi hari ini.
+     * Halaman verifikasi absen - menampilkan data presensi karyawan dalam
+     * RENTANG TANGGAL terpilih (1 baris = 1 karyawan x 1 tanggal).
+     *
+     * Filter yang didukung (semua diproses di server supaya hasilnya
+     * mencakup seluruh halaman, bukan hanya baris yang sedang tampil):
+     *   - start_date & end_date : rentang tanggal absensi
+     *   - tanggal (legacy)      : dipakai kalau rentang tidak diisi
+     *   - q                     : cari nama / kode pegawai / jabatan
+     *   - divisi                : filter divisi karyawan
+     *   - status                : filter status absensi
      */
     public function verifikasiIndex(Request $request)
     {
         $today = Carbon::today($this->officeTimezone);
-        $now = Carbon::now($this->officeTimezone);
+        $maxRangeDays = 31; // batas rentang supaya query & loop tetap ringan
 
-        $selectedDate = $request->filled('tanggal') ? Carbon::parse($request->tanggal, $this->officeTimezone)->startOfDay() : $today;
+        // --------------------------------------------------
+        // 1. Rentang tanggal (dari - sampai)
+        // --------------------------------------------------
+        $startDate = $this->parseFilterDate($request->input('start_date'));
+        $endDate   = $this->parseFilterDate($request->input('end_date'));
 
-        $karyawans = Karyawan::orderBy('nama_lengkap')->get();
-
-        $absensiToday = Absensi::whereDate('tanggal', $selectedDate)->get()->keyBy('karyawan_id');
-
-        $allEmployees = $karyawans->map(function ($karyawan) use ($absensiToday, $selectedDate) {
-            $absensi = $absensiToday->get($karyawan->id);
-            $durasiTeks = '-';
-            if ($absensi && $absensi->check_in && $absensi->check_out) {
-                $durasiTeks = Absensi::formatDurasiKerja($absensi->check_in, $absensi->check_out, $selectedDate);
+        // Kompatibilitas dengan parameter lama "tanggal" (single date)
+        if (!$startDate || !$endDate) {
+            $legacy = $this->parseFilterDate($request->input('tanggal'));
+            if ($legacy) {
+                $startDate = $startDate ?: $legacy;
+                $endDate   = $endDate ?: $legacy;
             }
-            return [
-                'id' => $karyawan->id,
-                'nama' => $karyawan->nama_lengkap ?? '-',
-                'kode_pegawai' => $karyawan->kode_pegawai ?? '-',
-                'jabatan' => $karyawan->jabatan ?? '-',
-                'divisi' => $karyawan->divisi ?? '-',
-                'absensi_id' => $absensi ? $absensi->id : null,
-                'check_in' => $absensi && $absensi->check_in ? Carbon::parse($absensi->check_in)->format('H:i') : null,
-                'check_out' => $absensi && $absensi->check_out ? Carbon::parse($absensi->check_out)->format('H:i') : null,
-                'total_jam_kerja' => $absensi ? ($absensi->total_jam_kerja ?? 0) : 0,
-                'durasi_teks' => $durasiTeks,
-                'status' => $absensi ? $absensi->status : 'Alpha',
-                'kantor_cabang' => $absensi ? ($absensi->kantor_cabang ?? '-') : '-',
-            ];
-        });
+        }
+
+        $startDate = $startDate ?: $today->copy();
+        $endDate   = $endDate ?: $startDate->copy();
+
+        if ($endDate->lt($startDate)) {
+            [$startDate, $endDate] = [$endDate, $startDate];
+        }
+
+        if ($startDate->diffInDays($endDate) >= $maxRangeDays) {
+            $startDate = $endDate->copy()->subDays($maxRangeDays - 1);
+        }
+
+        // --------------------------------------------------
+        // 2. Filter karyawan (server-side)
+        // --------------------------------------------------
+        $q            = is_string($request->input('q')) ? trim($request->input('q')) : '';
+        $divisiFilter = is_string($request->input('divisi')) ? trim($request->input('divisi')) : '';
+        $statusFilter = is_string($request->input('status')) ? trim($request->input('status')) : '';
+
+        $karyawanQuery = Karyawan::query();
+
+        if ($q !== '') {
+            $like = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $q) . '%';
+            $karyawanQuery->where(function ($query) use ($like) {
+                $query->where('nama_lengkap', 'like', $like)
+                    ->orWhere('kode_pegawai', 'like', $like)
+                    ->orWhere('jabatan', 'like', $like);
+            });
+        }
+
+        if ($divisiFilter !== '') {
+            $karyawanQuery->where('divisi', $divisiFilter);
+        }
+
+        $karyawans = $karyawanQuery->orderBy('nama_lengkap')->get();
+
+        $divisiList = Karyawan::query()
+            ->whereNotNull('divisi')
+            ->where('divisi', '!=', '')
+            ->distinct()
+            ->orderBy('divisi')
+            ->pluck('divisi');
+
+        // --------------------------------------------------
+        // 3. Data absensi untuk seluruh rentang (1 query)
+        // --------------------------------------------------
+        $absensiMap = [];
+        $absensis = Absensi::whereBetween('tanggal', [$startDate, $endDate])->get();
+        foreach ($absensis as $absensi) {
+            $key = $absensi->karyawan_id . '|' . Carbon::parse($absensi->tanggal)->format('Y-m-d');
+            $absensiMap[$key] = $absensi;
+        }
+
+        // --------------------------------------------------
+        // 4. Susun baris: tanggal terbaru dulu, lalu nama karyawan
+        // --------------------------------------------------
+        $dates = [];
+        for ($cursor = $startDate->copy(); $cursor->lte($endDate); $cursor->addDay()) {
+            $dates[] = $cursor->format('Y-m-d');
+        }
+        $dates = array_reverse($dates);
+
+        $allRows = collect();
+        foreach ($dates as $tanggalStr) {
+            $tanggalDate = Carbon::createFromFormat('Y-m-d', $tanggalStr, $this->officeTimezone);
+            $hariTeks = $tanggalDate->format('D');
+
+            foreach ($karyawans as $karyawan) {
+                $absensi = $absensiMap[$karyawan->id . '|' . $tanggalStr] ?? null;
+                $status = $absensi ? ($absensi->status ?? 'Alpha') : 'Alpha';
+
+                if ($statusFilter !== '' && $status !== $statusFilter) {
+                    continue;
+                }
+
+                $durasiTeks = '-';
+                if ($absensi && $absensi->check_in && $absensi->check_out) {
+                    $durasiTeks = Absensi::formatDurasiKerja($absensi->check_in, $absensi->check_out, $tanggalStr);
+                }
+
+                $allRows->push([
+                    'id' => $karyawan->id,
+                    'tanggal' => $tanggalStr,
+                    'tanggal_teks' => $tanggalDate->format('d/m/Y'),
+                    'hari' => $hariTeks,
+                    'nama' => $karyawan->nama_lengkap ?? '-',
+                    'kode_pegawai' => $karyawan->kode_pegawai ?? '-',
+                    'jabatan' => $karyawan->jabatan ?? '-',
+                    'divisi' => $karyawan->divisi ?? '-',
+                    'absensi_id' => $absensi ? $absensi->id : null,
+                    'check_in' => $absensi && $absensi->check_in ? Carbon::parse($absensi->check_in)->format('H:i') : null,
+                    'check_out' => $absensi && $absensi->check_out ? Carbon::parse($absensi->check_out)->format('H:i') : null,
+                    'total_jam_kerja' => $absensi ? ($absensi->total_jam_kerja ?? 0) : 0,
+                    'durasi_teks' => $durasiTeks,
+                    'status' => $status,
+                    'kantor_cabang' => $absensi ? ($absensi->kantor_cabang ?? '-') : '-',
+                ]);
+            }
+        }
 
         $stats = [
-            'total' => $karyawans->count(),
-            'sudah_checkin' => $allEmployees->where('check_in', '!=', null)->count(),
-            'sudah_checkout' => $allEmployees->where('check_out', '!=', null)->count(),
-            'belum_absen' => $allEmployees->where('check_in', null)->count(),
+            'total' => $allRows->count(),
+            'sudah_checkin' => $allRows->where('check_in', '!=', null)->count(),
+            'sudah_checkout' => $allRows->where('check_out', '!=', null)->count(),
+            'belum_absen' => $allRows->where('check_in', null)->count(),
+            'jumlah_hari' => count($dates),
+            'jumlah_karyawan' => $karyawans->count(),
         ];
 
         $perPage = 10;
         $page = LengthAwarePaginator::resolveCurrentPage();
-        $total = $allEmployees->count();
-        $employeesData = $allEmployees->slice(($page - 1) * $perPage, $perPage)->values();
+        $total = $allRows->count();
 
-        $paginator = new LengthAwarePaginator($employeesData, $total, $perPage, $page, [
+        // Clamp halaman aktif supaya tidak pernah melewati halaman terakhir
+        // (mis. URL membawa ?page=99 setelah filter menyempit).
+        $maxPage = max(1, (int) ceil($total / $perPage));
+        $page = min($page, $maxPage);
+
+        $rowsData = $allRows->slice(($page - 1) * $perPage, $perPage)->values();
+
+        $paginator = new LengthAwarePaginator($rowsData, $total, $perPage, $page, [
             'path' => route('hr.absensi.verifikasi'),
             'query' => $request->query(),
         ]);
 
-        return view('hr.absensi.verifikasi', compact('paginator', 'selectedDate', 'stats'));
+        $filters = [
+            'start_date' => $startDate->format('Y-m-d'),
+            'end_date' => $endDate->format('Y-m-d'),
+            'q' => $q,
+            'divisi' => $divisiFilter,
+            'status' => $statusFilter,
+        ];
+
+        return view('hr.absensi.verifikasi', compact('paginator', 'stats', 'filters', 'divisiList'));
+    }
+
+    /**
+     * Parse nilai input tanggal filter dengan aman.
+     * Mengembalikan null (bukan exception) kalau kosong / format salah,
+     * supaya parameter URL yang rusak tidak membuat halaman error 500.
+     */
+    private function parseFilterDate($value): ?Carbon
+    {
+        if (!is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        try {
+            return Carbon::parse(trim($value), $this->officeTimezone)->startOfDay();
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     /**

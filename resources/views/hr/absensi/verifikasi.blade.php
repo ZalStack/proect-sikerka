@@ -67,8 +67,9 @@
             {{-- Stats Cards --}}
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 border-l-4 border-[#161758]">
-                    <p class="text-[10px] sm:text-xs font-medium text-gray-400 uppercase tracking-wider">Total Karyawan</p>
+                    <p class="text-[10px] sm:text-xs font-medium text-gray-400 uppercase tracking-wider">Total Data</p>
                     <p class="text-xl sm:text-2xl font-bold text-[#161758] mt-1">{{ $stats['total'] }}</p>
+                    <p class="text-[10px] text-gray-400 mt-0.5">{{ $stats['jumlah_karyawan'] }} karyawan &times; {{ $stats['jumlah_hari'] }} hari</p>
                 </div>
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 border-l-4 border-[#2E7D3E]">
                     <p class="text-[10px] sm:text-xs font-medium text-gray-400 uppercase tracking-wider">Sudah Check-in</p>
@@ -84,22 +85,55 @@
                 </div>
             </div>
 
-            {{-- Filter & Tanggal --}}
+            {{-- Filter & Rentang Tanggal --}}
             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-5 sm:p-6 mb-6">
-                <form action="{{ route('hr.absensi.verifikasi') }}" method="GET" class="flex flex-col sm:flex-row gap-3 sm:items-end">
-                    <div class="flex-1 sm:max-w-xs">
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Tanggal Absensi</label>
-                        <input type="date" name="tanggal" value="{{ $selectedDate->format('Y-m-d') }}"
-                               class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent transition">
+                <form action="{{ route('hr.absensi.verifikasi') }}" method="GET" id="filterForm"
+                      class="flex flex-col gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div>
+                            <label for="startDate" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Tanggal Absensi Dari</label>
+                            <input type="date" id="startDate" name="start_date" value="{{ $filters['start_date'] }}"
+                                   class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent transition">
+                        </div>
+                        <div>
+                            <label for="endDate" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Tanggal Absensi Sampai</label>
+                            <input type="date" id="endDate" name="end_date" value="{{ $filters['end_date'] }}"
+                                   class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent transition">
+                        </div>
+                        <div>
+                            <label for="searchEmployee" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Cari Karyawan</label>
+                            <input type="text" id="searchEmployee" name="q" value="{{ $filters['q'] }}"
+                                   placeholder="Nama / Kode / Jabatan..." autocomplete="off"
+                                   @if($filters['q'] !== '') autofocus @endif
+                                   class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent transition">
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label for="filterDivisi" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Divisi</label>
+                                <select id="filterDivisi" name="divisi"
+                                        class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent transition">
+                                    <option value="">Semua</option>
+                                    @foreach ($divisiList as $divisi)
+                                        <option value="{{ $divisi }}" @selected($filters['divisi'] === $divisi)>{{ $divisi }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label for="filterStatus" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Status</label>
+                                <select id="filterStatus" name="status"
+                                        class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent transition">
+                                    <option value="">Semua</option>
+                                    @foreach (['Hadir', 'Izin', 'Sakit', 'Perjalanan Dinas', 'Cuti', 'Alpha'] as $statusOption)
+                                        <option value="{{ $statusOption }}" @selected($filters['status'] === $statusOption)>{{ $statusOption }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                    <div class="flex-1 sm:max-w-xs">
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Cari Karyawan</label>
-                        <input type="text" id="searchEmployee" placeholder="Nama / Kode / Jabatan..."
-                               class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#00a2e9] focus:border-transparent transition">
-                    </div>
-                    <div class="flex gap-2">
+                    <div class="flex flex-wrap gap-2">
                         <button type="submit" class="px-5 py-2.5 bg-[#00a2e9] text-white rounded-xl hover:bg-[#0088c4] transition-all duration-200 text-sm font-medium shadow-sm">Filter</button>
                         <a href="{{ route('hr.absensi.verifikasi') }}" class="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200 text-sm font-medium">Reset</a>
+                        <span class="px-3 py-2.5 text-xs text-gray-400 self-center">Maksimal rentang 31 hari</span>
                     </div>
                 </form>
             </div>
@@ -110,6 +144,7 @@
                     <table class="min-w-full divide-y divide-gray-100" id="employeeTable">
                         <thead class="bg-gray-50/80">
                             <tr>
+                                <th class="px-4 py-3.5 text-left text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider">Tanggal</th>
                                 <th class="px-4 py-3.5 text-left text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider">Karyawan</th>
                                 <th class="px-4 py-3.5 text-left text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider hidden sm:table-cell">Jabatan / Divisi</th>
                                 <th class="px-4 py-3.5 text-left text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
@@ -123,7 +158,7 @@
                         <tbody class="bg-white divide-y divide-gray-100" id="employeeBody">
                             @forelse($paginator as $emp)
                                 <tr class="hover:bg-gray-50/70 transition-colors employee-row"
-                                    data-search="{{ strtolower($emp['nama'] . ' ' . $emp['kode_pegawai'] . ' ' . $emp['jabatan'] . ' ' . ($emp['divisi'] ?? '')) }}"
+                                    data-tanggal="{{ $emp['tanggal'] }}"
                                     data-id="{{ $emp['id'] }}"
                                     data-nama="{{ addslashes($emp['nama']) }}"
                                     data-kode="{{ $emp['kode_pegawai'] }}"
@@ -134,6 +169,10 @@
                                     data-status="{{ $emp['status'] }}"
                                     data-totaljam="{{ $emp['total_jam_kerja'] ?? 0 }}"
                                     data-durasiteks="{{ $emp['durasi_teks'] ?? '-' }}">
+                                    <td class="px-4 py-3.5 whitespace-nowrap">
+                                        <p class="text-sm font-semibold text-[#161758]">{{ $emp['tanggal_teks'] }}</p>
+                                        <p class="text-xs text-gray-400">{{ $emp['hari'] }}</p>
+                                    </td>
                                     <td class="px-4 py-3.5">
                                         <div>
                                             <p class="text-sm font-medium text-gray-900">{{ $emp['nama'] }}</p>
@@ -187,7 +226,7 @@
                                     </td>
                                     <td class="px-4 py-3.5 text-center">
                                         <button type="button"
-                                                onclick="openVerifikasiModal({{ $emp['id'] }}, '{{ addslashes($emp['nama']) }}', '{{ $emp['kode_pegawai'] }}', '{{ $emp['jabatan'] }}', '{{ $emp['check_in'] ?? '' }}', '{{ $emp['check_out'] ?? '' }}', '{{ $emp['status'] }}', '{{ $emp['total_jam_kerja'] ?? 0 }}', '{{ $emp['durasi_teks'] ?? '-' }}')"
+                                                onclick="openVerifikasiModal({{ $emp['id'] }}, '{{ addslashes($emp['nama']) }}', '{{ addslashes($emp['kode_pegawai']) }}', '{{ addslashes($emp['jabatan']) }}', '{{ $emp['check_in'] ?? '' }}', '{{ $emp['check_out'] ?? '' }}', '{{ $emp['status'] }}', '{{ $emp['total_jam_kerja'] ?? 0 }}', '{{ $emp['durasi_teks'] ?? '-' }}', '{{ $emp['tanggal'] }}', '{{ $emp['tanggal_teks'] }}')"
                                                 class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#161758] text-white text-xs font-semibold rounded-lg hover:bg-[#0a0b33] transition-all duration-200 shadow-sm hover:shadow">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
@@ -198,12 +237,13 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="px-4 py-12 text-center">
+                                    <td colspan="9" class="px-4 py-12 text-center">
                                         <div class="flex flex-col items-center justify-center text-gray-400">
                                             <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
                                             </svg>
                                             <p class="text-sm font-medium">Tidak ada data karyawan.</p>
+                                            <p class="text-xs text-gray-400 mt-1">Coba ubah kata kunci, divisi, status, atau rentang tanggal.</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -216,12 +256,19 @@
                 @if ($paginator->total() > 0)
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-gray-100 px-4 py-4">
                         <p class="text-xs sm:text-sm text-gray-500 text-center sm:text-left">
-                            Menampilkan <span class="font-semibold text-gray-700">{{ $paginator->firstItem() }}</span> – <span class="font-semibold text-gray-700">{{ $paginator->lastItem() }}</span>
-                            dari <span class="font-semibold text-gray-700">{{ $paginator->total() }}</span> karyawan
-                            @if ($selectedDate->isToday())
-                                &middot; Hari ini {{ $selectedDate->format('d/m/Y') }}
-                            @else
-                                &middot; {{ $selectedDate->format('d/m/Y') }}
+                            Menampilkan <span class="font-semibold text-gray-700">{{ $paginator->firstItem() ?? 0 }}</span> – <span class="font-semibold text-gray-700">{{ $paginator->lastItem() ?? 0 }}</span>
+                            dari <span class="font-semibold text-gray-700">{{ $paginator->total() }}</span> data presensi
+                            @php
+                                $rangeStart = \Carbon\Carbon::parse($filters['start_date']);
+                                $rangeEnd = \Carbon\Carbon::parse($filters['end_date']);
+                                $rangeLabel = $rangeStart->isToday() && $rangeEnd->isToday()
+                                    ? 'Hari ini ' . $rangeStart->format('d/m/Y')
+                                    : 'Rentang ' . $rangeStart->format('d/m/Y') . ' – ' . $rangeEnd->format('d/m/Y');
+                            @endphp
+                            &middot; {{ $rangeLabel }}
+                            &middot; {{ $stats['jumlah_hari'] }} hari
+                            @if ($filters['q'] !== '' || $filters['divisi'] !== '' || $filters['status'] !== '')
+                                &middot; Filter aktif
                             @endif
                             &middot; Hal. {{ $paginator->currentPage() }}/{{ $paginator->lastPage() }}
                         </p>
@@ -287,6 +334,7 @@
                         <div>
                             <h3 class="text-base font-bold text-[#161758]">Verifikasi &amp; Koreksi Presensi</h3>
                             <p id="modalKaryawanInfo" class="text-xs text-gray-500 font-medium">-</p>
+                            <p id="modalTanggalInfo" class="text-[11px] font-semibold text-[#00a2e9] mt-0.5">-</p>
                         </div>
                     </div>
                     <button type="button" onclick="closeVerifikasiModal()" class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition text-gray-400 hover:text-gray-700">
@@ -313,7 +361,8 @@
                 <form id="verifikasiForm" class="space-y-4">
                     <input type="hidden" id="vKaryawanId">
                     <input type="hidden" id="vNama">
-                    <input type="hidden" id="vSelectedDate" value="{{ $selectedDate->format('Y-m-d') }}">
+                    <input type="hidden" id="vSelectedDate" value="{{ $filters['start_date'] }}">
+                    <input type="hidden" id="vSelectedDateTeks" value="">
 
                     {{-- Status Presensi Saat Ini --}}
                     <div class="bg-slate-50 border border-slate-200/70 rounded-xl p-3.5">
@@ -518,13 +567,16 @@ function updateModalGpsBadge(active) {
 // ==========================================================
 // MODAL VERIFIKASI & UBAH
 // ==========================================================
-function openVerifikasiModal(id, nama, kode, jabatan, checkin, checkout, status, totalJam, durasiTeks) {
+function openVerifikasiModal(id, nama, kode, jabatan, checkin, checkout, status, totalJam, durasiTeks, tanggal, tanggalTeks) {
     const hasCheckin  = checkin && checkin !== '';
     const hasCheckout = checkout && checkout !== '';
 
     document.getElementById('vKaryawanId').value = id;
     document.getElementById('vNama').value        = nama;
     document.getElementById('modalKaryawanInfo').textContent = nama + ' (' + (kode || '-') + ') · ' + (jabatan || '-');
+    document.getElementById('vSelectedDate').value     = tanggal || '';
+    document.getElementById('vSelectedDateTeks').value = tanggalTeks || '';
+    document.getElementById('modalTanggalInfo').textContent = tanggalTeks ? ('Tanggal Absensi: ' + tanggalTeks) : 'Tanggal Absensi: -';
     document.getElementById('vCurrentCheckin').textContent  = hasCheckin  ? checkin  : '-';
     document.getElementById('vCurrentCheckout').textContent = hasCheckout ? checkout : '-';
     document.getElementById('vCurrentTotalJam').textContent  = (totalJam > 0 ? totalJam + ' Jam' : '-') + (durasiTeks && durasiTeks !== '-' ? ' (' + durasiTeks + ')' : '');
@@ -691,13 +743,21 @@ function doSubmitVerifikasi(karyawanId, nama, tanggal, jamMasuk, jamKeluar, stat
     .then(r => r.json().then(d => ({ status: r.status, data: d })))
     .then(({ status: httpStatus, data }) => {
         if (data.success) {
+            // Tutup modal verifikasi, tampilkan notifikasi singkat,
+            // lalu redirect ke halaman verifikasi dengan filter yang masih aktif
+            // sehingga data terbaru langsung terlihat.
+            closeVerifikasiModal();
+
             Swal.fire({
                 icon:            'success',
                 title:           'Berhasil Disimpan!',
                 text:            data.message,
-                timer:           2200,
+                timer:           1800,
+                showConfirmButton: false,
                 confirmButtonColor: '#161758',
-            }).then(() => { window.location.reload(); });
+            }).then(() => {
+                window.location.href = buildVerifikasiUrl();
+            });
         } else {
             Swal.fire({
                 icon:  'error',
@@ -718,14 +778,52 @@ function doSubmitVerifikasi(karyawanId, nama, tanggal, jamMasuk, jamKeluar, stat
 }
 
 // ==========================================================
-// SEARCH EMPLOYEE (client-side filter for current page)
+// FILTER SERVER-SIDE (rentang tanggal, pencarian, divisi, status)
+// Semua filter diproses di server sehingga hasilnya mencakup
+// seluruh data, bukan hanya baris pada halaman yang aktif.
 // ==========================================================
+function buildVerifikasiUrl(resetPage) {
+    const params = new URLSearchParams(window.location.search);
+
+    const startEl = document.getElementById('startDate');
+    const endEl   = document.getElementById('endDate');
+    const qEl     = document.getElementById('searchEmployee');
+    const divEl   = document.getElementById('filterDivisi');
+    const stsEl   = document.getElementById('filterStatus');
+
+    params.set('start_date', startEl ? startEl.value : '');
+    params.set('end_date', endEl ? endEl.value : '');
+    params.delete('tanggal'); // parameter lama sudah tidak dipakai
+
+    const q = qEl ? qEl.value.trim() : '';
+    const divisi = divEl ? divEl.value : '';
+    const status = stsEl ? stsEl.value : '';
+
+    if (q) params.set('q', q); else params.delete('q');
+    if (divisi) params.set('divisi', divisi); else params.delete('divisi');
+    if (status) params.set('status', status); else params.delete('status');
+
+    if (resetPage) params.delete('page');
+
+    const query = params.toString();
+    return '{{ route('hr.absensi.verifikasi') }}' + (query ? '?' + query : '');
+}
+
+function applyFilterNow() {
+    window.location.href = buildVerifikasiUrl(true);
+}
+
+// Pencarian: auto-submit 500ms setelah berhenti mengetik
+let filterTimer = null;
 document.getElementById('searchEmployee').addEventListener('input', function () {
-    const query = this.value.toLowerCase();
-    document.querySelectorAll('.employee-row').forEach(row => {
-        const search = row.getAttribute('data-search');
-        row.style.display = search.includes(query) ? '' : 'none';
-    });
+    clearTimeout(filterTimer);
+    filterTimer = setTimeout(applyFilterNow, 500);
+});
+
+// Dropdown Divisi & Status: langsung difilter saat berubah
+['filterDivisi', 'filterStatus'].forEach(function (id) {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('change', applyFilterNow);
 });
 
 // ==========================================================
@@ -733,6 +831,15 @@ document.getElementById('searchEmployee').addEventListener('input', function () 
 // ==========================================================
 document.addEventListener('DOMContentLoaded', function () {
     getHrLocation();
+
+    // Pertahankan fokus & posisi kursor di kolom pencarian
+    // setelah halaman reload karena filter server-side.
+    const searchEl = document.getElementById('searchEmployee');
+    if (searchEl && searchEl.value && (document.activeElement === searchEl || document.activeElement === document.body)) {
+        searchEl.focus();
+        const len = searchEl.value.length;
+        try { searchEl.setSelectionRange(len, len); } catch (e) {}
+    }
 });
 </script>
 @endsection
