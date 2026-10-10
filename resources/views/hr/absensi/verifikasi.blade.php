@@ -470,10 +470,16 @@
 
 {{-- SweetAlert2 --}}
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+    {{-- Dialog SweetAlert (sukses/gagal) harus SELALU berada di atas modal verifikasi
+         yang z-index-nya 9999, supaya tidak pernah muncul menumpuk/dobel di belakang modal. --}}
+    .swal2-container { z-index: 10001 !important; }
+</style>
 
 <script>
 const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 let hrLocation = null;
+let isSubmittingVerifikasi = false; // pengunci anti submit ganda
 
 // ==========================================================
 // GPS LOCATION - HR Device
@@ -687,41 +693,27 @@ function submitVerifikasi() {
     const jamKeluar  = document.getElementById('vJamKeluar').value;
     const status     = document.getElementById('vStatus').value;
 
-    let detailWaktu = [];
-    if (jamMasuk) detailWaktu.push('Masuk: ' + jamMasuk);
-    if (jamKeluar) detailWaktu.push('Pulang: ' + jamKeluar);
-    let summaryWaktu = detailWaktu.length > 0 ? detailWaktu.join(' | ') : 'Tanpa Jam Masuk & Pulang';
-
-    Swal.fire({
-        title: 'Simpan Presensi?',
-        html: '<div class="text-left bg-gray-50 p-4 rounded-xl space-y-1.5 text-xs text-gray-600">' +
-              '<p>Karyawan: <strong class="text-gray-900 text-sm">' + nama + '</strong></p>' +
-              '<p>Status: <strong class="text-gray-900">' + status + '</strong></p>' +
-              '<p>Waktu: <strong class="text-[#161758]">' + summaryWaktu + '</strong></p>' +
-              (hrLocation ? '<p class="text-[11px] text-gray-400 mt-2">GPS HR: ' + hrLocation.latitude.toFixed(6) + ', ' + hrLocation.longitude.toFixed(6) + '</p>' : '') +
-              '</div>',
-        icon:            'question',
-        showCancelButton: true,
-        confirmButtonColor: '#161758',
-        cancelButtonColor:  '#6B7280',
-        confirmButtonText:  'Ya, Simpan',
-        cancelButtonText:   'Batal',
-    }).then((result) => {
-        if (result.isConfirmed) {
-            doSubmitVerifikasi(karyawanId, nama, tanggal, jamMasuk, jamKeluar, status);
-        }
-    });
+    // Tombol Verifikasi/Ubah hanya memakai SATU modal (modal verifikasi ini).
+    // Tidak ada lagi dialog konfirmasi tambahan - langsung simpan ke server.
+    doSubmitVerifikasi(karyawanId, nama, tanggal, jamMasuk, jamKeluar, status);
 }
 
 function doSubmitVerifikasi(karyawanId, nama, tanggal, jamMasuk, jamKeluar, status) {
-    Swal.fire({
-        title:           'Menyimpan...',
-        html:            'Sedang memperbarui presensi untuk <strong>' + nama + '</strong>',
-        allowOutsideClick: false,
-        allowEscapeKey:  false,
-        showConfirmButton: false,
-        didOpen: () => { Swal.showLoading(); }
-    });
+    // Cegah submit ganda (klik tombol lebih dari sekali saat request berjalan)
+    if (isSubmittingVerifikasi) return;
+    isSubmittingVerifikasi = true;
+
+    // Loading tidak pakai modal baru: cukup spinner di dalam tombol submit
+    const btn = document.getElementById('btnSubmitVerifikasi');
+    const btnLabelOriginal = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="inline-block w-4 h-4 align-middle border-2 border-white/40 border-t-white rounded-full animate-spin"></span><span class="ml-2 align-middle">Menyimpan...</span>';
+
+    const resetSubmitButton = function () {
+        isSubmittingVerifikasi = false;
+        btn.disabled = false;
+        btn.innerHTML = btnLabelOriginal;
+    };
 
     fetch('{{ route("hr.absensi.verifikasi.store") }}', {
         method: 'POST',
@@ -743,22 +735,26 @@ function doSubmitVerifikasi(karyawanId, nama, tanggal, jamMasuk, jamKeluar, stat
     .then(r => r.json().then(d => ({ status: r.status, data: d })))
     .then(({ status: httpStatus, data }) => {
         if (data.success) {
-            // Tutup modal verifikasi, tampilkan notifikasi singkat,
+            // Tutup modal verifikasi dulu, tampilkan SATU notifikasi sukses,
             // lalu redirect ke halaman verifikasi dengan filter yang masih aktif
             // sehingga data terbaru langsung terlihat.
+            resetSubmitButton();
             closeVerifikasiModal();
 
-            Swal.fire({
-                icon:            'success',
-                title:           'Berhasil Disimpan!',
-                text:            data.message,
-                timer:           1800,
-                showConfirmButton: false,
-                confirmButtonColor: '#161758',
-            }).then(() => {
-                window.location.href = buildVerifikasiUrl();
-            });
+            setTimeout(function () {
+                Swal.fire({
+                    icon:            'success',
+                    title:           'Berhasil Disimpan!',
+                    text:            data.message,
+                    timer:           1800,
+                    showConfirmButton: false,
+                    confirmButtonColor: '#161758',
+                }).then(() => {
+                    window.location.href = buildVerifikasiUrl();
+                });
+            }, 350); // jeda supaya animasi tutup modal selesai, tidak tumpang tindih
         } else {
+            resetSubmitButton();
             Swal.fire({
                 icon:  'error',
                 title: 'Gagal!',
@@ -768,6 +764,7 @@ function doSubmitVerifikasi(karyawanId, nama, tanggal, jamMasuk, jamKeluar, stat
         }
     })
     .catch((err) => {
+        resetSubmitButton();
         Swal.fire({
             icon:  'error',
             title: 'Error!',
