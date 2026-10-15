@@ -8,7 +8,7 @@
             <div class="p-3 sm:p-4 lg:p-6">
                 <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
-                        <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">Perizinan (Izin /
+                        <h1 class="text-xl sm:text-2xl font-bold font-['Poppins'] text-[#161758]">Perizinan (Izin /
                             Sakit)</h1>
                         <p class="text-sm sm:text-base text-[#27438D]">Ajukan izin/sakit dan pantau status
                             persetujuannya dari HRD</p>

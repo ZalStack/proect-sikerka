@@ -8,7 +8,7 @@
         <div class="p-3 sm:p-4 md:p-6">
             <!-- Header -->
             <div class="mb-4 sm:mb-6">
-                <h1 class="text-lg sm:text-xl md:text-2xl font-bold font-['Montserrat'] text-[#161758]">Detail 7SPS</h1>
+                <h1 class="text-lg sm:text-xl md:text-2xl font-bold font-['Poppins'] text-[#161758]">Detail 7SPS</h1>
                 <p class="text-xs sm:text-sm md:text-base text-[#27438D]">Detail kegiatan 7 Sunnah Plus Suprasional</p>
             </div>
 

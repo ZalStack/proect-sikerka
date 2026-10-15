@@ -11,7 +11,7 @@
             <div class="px-4 sm:px-6 lg:px-8 py-4">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
-                        <h1 class="text-2xl sm:text-3xl font-bold font-['Montserrat'] text-[#161758]">
+                        <h1 class="text-2xl sm:text-3xl font-bold font-['Poppins'] text-[#161758]">
                             Dashboard HR
                         </h1>
                         <p class="text-sm text-slate-500 mt-0.5">

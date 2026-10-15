@@ -3,6 +3,21 @@
 @tailwind utilities;
 
 @layer base {
+  /* SEMUA font di aplikasi ini adalah Poppins */
+  html,
+  body,
+  button,
+  input,
+  select,
+  textarea,
+  optgroup,
+  code,
+  kbd,
+  samp,
+  pre {
+    font-family: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+  }
+
   html {
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;

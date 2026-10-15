@@ -14,7 +14,7 @@
                     <span>/</span>
                     <span class="text-gray-700">Manajemen Role Pengguna</span>
                 </div>
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-[#0F1245] font-['Montserrat']">
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-[#0F1245] font-['Poppins']">
                     Kelola Role & Hak Akses Pengguna
                 </h1>
                 <p class="text-xs sm:text-sm text-gray-500 font-light mt-0.5">
@@ -129,7 +129,7 @@
                                     <div class="font-bold text-gray-900">{{ $k->nama_lengkap }}</div>
                                     <div class="text-[11px] text-gray-400">NIP: {{ $k->kode_pegawai }}</div>
                                 </td>
-                                <td class="px-4 py-3.5 font-mono text-xs text-gray-700">
+                                <td class="px-4 py-3.5 font-['Poppins'] text-xs text-gray-700">
                                     {{ $k->email }}
                                 </td>
                                 <td class="px-4 py-3.5 text-xs">

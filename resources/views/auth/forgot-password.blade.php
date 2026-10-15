@@ -9,7 +9,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&family=Lexend:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800&display=swap" rel="stylesheet">
 
     <!-- Compiled Assets via Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -61,7 +61,7 @@
         .captcha-refreshing { animation: spin 0.6s linear; }
     </style>
 </head>
-<body class="font-sans antialiased min-h-screen min-h-[100dvh] flex bg-slate-950 overflow-x-hidden">
+<body class="font-['Poppins'] antialiased min-h-screen min-h-[100dvh] flex bg-slate-950 overflow-x-hidden">
 
     <div class="w-full min-h-screen min-h-[100dvh] flex flex-col lg:flex-row">
 
@@ -89,7 +89,7 @@
                         </div>
                     </div>
                 </div>
-                <h1 class="text-3xl lg:text-4xl xl:text-5xl font-display font-extrabold text-white tracking-tight mb-3 lg:mb-4 animate-slide-right">
+                <h1 class="text-3xl lg:text-4xl xl:text-5xl font-['Poppins'] font-extrabold text-white tracking-tight mb-3 lg:mb-4 animate-slide-right">
                     <span class="bg-gradient-to-r from-cyan-300 via-blue-300 to-purple-300 bg-clip-text text-transparent animate-gradient-shift bg-200%">SIKEKAR</span>
                     <span class="block text-white/90 text-xl lg:text-2xl xl:text-3xl mt-1 lg:mt-2 font-semibold">KPM</span>
                 </h1>
@@ -146,7 +146,7 @@
                             <span class="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
                             Lupa Password
                         </span>
-                        <h2 class="text-2xl sm:text-3xl font-display font-bold text-slate-800 leading-tight">Verifikasi Identitas</h2>
+                        <h2 class="text-2xl sm:text-3xl font-['Poppins'] font-bold text-slate-800 leading-tight">Verifikasi Identitas</h2>
                         <p class="text-gray-500 mt-2 text-sm">Masukkan email Anda untuk mereset password</p>
                     </div>
 
@@ -181,7 +181,7 @@
                             <label class="block text-sm font-semibold text-slate-700 mb-2 ml-1">Verifikasi Keamanan</label>
                             <div class="flex items-center gap-3 bg-white/60 backdrop-blur-sm border border-gray-200 rounded-2xl p-3">
                                 <div class="flex-1 text-center">
-                                    <span class="text-xl sm:text-2xl font-display font-bold text-slate-800 tracking-wider break-all" id="captcha-text">{{ $captcha['text'] }}</span>
+                                    <span class="text-xl sm:text-2xl font-['Poppins'] font-bold text-slate-800 tracking-wider break-all" id="captcha-text">{{ $captcha['text'] }}</span>
                                 </div>
                                 <button type="button" id="captcha-refresh-btn" onclick="refreshCaptcha()" class="p-2 rounded-xl text-gray-400 hover:text-cyan-600 hover:bg-cyan-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" id="captcha-refresh-icon"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>

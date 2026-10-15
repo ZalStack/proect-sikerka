@@ -9,7 +9,7 @@
             <!-- Header -->
             <div class="mb-4 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
                 <div>
-                    <h1 class="text-lg sm:text-xl md:text-2xl font-bold font-['Montserrat'] text-[#161758]">📊 Rekap Karyawan 7SPS</h1>
+                    <h1 class="text-lg sm:text-xl md:text-2xl font-bold font-['Poppins'] text-[#161758]">📊 Rekap Karyawan 7SPS</h1>
                     <p class="text-xs sm:text-sm md:text-base text-[#27438D]">Total poin 7 Sunnah Plus Suprasional setiap karyawan per bulan</p>
                 </div>
                 <div class="flex flex-wrap gap-2 w-full sm:w-auto">

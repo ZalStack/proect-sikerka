@@ -9,7 +9,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&family=Lexend:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800&display=swap" rel="stylesheet">
 
     <!-- Compiled Assets via Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -59,7 +59,7 @@
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="font-sans antialiased min-h-screen min-h-[100dvh] flex bg-slate-950 overflow-x-hidden">
+<body class="font-['Poppins'] antialiased min-h-screen min-h-[100dvh] flex bg-slate-950 overflow-x-hidden">
 
     <div class="w-full min-h-screen min-h-[100dvh] flex flex-col lg:flex-row">
 
@@ -87,7 +87,7 @@
                         </div>
                     </div>
                 </div>
-                <h1 class="text-3xl lg:text-4xl xl:text-5xl font-display font-extrabold text-white tracking-tight mb-3 lg:mb-4 animate-slide-right">
+                <h1 class="text-3xl lg:text-4xl xl:text-5xl font-['Poppins'] font-extrabold text-white tracking-tight mb-3 lg:mb-4 animate-slide-right">
                     <span class="bg-gradient-to-r from-cyan-300 via-blue-300 to-purple-300 bg-clip-text text-transparent animate-gradient-shift bg-200%">SIKEKAR</span>
                     <span class="block text-white/90 text-xl lg:text-2xl xl:text-3xl mt-1 lg:mt-2 font-semibold">KPM</span>
                 </h1>
@@ -145,7 +145,7 @@
                             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                             Reset Password
                         </span>
-                        <h2 class="text-2xl sm:text-3xl font-display font-bold text-slate-800 leading-tight">Buat Password Baru</h2>
+                        <h2 class="text-2xl sm:text-3xl font-['Poppins'] font-bold text-slate-800 leading-tight">Buat Password Baru</h2>
                         <p class="text-gray-500 mt-2 text-sm">
                             Untuk akun <span class="font-semibold text-slate-700">{{ $email }}</span>
                         </p>

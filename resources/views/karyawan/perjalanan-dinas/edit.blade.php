@@ -12,7 +12,7 @@
                     </svg>
                     <span>Kembali</span>
                 </a>
-                <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">Edit Perjalanan Dinas</h1>
+                <h1 class="text-xl sm:text-2xl font-bold font-['Poppins'] text-[#161758]">Edit Perjalanan Dinas</h1>
                 <p class="text-[#27438D] text-sm sm:text-base">Perbarui data pengajuan Anda (hanya bisa diedit jika status menunggu)</p>
             </div>
 

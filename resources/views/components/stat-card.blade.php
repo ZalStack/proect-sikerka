@@ -41,7 +41,7 @@
 <div {{ $attributes->merge(['class' => "bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-100 hover:shadow-md transition-all duration-300 flex items-center justify-between {$cfg['border']}"]) }}>
     <div class="space-y-1">
         <p class="text-xs sm:text-sm font-medium text-slate-500 uppercase tracking-wider">{{ $title }}</p>
-        <p class="text-xl sm:text-2xl lg:text-3xl font-bold font-['Montserrat'] text-slate-800">{{ $value }}</p>
+        <p class="text-xl sm:text-2xl lg:text-3xl font-bold font-['Poppins'] text-slate-800">{{ $value }}</p>
         @if($subtext)
             <p class="text-xs text-slate-400">{{ $subtext }}</p>
         @endif

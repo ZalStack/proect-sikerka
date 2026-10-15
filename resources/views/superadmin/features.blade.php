@@ -14,7 +14,7 @@
                     <span>/</span>
                     <span class="text-gray-700">Kontrol Fitur & Maintenance</span>
                 </div>
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-[#0F1245] font-['Montserrat']">
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-[#0F1245] font-['Poppins']">
                     Pusat Kontrol Sistem & Fitur
                 </h1>
                 <p class="text-xs sm:text-sm text-gray-500 font-light mt-0.5">

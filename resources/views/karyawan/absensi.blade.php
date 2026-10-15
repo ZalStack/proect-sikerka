@@ -8,7 +8,7 @@
             <div class="p-3 sm:p-4 lg:p-6">
                 <div class="mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                     <div>
-                        <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">Absensi Karyawan
+                        <h1 class="text-xl sm:text-2xl font-bold font-['Poppins'] text-[#161758]">Absensi Karyawan
                         </h1>
                         <p class="text-sm sm:text-base text-[#27438D]">Check-in / Check-out dengan lokasi GPS</p>
                         <p class="text-xs text-gray-500 mt-1">📍 Radius absensi: 50 meter dari kantor KPM</p>
@@ -27,7 +27,7 @@
                 <!-- Jam Realtime -->
                 <div class="bg-[#161758] rounded-2xl shadow-sm p-4 sm:p-6 mb-4 text-center">
                     <p class="text-sm text-white/70 mb-1">Jam Sekarang (Realtime Server)</p>
-                    <p id="liveClock" class="text-2xl sm:text-4xl font-bold text-white font-mono tracking-widest">--:--:--
+                    <p id="liveClock" class="text-2xl sm:text-4xl font-bold text-white font-['Poppins'] tracking-widest">--:--:--
                     </p>
                     <p id="liveDate" class="text-sm text-white/80 mt-1">Memuat tanggal...</p>
                 </div>

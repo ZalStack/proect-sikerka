@@ -7,7 +7,7 @@
     <div class="flex-1 transition-all duration-300 md:ml-64 p-3 sm:p-6">
         <div class="flex flex-wrap justify-between items-start mb-6 gap-3">
             <div>
-                <h1 class="text-2xl font-bold font-['Montserrat'] text-[#161758]">🏅 Achievement</h1>
+                <h1 class="text-2xl font-bold font-['Poppins'] text-[#161758]">🏅 Achievement</h1>
                 <p class="text-[#27438D]">Rekap capaian 7SPS, FHL, dan Khataman</p>
             </div>
             <a href="{{ route('profile.show') }}"

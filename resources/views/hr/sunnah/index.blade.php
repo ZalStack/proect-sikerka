@@ -14,7 +14,7 @@
                         📋
                     </div>
                     <div>
-                        <h1 class="text-lg sm:text-xl md:text-2xl font-bold font-['Montserrat'] text-[#161758] leading-tight">Monitoring 7SPS</h1>
+                        <h1 class="text-lg sm:text-xl md:text-2xl font-bold font-['Poppins'] text-[#161758] leading-tight">Monitoring 7SPS</h1>
                         <p class="text-xs sm:text-sm md:text-base text-[#27438D]">Monitoring kegiatan 7 Sunnah Plus Suprasional karyawan</p>
                     </div>
                 </div>

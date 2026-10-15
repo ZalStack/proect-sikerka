@@ -13,7 +13,7 @@
                         👥
                     </div>
                     <div>
-                        <h1 class="text-lg sm:text-xl md:text-2xl font-bold font-['Montserrat'] text-[#161758] leading-tight">Rekapitulasi Karyawan 7SPS</h1>
+                        <h1 class="text-lg sm:text-xl md:text-2xl font-bold font-['Poppins'] text-[#161758] leading-tight">Rekapitulasi Karyawan 7SPS</h1>
                         <p class="text-xs sm:text-sm md:text-base text-[#27438D]">Data karyawan berdasarkan jenis kelamin &mdash; Laki-Laki & Perempuan</p>
                     </div>
                 </div>

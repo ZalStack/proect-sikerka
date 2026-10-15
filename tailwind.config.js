@@ -18,10 +18,14 @@ export default {
                 'off-white': '#F5F5F5',
             },
             fontFamily: {
-                'poppins': ['Poppins', 'sans-serif'],
-                'inter': ['Inter', 'sans-serif'],
-                'montserrat': ['Montserrat', 'sans-serif'],
-                'display': ['Lexend', 'Inter', 'sans-serif'],
+                // SEMUA font di aplikasi ini memakai Poppins
+                'sans': ['Poppins', 'ui-sans-serif', 'system-ui', 'sans-serif', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'],
+                'poppins': ['Poppins', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                'montserrat': ['Poppins', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                'inter': ['Poppins', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                'display': ['Poppins', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                'mono': ['Poppins', 'ui-monospace', 'monospace'],
+                'serif': ['Poppins', 'ui-serif', 'Georgia', 'serif'],
             },
             animation: {
                 'float': 'float 8s ease-in-out infinite',

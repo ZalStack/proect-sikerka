@@ -7,7 +7,7 @@
         <div class="flex-1 transition-all duration-300 md:ml-64 pt-6 w-full">
             <div class="p-3 sm:p-6">
                 <div class="mb-6">
-                    <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">Detail Absensi</h1>
+                    <h1 class="text-xl sm:text-2xl font-bold font-['Poppins'] text-[#161758]">Detail Absensi</h1>
                     <p class="text-sm sm:text-base text-[#27438D]">Informasi lengkap absensi karyawan</p>
                 </div>
 

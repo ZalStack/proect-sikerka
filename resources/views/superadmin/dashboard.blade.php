@@ -47,7 +47,7 @@
                         <i class="fa-solid fa-crown text-xs"></i>
                         <span>Super Administrator Control Center</span>
                     </div>
-                    <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold font-['Montserrat'] tracking-tight">
+                    <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold font-['Poppins'] tracking-tight">
                         Selamat Datang, {{ auth()->user()->nama_lengkap }}
                     </h1>
                     <p class="text-white/75 text-xs sm:text-sm max-w-2xl font-light">
@@ -296,7 +296,7 @@
                                 <td class="px-4 py-3 font-medium text-gray-700 whitespace-nowrap">
                                     {{ $abs->tanggal ? $abs->tanggal->translatedFormat('d M Y') : '-' }}
                                 </td>
-                                <td class="px-4 py-3 whitespace-nowrap font-mono text-xs">
+                                <td class="px-4 py-3 whitespace-nowrap font-['Poppins'] text-xs">
                                     @if($abs->check_in)
                                         <span class="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md font-semibold">
                                             <i class="fa-solid fa-arrow-right-to-bracket text-[10px]"></i>
@@ -306,7 +306,7 @@
                                         <span class="text-gray-400">-</span>
                                     @endif
                                 </td>
-                                <td class="px-4 py-3 whitespace-nowrap font-mono text-xs">
+                                <td class="px-4 py-3 whitespace-nowrap font-['Poppins'] text-xs">
                                     @if($abs->check_out)
                                         <span class="inline-flex items-center gap-1 text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md font-semibold">
                                             <i class="fa-solid fa-arrow-right-from-bracket text-[10px]"></i>

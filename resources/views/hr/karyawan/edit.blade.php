@@ -7,7 +7,7 @@
         <div class="flex-1 transition-all duration-300 md:ml-64 p-3 sm:p-6">
             <div class="flex flex-wrap justify-between items-start mb-6 gap-3">
                 <div>
-                    <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">Edit Karyawan</h1>
+                    <h1 class="text-xl sm:text-2xl font-bold font-['Poppins'] text-[#161758]">Edit Karyawan</h1>
                     <p class="text-sm sm:text-base text-[#27438D]">Perbarui data karyawan</p>
                 </div>
                 <button onclick="toggleEditForm()"

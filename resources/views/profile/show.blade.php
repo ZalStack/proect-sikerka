@@ -2,12 +2,26 @@
 @extends('layouts.app')
 
 @section('content')
+    @php
+        // Label & badge role agar Super Admin tampil benar (bukan "Karyawan")
+        $posisiLabel = match ($user->posisi) {
+            'superadmin' => 'Super Admin',
+            'hr' => 'HR',
+            default => 'Karyawan',
+        };
+        $posisiBadgeClass = match ($user->posisi) {
+            'superadmin' => 'bg-[#FCC626] text-[#0F1245]',
+            'hr' => 'bg-[#27438D] text-white',
+            default => 'bg-[#00a2e9] text-white',
+        };
+        $isSuperAdmin = ($user->posisi ?? null) === 'superadmin';
+    @endphp
     <div class="flex min-h-screen">
         @include('layouts.sidebar')
         <div class="flex-1 transition-all duration-300 md:ml-64 p-3 sm:p-6">
             <div class="flex flex-wrap justify-between items-start mb-6 gap-3">
                 <div>
-                    <h1 class="text-2xl font-bold font-['Montserrat'] text-[#161758]">Profile Saya</h1>
+                    <h1 class="text-2xl font-bold font-['Poppins'] text-[#161758]">Profile Saya</h1>
                     <p class="text-[#27438D]">Detail informasi profil Anda</p>
                 </div>
 
@@ -17,9 +31,15 @@
                         class="bg-[#00a2e9] text-white px-4 py-2 rounded-lg hover:bg-[#27438D] transition-colors duration-200">
                         <i class="fas fa-edit mr-2"></i> Edit Profile
                     </a>
-                    <a href="{{ route('profile.achievement') }}"
-                        class="bg-[#FCC626] text-[#1B1B1B] px-4 py-2 rounded-lg hover:bg-[#e6b222] transition-colors duration-200">
-                        <i class="fas fa-trophy mr-2"></i> Achievement
+                    @unless ($isSuperAdmin)
+                        <a href="{{ route('profile.achievement') }}"
+                            class="bg-[#FCC626] text-[#1B1B1B] px-4 py-2 rounded-lg hover:bg-[#e6b222] transition-colors duration-200">
+                            <i class="fas fa-trophy mr-2"></i> Achievement
+                        </a>
+                    @endunless
+                    <a href="{{ route('profile.change-password') }}"
+                        class="bg-[#2E7D3E] text-white px-4 py-2 rounded-lg hover:bg-[#1B5E20] transition-colors duration-200">
+                        <i class="fas fa-key mr-2"></i> Ubah Password
                     </a>
                 </div>
             </div>
@@ -65,8 +85,8 @@
                                     {{ $user->status_label }}
                                 </span>
                                 <span
-                                    class="inline-block px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-sm font-medium {{ $user->posisi === 'hr' ? 'bg-[#27438D] text-white' : 'bg-[#00a2e9] text-white' }}">
-                                    {{ $user->posisi === 'hr' ? 'HR' : 'Karyawan' }}
+                                    class="inline-block px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-sm font-medium {{ $posisiBadgeClass }}">
+                                    {{ $posisiLabel }}
                                 </span>
                                 <span
                                     class="inline-block px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-sm font-medium bg-[#F5F5F5] text-[#1B1B1B]">
@@ -86,6 +106,60 @@
 
                 <!-- Detail Data (Readonly) -->
                 <div class="p-6">
+                    @if ($isSuperAdmin)
+                        <!-- ========== RINGKASAN AKUN SUPER ADMIN ========== -->
+                        <div class="mb-8">
+                            <h3
+                                class="text-base sm:text-lg font-semibold text-[#161758] border-b-2 border-[#FCC626] pb-2 mb-4 flex items-center">
+                                <span
+                                    class="bg-[#FCC626] text-[#0F1245] rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2">
+                                    <i class="fa-solid fa-crown text-[9px]"></i>
+                                </span>
+                                Informasi Akun
+                            </h3>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                                <div><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">ID Karyawan</label>
+                                    <p class="text-sm sm:text-base text-[#27438D] font-semibold break-words">
+                                        {{ $user->kode_pegawai ?? '-' }}</p>
+                                </div>
+                                <div><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Nama Lengkap</label>
+                                    <p class="text-sm sm:text-base text-[#27438D] break-words">{{ $user->nama_lengkap }}</p>
+                                </div>
+                                <div><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Email</label>
+                                    <p class="text-sm sm:text-base text-[#27438D] break-all">{{ $user->email }}</p>
+                                </div>
+                                <div><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Role</label>
+                                    <p class="text-sm sm:text-base text-[#27438D]">
+                                        <span class="px-2 py-1 rounded-full text-xs font-medium {{ $posisiBadgeClass }}">
+                                            {{ $posisiLabel }}
+                                        </span>
+                                    </p>
+                                </div>
+                                <div><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Jabatan</label>
+                                    <p class="text-sm sm:text-base text-[#27438D] break-words">{{ $user->jabatan ?? '-' }}</p>
+                                </div>
+                                <div><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Divisi</label>
+                                    <p class="text-sm sm:text-base text-[#27438D] break-words">{{ $user->divisi ?? '-' }}</p>
+                                </div>
+                                <div><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Tanggal Bergabung</label>
+                                    <p class="text-sm sm:text-base text-[#27438D]">
+                                        {{ $user->tanggal_bergabung ? $user->tanggal_bergabung->format('d-m-Y') : '-' }}</p>
+                                </div>
+                                <div><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Status Karyawan</label>
+                                    <p class="text-sm sm:text-base text-[#27438D]">
+                                        <span class="px-2 py-1 rounded-full text-xs font-medium {{ $user->status_badge }}">{{ $user->status_label }}</span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <p class="text-xs sm:text-sm text-[#27438D] mt-4 bg-[#f8faff] border border-[#00a2e9]/30 rounded-lg p-3">
+                                <i class="fa-solid fa-circle-info mr-1 text-[#00a2e9]"></i>
+                                Sebagai Super Admin, Anda hanya dapat mengubah <strong>Nama Lengkap</strong>,
+                                <strong>Email</strong>, dan <strong>Password</strong> akun Anda.
+                            </p>
+                        </div>
+                    @else
                     <!-- 1. Informasi Pribadi -->
                     <div class="mb-8">
                         <h3
@@ -162,7 +236,7 @@
                             </div>
                             <div><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Posisi</label>
                                 <p class="text-sm sm:text-base text-[#27438D]"><span
-                                        class="px-2 py-1 rounded-full text-xs font-medium {{ $user->posisi === 'hr' ? 'bg-[#27438D] text-white' : 'bg-[#00a2e9] text-white' }}">{{ $user->posisi === 'hr' ? 'HR' : 'Karyawan' }}</span>
+                                        class="px-2 py-1 rounded-full text-xs font-medium {{ $posisiBadgeClass }}">{{ $posisiLabel }}</span>
                                 </p>
                             </div>
                             <div><label class="text-xs sm:text-sm text-[#1B1B1B] font-medium">Status Karyawan</label>
@@ -313,6 +387,7 @@
                             </div>
                         </div>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>

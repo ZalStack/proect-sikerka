@@ -355,7 +355,7 @@
                         </svg>
                         <span class="text-xs font-semibold text-yellow-700">GPS Device HR: Siap</span>
                     </div>
-                    <span id="vGpsSummary" class="text-[11px] text-gray-500 font-mono">-</span>
+                    <span id="vGpsSummary" class="text-[11px] text-gray-500 font-['Poppins']">-</span>
                 </div>
 
                 <form id="verifikasiForm" class="space-y-4">

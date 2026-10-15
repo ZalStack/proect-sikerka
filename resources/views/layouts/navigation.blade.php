@@ -23,9 +23,9 @@
 
                 <a href="{{ route($dashboardRoute) }}" class="flex items-center gap-1.5 sm:gap-2 group">
                     <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-[#FCC626] to-[#f0a500] flex items-center justify-center shadow-lg shadow-[#FCC626]/30 group-hover:scale-110 transition-transform duration-200">
-                        <span class="text-[#0F1245] text-xs sm:text-sm font-bold font-['Montserrat']">S</span>
+                        <span class="text-[#0F1245] text-xs sm:text-sm font-bold font-['Poppins']">S</span>
                     </div>
-                    <span class="text-[#FCC626] text-base sm:text-lg md:text-xl font-bold font-['Montserrat'] tracking-wide group-hover:text-white transition-colors">
+                    <span class="text-[#FCC626] text-base sm:text-lg md:text-xl font-bold font-['Poppins'] tracking-wide group-hover:text-white transition-colors">
                         SIKEKAR
                     </span>
                 </a>

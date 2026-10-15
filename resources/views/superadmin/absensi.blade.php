@@ -14,7 +14,7 @@
                     <span>/</span>
                     <span class="text-gray-700">Presensi Karyawan</span>
                 </div>
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-[#0F1245] font-['Montserrat']">
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-[#0F1245] font-['Poppins']">
                     Kelola & Koreksi Jam Kerja Karyawan
                 </h1>
                 <p class="text-xs sm:text-sm text-gray-500 font-light mt-0.5">
@@ -196,7 +196,7 @@
                                 </td>
                                 <td class="px-4 py-3.5 whitespace-nowrap">
                                     @if($abs->check_in)
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-['Poppins'] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                             <i class="fa-solid fa-arrow-right-to-bracket text-[10px]"></i>
                                             {{ $abs->check_in->format('H:i') }}
                                         </span>
@@ -209,7 +209,7 @@
                                 </td>
                                 <td class="px-4 py-3.5 whitespace-nowrap">
                                     @if($abs->check_out)
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-['Poppins'] font-bold bg-blue-50 text-blue-700 border border-blue-200">
                                             <i class="fa-solid fa-arrow-right-from-bracket text-[10px]"></i>
                                             {{ $abs->check_out->format('H:i') }}
                                         </span>
@@ -327,7 +327,7 @@
                         <i class="fa-solid fa-arrow-right-to-bracket text-emerald-600 mr-1"></i>
                         Jam Masuk (H:i)
                     </label>
-                    <input type="time" id="editCheckIn" name="check_in" oninput="calculateLiveHours()" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-mono font-bold focus:ring-2 focus:ring-[#00a2e9]/20 focus:border-[#00a2e9]">
+                    <input type="time" id="editCheckIn" name="check_in" oninput="calculateLiveHours()" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-['Poppins'] font-bold focus:ring-2 focus:ring-[#00a2e9]/20 focus:border-[#00a2e9]">
                 </div>
 
                 <div>
@@ -335,7 +335,7 @@
                         <i class="fa-solid fa-arrow-right-from-bracket text-blue-600 mr-1"></i>
                         Jam Pulang (H:i)
                     </label>
-                    <input type="time" id="editCheckOut" name="check_out" oninput="calculateLiveHours()" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-mono font-bold focus:ring-2 focus:ring-[#00a2e9]/20 focus:border-[#00a2e9]">
+                    <input type="time" id="editCheckOut" name="check_out" oninput="calculateLiveHours()" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-['Poppins'] font-bold focus:ring-2 focus:ring-[#00a2e9]/20 focus:border-[#00a2e9]">
                 </div>
             </div>
 
@@ -350,7 +350,7 @@
                 </div>
                 <div class="flex items-baseline justify-between pt-1">
                     <span class="text-xs text-purple-700">Total Jam Kerja Terhitung:</span>
-                    <span id="calcTotalJam" class="text-lg font-extrabold text-purple-900 font-mono">0 Jam</span>
+                    <span id="calcTotalJam" class="text-lg font-extrabold text-purple-900 font-['Poppins']">0 Jam</span>
                 </div>
                 <p id="calcDurasiDetail" class="text-[11px] text-purple-600 font-medium">Masukkan Jam Masuk & Jam Pulang untuk menghitung otomatis.</p>
             </div>
@@ -442,12 +442,12 @@
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Jam Masuk (H:i)</label>
-                    <input type="time" id="addCheckIn" name="check_in" value="07:30" oninput="calculateAddLiveHours()" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-mono font-bold focus:ring-2 focus:ring-[#00a2e9]/20 focus:border-[#00a2e9]">
+                    <input type="time" id="addCheckIn" name="check_in" value="07:30" oninput="calculateAddLiveHours()" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-['Poppins'] font-bold focus:ring-2 focus:ring-[#00a2e9]/20 focus:border-[#00a2e9]">
                 </div>
 
                 <div>
                     <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Jam Pulang (H:i)</label>
-                    <input type="time" id="addCheckOut" name="check_out" value="16:00" oninput="calculateAddLiveHours()" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-mono font-bold focus:ring-2 focus:ring-[#00a2e9]/20 focus:border-[#00a2e9]">
+                    <input type="time" id="addCheckOut" name="check_out" value="16:00" oninput="calculateAddLiveHours()" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-['Poppins'] font-bold focus:ring-2 focus:ring-[#00a2e9]/20 focus:border-[#00a2e9]">
                 </div>
             </div>
 
@@ -455,7 +455,7 @@
             <div class="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/70 rounded-2xl p-4 text-emerald-900 space-y-1">
                 <div class="flex items-baseline justify-between">
                     <span class="text-xs font-semibold text-emerald-700">Estimasi Total Jam Kerja:</span>
-                    <span id="addCalcTotalJam" class="text-lg font-extrabold text-emerald-900 font-mono">9 Jam</span>
+                    <span id="addCalcTotalJam" class="text-lg font-extrabold text-emerald-900 font-['Poppins']">9 Jam</span>
                 </div>
                 <p id="addCalcDurasiDetail" class="text-[11px] text-emerald-600 font-medium">8 Jam 30 Menit (Dibulatkan jadi 9 Jam kerja)</p>
             </div>

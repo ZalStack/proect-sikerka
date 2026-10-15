@@ -37,12 +37,41 @@ class ProfileController extends Controller
     public function edit()
     {
         $user = Auth::user();
+
+        // Super Admin hanya boleh mengubah nama & email (form khusus, tanpa data karyawan)
+        if ($user->isSuperAdmin()) {
+            return view('profile.edit-superadmin', compact('user'));
+        }
+
         return view('profile.edit', compact('user'));
     }
 
     public function update(Request $request)
     {
         $user = Auth::user();
+
+        // ==========================================================
+        // SUPER ADMIN: hanya nama & email yang boleh diubah.
+        // Data lain (jabatan, divisi, status, foto, posisi, dll)
+        // tidak boleh tersentuh sama sekali oleh halaman profil.
+        // ==========================================================
+        if ($user->isSuperAdmin()) {
+            $request->validate([
+                'nama_lengkap' => 'required|string|max:100',
+                'email' => 'required|email|max:100|unique:karyawans,email,' . $user->id,
+            ], [], [
+                'nama_lengkap' => 'nama lengkap',
+                'email' => 'email',
+            ]);
+
+            $user->update([
+                'nama_lengkap' => $request->input('nama_lengkap'),
+                'email' => $request->input('email'),
+            ]);
+            $user->refresh();
+
+            return redirect()->route('profile.show')->with('success', 'Profile berhasil diupdate');
+        }
 
         $rules = [
             'kode_pegawai' => 'required|unique:karyawans,kode_pegawai,' . $user->id,

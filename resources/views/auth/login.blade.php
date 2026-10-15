@@ -9,7 +9,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&family=Lexend:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800&display=swap" rel="stylesheet">
 
     <!-- Compiled Assets via Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -61,7 +61,7 @@
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="font-sans antialiased min-h-screen min-h-[100dvh] flex bg-slate-950 overflow-x-hidden">
+<body class="font-['Poppins'] antialiased min-h-screen min-h-[100dvh] flex bg-slate-950 overflow-x-hidden">
 
     <!-- ==================== MAIN GRID ==================== -->
     <div class="w-full min-h-screen min-h-[100dvh] flex flex-col lg:flex-row">
@@ -102,7 +102,7 @@
                     </div>
                 </div>
 
-                <h1 class="text-3xl lg:text-4xl xl:text-5xl font-display font-extrabold text-white tracking-tight mb-3 lg:mb-4 animate-slide-right">
+                <h1 class="text-3xl lg:text-4xl xl:text-5xl font-['Poppins'] font-extrabold text-white tracking-tight mb-3 lg:mb-4 animate-slide-right">
                     <span class="bg-gradient-to-r from-cyan-300 via-blue-300 to-purple-300 bg-clip-text text-transparent animate-gradient-shift bg-200%">
                         SIKEKAR
                     </span>
@@ -190,7 +190,7 @@
                                 <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
                                 Portal Super Admin
                             </span>
-                            <h2 class="text-2xl sm:text-3xl font-display font-bold text-slate-800 leading-tight">
+                            <h2 class="text-2xl sm:text-3xl font-['Poppins'] font-bold text-slate-800 leading-tight">
                                 Super Admin Login
                             </h2>
                             <p class="text-gray-500 mt-2 text-sm">Masuk untuk mengelola sistem dan kontrol penuh</p>
@@ -199,7 +199,7 @@
                                 <span class="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
                                 Selamat Datang
                             </span>
-                            <h2 class="text-2xl sm:text-3xl font-display font-bold text-slate-800 leading-tight">
+                            <h2 class="text-2xl sm:text-3xl font-['Poppins'] font-bold text-slate-800 leading-tight">
                                 Masuk ke Akun
                             </h2>
                             <p class="text-gray-500 mt-2 text-sm">Silakan isi kredensial Anda untuk melanjutkan</p>
@@ -345,7 +345,7 @@
                     </div>
                 </div>
             </div>
-            <h3 class="text-xl font-display font-bold text-slate-800 text-center mb-2">Akun Tidak Aktif</h3>
+            <h3 class="text-xl font-['Poppins'] font-bold text-slate-800 text-center mb-2">Akun Tidak Aktif</h3>
             <p class="text-gray-500 text-center mb-6 text-sm leading-relaxed">{{ session('error') ?: 'Akun Anda sudah tidak aktif karena telah resign. Silakan hubungi HRD untuk informasi lebih lanjut.' }}</p>
             <button onclick="closeResignModal()" class="w-full bg-gradient-to-r from-red-500 to-red-600 text-white py-3 px-6 rounded-2xl hover:shadow-xl hover:shadow-red-500/30 transform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 font-semibold text-sm">Saya Mengerti</button>
         </div>

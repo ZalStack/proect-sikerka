@@ -8,7 +8,7 @@
         <div class="p-3 sm:p-6">
             <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
-                    <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">7SPS - 7 Sunnah Plus Suprasional</h1>
+                    <h1 class="text-xl sm:text-2xl font-bold font-['Poppins'] text-[#161758]">7SPS - 7 Sunnah Plus Suprasional</h1>
                     <p class="text-sm sm:text-base text-[#27438D]">Kelola kegiatan sunnah harian Anda. Langsung centang, tidak perlu konfirmasi tambahan.</p>
                 </div>
                 <button type="button" id="toggle-view-btn" onclick="toggleSunnahView()"
@@ -342,7 +342,7 @@
 <div id="milestone-popup-overlay" class="fixed inset-0 z-[60] flex items-center justify-center pointer-events-none">
     <div id="milestone-popup-card" class="milestone-popup-hidden text-center px-6 sm:px-10 py-6 sm:py-8 rounded-2xl shadow-2xl max-w-[90%] sm:max-w-md">
         <div id="milestone-popup-icon" class="text-4xl sm:text-6xl mb-2 sm:mb-3"></div>
-        <div id="milestone-popup-title" class="text-lg sm:text-2xl font-extrabold font-['Montserrat'] mb-1 sm:mb-2"></div>
+        <div id="milestone-popup-title" class="text-lg sm:text-2xl font-extrabold font-['Poppins'] mb-1 sm:mb-2"></div>
         <div id="milestone-popup-text" class="text-sm sm:text-lg font-semibold leading-snug"></div>
         <div class="mt-3 sm:mt-4 flex justify-center gap-2">
             <span class="milestone-popup-sparkle">✨</span>

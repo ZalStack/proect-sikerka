@@ -19,7 +19,7 @@
                     <i class="fa-solid fa-triangle-exclamation"></i>
                     Fitur Dinonaktifkan
                 </span>
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-[#0F1245] font-['Montserrat']">
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-[#0F1245] font-['Poppins']">
                     {{ $meta['name'] ?? 'Fitur Ini Sedang Ditutup' }}
                 </h1>
                 <p class="text-sm sm:text-base text-gray-600 max-w-lg mx-auto font-light leading-relaxed">

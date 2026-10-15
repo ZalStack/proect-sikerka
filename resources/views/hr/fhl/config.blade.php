@@ -9,7 +9,7 @@
                 <div class="mb-6">
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
-                            <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">⚙️ Pengaturan Jadwal FHL</h1>
+                            <h1 class="text-xl sm:text-2xl font-bold font-['Poppins'] text-[#161758]">⚙️ Pengaturan Jadwal FHL</h1>
                             <p class="text-sm sm:text-base text-[#27438D]">Atur hari dan jam terakhir absensi FHL</p>
                         </div>
                         <a href="{{ route('hr.fhl.index') }}"

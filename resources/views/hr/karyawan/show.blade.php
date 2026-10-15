@@ -8,7 +8,7 @@
         <div class="p-4 sm:p-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3 sm:gap-4">
                 <div>
-                    <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758]">Detail Karyawan</h1>
+                    <h1 class="text-xl sm:text-2xl font-bold font-['Poppins'] text-[#161758]">Detail Karyawan</h1>
                     <p class="text-sm sm:text-base text-[#27438D]">Informasi lengkap karyawan</p>
                 </div>
                 <div class="flex flex-wrap gap-2">

@@ -12,7 +12,7 @@
             </div>
         @endif
         <div>
-            <h1 class="text-xl sm:text-2xl font-bold font-['Montserrat'] text-[#161758] tracking-tight">
+            <h1 class="text-xl sm:text-2xl font-bold font-['Poppins'] text-[#161758] tracking-tight">
                 {{ $title }}
             </h1>
             @if($subtitle)

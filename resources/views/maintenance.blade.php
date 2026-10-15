@@ -6,7 +6,7 @@
     <title>{{ $info['title'] ?? 'Sistem Sedang Pemeliharaan' }} - SIKEKAR</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Montserrat:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
@@ -59,10 +59,10 @@
     <header class="relative z-20 w-full border-b border-white/10 backdrop-blur-md bg-white/[0.02]">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4 flex items-center justify-between">
             <div class="flex items-center gap-2.5">
-                <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-[#FCC626] to-[#e5a000] flex items-center justify-center shadow-lg shadow-[#FCC626]/20 font-['Montserrat'] font-extrabold text-[#0F1245] text-base sm:text-lg">
+                <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-[#FCC626] to-[#e5a000] flex items-center justify-center shadow-lg shadow-[#FCC626]/20 font-['Poppins'] font-extrabold text-[#0F1245] text-base sm:text-lg">
                     S
                 </div>
-                <span class="font-['Montserrat'] font-bold text-lg sm:text-xl tracking-wider text-[#FCC626]">
+                <span class="font-['Poppins'] font-bold text-lg sm:text-xl tracking-wider text-[#FCC626]">
                     SIKEKAR
                 </span>
             </div>
@@ -100,8 +100,8 @@
                     <i class="fa-solid fa-wrench text-xs"></i>
                     <span>Sistem Sedang Diperbarui & Dioptimalkan</span>
                 </div>
-                <h1 class="text-2xl sm:text-4xl md:text-5xl font-extrabold font-['Montserrat'] tracking-tight text-white leading-tight">
-                    {{ $info['title'] ?? 'Sistem Sedang Dalam Pemeliharaan' }}
+                <h1 class="text-2xl sm:text-4xl md:text-5xl font-extrabold font-['Poppins'] tracking-tight text-white leading-tight">
+                     {{ $info['title'] ?? 'Sistem Sedang Dalam Pemeliharaan' }}
                 </h1>
             </div>
 
