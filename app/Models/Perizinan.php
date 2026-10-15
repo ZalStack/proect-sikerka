@@ -108,46 +108,15 @@ class Perizinan extends Model
      */
     public function syncToAbsensi(): void
     {
-        $period = CarbonPeriod::create($this->tanggal_mulai, $this->tanggal_selesai);
-
-        foreach ($period as $tanggal) {
-            Absensi::updateOrCreate(
-                [
-                    'karyawan_id' => $this->karyawan_id,
-                    'tanggal' => $tanggal->format('Y-m-d'),
-                ],
-                [
-                    'status' => $this->jenis,
-                    'keterangan' => 'Pengajuan ' . $this->jenis . ' (disetujui HRD): ' . $this->keterangan,
-                ]
-            );
-        }
+        app(\App\Services\AbsensiSyncService::class)->syncPerizinan($this);
     }
 
     /**
      * Kebalikan dari syncToAbsensi(): dipakai kalau pengajuan yang SUDAH
-     * disetujui dibatalkan/direset oleh HR. Baris absensi yang tanggalnya
-     * masuk rentang pengajuan ini akan dikembalikan ke "Alpha" -- TAPI HANYA
-     * kalau karyawan belum benar-benar check-in hari itu (tidak menimpa data
-     * kehadiran asli), dan hanya kalau keterangannya masih cocok dengan
-     * keterangan yang dibuat oleh syncToAbsensi() di atas (supaya tidak
-     * menimpa baris yang sudah diubah manual oleh HR untuk keperluan lain).
+     * disetujui dibatalkan/direset oleh HR.
      */
     public function revertAbsensi(): void
     {
-        $period = CarbonPeriod::create($this->tanggal_mulai, $this->tanggal_selesai);
-        $expectedKeterangan = 'Pengajuan ' . $this->jenis . ' (disetujui HRD): ' . $this->keterangan;
-
-        foreach ($period as $tanggal) {
-            Absensi::where('karyawan_id', $this->karyawan_id)
-                ->whereDate('tanggal', $tanggal->format('Y-m-d'))
-                ->whereNull('check_in')
-                ->where('status', $this->jenis)
-                ->where('keterangan', $expectedKeterangan)
-                ->update([
-                    'status' => 'Alpha',
-                    'keterangan' => null,
-                ]);
-        }
+        app(\App\Services\AbsensiSyncService::class)->removePerizinan($this);
     }
 }

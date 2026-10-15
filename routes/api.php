@@ -15,6 +15,14 @@ use Illuminate\Support\Facades\Storage;
 
 // 1. Verifikasi Kredensial Login (Password) dari SUDOKU
 Route::post('/verify', function (Request $request) {
+    $expectedKey = config('services.sudoku.api_key', env('SUDOKU_API_KEY'));
+    if ($expectedKey) {
+        $providedKey = $request->header('X-API-Key') ?: $request->bearerToken();
+        if ($providedKey !== $expectedKey) {
+            return response()->json(['valid' => false, 'message' => 'Unauthorized'], 401);
+        }
+    }
+
     $request->validate([
         'kode_pegawai' => 'required|string',
         'password' => 'required|string',
@@ -44,9 +52,9 @@ Route::post('/verify', function (Request $request) {
             'kode_pegawai' => $request->kode_pegawai,
             'error' => $e->getMessage(),
         ]);
-        return response()->json(['valid' => false], 500);
+        return response()->json(['valid' => false, 'message' => 'Terjadi kesalahan pada server'], 500);
     }
-});
+})->middleware('throttle:10,1');
 
 // 2. Tarik Foto Profil Karyawan untuk SUDOKU
 Route::get('/foto/{kode_pegawai}', function ($kode_pegawai) {
@@ -76,10 +84,18 @@ Route::get('/foto/{kode_pegawai}', function ($kode_pegawai) {
         Log::error('API foto error', ['kode' => $kode_pegawai, 'error' => $e->getMessage()]);
         return response()->json(['message' => 'Internal server error'], 500);
     }
-});
+})->middleware('throttle:60,1');
 
 // 3. Daftar Seluruh Karyawan Aktif
-Route::get('/karyawan', function () {
+Route::get('/karyawan', function (Request $request) {
+    $expectedKey = config('services.sudoku.api_key', env('SUDOKU_API_KEY'));
+    if ($expectedKey) {
+        $providedKey = $request->header('X-API-Key') ?: $request->bearerToken();
+        if ($providedKey !== $expectedKey) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+    }
+
     try {
         $karyawans = Karyawan::where('is_resigned', false)->get(['kode_pegawai', 'nama_lengkap as name', 'email', 'foto_profil', 'divisi']);
         return response()->json([
@@ -93,6 +109,7 @@ Route::get('/karyawan', function () {
             ]),
         ]);
     } catch (\Throwable $e) {
-        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        Log::error('API karyawan error', ['error' => $e->getMessage()]);
+        return response()->json(['success' => false, 'message' => 'Terjadi kesalahan pada server'], 500);
     }
-});
+})->middleware('throttle:60,1');

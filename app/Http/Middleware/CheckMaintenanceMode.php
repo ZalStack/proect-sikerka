@@ -22,11 +22,12 @@ class CheckMaintenanceMode
             return $next($request);
         }
 
-        // Izinkan route auth/login/logout dan superadmin agar Super Admin bisa login saat sistem maintenance
+        // Izinkan route auth/login/logout dan superadmin login agar Super Admin bisa login saat sistem maintenance
         $allowedRoutes = [
             'login',
+            'superadmin.login',
+            'superadmin.login.store',
             'logout',
-            'logout.get',
             'password.request',
             'password.verify',
             'password.reset.form',
@@ -35,13 +36,12 @@ class CheckMaintenanceMode
         ];
 
         $currentRouteName = $request->route() ? $request->route()->getName() : '';
-        if (in_array($currentRouteName, $allowedRoutes, true) || str_starts_with((string)$currentRouteName, 'superadmin.')) {
+        if (in_array($currentRouteName, $allowedRoutes, true)) {
             return $next($request);
         }
 
-        // Izinkan path superadmin atau login secara eksplisit
         $path = $request->path();
-        if (str_starts_with($path, 'superadmin') || $path === 'login' || $path === 'logout') {
+        if ($path === 'login' || $path === 'superadmin/login' || $path === 'logout') {
             return $next($request);
         }
 

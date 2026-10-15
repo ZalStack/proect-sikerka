@@ -15,6 +15,13 @@ class KaryawanMiddleware
             return $next($request);
         }
 
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses ditolak. Halaman ini hanya dapat diakses oleh Karyawan.',
+            ], 403);
+        }
+
         if (Auth::check() && Auth::user()->posisi === 'hr') {
             return redirect('/hr/dashboard');
         }

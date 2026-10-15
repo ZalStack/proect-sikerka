@@ -342,43 +342,7 @@ class PerjalananDinasController extends Controller
      */
     private function rekapKeAbsensi(PerjalananDinas $perjalananDinas)
     {
-        $start = Carbon::parse($perjalananDinas->tanggal_mulai);
-        $end = Carbon::parse($perjalananDinas->tanggal_selesai);
-        $karyawanId = $perjalananDinas->karyawan_id;
-        $judul = $perjalananDinas->judul;
-
-        for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
-            $tanggal = $date->format('Y-m-d');
-
-            $absensi = Absensi::where('karyawan_id', $karyawanId)->whereDate('tanggal', $tanggal)->first();
-
-            if (!$absensi) {
-                Absensi::create([
-                    'karyawan_id' => $karyawanId,
-                    'tanggal' => $tanggal,
-                    'status' => 'Perjalanan Dinas',
-                    'kantor_cabang' => 'Perjalanan Dinas',
-                    'keterangan' => "Perjalanan Dinas: {$judul}",
-                    'check_in' => null,
-                    'check_out' => null,
-                    'total_jam_kerja' => 0,
-                    'is_valid_location' => false,
-                    'ip_address' => null,
-                    'user_agent' => null,
-                    'is_suspicious' => false,
-                    'suspicious_reason' => null,
-                ]);
-            } else {
-                $absensi->status = 'Perjalanan Dinas';
-                $absensi->kantor_cabang = 'Perjalanan Dinas';
-                $absensi->keterangan = "Perjalanan Dinas: {$judul}";
-                $absensi->check_in = null;
-                $absensi->check_out = null;
-                $absensi->total_jam_kerja = 0;
-                $absensi->is_valid_location = false;
-                $absensi->save();
-            }
-        }
+        app(\App\Services\AbsensiSyncService::class)->syncPerjalananDinas($perjalananDinas);
     }
 
     /**

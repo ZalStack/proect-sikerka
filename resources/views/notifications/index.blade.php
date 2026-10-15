@@ -2,7 +2,10 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-3xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
+<div class="flex">
+    @include('layouts.sidebar')
+    <div class="flex-1 min-w-0 md:ml-64 p-3 sm:p-6 lg:p-8">
+        <div class="max-w-4xl mx-auto">
 
     {{-- ============ HEADER ============ --}}
     <div class="flex items-center gap-3 mb-4 sm:mb-6">
@@ -119,7 +122,7 @@
             @endif
         </div>
     @endif
-
+    </div>
 </div>
 
 <style>

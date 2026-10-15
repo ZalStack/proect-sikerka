@@ -39,7 +39,6 @@ Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('lo
 Route::post('login', [AuthenticatedSessionController::class, 'store']);
 Route::get('superadmin/login', [AuthenticatedSessionController::class, 'create'])->name('superadmin.login');
 Route::post('superadmin/login', [AuthenticatedSessionController::class, 'store'])->name('superadmin.login.store');
-Route::get('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout.get');
 Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
 // Guest password routes
@@ -77,16 +76,16 @@ Route::middleware('auth')->group(function () {
 
             // Kontrol Fitur & Maintenance
             Route::get('/features', [SuperAdminController::class, 'featuresIndex'])->name('features.index');
-            Route::match(['GET', 'POST'], '/features/toggle-all', [SuperAdminController::class, 'featureToggleAll'])->name('features.toggle-all');
-            Route::match(['GET', 'POST'], '/features/{feature}/toggle', [SuperAdminController::class, 'featureToggle'])->name('features.toggle');
-            Route::match(['GET', 'POST'], '/maintenance/toggle', [SuperAdminController::class, 'maintenanceToggle'])->name('maintenance.toggle');
+            Route::post('/features/toggle-all', [SuperAdminController::class, 'featureToggleAll'])->name('features.toggle-all');
+            Route::post('/features/{feature}/toggle', [SuperAdminController::class, 'featureToggle'])->name('features.toggle');
+            Route::post('/maintenance/toggle', [SuperAdminController::class, 'maintenanceToggle'])->name('maintenance.toggle');
             Route::match(['POST', 'PUT'], '/maintenance/update', [SuperAdminController::class, 'maintenanceUpdate'])->name('maintenance.update');
 
             // Kelola & Koreksi Jam Presensi Karyawan
             Route::get('/absensi', [SuperAdminController::class, 'absensiIndex'])->name('absensi.index');
             Route::post('/absensi/store', [SuperAdminController::class, 'absensiStore'])->name('absensi.store');
             Route::match(['PUT', 'POST'], '/absensi/{id}/update', [SuperAdminController::class, 'absensiUpdate'])->name('absensi.update');
-            Route::match(['DELETE', 'POST'], '/absensi/{id}', [SuperAdminController::class, 'absensiDestroy'])->name('absensi.destroy');
+            Route::delete('/absensi/{id}', [SuperAdminController::class, 'absensiDestroy'])->name('absensi.destroy');
 
             // Kelola Role Pengguna
             Route::get('/karyawan', [SuperAdminController::class, 'karyawanIndex'])->name('karyawan.index');
@@ -220,21 +219,21 @@ Route::middleware('auth')->group(function () {
             // FHL
             Route::middleware('feature:fhl')->group(function () {
                 Route::get('/fhl', [FhlController::class, 'dashboard'])->name('fhl.dashboard');
-                Route::post('/fhl/checkin', [FhlController::class, 'checkIn'])->name('fhl.checkin');
+                Route::post('/fhl/checkin', [FhlController::class, 'checkIn'])->name('fhl.checkin')->middleware('throttle:10,1');
                 Route::get('/fhl/server-time', [FhlController::class, 'serverTime'])->name('fhl.server-time');
             });
 
             // Khataman
             Route::middleware('feature:khataman')->group(function () {
                 Route::get('/khataman', [KhatamanController::class, 'dashboard'])->name('khataman.dashboard');
-                Route::post('/khataman/checkin', [KhatamanController::class, 'checkIn'])->name('khataman.checkin');
+                Route::post('/khataman/checkin', [KhatamanController::class, 'checkIn'])->name('khataman.checkin')->middleware('throttle:10,1');
                 Route::get('/khataman/server-time', [KhatamanController::class, 'serverTime'])->name('khataman.server-time');
             });
 
             // 7SPS Sunnah
             Route::middleware('feature:sunnah')->group(function () {
                 Route::get('/sunnah', [SunnahController::class, 'dashboard'])->name('sunnah.dashboard');
-                Route::post('/sunnah/save', [SunnahController::class, 'saveDaily'])->name('sunnah.save');
+                Route::post('/sunnah/save', [SunnahController::class, 'saveDaily'])->name('sunnah.save')->middleware('throttle:10,1');
             });
 
             // Cuti

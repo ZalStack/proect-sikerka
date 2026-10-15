@@ -133,7 +133,7 @@ class Karyawan extends Authenticatable
 
     public function getNamaBankAttribute($value)
     {
-        return 'BSI';
+        return $value ?: 'BSI';
     }
 
     public function scopeActive($query)

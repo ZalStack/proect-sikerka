@@ -13,14 +13,21 @@
             ? substr($user->nama_lengkap ?? '', 0, 15) . '...'
             : $user->nama_lengkap ?? 'User';
 
-    // Hitung jumlah pengajuan pending untuk notifikasi HR & Superadmin
+    // Hitung jumlah pengajuan pending untuk notifikasi HR & Superadmin (di-cache 30 detik untuk efisiensi)
     $pendingCuti = 0;
     $pendingPerjalananDinas = 0;
     $pendingPerizinan = 0;
     if ($isHr || $isSuperAdmin) {
-        $pendingCuti = \App\Models\Cuti::where('status', 'pending')->count();
-        $pendingPerjalananDinas = \App\Models\PerjalananDinas::where('status', 'pending')->count();
-        $pendingPerizinan = \App\Models\Perizinan::where('status', 'pending')->count();
+        $pendingCounts = \Illuminate\Support\Facades\Cache::remember('pending_approval_counts', 30, function () {
+            return [
+                'cuti' => \App\Models\Cuti::where('status', 'pending')->count(),
+                'perjalanan_dinas' => \App\Models\PerjalananDinas::where('status', 'pending')->count(),
+                'perizinan' => \App\Models\Perizinan::where('status', 'pending')->count(),
+            ];
+        });
+        $pendingCuti = $pendingCounts['cuti'] ?? 0;
+        $pendingPerjalananDinas = $pendingCounts['perjalanan_dinas'] ?? 0;
+        $pendingPerizinan = $pendingCounts['perizinan'] ?? 0;
     }
 @endphp
 

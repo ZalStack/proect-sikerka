@@ -39,7 +39,7 @@
                 <!-- Notifikasi -->
                 @if (session('success'))
                     <div class="bg-[#2E7D3E] text-white p-3 rounded-lg mb-4 text-sm">
-                        {!! session('success') !!}
+                        {{ session('success') }}
                     </div>
                 @endif
                 @if (session('error'))

@@ -2,12 +2,12 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="flex min-h">
+<div class="flex min-h-screen">
     @include('layouts.sidebar')
     <div class="flex-1 transition-all duration-300 md:ml-64">
 
         {{-- ==================== HEADER ==================== --}}
-        <div class="bg-white/90 backdrop-blur-md shadow-sm border-b border-slate-200/50 sticky top-0 z-20">
+        <div class="bg-white/90 backdrop-blur-md shadow-sm border-b border-slate-200/50 sticky top-14 sm:top-16 z-20">
             <div class="px-4 sm:px-6 lg:px-8 py-4">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
