@@ -318,9 +318,9 @@ class SuperAdminAccessManagementTest extends TestCase
         $this->assertNotNull($row->valid_until);
         $this->assertNotNull($row->reason);
 
-        // Route fitur yang dimatikan → 403 dengan halaman "Akses Dibatasi"
+        // Route fitur yang dimatikan → 403 dengan halaman "Mohon Maaf, Akses Menu Dinonaktifkan"
         $blocked = $this->actingAs($k)->get(route('karyawan.absensi'));
-        $blocked->assertForbidden()->assertSee('Akses Dibatasi');
+        $blocked->assertForbidden()->assertSee('Mohon Maaf, Akses Menu Dinonaktifkan');
 
         // Route fitur yang tetap aktif → 200
         $this->actingAs($k)->get(route('karyawan.cuti.dashboard'))->assertOk();
@@ -470,7 +470,7 @@ class SuperAdminAccessManagementTest extends TestCase
 
         $this->actingAs($k)->get(route('karyawan.absensi'))
             ->assertForbidden()
-            ->assertSee('Akses Dibatasi')
+            ->assertSee('Mohon Maaf, Akses Menu Dinonaktifkan')
             ->assertSee('Menu hanya untuk tim lapangan - uji tampilan alasan');
     }
 

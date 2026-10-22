@@ -17,14 +17,18 @@
             <div class="space-y-2">
                 <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold {{ ($restricted ?? false) ? 'bg-rose-100 text-rose-800 border border-rose-200' : 'bg-amber-100 text-amber-800 border border-amber-200' }}">
                     <i class="fa-solid {{ ($restricted ?? false) ? 'fa-user-lock' : 'fa-triangle-exclamation' }}"></i>
-                    {{ ($restricted ?? false) ? 'Akses Dibatasi' : 'Fitur Dinonaktifkan' }}
+                    {{ ($restricted ?? false) ? 'Menu Dinonaktifkan' : 'Fitur Dinonaktifkan' }}
                 </span>
                 <h1 class="text-2xl sm:text-3xl font-extrabold text-[#0F1245] font-['Poppins']">
-                    {{ $meta['name'] ?? 'Fitur Ini Sedang Ditutup' }}
+                    @if($restricted ?? false)
+                        Mohon Maaf, Akses Menu Dinonaktifkan
+                    @else
+                        {{ $meta['name'] ?? 'Fitur Ini Sedang Ditutup' }}
+                    @endif
                 </h1>
                 <p class="text-sm sm:text-base text-gray-600 max-w-lg mx-auto font-light leading-relaxed">
                     @if($restricted ?? false)
-                        Mohon maaf, akses Anda ke menu ini dinonaktifkan oleh Super Administrator. Menu tetap ditampilkan di sidebar dalam keadaan nonaktif — silakan hubungi Superadmin apabila Anda membutuhkan akses kembali.
+                        Akses Anda ke menu ini telah dinonaktifkan sementara oleh sistem karena terdeteksi adanya indikasi pelanggaran terhadap kebijakan sistem. Menu tetap ditampilkan di sidebar dalam keadaan nonaktif. Silakan hubungi tim administrator apabila Anda memerlukan informasi lebih lanjut atau ingin mengajukan peninjauan akses kembali.
                     @else
                         Mohon maaf, fitur ini sedang dinonaktifkan sementara oleh Super Administrator untuk pemeliharaan berkala atau penyesuaian operasional.
                     @endif
@@ -47,6 +51,12 @@
 
             <!-- Feature Info Box -->
             <div class="bg-gray-50 rounded-2xl p-4 sm:p-5 max-w-md mx-auto text-left border border-gray-200/80 space-y-2">
+                @if($restricted ?? false)
+                    <div class="flex items-center justify-between text-xs text-gray-500 font-medium">
+                        <span>Menu:</span>
+                        <span class="font-semibold text-gray-800">{{ $meta['name'] ?? '-' }}</span>
+                    </div>
+                @endif
                 <div class="flex items-center justify-between text-xs text-gray-500 font-medium">
                     <span>Kategori Modul:</span>
                     <span class="font-semibold text-gray-800">{{ $meta['category'] ?? 'Sistem' }}</span>
@@ -55,7 +65,7 @@
                     <span>Status Fitur:</span>
                     <span class="inline-flex items-center gap-1 font-semibold text-rose-600">
                         <span class="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
-                        {{ ($restricted ?? false) ? 'Dibatasi Untuk Akun Anda' : 'Non-Aktif (Maintenance)' }}
+                        {{ ($restricted ?? false) ? 'Dinonaktifkan Untuk Akun Anda' : 'Non-Aktif (Maintenance)' }}
                     </span>
                 </div>
                 <p class="text-xs text-gray-500 pt-2 border-t border-gray-200">
