@@ -43,11 +43,12 @@
 
     {{-- Menu yang dinonaktifkan --}}
     @if(count($disabledKeys) > 0)
+        @php $mInfo = method_exists($k, 'menuRestrictionMeta') ? $k->menuRestrictionMeta() : null; @endphp
         <div class="flex flex-wrap gap-1">
             @foreach(array_slice($disabledKeys, 0, 3) as $key)
                 <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#0F1245]/10 text-[#0F1245] border border-[#0F1245]/15"
                       title="{{ $menuMeta[$key]['name'] ?? $key }} nonaktif">
-                    {{ \Illuminate\Support\Str::of($menuMeta[$key]['name'] ?? $key)->limit(16, '…') }}
+                    <i class="fa-solid fa-lock text-[9px] mr-0.5"></i>{{ \Illuminate\Support\Str::of($menuMeta[$key]['name'] ?? $key)->limit(16, '…') }}
                 </span>
             @endforeach
             @if(count($disabledKeys) > 3)
@@ -56,6 +57,12 @@
                 </span>
             @endif
         </div>
+        @if($mInfo && ($mInfo['start'] || $mInfo['end']))
+            <span class="text-[11px] text-gray-400">
+                Berlaku {{ $mInfo['start'] ? \Carbon\Carbon::parse($mInfo['start'])->isoFormat('D MMM Y') : '...' }} – {{ $mInfo['end'] ? \Carbon\Carbon::parse($mInfo['end'])->isoFormat('D MMM Y') : '...' }}
+                (menu kembali aktif otomatis setelahnya)
+            </span>
+        @endif
     @elseif(!$self)
         <span class="text-[11px] text-gray-400">Semua menu aktif</span>
     @endif

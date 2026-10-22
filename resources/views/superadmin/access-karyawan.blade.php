@@ -162,6 +162,7 @@
                                     && $k->suspend_start->lte(\Carbon\Carbon::today())
                                     && $k->suspend_end->gte(\Carbon\Carbon::today());
                                 $hasAnyRange = (bool) ($k->suspend_start && $k->suspend_end);
+                                $menuInfo = $k->menuRestrictionMeta();
                             @endphp
                             <tr class="hover:bg-blue-50/25 transition-colors align-top">
                                 <td class="px-4 py-3.5">
@@ -229,6 +230,9 @@
                                                     data-name="{{ $k->nama_lengkap }}"
                                                     data-disabled="{{ implode(',', $k->disabledMenuKeys()) }}"
                                                     data-superadmin="{{ $k->posisi === 'superadmin' ? '1' : '0' }}"
+                                                    data-start="{{ $menuInfo['start'] }}"
+                                                    data-end="{{ $menuInfo['end'] }}"
+                                                    data-reason="{{ $menuInfo['reason'] }}"
                                                     class="px-3 py-1.5 rounded-lg bg-[#0F1245] hover:bg-[#161758] text-white text-xs font-semibold shadow-sm transition-all inline-flex items-center gap-1.5">
                                                 <i class="fa-solid fa-toggle-on"></i>
                                                 <span>Hak Akses Menu</span>
@@ -259,6 +263,7 @@
                 @php
                     $isSelf = (int) $k->id === (int) auth()->id();
                     $hasAnyRange = (bool) ($k->suspend_start && $k->suspend_end);
+                    $menuInfo = $k->menuRestrictionMeta();
                 @endphp
                 <div class="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 space-y-3">
                     <div class="flex items-start justify-between gap-3">
@@ -326,6 +331,9 @@
                                     data-name="{{ $k->nama_lengkap }}"
                                     data-disabled="{{ implode(',', $k->disabledMenuKeys()) }}"
                                     data-superadmin="{{ $k->posisi === 'superadmin' ? '1' : '0' }}"
+                                    data-start="{{ $menuInfo['start'] }}"
+                                    data-end="{{ $menuInfo['end'] }}"
+                                    data-reason="{{ $menuInfo['reason'] }}"
                                     class="mt-2 w-full px-3 py-2.5 rounded-xl bg-[#0F1245] hover:bg-[#161758] text-white text-xs font-bold shadow-sm transition-all inline-flex items-center justify-center gap-2">
                                 <i class="fa-solid fa-toggle-on"></i>
                                 <span>Hak Akses Menu</span>
@@ -458,7 +466,7 @@
                     </span>
                     <div class="min-w-0">
                         <h3 id="menuModalTitle" class="text-white font-bold text-sm sm:text-base truncate">Hak Akses Menu</h3>
-                        <p class="text-white/60 text-[11px] truncate">Nonaktifkan menu yang tidak boleh diakses karyawan ini</p>
+                        <p class="text-white/60 text-[11px] truncate">Nonaktifkan menu pada rentang tanggal tertentu — menu tetap tampil namun dinonaktifkan</p>
                     </div>
                 </div>
                 <button type="button" onclick="closeModal('menuModal')" class="shrink-0 text-white/70 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-all" aria-label="Tutup">
@@ -522,6 +530,57 @@
                 <p id="menuCountInfo" class="text-[11px] text-gray-500 bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5">
                     0 dari 8 menu dinonaktifkan.
                 </p>
+
+                <!-- Periode & Alasan Pembatasan (sama seperti form Suspend Akun) -->
+                <div id="menuDurationSection" class="space-y-4 pt-1 border-t border-gray-100">
+                    <!-- Durasi Cepat -->
+                    <div class="pt-4">
+                        <label class="block text-xs font-semibold text-gray-700 mb-2">Durasi Cepat <span class="font-normal text-gray-400">(klik untuk hitung otomatis)</span></label>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button" onclick="applyMenuPreset(7)" class="px-3.5 py-2 rounded-xl border border-gray-200 hover:border-[#00a2e9] hover:bg-[#00a2e9]/5 text-xs font-semibold text-gray-700 transition-all">
+                                <i class="fa-regular fa-calendar mr-1"></i> 1 Minggu
+                            </button>
+                            <button type="button" onclick="applyMenuPreset(14)" class="px-3.5 py-2 rounded-xl border border-gray-200 hover:border-[#00a2e9] hover:bg-[#00a2e9]/5 text-xs font-semibold text-gray-700 transition-all">
+                                <i class="fa-regular fa-calendar mr-1"></i> 2 Minggu
+                            </button>
+                            <button type="button" onclick="applyMenuPreset(30)" class="px-3.5 py-2 rounded-xl border border-gray-200 hover:border-[#00a2e9] hover:bg-[#00a2e9]/5 text-xs font-semibold text-gray-700 transition-all">
+                                <i class="fa-regular fa-calendar mr-1"></i> 1 Bulan
+                            </button>
+                            <button type="button" onclick="applyMenuPreset(90)" class="px-3.5 py-2 rounded-xl border border-gray-200 hover:border-[#00a2e9] hover:bg-[#00a2e9]/5 text-xs font-semibold text-gray-700 transition-all">
+                                <i class="fa-regular fa-calendar mr-1"></i> 3 Bulan
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Rentang Tanggal -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="menu_valid_from" class="block text-xs font-semibold text-gray-700 mb-1.5">Tanggal Mulai <span class="text-rose-500">*</span></label>
+                            <input type="date" id="menu_valid_from" name="valid_from" required
+                                   class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-xs font-medium focus:ring-2 focus:ring-[#00a2e9]/20 focus:border-[#00a2e9]">
+                        </div>
+                        <div>
+                            <label for="menu_valid_until" class="block text-xs font-semibold text-gray-700 mb-1.5">Tanggal Selesai <span class="text-rose-500">*</span></label>
+                            <input type="date" id="menu_valid_until" name="valid_until" required
+                                   class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-xs font-medium focus:ring-2 focus:ring-[#00a2e9]/20 focus:border-[#00a2e9]">
+                        </div>
+                    </div>
+
+                    <!-- Ringkasan Periode -->
+                    <div id="menuRestrictionSummary" class="text-xs text-gray-500 bg-[#00a2e9]/5 border border-[#00a2e9]/15 rounded-xl px-4 py-3 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-info text-[#00a2e9]"></i>
+                        <span>Pilih tanggal mulai &amp; selesai terlebih dahulu.</span>
+                    </div>
+
+                    <!-- Alasan -->
+                    <div>
+                        <label for="menu_reason" class="block text-xs font-semibold text-gray-700 mb-1.5">Alasan Pembatasan <span class="text-rose-500">*</span></label>
+                        <textarea id="menu_reason" name="reason" rows="3" required maxlength="500"
+                                  placeholder="Contoh: Menu hanya untuk tim tertentu — kebijakan divisi"
+                                  class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-xs font-medium focus:ring-2 focus:ring-[#00a2e9]/20 focus:border-[#00a2e9] resize-none"></textarea>
+                        <p class="text-[11px] text-gray-400 mt-1">Alasan ini ditampilkan ke karyawan saat membuka menu yang dimatikan.</p>
+                    </div>
+                </div>
 
                 <!-- Footer -->
                 <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-1">
@@ -663,8 +722,54 @@
             cb.checked = !disabled.includes(cb.value);
         });
 
+        // Prefill periode & alasan dari pembatasan yang sedang berlaku
+        document.getElementById('menu_valid_from').value = btn.dataset.start || todayStr();
+        document.getElementById('menu_valid_until').value = btn.dataset.end || '';
+        document.getElementById('menu_reason').value = btn.dataset.reason || '';
+
         updateMenuCount();
+        updateMenuSummary();
         showModal('menuModal');
+    }
+
+    function applyMenuPreset(days) {
+        const startInput = document.getElementById('menu_valid_from');
+        const endInput = document.getElementById('menu_valid_until');
+
+        if (!startInput.value) {
+            startInput.value = todayStr();
+        }
+
+        const d = new Date(startInput.value + 'T00:00:00');
+        d.setDate(d.getDate() + days);
+        endInput.value = fmtDate(d);
+
+        updateMenuSummary();
+    }
+
+    function updateMenuSummary() {
+        const start = document.getElementById('menu_valid_from').value;
+        const end = document.getElementById('menu_valid_until').value;
+        const box = document.getElementById('menuRestrictionSummary').querySelector('span');
+
+        if (!start || !end) {
+            box.textContent = 'Pilih tanggal mulai & selesai terlebih dahulu.';
+            return;
+        }
+
+        const s = new Date(start + 'T00:00:00');
+        const e = new Date(end + 'T00:00:00');
+
+        if (e < s) {
+            box.textContent = 'Tanggal selesai tidak boleh sebelum tanggal mulai.';
+            return;
+        }
+
+        const days = Math.round((e - s) / 86400000) + 1;
+        const opts = { day: 'numeric', month: 'short', year: 'numeric' };
+        box.textContent = 'Menu nonaktif selama ' + days + ' hari (' +
+            s.toLocaleDateString('id-ID', opts) + ' — ' +
+            e.toLocaleDateString('id-ID', opts) + '). Menu tetap tampil di sidebar dalam keadaan nonaktif dan kembali aktif otomatis setelah tanggal selesai.';
     }
 
     function setAllMenus(enabled) {
@@ -678,9 +783,56 @@
         const all = document.querySelectorAll('#menuForm input[name="menus[]"]');
         const checked = document.querySelectorAll('#menuForm input[name="menus[]"]:checked').length;
         const disabledCount = all.length - checked;
-        document.getElementById('menuCountInfo').textContent =
-            disabledCount + ' dari ' + all.length + ' menu dinonaktifkan untuk karyawan ini.';
+        const allActive = disabledCount === 0;
+
+        document.getElementById('menuCountInfo').textContent = allActive
+            ? 'Semua menu aktif — pembatasan akan dilepas (periode & alasan tidak diperlukan).'
+            : disabledCount + ' dari ' + all.length + ' menu dinonaktifkan untuk karyawan ini.';
+
+        // Periode & alasan hanya wajib bila ada menu yang dimatikan.
+        // Saat semua menu aktif → form "pelepasan pembatasan", field dinonaktifkan.
+        ['menu_valid_from', 'menu_valid_until', 'menu_reason'].forEach(function (elId) {
+            document.getElementById(elId).required = !allActive;
+        });
+
+        const section = document.getElementById('menuDurationSection');
+        section.classList.toggle('opacity-40', allActive);
+        section.classList.toggle('pointer-events-none', allActive);
     }
+
+    document.getElementById('menu_valid_from').addEventListener('change', updateMenuSummary);
+    document.getElementById('menu_valid_until').addEventListener('change', updateMenuSummary);
+
+    document.getElementById('menuForm').addEventListener('submit', function (e) {
+        const all = document.querySelectorAll('#menuForm input[name="menus[]"]');
+        const checked = document.querySelectorAll('#menuForm input[name="menus[]"]:checked').length;
+
+        // Semua menu aktif = murni pelepasan pembatasan → tanpa periode/alasan
+        if (checked === all.length) {
+            return;
+        }
+
+        const start = document.getElementById('menu_valid_from').value;
+        const end = document.getElementById('menu_valid_until').value;
+        const reason = document.getElementById('menu_reason').value.trim();
+
+        if (!start || !end) {
+            e.preventDefault();
+            alert('Tanggal mulai & selesai pembatasan menu wajib diisi.');
+            return;
+        }
+
+        if (new Date(end + 'T00:00:00') < new Date(start + 'T00:00:00')) {
+            e.preventDefault();
+            alert('Tanggal selesai tidak boleh sebelum tanggal mulai.');
+            return;
+        }
+
+        if (!reason) {
+            e.preventDefault();
+            alert('Alasan pembatasan menu wajib diisi.');
+        }
+    });
 
     // Tutup modal dengan tombol ESC
     document.addEventListener('keydown', function (e) {

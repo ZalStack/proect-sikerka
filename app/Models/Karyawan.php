@@ -328,17 +328,92 @@ class Karyawan extends Authenticatable
     }
 
     /**
-     * Daftar menu_key yang dinonaktifkan untuk karyawan ini (di-memo per instance).
+     * Daftar menu_key yang dinonaktifkan untuk karyawan ini saat ini
+     * (hanya pembatasan yang sedang berlaku pada rentang tanggalnya).
+     * Pembatasan yang sudah kedaluwarsa dibersihkan otomatis (auto-expiry),
+     * sehingga menu kembali aktif tanpa perlu aksi Superadmin.
      */
     public function disabledMenuKeys(): array
     {
         if ($this->disabledMenuKeysCache === null) {
-            $this->disabledMenuKeysCache = $this->relationLoaded('menuDisabled')
-                ? $this->menuDisabled->pluck('menu_key')->all()
-                : $this->menuDisabled()->pluck('menu_key')->all();
+            $today = now()->toDateString();
+
+            // Bersihkan pembatasan menu yang sudah kedaluwarsa
+            KaryawanMenuDisabled::where('karyawan_id', $this->id)
+                ->whereNotNull('valid_until')
+                ->whereDate('valid_until', '<', $today)
+                ->delete();
+
+            if ($this->relationLoaded('menuDisabled')) {
+                // Rapikan koleksi ter-load: buang baris kedaluwarsa, saring yang berlaku
+                $this->setRelation(
+                    'menuDisabled',
+                    $this->menuDisabled
+                        ->reject(fn ($row) => $row->valid_until && $row->valid_until->copy()->startOfDay()->lt(\Carbon\Carbon::today()))
+                        ->values()
+                );
+
+                $this->disabledMenuKeysCache = $this->menuDisabled
+                    ->filter(fn ($row) => method_exists($row, 'isActiveNow') ? $row->isActiveNow() : true)
+                    ->pluck('menu_key')
+                    ->all();
+            } else {
+                $this->disabledMenuKeysCache = $this->activeMenuRestrictions()->pluck('menu_key')->all();
+            }
         }
 
         return $this->disabledMenuKeysCache;
+    }
+
+    /**
+     * Koleksi pembatasan menu yang SEDANG berlaku untuk karyawan ini.
+     */
+    public function activeMenuRestrictions()
+    {
+        $today = now()->toDateString();
+
+        return $this->menuDisabled()
+            ->where(function ($q) use ($today) {
+                $q->whereNull('valid_from')->orWhereDate('valid_from', '<=', $today);
+            })
+            ->where(function ($q) use ($today) {
+                $q->whereNull('valid_until')->orWhereDate('valid_until', '>=', $today);
+            })
+            ->get();
+    }
+
+    /**
+     * Info ringkas pembatasan menu aktif (periode & alasan) — dipakai
+     * untuk prefill modal Hak Akses Menu di halaman Superadmin.
+     */
+    public function menuRestrictionMeta(): array
+    {
+        $rows = $this->relationLoaded('menuDisabled')
+            ? $this->menuDisabled->filter(fn ($row) => method_exists($row, 'isActiveNow') ? $row->isActiveNow() : true)->values()
+            : $this->activeMenuRestrictions();
+
+        if ($rows->isEmpty()) {
+            return ['active' => false, 'count' => 0, 'start' => '', 'end' => '', 'reason' => ''];
+        }
+
+        $starts = $rows->pluck('valid_from')->filter();
+        $ends = $rows->pluck('valid_until')->filter();
+
+        return [
+            'active' => true,
+            'count' => $rows->count(),
+            'start' => $starts->min() ? $starts->min()->toDateString() : '',
+            'end' => $ends->max() ? $ends->max()->toDateString() : '',
+            'reason' => (string) ($rows->first()->reason ?? ''),
+        ];
+    }
+
+    /**
+     * Pembatasan menu tertentu yang sedang berlaku (untuk halaman 403).
+     */
+    public function menuRestrictionFor(string $menuKey): ?KaryawanMenuDisabled
+    {
+        return $this->activeMenuRestrictions()->firstWhere('menu_key', $menuKey);
     }
 
     /**

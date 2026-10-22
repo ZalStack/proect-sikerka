@@ -44,8 +44,8 @@
         $todayStr = now()->toDateString();
         $suspendedAccounts = \App\Models\Karyawan::whereNotNull('suspend_start')
             ->whereNotNull('suspend_end')
-            ->where('suspend_start', '<=', $todayStr)
-            ->where('suspend_end', '>=', $todayStr)
+            ->whereDate('suspend_start', '<=', $todayStr)
+            ->whereDate('suspend_end', '>=', $todayStr)
             ->count();
     }
 
@@ -204,53 +204,53 @@
                     </a>
 
                     <!-- Absensi HR -->
-                    @unless(Auth::user()->isMenuDisabled('absensi'))
+                    @php $menuOff = Auth::user()->isMenuDisabled('absensi'); @endphp
                     <a href="{{ route('hr.absensi.index') }}"
-                        class="{{ $menuBase }} {{ $currentRoute === 'hr.absensi.index' || str_starts_with($currentRoute, 'hr.absensi.') ? $menuActive : $menuIdle }}">
+                        class="{{ $menuBase }} {{ $currentRoute === 'hr.absensi.index' || str_starts_with($currentRoute, 'hr.absensi.') ? $menuActive : $menuIdle }} {{ $menuOff ? 'menu-restricted opacity-50 saturate-50 cursor-not-allowed' : '' }}" @if($menuOff) title="Menu dinonaktifkan oleh Super Administrator — silakan hubungi Superadmin" @endif>
                         <span class="{{ $iconChip }} {{ $currentRoute === 'hr.absensi.index' || str_starts_with($currentRoute, 'hr.absensi.') ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
                         </span>
                         <span class="truncate">Presensi Karyawan</span>
+                        @if($menuOff)<i class="fa-solid fa-lock text-[10px] opacity-70 ml-1" aria-hidden="true"></i>@endif
                     </a>
-                    @endunless
 
                     <!-- Pengumuman HR -->
-                    @unless(Auth::user()->isMenuDisabled('pengumuman'))
+                    @php $menuOff = Auth::user()->isMenuDisabled('pengumuman'); @endphp
                     <a href="{{ route('hr.pengumuman.index') }}"
-                        class="{{ $menuBase }} {{ $currentRoute === 'hr.pengumuman.index' || str_starts_with($currentRoute, 'hr.pengumuman.') ? $menuActive : $menuIdle }}">
+                        class="{{ $menuBase }} {{ $currentRoute === 'hr.pengumuman.index' || str_starts_with($currentRoute, 'hr.pengumuman.') ? $menuActive : $menuIdle }} {{ $menuOff ? 'menu-restricted opacity-50 saturate-50 cursor-not-allowed' : '' }}" @if($menuOff) title="Menu dinonaktifkan oleh Super Administrator — silakan hubungi Superadmin" @endif>
                         <span class="{{ $iconChip }} {{ $currentRoute === 'hr.pengumuman.index' || str_starts_with($currentRoute, 'hr.pengumuman.') ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                             </svg>
                         </span>
                         <span class="truncate">Pengumuman</span>
+                        @if($menuOff)<i class="fa-solid fa-lock text-[10px] opacity-70 ml-1" aria-hidden="true"></i>@endif
                     </a>
-                    @endunless
 
                     <!-- CUTI -->
-                    @unless(Auth::user()->isMenuDisabled('cuti'))
+                    @php $menuOff = Auth::user()->isMenuDisabled('cuti'); @endphp
                     <a href="{{ route('hr.cuti.index') }}"
-                        class="{{ $menuBase }} {{ $currentRoute === 'hr.cuti.index' || str_starts_with($currentRoute, 'hr.cuti.') ? $menuActive : $menuIdle }}">
+                        class="{{ $menuBase }} {{ $currentRoute === 'hr.cuti.index' || str_starts_with($currentRoute, 'hr.cuti.') ? $menuActive : $menuIdle }} {{ $menuOff ? 'menu-restricted opacity-50 saturate-50 cursor-not-allowed' : '' }}" @if($menuOff) title="Menu dinonaktifkan oleh Super Administrator — silakan hubungi Superadmin" @endif>
                         <span class="{{ $iconChip }} {{ $currentRoute === 'hr.cuti.index' || str_starts_with($currentRoute, 'hr.cuti.') ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
                         </span>
                         <span class="truncate flex-1">Cuti</span>
+                        @if($menuOff)<i class="fa-solid fa-lock text-[10px] opacity-70 ml-1" aria-hidden="true"></i>@endif
                         @if($pendingCuti > 0)
                             <span class="flex-shrink-0 bg-[#ec1d1d] text-white text-[9px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow-lg animate-pulse">
                                 {{ $pendingCuti > 99 ? '99+' : $pendingCuti }}
                             </span>
                         @endif
                     </a>
-                    @endunless
 
                     <!-- Perjalanan Dinas HR -->
-                    @unless(Auth::user()->isMenuDisabled('perjalanan_dinas'))
+                    @php $menuOff = Auth::user()->isMenuDisabled('perjalanan_dinas'); @endphp
                     <a href="{{ route('hr.perjalanan-dinas.index') }}"
-                        class="{{ $menuBase }} {{ $currentRoute === 'hr.perjalanan-dinas.index' || str_starts_with($currentRoute, 'hr.perjalanan-dinas.') ? $menuActive : $menuIdle }}">
+                        class="{{ $menuBase }} {{ $currentRoute === 'hr.perjalanan-dinas.index' || str_starts_with($currentRoute, 'hr.perjalanan-dinas.') ? $menuActive : $menuIdle }} {{ $menuOff ? 'menu-restricted opacity-50 saturate-50 cursor-not-allowed' : '' }}" @if($menuOff) title="Menu dinonaktifkan oleh Super Administrator — silakan hubungi Superadmin" @endif>
                         <span class="{{ $iconChip }} {{ $currentRoute === 'hr.perjalanan-dinas.index' || str_starts_with($currentRoute, 'hr.perjalanan-dinas.') ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -258,17 +258,17 @@
                             </svg>
                         </span>
                         <span class="truncate flex-1">Perjalanan Dinas</span>
+                        @if($menuOff)<i class="fa-solid fa-lock text-[10px] opacity-70 ml-1" aria-hidden="true"></i>@endif
                         @if($pendingPerjalananDinas > 0)
                             <span class="flex-shrink-0 bg-[#ec1d1d] text-white text-[9px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow-lg animate-pulse">
                                 {{ $pendingPerjalananDinas > 99 ? '99+' : $pendingPerjalananDinas }}
                             </span>
                         @endif
                     </a>
-                    @endunless
 
-                    @unless(Auth::user()->isMenuDisabled('perizinan'))
+                    @php $menuOff = Auth::user()->isMenuDisabled('perizinan'); @endphp
                     <a href="{{ route('hr.perizinan.index') }}"
-                        class="{{ $menuBase }} {{ $currentRoute === 'hr.perizinan.index' || str_starts_with($currentRoute, 'hr.perizinan.') ? $menuActive : $menuIdle }}">
+                        class="{{ $menuBase }} {{ $currentRoute === 'hr.perizinan.index' || str_starts_with($currentRoute, 'hr.perizinan.') ? $menuActive : $menuIdle }} {{ $menuOff ? 'menu-restricted opacity-50 saturate-50 cursor-not-allowed' : '' }}" @if($menuOff) title="Menu dinonaktifkan oleh Super Administrator — silakan hubungi Superadmin" @endif>
                         <span class="{{ $iconChip }} {{ $currentRoute === 'hr.perizinan.index' || str_starts_with($currentRoute, 'hr.perizinan.') ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -276,13 +276,13 @@
                             </svg>
                         </span>
                         <span class="truncate flex-1">Perizinan Karyawan</span>
+                        @if($menuOff)<i class="fa-solid fa-lock text-[10px] opacity-70 ml-1" aria-hidden="true"></i>@endif
                         @if($pendingPerizinan > 0)
                             <span class="flex-shrink-0 bg-[#ec1d1d] text-white text-[9px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow-lg animate-pulse">
                                 {{ $pendingPerizinan > 99 ? '99+' : $pendingPerizinan }}
                             </span>
                         @endif
                     </a>
-                    @endunless
 
                     <!-- Menu Lainnya -->
                     <div class="pt-3 mt-3 border-t border-white/10">
@@ -301,15 +301,15 @@
                     </a>
 
                     <!-- 7SPS -->
-                    @unless(Auth::user()->isMenuDisabled('sunnah'))
+                    @php $menuOff = Auth::user()->isMenuDisabled('sunnah'); @endphp
                     <a href="{{ route('hr.sunnah.index') }}"
-                        class="{{ $menuBase }} {{ $currentRoute === 'hr.sunnah.index' || str_starts_with($currentRoute, 'hr.sunnah.') ? $menuActive : $menuIdle }}">
+                        class="{{ $menuBase }} {{ $currentRoute === 'hr.sunnah.index' || str_starts_with($currentRoute, 'hr.sunnah.') ? $menuActive : $menuIdle }} {{ $menuOff ? 'menu-restricted opacity-50 saturate-50 cursor-not-allowed' : '' }}" @if($menuOff) title="Menu dinonaktifkan oleh Super Administrator — silakan hubungi Superadmin" @endif>
                         <span class="{{ $iconChip }} {{ $currentRoute === 'hr.sunnah.index' || str_starts_with($currentRoute, 'hr.sunnah.') ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
                             <i class="fa-solid fa-kaaba text-sm"></i>
                         </span>
                         <span class="truncate">7SPS</span>
+                        @if($menuOff)<i class="fa-solid fa-lock text-[10px] opacity-70 ml-1" aria-hidden="true"></i>@endif
                     </a>
-                    @endunless
 
                     <!-- English Today -->
                     <a href="https://englishtoday.read1kpmseikhlasnya.com/"
@@ -321,26 +321,26 @@
                     </a>
 
                     <!-- FHL -->
-                    @unless(Auth::user()->isMenuDisabled('fhl'))
+                    @php $menuOff = Auth::user()->isMenuDisabled('fhl'); @endphp
                     <a href="{{ route('hr.fhl.index') }}"
-                        class="{{ $menuBase }} {{ $currentRoute === 'hr.fhl.index' || str_starts_with($currentRoute, 'hr.fhl.') ? $menuActive : $menuIdle }}">
+                        class="{{ $menuBase }} {{ $currentRoute === 'hr.fhl.index' || str_starts_with($currentRoute, 'hr.fhl.') ? $menuActive : $menuIdle }} {{ $menuOff ? 'menu-restricted opacity-50 saturate-50 cursor-not-allowed' : '' }}" @if($menuOff) title="Menu dinonaktifkan oleh Super Administrator — silakan hubungi Superadmin" @endif>
                         <span class="{{ $iconChip }} {{ $currentRoute === 'hr.fhl.index' || str_starts_with($currentRoute, 'hr.fhl.') ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
                             <i class="fa-solid fa-heart text-sm"></i>
                         </span>
                         <span class="truncate">FHL</span>
+                        @if($menuOff)<i class="fa-solid fa-lock text-[10px] opacity-70 ml-1" aria-hidden="true"></i>@endif
                     </a>
-                    @endunless
 
                     <!-- Khataman -->
-                    @unless(Auth::user()->isMenuDisabled('khataman'))
+                    @php $menuOff = Auth::user()->isMenuDisabled('khataman'); @endphp
                     <a href="{{ route('hr.khataman.index') }}"
-                        class="{{ $menuBase }} {{ $currentRoute === 'hr.khataman.index' || str_starts_with($currentRoute, 'hr.khataman.') ? $menuActive : $menuIdle }}">
+                        class="{{ $menuBase }} {{ $currentRoute === 'hr.khataman.index' || str_starts_with($currentRoute, 'hr.khataman.') ? $menuActive : $menuIdle }} {{ $menuOff ? 'menu-restricted opacity-50 saturate-50 cursor-not-allowed' : '' }}" @if($menuOff) title="Menu dinonaktifkan oleh Super Administrator — silakan hubungi Superadmin" @endif>
                         <span class="{{ $iconChip }} {{ $currentRoute === 'hr.khataman.index' || str_starts_with($currentRoute, 'hr.khataman.') ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
                             <i class="fa-solid fa-book-quran text-sm"></i>
                         </span>
                         <span class="truncate">Khataman</span>
+                        @if($menuOff)<i class="fa-solid fa-lock text-[10px] opacity-70 ml-1" aria-hidden="true"></i>@endif
                     </a>
-                    @endunless
                 </nav>
             @else
                 <!-- ============================================== -->
@@ -363,35 +363,35 @@
                     </a>
 
                     <!-- Absensi Karyawan -->
-                    @unless(Auth::user()->isMenuDisabled('absensi'))
+                    @php $menuOff = Auth::user()->isMenuDisabled('absensi'); @endphp
                     <a href="{{ route('karyawan.absensi') }}"
-                        class="{{ $menuBase }} {{ $currentRoute === 'karyawan.absensi' ? $menuActive : $menuIdle }}">
+                        class="{{ $menuBase }} {{ $currentRoute === 'karyawan.absensi' ? $menuActive : $menuIdle }} {{ $menuOff ? 'menu-restricted opacity-50 saturate-50 cursor-not-allowed' : '' }}" @if($menuOff) title="Menu dinonaktifkan oleh Super Administrator — silakan hubungi Superadmin" @endif>
                         <span class="{{ $iconChip }} {{ $currentRoute === 'karyawan.absensi' ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
                         </span>
                         <span class="truncate">Presensi Kehadiran</span>
+                        @if($menuOff)<i class="fa-solid fa-lock text-[10px] opacity-70 ml-1" aria-hidden="true"></i>@endif
                     </a>
-                    @endunless
 
                     <!-- CUTI -->
-                    @unless(Auth::user()->isMenuDisabled('cuti'))
+                    @php $menuOff = Auth::user()->isMenuDisabled('cuti'); @endphp
                     <a href="{{ route('karyawan.cuti.dashboard') }}"
-                        class="{{ $menuBase }} {{ $currentRoute === 'karyawan.cuti.dashboard' || $currentRoute === 'karyawan.cuti.create' ? $menuActive : $menuIdle }}">
+                        class="{{ $menuBase }} {{ $currentRoute === 'karyawan.cuti.dashboard' || $currentRoute === 'karyawan.cuti.create' ? $menuActive : $menuIdle }} {{ $menuOff ? 'menu-restricted opacity-50 saturate-50 cursor-not-allowed' : '' }}" @if($menuOff) title="Menu dinonaktifkan oleh Super Administrator — silakan hubungi Superadmin" @endif>
                         <span class="{{ $iconChip }} {{ $currentRoute === 'karyawan.cuti.dashboard' || $currentRoute === 'karyawan.cuti.create' ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
                         </span>
                         <span class="truncate">Cuti</span>
+                        @if($menuOff)<i class="fa-solid fa-lock text-[10px] opacity-70 ml-1" aria-hidden="true"></i>@endif
                     </a>
-                    @endunless
 
                     <!-- Perjalanan Dinas -->
-                    @unless(Auth::user()->isMenuDisabled('perjalanan_dinas'))
+                    @php $menuOff = Auth::user()->isMenuDisabled('perjalanan_dinas'); @endphp
                     <a href="{{ route('karyawan.perjalanan-dinas.index') }}"
-                        class="{{ $menuBase }} {{ $currentRoute === 'karyawan.perjalanan-dinas.index' || str_starts_with($currentRoute, 'karyawan.perjalanan-dinas.') ? $menuActive : $menuIdle }}">
+                        class="{{ $menuBase }} {{ $currentRoute === 'karyawan.perjalanan-dinas.index' || str_starts_with($currentRoute, 'karyawan.perjalanan-dinas.') ? $menuActive : $menuIdle }} {{ $menuOff ? 'menu-restricted opacity-50 saturate-50 cursor-not-allowed' : '' }}" @if($menuOff) title="Menu dinonaktifkan oleh Super Administrator — silakan hubungi Superadmin" @endif>
                         <span class="{{ $iconChip }} {{ $currentRoute === 'karyawan.perjalanan-dinas.index' || str_starts_with($currentRoute, 'karyawan.perjalanan-dinas.') ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -399,8 +399,8 @@
                             </svg>
                         </span>
                         <span class="truncate">Perjalanan Dinas</span>
+                        @if($menuOff)<i class="fa-solid fa-lock text-[10px] opacity-70 ml-1" aria-hidden="true"></i>@endif
                     </a>
-                    @endunless
 
                     <!-- Menu Lainnya -->
                     <div class="pt-3 mt-3 border-t border-white/10">
@@ -419,15 +419,15 @@
                     </a>
 
                     <!-- 7SPS -->
-                    @unless(Auth::user()->isMenuDisabled('sunnah'))
+                    @php $menuOff = Auth::user()->isMenuDisabled('sunnah'); @endphp
                     <a href="{{ route('karyawan.sunnah.dashboard') }}"
-                        class="{{ $menuBase }} {{ $currentRoute === 'karyawan.sunnah.dashboard' ? $menuActive : $menuIdle }}">
+                        class="{{ $menuBase }} {{ $currentRoute === 'karyawan.sunnah.dashboard' ? $menuActive : $menuIdle }} {{ $menuOff ? 'menu-restricted opacity-50 saturate-50 cursor-not-allowed' : '' }}" @if($menuOff) title="Menu dinonaktifkan oleh Super Administrator — silakan hubungi Superadmin" @endif>
                         <span class="{{ $iconChip }} {{ $currentRoute === 'karyawan.sunnah.dashboard' ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
                             <i class="fa-solid fa-kaaba text-sm"></i>
                         </span>
                         <span class="truncate">7SPS</span>
+                        @if($menuOff)<i class="fa-solid fa-lock text-[10px] opacity-70 ml-1" aria-hidden="true"></i>@endif
                     </a>
-                    @endunless
 
                     <!-- English Today -->
                     <a href="https://englishtoday.read1kpmseikhlasnya.com/"
@@ -439,26 +439,26 @@
                     </a>
 
                     <!-- FHL -->
-                    @unless(Auth::user()->isMenuDisabled('fhl'))
+                    @php $menuOff = Auth::user()->isMenuDisabled('fhl'); @endphp
                     <a href="{{ route('karyawan.fhl.dashboard') }}"
-                        class="{{ $menuBase }} {{ $currentRoute === 'karyawan.fhl.dashboard' ? $menuActive : $menuIdle }}">
+                        class="{{ $menuBase }} {{ $currentRoute === 'karyawan.fhl.dashboard' ? $menuActive : $menuIdle }} {{ $menuOff ? 'menu-restricted opacity-50 saturate-50 cursor-not-allowed' : '' }}" @if($menuOff) title="Menu dinonaktifkan oleh Super Administrator — silakan hubungi Superadmin" @endif>
                         <span class="{{ $iconChip }} {{ $currentRoute === 'karyawan.fhl.dashboard' ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
                             <i class="fa-solid fa-heart text-sm"></i>
                         </span>
                         <span class="truncate">FHL</span>
+                        @if($menuOff)<i class="fa-solid fa-lock text-[10px] opacity-70 ml-1" aria-hidden="true"></i>@endif
                     </a>
-                    @endunless
 
                     <!-- Khataman -->
-                    @unless(Auth::user()->isMenuDisabled('khataman'))
+                    @php $menuOff = Auth::user()->isMenuDisabled('khataman'); @endphp
                     <a href="{{ route('karyawan.khataman.dashboard') }}"
-                        class="{{ $menuBase }} {{ $currentRoute === 'karyawan.khataman.dashboard' ? $menuActive : $menuIdle }}">
+                        class="{{ $menuBase }} {{ $currentRoute === 'karyawan.khataman.dashboard' ? $menuActive : $menuIdle }} {{ $menuOff ? 'menu-restricted opacity-50 saturate-50 cursor-not-allowed' : '' }}" @if($menuOff) title="Menu dinonaktifkan oleh Super Administrator — silakan hubungi Superadmin" @endif>
                         <span class="{{ $iconChip }} {{ $currentRoute === 'karyawan.khataman.dashboard' ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
                             <i class="fa-solid fa-book-quran text-sm"></i>
                         </span>
                         <span class="truncate">Khataman</span>
+                        @if($menuOff)<i class="fa-solid fa-lock text-[10px] opacity-70 ml-1" aria-hidden="true"></i>@endif
                     </a>
-                    @endunless
                 </nav>
             @endif
 

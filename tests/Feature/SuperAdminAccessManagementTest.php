@@ -59,6 +59,23 @@ class SuperAdminAccessManagementTest extends TestCase
         );
     }
 
+    /**
+     * Terapkan pembatasan menu (checkbox = menu AKTIF) lengkap dengan
+     * periode & alasan — sama seperti form suspend.
+     */
+    private function restrictMenusAsSuperadmin(Karyawan $superadmin, Karyawan $target, array $menus, array $overrides = [])
+    {
+        return $this->actingAs($superadmin)->post(
+            route('superadmin.access.menus', $target->id),
+            array_merge([
+                'menus' => $menus,
+                'valid_from' => now()->toDateString(),
+                'valid_until' => now()->addDays(7)->toDateString(),
+                'reason' => 'Pembatasan menu divisi - uji coba fitur hak akses',
+            ], $overrides)
+        );
+    }
+
     // ==========================================================
     // HALAMAN BARU
     // ==========================================================
@@ -288,13 +305,18 @@ class SuperAdminAccessManagementTest extends TestCase
         $sa = $this->makeSuperadmin();
         $k = $this->makeKaryawan();
 
-        // Hanya Cuti yang aktif, 7 menu lain dimatikan
-        $this->actingAs($sa)
-            ->post(route('superadmin.access.menus', $k->id), ['menus' => ['cuti']])
+        // Hanya Cuti yang aktif, 7 menu lain dimatikan (berlaku 7 hari)
+        $this->restrictMenusAsSuperadmin($sa, $k, ['cuti'])
             ->assertSessionHasNoErrors();
 
         $this->assertSame(7, KaryawanMenuDisabled::where('karyawan_id', $k->id)->count());
         $this->assertTrue($k->fresh()->isMenuDisabled('absensi'));
+
+        // Periode & alasan tersimpan pada tiap baris pembatasan
+        $row = KaryawanMenuDisabled::where('karyawan_id', $k->id)->where('menu_key', 'absensi')->first();
+        $this->assertNotNull($row->valid_from);
+        $this->assertNotNull($row->valid_until);
+        $this->assertNotNull($row->reason);
 
         // Route fitur yang dimatikan → 403 dengan halaman "Akses Dibatasi"
         $blocked = $this->actingAs($k)->get(route('karyawan.absensi'));
@@ -306,19 +328,20 @@ class SuperAdminAccessManagementTest extends TestCase
         // middleware role (bukan middleware fitur) yang membatasi lintas role.
     }
 
-    public function test_disabled_menu_disappears_from_karyawan_sidebar(): void
+    public function test_disabled_menu_stays_visible_but_marked_disabled_in_sidebar(): void
     {
         $sa = $this->makeSuperadmin();
         $k = $this->makeKaryawan();
 
-        $this->actingAs($sa)
-            ->post(route('superadmin.access.menus', $k->id), ['menus' => ['cuti']]);
+        $this->restrictMenusAsSuperadmin($sa, $k, ['cuti']);
 
         $response = $this->actingAs($k)->get(route('karyawan.dashboard'));
 
         $response->assertOk();
-        $response->assertDontSee('Presensi Kehadiran');   // menu absensi hilang
-        $response->assertSee('Cuti');                     // menu cuti tetap ada
+        $response->assertSee('Presensi Kehadiran');       // menu TETAP ADA di sidebar
+        $response->assertSee('menu-restricted', false);   // ...namun ditandai nonaktif
+        $response->assertSee('fa-lock', false);           // ...dengan ikon gembok
+        $response->assertSee('Cuti');                     // menu aktif tampil normal
     }
 
     public function test_re_enabling_all_menus_removes_all_restrictions(): void
@@ -326,10 +349,10 @@ class SuperAdminAccessManagementTest extends TestCase
         $sa = $this->makeSuperadmin();
         $k = $this->makeKaryawan();
 
-        $this->actingAs($sa)->post(route('superadmin.access.menus', $k->id), ['menus' => ['cuti']]);
+        $this->restrictMenusAsSuperadmin($sa, $k, ['cuti']);
         $this->assertSame(7, KaryawanMenuDisabled::where('karyawan_id', $k->id)->count());
 
-        // Semua menu dikirim aktif (checkbox dicentang semua)
+        // Semua menu dikirim aktif (checkbox dicentang semua) → tanpa periode/alasan pun boleh
         $this->actingAs($sa)
             ->post(route('superadmin.access.menus', $k->id), [
                 'menus' => array_keys(\App\Models\SystemSetting::AVAILABLE_FEATURES),
@@ -349,8 +372,7 @@ class SuperAdminAccessManagementTest extends TestCase
         $hr = $this->makeKaryawan(['posisi' => 'hr', 'divisi' => 'HRD']);
 
         // Hanya Cuti yang aktif → absensi & menu lain nonaktif untuk HR ini
-        $this->actingAs($sa)
-            ->post(route('superadmin.access.menus', $hr->id), ['menus' => ['cuti']]);
+        $this->restrictMenusAsSuperadmin($sa, $hr, ['cuti']);
 
         // HR: presensi dimatikan → 403, menu lain tetap jalan
         $this->actingAs($hr)->get(route('hr.absensi.index'))->assertForbidden();
@@ -381,6 +403,95 @@ class SuperAdminAccessManagementTest extends TestCase
         $this->assertSame(0, KaryawanMenuDisabled::count());
     }
 
+    public function test_disabling_menus_requires_period_and_reason_like_suspend_form(): void
+    {
+        $sa = $this->makeSuperadmin();
+        $k = $this->makeKaryawan();
+
+        // Tanpa periode & alasan (seperti form suspend yang mewajibkannya) → ditolak
+        $this->actingAs($sa)
+            ->post(route('superadmin.access.menus', $k->id), ['menus' => ['cuti']])
+            ->assertSessionHasErrors(['valid_from', 'valid_until', 'reason']);
+
+        $this->assertSame(0, KaryawanMenuDisabled::count());
+
+        // Tanggal selesai sebelum mulai → ditolak
+        $this->restrictMenusAsSuperadmin($sa, $k, ['cuti'], [
+            'valid_from' => now()->addDays(5)->toDateString(),
+            'valid_until' => now()->toDateString(),
+        ])->assertSessionHasErrors('valid_until');
+
+        $this->assertSame(0, KaryawanMenuDisabled::count());
+    }
+
+    public function test_menu_restriction_expires_automatically_after_end_date(): void
+    {
+        $k = $this->makeKaryawan();
+
+        KaryawanMenuDisabled::create([
+            'karyawan_id' => $k->id,
+            'menu_key' => 'absensi',
+            'valid_from' => now()->subDays(10)->toDateString(),
+            'valid_until' => now()->subDays(2)->toDateString(),
+            'reason' => 'Masa pembatasan sudah berakhir',
+        ]);
+
+        // Menu kembali aktif otomatis & baris kedaluwarsa dibersihkan
+        $this->assertFalse($k->fresh()->isMenuDisabled('absensi'));
+        $this->actingAs($k)->get(route('karyawan.absensi'))->assertOk();
+        $this->assertSame(0, KaryawanMenuDisabled::count());
+    }
+
+    public function test_menu_restriction_not_yet_active_before_start_date(): void
+    {
+        $k = $this->makeKaryawan();
+
+        KaryawanMenuDisabled::create([
+            'karyawan_id' => $k->id,
+            'menu_key' => 'absensi',
+            'valid_from' => now()->addDay()->toDateString(),
+            'valid_until' => now()->addDays(10)->toDateString(),
+            'reason' => 'Pembatasan terjadwal',
+        ]);
+
+        // Rentang belum dimulai → menu masih aktif
+        $this->assertFalse($k->fresh()->isMenuDisabled('absensi'));
+        $this->actingAs($k)->get(route('karyawan.absensi'))->assertOk();
+    }
+
+    public function test_restricted_menu_403_page_shows_reason_and_period(): void
+    {
+        $sa = $this->makeSuperadmin();
+        $k = $this->makeKaryawan();
+
+        $this->restrictMenusAsSuperadmin($sa, $k, ['cuti'], [
+            'reason' => 'Menu hanya untuk tim lapangan - uji tampilan alasan',
+        ]);
+
+        $this->actingAs($k)->get(route('karyawan.absensi'))
+            ->assertForbidden()
+            ->assertSee('Akses Dibatasi')
+            ->assertSee('Menu hanya untuk tim lapangan - uji tampilan alasan');
+    }
+
+    public function test_access_page_renders_menu_modal_period_fields(): void
+    {
+        $sa = $this->makeSuperadmin();
+        $k = $this->makeKaryawan();
+
+        $this->restrictMenusAsSuperadmin($sa, $k, ['cuti']);
+
+        // Halaman admin memuat field periode & alasan pada modal Hak Akses Menu
+        $this->actingAs($sa)
+            ->get(route('superadmin.access.index'))
+            ->assertOk()
+            ->assertSee('name="valid_from"', false)
+            ->assertSee('name="valid_until"', false)
+            ->assertSee('name="reason"', false)
+            ->assertSee('Durasi Cepat')
+            ->assertSee(now()->addDays(7)->isoFormat('D MMM Y')); // periode berlaku tampil di badge
+    }
+
     // ==========================================================
     // FILTER HALAMAN
     // ==========================================================
@@ -393,16 +504,19 @@ class SuperAdminAccessManagementTest extends TestCase
 
         $this->suspendAsSuperadmin($sa, $suspended);
 
-        $response = $this->actingAs($sa)
+        // Baris tabel dikenali lewat NIP + badge status (bukan flash pesan sukses,
+        // yang juga memuat nama karyawan)
+        $this->actingAs($sa)
             ->get(route('superadmin.access.index', ['status' => 'suspended']))
             ->assertOk()
-            ->assertSee($suspended->nama_lengkap)
-            ->assertDontSee($active->nama_lengkap);
+            ->assertSee('NIP: ' . $suspended->kode_pegawai)
+            ->assertSee('DISUSPEND')
+            ->assertDontSee('NIP: ' . $active->kode_pegawai);
 
         $this->actingAs($sa)
             ->get(route('superadmin.access.index', ['status' => 'active']))
             ->assertOk()
-            ->assertSee($active->nama_lengkap)
-            ->assertDontSee($suspended->nama_lengkap);
+            ->assertSee('NIP: ' . $active->kode_pegawai)
+            ->assertDontSee('NIP: ' . $suspended->kode_pegawai);
     }
 }

@@ -24,11 +24,25 @@
                 </h1>
                 <p class="text-sm sm:text-base text-gray-600 max-w-lg mx-auto font-light leading-relaxed">
                     @if($restricted ?? false)
-                        Mohon maaf, akses Anda ke menu ini dinonaktifkan oleh Super Administrator. Silakan hubungi Superadmin apabila Anda membutuhkan akses kembali.
+                        Mohon maaf, akses Anda ke menu ini dinonaktifkan oleh Super Administrator. Menu tetap ditampilkan di sidebar dalam keadaan nonaktif — silakan hubungi Superadmin apabila Anda membutuhkan akses kembali.
                     @else
                         Mohon maaf, fitur ini sedang dinonaktifkan sementara oleh Super Administrator untuk pemeliharaan berkala atau penyesuaian operasional.
                     @endif
                 </p>
+
+                @if(($restricted ?? false) && !empty($restriction_reason))
+                    <div class="inline-flex flex-col items-start gap-1 text-left bg-rose-50 border border-rose-200 rounded-2xl px-4 py-3 max-w-lg mx-auto">
+                        <span class="text-[11px] font-bold text-rose-700 uppercase tracking-wide">
+                            <i class="fa-solid fa-comment-dots mr-1"></i>Alasan Pembatasan
+                        </span>
+                        <span class="text-xs text-rose-800 font-medium leading-relaxed">{{ $restriction_reason }}</span>
+                        @if(!empty($restriction_period))
+                            <span class="text-[11px] text-rose-600">
+                                <i class="fa-regular fa-calendar mr-1"></i>Berlaku: {{ $restriction_period }}
+                            </span>
+                        @endif
+                    </div>
+                @endif
             </div>
 
             <!-- Feature Info Box -->

@@ -759,11 +759,11 @@ class SuperAdminController extends Controller
         if ($status === 'suspended') {
             $query->whereNotNull('suspend_start')
                 ->whereNotNull('suspend_end')
-                ->where('suspend_start', '<=', $today)
-                ->where('suspend_end', '>=', $today);
+                ->whereDate('suspend_start', '<=', $today)
+                ->whereDate('suspend_end', '>=', $today);
         } elseif ($status === 'active') {
             $query->where(function ($q) use ($today) {
-                $q->whereNull('suspend_end')->orWhere('suspend_end', '<', $today);
+                $q->whereNull('suspend_end')->orWhereDate('suspend_end', '<', $today);
             });
         }
 
@@ -771,8 +771,8 @@ class SuperAdminController extends Controller
 
         $suspendedCount = Karyawan::whereNotNull('suspend_start')
             ->whereNotNull('suspend_end')
-            ->where('suspend_start', '<=', $today)
-            ->where('suspend_end', '>=', $today)
+            ->whereDate('suspend_start', '<=', $today)
+            ->whereDate('suspend_end', '>=', $today)
             ->count();
 
         $totalCount = Karyawan::count();
@@ -780,7 +780,14 @@ class SuperAdminController extends Controller
         $stats = [
             'total' => $totalCount,
             'suspended' => $suspendedCount,
-            'menu_limited' => KaryawanMenuDisabled::distinct()->count('karyawan_id'),
+            'menu_limited' => KaryawanMenuDisabled::where(function ($q) use ($today) {
+                    $q->whereNull('valid_from')->orWhereDate('valid_from', '<=', $today);
+                })
+                ->where(function ($q) use ($today) {
+                    $q->whereNull('valid_until')->orWhereDate('valid_until', '>=', $today);
+                })
+                ->distinct()
+                ->count('karyawan_id'),
             'aktif' => $totalCount - $suspendedCount,
         ];
 
@@ -829,7 +836,7 @@ class SuperAdminController extends Controller
             $activeSuperadmins = Karyawan::where('posisi', 'superadmin')
                 ->where('is_resigned', false)
                 ->where(function ($q) use ($today) {
-                    $q->whereNull('suspend_end')->orWhere('suspend_end', '<', $today);
+                    $q->whereNull('suspend_end')->orWhereDate('suspend_end', '<', $today);
                 })
                 ->count();
 
@@ -883,7 +890,9 @@ class SuperAdminController extends Controller
 
     /**
      * Simpan hak akses menu untuk satu karyawan.
-     * Checkbox yang dicentang = menu AKTIF; yang tidak = dinonaktifkan.
+     * Checkbox yang dicentang = menu AKTIF; yang tidak = dinonaktifkan
+     * pada rentang tanggal tertentu (sama seperti form suspend) beserta alasan.
+     * Jika semua menu dicentang → pembatasan dilepas (tanpa periode/alasan).
      */
     public function accessUpdateMenus(Request $request, $id)
     {
@@ -907,13 +916,35 @@ class SuperAdminController extends Controller
         $aktif = array_values(array_intersect($menuKeys, (array) $request->input('menus', [])));
         $nonaktif = array_values(array_diff($menuKeys, $aktif));
 
-        DB::transaction(function () use ($karyawan, $nonaktif) {
+        // Periode & alasan wajib hanya bila ada menu yang dinonaktifkan.
+        // (Jika semua dicentang → murni pelepasan pembatasan.)
+        if (count($nonaktif) > 0) {
+            $request->validate([
+                'valid_from' => 'required|date',
+                'valid_until' => 'required|date|after_or_equal:valid_from',
+                'reason' => 'required|string|max:500',
+            ], [
+                'valid_from.required' => 'Tanggal mulai pembatasan menu wajib diisi.',
+                'valid_from.date' => 'Tanggal mulai pembatasan menu tidak valid.',
+                'valid_until.required' => 'Tanggal selesai pembatasan menu wajib diisi.',
+                'valid_until.date' => 'Tanggal selesai pembatasan menu tidak valid.',
+                'valid_until.after_or_equal' => 'Tanggal selesai tidak boleh sebelum tanggal mulai.',
+                'reason.required' => 'Alasan pembatasan menu wajib diisi.',
+                'reason.max' => 'Alasan pembatasan menu maksimal 500 karakter.',
+            ]);
+        }
+
+        DB::transaction(function () use ($karyawan, $nonaktif, $request) {
             KaryawanMenuDisabled::where('karyawan_id', $karyawan->id)->delete();
 
             foreach ($nonaktif as $menuKey) {
                 KaryawanMenuDisabled::create([
                     'karyawan_id' => $karyawan->id,
                     'menu_key' => $menuKey,
+                    'valid_from' => $request->input('valid_from'),
+                    'valid_until' => $request->input('valid_until'),
+                    'reason' => trim((string) $request->input('reason')),
+                    'created_by' => Auth::id(),
                 ]);
             }
         });
@@ -921,9 +952,14 @@ class SuperAdminController extends Controller
         $karyawan->flushMenuAccessCache();
 
         $jumlah = count($nonaktif);
-        $pesan = $jumlah === 0
-            ? "Semua menu diaktifkan kembali untuk {$karyawan->nama_lengkap}."
-            : "{$jumlah} menu dinonaktifkan untuk {$karyawan->nama_lengkap}.";
+
+        if ($jumlah === 0) {
+            $pesan = "Semua menu diaktifkan kembali untuk {$karyawan->nama_lengkap} — pembatasan dilepas.";
+        } else {
+            $mulai = Carbon::parse($request->input('valid_from'))->isoFormat('D MMM Y');
+            $sampai = Carbon::parse($request->input('valid_until'))->isoFormat('D MMM Y');
+            $pesan = "{$jumlah} menu dinonaktifkan untuk {$karyawan->nama_lengkap} pada {$mulai} – {$sampai}. Menu tetap tampil di sidebar dalam keadaan nonaktif dan kembali aktif otomatis setelah tanggal selesai.";
+        }
 
         return redirect()->back()->with('success', $pesan);
     }

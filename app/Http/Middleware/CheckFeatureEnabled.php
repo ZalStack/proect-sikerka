@@ -41,7 +41,7 @@ class CheckFeatureEnabled
             ], 403);
         }
 
-        // Cek hak akses menu per karyawan (ditetapkan Superadmin)
+        // Cek hak akses menu per karyawan (ditetapkan Superadmin, berlaku pada rentang tanggal)
         if (Auth::check() && method_exists(Auth::user(), 'isMenuDisabled') && Auth::user()->isMenuDisabled($feature)) {
             $featureMeta = SystemSetting::AVAILABLE_FEATURES[$feature] ?? [
                 'name' => ucfirst($feature),
@@ -50,12 +50,19 @@ class CheckFeatureEnabled
                 'color' => '#ec1d1d',
             ];
 
+            $restriction = method_exists(Auth::user(), 'menuRestrictionFor')
+                ? Auth::user()->menuRestrictionFor($feature)
+                : null;
+            $reason = $restriction && $restriction->reason ? $restriction->reason : null;
+            $period = $restriction && method_exists($restriction, 'periodLabel') ? $restriction->periodLabel() : null;
+
             if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json([
                     'success' => false,
                     'feature_disabled' => true,
                     'restricted' => true,
-                    'message' => 'Akses Anda ke fitur ' . $featureMeta['name'] . ' dinonaktifkan oleh Super Administrator.',
+                    'message' => 'Akses Anda ke fitur ' . $featureMeta['name'] . ' dinonaktifkan oleh Super Administrator.'
+                        . ($reason ? ' Alasan: ' . $reason : ''),
                 ], 403);
             }
 
@@ -63,6 +70,8 @@ class CheckFeatureEnabled
                 'feature' => $feature,
                 'meta' => $featureMeta,
                 'restricted' => true,
+                'restriction_reason' => $reason,
+                'restriction_period' => $period,
             ], 403);
         }
 
