@@ -5,6 +5,8 @@ use App\Http\Middleware\KaryawanMiddleware;
 use App\Http\Middleware\SuperAdminMiddleware;
 use App\Http\Middleware\CheckMaintenanceMode;
 use App\Http\Middleware\CheckFeatureEnabled;
+use App\Http\Middleware\CheckAttendanceBan;
+use App\Http\Middleware\CheckAccountSuspension;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -19,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->web(append: [
             CheckMaintenanceMode::class,
+            CheckAccountSuspension::class,
         ]);
 
         $middleware->alias([
@@ -27,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'karyawan' => KaryawanMiddleware::class,
             'maintenance' => CheckMaintenanceMode::class,
             'feature' => CheckFeatureEnabled::class,
+            'presensi.banned' => CheckAttendanceBan::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

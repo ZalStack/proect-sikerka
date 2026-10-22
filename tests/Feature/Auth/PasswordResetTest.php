@@ -2,72 +2,121 @@
 
 namespace Tests\Feature\Auth;
 
-use App\Models\User;
-use Illuminate\Auth\Notifications\ResetPassword;
+use App\Models\Karyawan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
+/**
+ * Lupa password memakai alur khusus aplikasi ini (tanpa email):
+ * GET /forgot-password -> verifikasi email + CAPTCHA -> form reset -> simpan password baru.
+ */
 class PasswordResetTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_reset_password_link_screen_can_be_rendered(): void
+    private function makeKaryawan(array $overrides = []): Karyawan
     {
-        $response = $this->get('/forgot-password');
+        static $counter = 0;
+        $counter++;
 
-        $response->assertStatus(200);
+        return Karyawan::create(array_merge([
+            'kode_pegawai' => 'NIP-RST-' . $counter . '-' . uniqid(),
+            'email' => 'reset' . $counter . '.' . uniqid() . '@test.local',
+            'kata_sandi' => Hash::make('password'),
+            'nama_lengkap' => 'Karyawan Reset ' . $counter,
+            'jabatan' => 'Staff',
+            'divisi' => 'Operasional',
+            'posisi' => 'karyawan',
+            'tanggal_bergabung' => now()->toDateString(),
+            'is_resigned' => false,
+        ], $overrides));
     }
 
-    public function test_reset_password_link_can_be_requested(): void
+    public function test_forgot_password_screen_can_be_rendered(): void
     {
-        Notification::fake();
-
-        $user = User::factory()->create();
-
-        $this->post('/forgot-password', ['email' => $user->email]);
-
-        Notification::assertSentTo($user, ResetPassword::class);
+        $this->get('/forgot-password')->assertOk();
     }
 
-    public function test_reset_password_screen_can_be_rendered(): void
+    public function test_reset_password_screen_requires_prior_email_verification(): void
     {
-        Notification::fake();
-
-        $user = User::factory()->create();
-
-        $this->post('/forgot-password', ['email' => $user->email]);
-
-        Notification::assertSentTo($user, ResetPassword::class, function ($notification) {
-            $response = $this->get('/reset-password/'.$notification->token);
-
-            $response->assertStatus(200);
-
-            return true;
-        });
+        $this->get('/reset-password')->assertRedirect(route('password.request', absolute: false));
     }
 
-    public function test_password_can_be_reset_with_valid_token(): void
+    public function test_unknown_email_is_rejected(): void
     {
-        Notification::fake();
+        $this->post('/forgot-password/verify', [
+            'email' => 'tidak-terdaftar@test.local',
+            'captcha_input' => '5',
+        ])->assertSessionHasErrors('email');
+    }
 
-        $user = User::factory()->create();
+    public function test_wrong_captcha_is_rejected(): void
+    {
+        $karyawan = $this->makeKaryawan();
 
-        $this->post('/forgot-password', ['email' => $user->email]);
+        $this->withSession(['captcha_result' => 5])
+            ->post('/forgot-password/verify', [
+                'email' => $karyawan->email,
+                'captcha_input' => '99',
+            ])
+            ->assertSessionHasErrors('captcha_input');
+    }
 
-        Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
-            $response = $this->post('/reset-password', [
-                'token' => $notification->token,
-                'email' => $user->email,
-                'password' => 'password',
-                'password_confirmation' => 'password',
-            ]);
+    public function test_valid_email_and_captcha_unlock_the_reset_form(): void
+    {
+        $karyawan = $this->makeKaryawan();
 
-            $response
-                ->assertSessionHasNoErrors()
-                ->assertRedirect(route('login'));
+        $this->withSession(['captcha_result' => 5])
+            ->post('/forgot-password/verify', [
+                'email' => $karyawan->email,
+                'captcha_input' => '5',
+            ])
+            ->assertRedirect(route('password.reset.form'));
 
-            return true;
-        });
+        $this->assertTrue((bool) session('reset_verified'));
+        $this->assertSame($karyawan->email, session('reset_email'));
+    }
+
+    public function test_password_can_be_reset_after_verification(): void
+    {
+        $karyawan = $this->makeKaryawan();
+
+        $this->withSession(['reset_verified' => true, 'reset_email' => $karyawan->email])
+            ->post('/reset-password', [
+                'email' => $karyawan->email,
+                'password' => 'password-baru-123',
+                'password_confirmation' => 'password-baru-123',
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('login'));
+
+        $this->assertTrue(Hash::check('password-baru-123', $karyawan->fresh()->kata_sandi));
+
+        // Session reset sudah dipakai habis
+        $this->assertNull(session('reset_email'));
+
+        // Login dengan password baru berhasil
+        $this->post('/login', [
+            'email' => $karyawan->email,
+            'password' => 'password-baru-123',
+        ]);
+        $this->assertAuthenticated();
+    }
+
+    public function test_reset_rejects_email_that_does_not_match_the_verified_session(): void
+    {
+        $karyawan = $this->makeKaryawan();
+        $other = $this->makeKaryawan();
+
+        $this->withSession(['reset_verified' => true, 'reset_email' => $karyawan->email])
+            ->post('/reset-password', [
+                'email' => $other->email,
+                'password' => 'password-baru-123',
+                'password_confirmation' => 'password-baru-123',
+            ])
+            ->assertSessionHasErrors('email');
+
+        $this->assertTrue(Hash::check('password', $other->fresh()->kata_sandi));
     }
 }

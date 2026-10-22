@@ -90,6 +90,21 @@ Route::middleware('auth')->group(function () {
             // Kelola Role Pengguna
             Route::get('/karyawan', [SuperAdminController::class, 'karyawanIndex'])->name('karyawan.index');
             Route::match(['PUT', 'POST'], '/karyawan/{id}/role', [SuperAdminController::class, 'karyawanUpdateRole'])->name('karyawan.update-role');
+
+            // Pelanggaran Presensi (Anti Remote Access: TeamViewer / AnyDesk / RDP dll.)
+            Route::get('/pelanggaran', [SuperAdminController::class, 'violationsIndex'])->name('violations.index');
+            Route::post('/pelanggaran/{id}/confirm', [SuperAdminController::class, 'violationsConfirm'])->name('violations.confirm');
+            Route::post('/pelanggaran/{id}/dismiss', [SuperAdminController::class, 'violationsDismiss'])->name('violations.dismiss');
+
+            // Blokir Presensi Karyawan: aktifkan kembali (unban) & kirim pesan alert
+            Route::post('/karyawan/{id}/unban', [SuperAdminController::class, 'karyawanUnban'])->name('karyawan.unban');
+            Route::post('/karyawan/{id}/ban-message', [SuperAdminController::class, 'karyawanBanMessage'])->name('karyawan.ban-message');
+
+            // Manajemen Akses Karyawan: suspend akun (rentang tanggal) & hak akses menu
+            Route::get('/akses-karyawan', [SuperAdminController::class, 'accessIndex'])->name('access.index');
+            Route::post('/akses-karyawan/{id}/suspend', [SuperAdminController::class, 'accessSuspend'])->name('access.suspend');
+            Route::post('/akses-karyawan/{id}/unsuspend', [SuperAdminController::class, 'accessUnsuspend'])->name('access.unsuspend');
+            Route::post('/akses-karyawan/{id}/menus', [SuperAdminController::class, 'accessUpdateMenus'])->name('access.menus');
         });
 
     // ==========================================
@@ -200,10 +215,10 @@ Route::middleware('auth')->group(function () {
                 Route::get('/absensi', [AbsensiController::class, 'dashboard'])->name('absensi');
                 Route::post('/absensi/checkin', [AbsensiController::class, 'checkIn'])
                     ->name('absensi.checkin')
-                    ->middleware('throttle:10,1');
+                    ->middleware(['throttle:10,1', 'presensi.banned']);
                 Route::post('/absensi/checkout', [AbsensiController::class, 'checkOut'])
                     ->name('absensi.checkout')
-                    ->middleware('throttle:10,1');
+                    ->middleware(['throttle:10,1', 'presensi.banned']);
                 Route::get('/absensi/status', [AbsensiController::class, 'status'])->name('absensi.status');
                 Route::get('/absensi/server-time', [AbsensiController::class, 'serverTime'])->name('absensi.server-time');
                 Route::get('/absensi/riwayat', [AbsensiController::class, 'getRiwayat'])->name('absensi.riwayat');

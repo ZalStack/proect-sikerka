@@ -48,6 +48,9 @@
 
         <div id="dashboard-content" class="p-4 sm:p-6 lg:p-8 space-y-6">
 
+            {{-- ==================== BLOKIR PRESENSI (ANTI REMOTE ACCESS) ==================== --}}
+            @include('karyawan.partials.ban-banner')
+
             <script type="application/json" id="chart-data">
                 {!! json_encode([
                     'absensi' => $absensiChart ?? ['labels' => [], 'data' => []],

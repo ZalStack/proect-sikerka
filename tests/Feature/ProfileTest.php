@@ -2,98 +2,122 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
+use App\Models\Karyawan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
+/**
+ * Profil karyawan: halaman profil, update data diri, dan ganti password.
+ * Route aktual: GET /profile, PUT /profile/update, PUT /profile/update-password.
+ */
 class ProfileTest extends TestCase
 {
     use RefreshDatabase;
 
+    private function makeKaryawan(array $overrides = []): Karyawan
+    {
+        static $counter = 0;
+        $counter++;
+
+        return Karyawan::create(array_merge([
+            'kode_pegawai' => 'NIP-PROF-' . $counter . '-' . uniqid(),
+            'email' => 'profil' . $counter . '.' . uniqid() . '@test.local',
+            'kata_sandi' => Hash::make('password'),
+            'nama_lengkap' => 'Karyawan Profil ' . $counter,
+            'jabatan' => 'Staff',
+            'divisi' => 'Operasional',
+            'posisi' => 'karyawan',
+            'status' => 'Karyawan Tetap',
+            'tanggal_bergabung' => now()->toDateString(),
+            'is_resigned' => false,
+        ], $overrides));
+    }
+
     public function test_profile_page_is_displayed(): void
     {
-        $user = User::factory()->create();
+        $karyawan = $this->makeKaryawan();
 
-        $response = $this
-            ->actingAs($user)
-            ->get('/profile');
-
-        $response->assertOk();
+        $this->actingAs($karyawan)->get('/profile')->assertOk();
     }
 
-    public function test_profile_information_can_be_updated(): void
+    public function test_guest_can_not_access_profile(): void
     {
-        $user = User::factory()->create();
+        $this->get('/profile')->assertRedirect('/login');
+    }
 
-        $response = $this
-            ->actingAs($user)
-            ->patch('/profile', [
-                'name' => 'Test User',
-                'email' => 'test@example.com',
-            ]);
+    public function test_karyawan_can_update_profile_information(): void
+    {
+        $karyawan = $this->makeKaryawan();
+
+        $response = $this->actingAs($karyawan)->put('/profile/update', [
+            'kode_pegawai' => $karyawan->kode_pegawai,
+            'nama_lengkap' => 'Nama Baru Diubah',
+            'email' => 'baru.diubah@test.local',
+            'jabatan' => 'Staff',
+            'divisi' => 'Operasional',
+            'status' => 'Karyawan Tetap',
+            'tanggal_bergabung' => $karyawan->tanggal_bergabung->toDateString(),
+        ]);
 
         $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect('/profile');
+            ->assertRedirect(route('profile.show', absolute: false));
 
-        $user->refresh();
-
-        $this->assertSame('Test User', $user->name);
-        $this->assertSame('test@example.com', $user->email);
-        $this->assertNull($user->email_verified_at);
+        $karyawan->refresh();
+        $this->assertSame('Nama Baru Diubah', $karyawan->nama_lengkap);
+        $this->assertSame('baru.diubah@test.local', $karyawan->email);
+        $this->assertSame('karyawan', $karyawan->posisi);
     }
 
-    public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged(): void
+    public function test_profile_update_requires_required_fields(): void
     {
-        $user = User::factory()->create();
+        $karyawan = $this->makeKaryawan();
 
-        $response = $this
-            ->actingAs($user)
-            ->patch('/profile', [
-                'name' => 'Test User',
-                'email' => $user->email,
-            ]);
-
-        $response
-            ->assertSessionHasNoErrors()
-            ->assertRedirect('/profile');
-
-        $this->assertNotNull($user->refresh()->email_verified_at);
-    }
-
-    public function test_user_can_delete_their_account(): void
-    {
-        $user = User::factory()->create();
-
-        $response = $this
-            ->actingAs($user)
-            ->delete('/profile', [
-                'password' => 'password',
-            ]);
-
-        $response
-            ->assertSessionHasNoErrors()
-            ->assertRedirect('/');
-
-        $this->assertGuest();
-        $this->assertNull($user->fresh());
-    }
-
-    public function test_correct_password_must_be_provided_to_delete_account(): void
-    {
-        $user = User::factory()->create();
-
-        $response = $this
-            ->actingAs($user)
+        $this->actingAs($karyawan)
             ->from('/profile')
-            ->delete('/profile', [
-                'password' => 'wrong-password',
+            ->put('/profile/update', [])
+            ->assertSessionHasErrors([
+                'kode_pegawai',
+                'nama_lengkap',
+                'email',
+                'jabatan',
+                'divisi',
+                'status',
+                'tanggal_bergabung',
             ]);
+    }
+
+    public function test_password_can_be_updated(): void
+    {
+        $karyawan = $this->makeKaryawan();
+
+        $response = $this->actingAs($karyawan)->put('/profile/update-password', [
+            'current_password' => 'password',
+            'password' => 'password-baru-123',
+            'password_confirmation' => 'password-baru-123',
+        ]);
 
         $response
-            ->assertSessionHasErrorsIn('userDeletion', 'password')
-            ->assertRedirect('/profile');
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('profile.show', absolute: false));
 
-        $this->assertNotNull($user->fresh());
+        $this->assertTrue(Hash::check('password-baru-123', $karyawan->fresh()->kata_sandi));
+    }
+
+    public function test_correct_current_password_must_be_provided_to_update_password(): void
+    {
+        $karyawan = $this->makeKaryawan();
+
+        $this->actingAs($karyawan)
+            ->put('/profile/update-password', [
+                'current_password' => 'wrong-password',
+                'password' => 'password-baru-123',
+                'password_confirmation' => 'password-baru-123',
+            ])
+            ->assertSessionHasErrors('current_password');
+
+        // Password lama tetap berlaku
+        $this->assertTrue(Hash::check('password', $karyawan->fresh()->kata_sandi));
     }
 }

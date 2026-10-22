@@ -22,6 +22,7 @@
         $icons = [
             'pengumuman' => '📢', 'cuti' => '🗓️', 'dinas' => '🧳', 'sunnah' => '🌙',
             'absensi' => '⚠️', 'profile' => '👤', 'fhl' => '🕌', 'khataman' => '📖',
+            'pelanggaran' => '🚨',
         ];
         $colors = [
             'blue' => 'bg-blue-100 text-blue-700',

@@ -47,6 +47,11 @@ class NotificationService
             $items = $items->merge($this->karyawanKhatamanReminder($user));
         }
 
+        // Pelanggaran presensi (anti remote access) → HANYA untuk Superadmin & HR.
+        // Karyawan yang melanggar TIDAK PERNAH melihat notifikasi ini di daftar
+        // notifikasinya (dia melihat status blokir lewat banner di dashboard).
+        $items = $items->merge($this->violationAlerts($user, $since));
+
         return $items->sortByDesc(fn ($item) => $item['created_at'])->values();
     }
 
@@ -62,11 +67,12 @@ class NotificationService
                 'dinas' => 'Perjalanan Dinas',
                 'sunnah' => '7SPS',
                 'absensi' => 'Absensi Mencurigakan',
+                'pelanggaran' => 'Pelanggaran Presensi',
                 'profile' => 'Update Profil Karyawan',
             ];
         }
 
-        return [
+        $types = [
             'pengumuman' => 'Pengumuman',
             'cuti' => 'Status Cuti',
             'dinas' => 'Status Perjalanan Dinas',
@@ -75,6 +81,14 @@ class NotificationService
             'fhl' => 'FHL',
             'khataman' => 'Khataman',
         ];
+
+        // Filter pelanggaran presensi hanya tersedia untuk Superadmin —
+        // karyawan tidak pernah diberi akses ke notifikasi pelanggaran.
+        if ($user->posisi === 'superadmin') {
+            $types['pelanggaran'] = 'Pelanggaran Presensi';
+        }
+
+        return $types;
     }
 
     /**
@@ -119,6 +133,85 @@ class NotificationService
     // ==========================================================
     // BUILDER PER SUMBER DATA
     // ==========================================================
+
+    /**
+     * [Superadmin & HR] Pelanggaran presensi karena indikasi akses remote
+     * (TeamViewer / AnyDesk / RustDesk / RDP / VNC). Notifikasi ini HANYA untuk
+     * role superadmin & HR — tidak pernah dikirim ke daftar notifikasi karyawan
+     * yang melanggar (karyawan melihat status blokir via banner di dashboard).
+     *
+     * - Pelanggaran `pending_review` → selalu tampil sampai ditinjau (antrean review).
+     * - Pelanggaran `confirmed`      → tampil sebagai riwayat selama lookbackDays.
+     */
+    private function violationAlerts(Karyawan $user, Carbon $since): Collection
+    {
+        if (!in_array($user->posisi, ['superadmin', 'hr'], true)) {
+            return collect();
+        }
+
+        // Untuk superadmin, tautan menuju halaman review pelanggaran;
+        // untuk HR (hanya bisa melihat) tautan menuju daftar absensi.
+        $url = $user->posisi === 'superadmin'
+            ? route('superadmin.violations.index')
+            : route('hr.absensi.index');
+
+        $items = collect();
+
+        // Antrean review: pelanggaran yang belum ditangani, tampil terus sampai ditinjau
+        $pending = \App\Models\RemoteAccessViolation::with('karyawan')
+            ->where('status', \App\Models\RemoteAccessViolation::STATUS_PENDING)
+            ->orderByDesc('tanggal')
+            ->limit(30)
+            ->get();
+
+        foreach ($pending as $v) {
+            $nama = $v->karyawan->nama_lengkap ?? 'Karyawan';
+            $konteks = $v->konteks === 'checkout' ? 'check-out' : 'check-in';
+
+            $items->push($this->item(
+                'pelanggaran-pending-' . $v->id,
+                'pelanggaran',
+                '🚨 Pelanggaran Presensi Perlu Review',
+                $nama . ' terdeteksi memakai akses remote saat ' . $konteks . ' pada ' . $v->tanggal?->translatedFormat('d M Y')
+                    . ' (' . $v->risk_label . '). Menunggu review: konfirmasi untuk memblokir atau tolak sebagai false positive.',
+                'amber',
+                $url,
+                $v->created_at,
+            ));
+        }
+
+        // Riwayat pelanggaran yang sudah terkonfirmasi (ban diterapkan)
+        $confirmed = \App\Models\RemoteAccessViolation::with('karyawan')
+            ->where('status', \App\Models\RemoteAccessViolation::STATUS_CONFIRMED)
+            ->where('created_at', '>=', $since)
+            ->orderByDesc('tanggal')
+            ->limit(30)
+            ->get();
+
+        foreach ($confirmed as $v) {
+            $nama = $v->karyawan->nama_lengkap ?? 'Karyawan';
+            $konteks = $v->konteks === 'checkout' ? 'check-out' : 'check-in';
+
+            $tindakan = '';
+            if ($v->strike_number) {
+                $tindakan = $v->strike_number >= 3
+                    ? ' — strike ke-' . $v->strike_number . ', akun DI-BLOKIR PERMANEN'
+                    : ' — strike ke-' . $v->strike_number . ', akun diblokir ' . $v->strike_number . ' hari';
+            }
+
+            $items->push($this->item(
+                'pelanggaran-confirmed-' . $v->id,
+                'pelanggaran',
+                '⛔ Pelanggaran Presensi Dikonfirmasi',
+                $nama . ' terbukti memakai akses remote saat ' . $konteks . ' pada ' . $v->tanggal?->translatedFormat('d M Y') . $tindakan . '.',
+                'rose',
+                $url,
+                $v->reviewed_at ?? $v->created_at,
+            ));
+        }
+
+        return $items;
+    }
 
     /**
      * Pengumuman yang relevan untuk user, mengikuti target aslinya di tabel
@@ -349,10 +442,17 @@ class NotificationService
     {
         return Karyawan::where('is_resigned', false)
             ->where('updated_at', '>=', $since)
-            ->whereRaw('updated_at > created_at + INTERVAL 1 MINUTE')
+            ->whereColumn('updated_at', '>', 'created_at')
             ->latest('updated_at')
-            ->limit(30)
+            ->limit(60)
             ->get()
+            // Karyawan dianggap "mengupdate profil" jika updated_at lebih dari
+            // 1 menit setelah created_at. Dicek di PHP (bukan SQL mentah) supaya
+            // kompatibel dengan MySQL (produksi) maupun SQLite (testing).
+            ->filter(fn ($k) => $k->created_at && $k->updated_at
+                && $k->updated_at->greaterThan($k->created_at->copy()->addMinute()))
+            ->take(30)
+            ->values()
             ->map(function ($karyawan) {
                 $nama = $karyawan->nama_lengkap ?? 'Karyawan';
                 $posisi = $karyawan->posisi ?? 'karyawan';

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Absensi;
 use App\Models\Karyawan;
+use App\Models\RemoteAccessViolation;
+use App\Services\RemoteAccessDetectionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -26,6 +28,10 @@ class AbsensiController extends Controller
      * Radius maksimum absensi dalam meter (50 meter)
      */
     private int $maxRadius = 50;
+
+    public function __construct(private RemoteAccessDetectionService $remoteAccessDetector)
+    {
+    }
 
     /**
      * Konfigurasi titik koordinat kantor KPM.
@@ -95,6 +101,59 @@ class AbsensiController extends Controller
     }
 
     /**
+     * Response standar saat absensi ditolak karena terindikasi akses remote
+     * (TeamViewer / AnyDesk / RDP dll.) — pelanggaran sudah dicatat & ban diterapkan.
+     */
+    private function rejectRemoteAccess(Karyawan $user)
+    {
+        $user->refresh();
+        $permanent = (bool) $user->is_banned_permanent;
+        $sisaHari = $user->banDaysRemaining();
+
+        $message = $permanent
+            ? 'Absensi ditolak! Sistem mendeteksi penggunaan akses remote desktop (TeamViewer/AnyDesk/RDP dll.) pada perangkat Anda. Akun Anda di-BLOKIR PERMANEN dari presensi dan dilaporkan ke Superadmin.'
+            : 'Absensi ditolak! Sistem mendeteksi penggunaan akses remote desktop (TeamViewer/AnyDesk/RDP dll.) pada perangkat Anda. Akun Anda diblokir presensi selama ' . ($sisaHari ?? 1) . ' hari (pelanggaran ke-' . $user->violation_count . ') dan dilaporkan ke Superadmin.';
+
+        return response()->json(
+            [
+                'success' => false,
+                'message' => $message,
+                'code' => 'REMOTE_ACCESS_DETECTED',
+                'ban' => [
+                    'permanent' => $permanent,
+                    'sisa_hari' => $sisaHari,
+                    'violation_count' => (int) $user->violation_count,
+                ],
+            ],
+            403,
+        );
+    }
+
+    /**
+     * Gabungkan alasan kecurigaan (fake GPS + indikasi akses remote) menjadi
+     * satu string maksimal 100 karakter (ukuran kolom suspicious_reason).
+     */
+    private function combinedSuspiciousReason(array $suspicion, bool $remoteIndication): ?string
+    {
+        $reasons = [];
+
+        $formatted = $this->formatSuspiciousReason($suspicion);
+        if ($formatted) {
+            $reasons[] = $formatted;
+        }
+
+        if ($remoteIndication) {
+            $reasons[] = RemoteAccessDetectionService::REASON_LABEL;
+        }
+
+        if (empty($reasons)) {
+            return null;
+        }
+
+        return mb_substr(implode('; ', $reasons), 0, 100);
+    }
+
+    /**
      * Ubah kumpulan kode alasan kecurigaan menjadi satu string yang mudah dibaca HR.
      */
     private function formatSuspiciousReason(array $suspicion): ?string
@@ -117,6 +176,7 @@ class AbsensiController extends Controller
             'accuracy' => 'required|numeric|min:0.1|max:5000',
             'client_flags' => 'nullable|array',
             'client_flags.*' => 'nullable|string|max:100',
+            'device_fingerprint' => 'nullable|array',
         ]);
 
         $user = Auth::user();
@@ -130,6 +190,30 @@ class AbsensiController extends Controller
 
         if ($suspicion['is_high_confidence']) {
             return $this->rejectFakeGps($suspicion);
+        }
+
+        // ==========================================================
+        // ANTI REMOTE ACCESS (TeamViewer / AnyDesk / RDP dll.)
+        // Risiko tinggi → tolak + catat pelanggaran + ban otomatis.
+        // Risiko rendah → absensi jalan, masuk antrean review Superadmin.
+        // ==========================================================
+        $remoteAssessment = $this->remoteAccessDetector->assess($request, $user, 'checkin');
+
+        if ($remoteAssessment['risk_level'] === RemoteAccessViolation::RISK_HIGH) {
+            $this->remoteAccessDetector->recordViolation($request, $user, 'checkin', $remoteAssessment, true);
+
+            Log::error('Check-in ditolak: terindikasi akses remote desktop', [
+                'karyawan_id' => $user->id,
+                'signals' => array_column($remoteAssessment['signals'], 'code'),
+                'ip' => $request->ip(),
+            ]);
+
+            return $this->rejectRemoteAccess($user);
+        }
+
+        $remoteViolation = null;
+        if ($remoteAssessment['risk_level'] === RemoteAccessViolation::RISK_LOW) {
+            $remoteViolation = $this->remoteAccessDetector->recordViolation($request, $user, 'checkin', $remoteAssessment, false);
         }
 
         $locationCheck = $this->isValidLocation((float) $request->latitude, (float) $request->longitude, $this->maxRadius, (float) $request->accuracy, $user->id);
@@ -198,10 +282,17 @@ class AbsensiController extends Controller
                 'is_valid_location' => $locationCheck['valid'],
                 'ip_address' => $request->ip(),
                 'user_agent' => substr((string) $request->userAgent(), 0, 255),
-                'is_suspicious' => $suspicion['is_suspicious'],
-                'suspicious_reason' => $this->formatSuspiciousReason($suspicion),
+                'device_fingerprint_hash' => $remoteAssessment['fingerprint']['hash'] ?? null,
+                'is_suspicious' => $suspicion['is_suspicious'] || $remoteViolation !== null,
+                'suspicious_reason' => $this->combinedSuspiciousReason($suspicion, $remoteViolation !== null),
             ],
         );
+
+        // Tautkan record pelanggaran (antrean review Superadmin) ke data absensi hari ini
+        if ($remoteViolation && !$remoteViolation->absensi_id) {
+            $remoteViolation->absensi_id = $absensi->id;
+            $remoteViolation->save();
+        }
 
         return response()->json([
             'success' => true,
@@ -232,6 +323,7 @@ class AbsensiController extends Controller
             'accuracy' => 'required|numeric|min:0.1|max:5000',
             'client_flags' => 'nullable|array',
             'client_flags.*' => 'nullable|string|max:100',
+            'device_fingerprint' => 'nullable|array',
         ]);
 
         $user = Auth::user();
@@ -245,6 +337,30 @@ class AbsensiController extends Controller
 
         if ($suspicion['is_high_confidence']) {
             return $this->rejectFakeGps($suspicion);
+        }
+
+        // ==========================================================
+        // ANTI REMOTE ACCESS (TeamViewer / AnyDesk / RDP dll.)
+        // Risiko tinggi → tolak + catat pelanggaran + ban otomatis.
+        // Risiko rendah → absensi jalan, masuk antrean review Superadmin.
+        // ==========================================================
+        $remoteAssessment = $this->remoteAccessDetector->assess($request, $user, 'checkout');
+
+        if ($remoteAssessment['risk_level'] === RemoteAccessViolation::RISK_HIGH) {
+            $this->remoteAccessDetector->recordViolation($request, $user, 'checkout', $remoteAssessment, true);
+
+            Log::error('Check-out ditolak: terindikasi akses remote desktop', [
+                'karyawan_id' => $user->id,
+                'signals' => array_column($remoteAssessment['signals'], 'code'),
+                'ip' => $request->ip(),
+            ]);
+
+            return $this->rejectRemoteAccess($user);
+        }
+
+        $remoteViolation = null;
+        if ($remoteAssessment['risk_level'] === RemoteAccessViolation::RISK_LOW) {
+            $remoteViolation = $this->remoteAccessDetector->recordViolation($request, $user, 'checkout', $remoteAssessment, false);
         }
 
         $locationCheck = $this->isValidLocation((float) $request->latitude, (float) $request->longitude, $this->maxRadius, (float) $request->accuracy, $user->id);
@@ -311,13 +427,21 @@ class AbsensiController extends Controller
         $absensi->ip_address = $request->ip();
         $absensi->user_agent = substr((string) $request->userAgent(), 0, 255);
 
-        // Kalau check-out terindikasi mencurigakan, tandai (tanpa menghapus tanda
-        // mencurigakan yang mungkin sudah ada dari saat check-in)
-        if ($suspicion['is_suspicious']) {
+        if (!empty($remoteAssessment['fingerprint']['hash'])) {
+            $absensi->device_fingerprint_hash = $remoteAssessment['fingerprint']['hash'];
+        }
+
+        // Kalau check-out terindikasi mencurigakan (fake GPS maupun indikasi akses
+        // remote), tandai (tanpa menghapus tanda yang mungkin sudah ada dari check-in)
+        if ($suspicion['is_suspicious'] || $remoteViolation !== null) {
             $absensi->is_suspicious = true;
             $existingReason = $absensi->suspicious_reason;
-            $newReason = $this->formatSuspiciousReason($suspicion);
-            $absensi->suspicious_reason = $existingReason && !str_contains($existingReason, $newReason) ? $existingReason . '; ' . $newReason : $existingReason ?? $newReason;
+            $newReason = $this->combinedSuspiciousReason($suspicion, $remoteViolation !== null);
+            if ($newReason) {
+                $absensi->suspicious_reason = $existingReason && !str_contains($existingReason, $newReason)
+                    ? mb_substr($existingReason . '; ' . $newReason, 0, 100)
+                    : ($existingReason ?? $newReason);
+            }
         }
 
         $absensi->save();
@@ -371,6 +495,14 @@ class AbsensiController extends Controller
                 'office_locations' => $this->getOfficeLocations(),
                 'max_radius' => $this->maxRadius,
                 'max_gps_accuracy' => Absensi::MAX_GPS_ACCURACY,
+                'account_ban' => [
+                    'is_banned' => $user->isBanned(),
+                    'permanent' => (bool) $user->is_banned_permanent,
+                    'sisa_hari' => $user->banDaysRemaining(),
+                    'banned_until' => $user->banned_until ? $user->banned_until->toDateTimeString() : null,
+                    'pesan_superadmin' => $user->ban_message,
+                    'violation_count' => (int) $user->violation_count,
+                ],
             ],
         ]);
     }

@@ -24,6 +24,9 @@
                     </a>
                 </div>
 
+                {{-- Banner blokir presensi (anti remote access) --}}
+                @include('karyawan.partials.ban-banner')
+
                 <!-- Jam Realtime -->
                 <div class="bg-[#161758] rounded-2xl shadow-sm p-4 sm:p-6 mb-4 text-center">
                     <p class="text-sm text-white/70 mb-1">Jam Sekarang (Realtime Server)</p>
@@ -433,6 +436,105 @@
         detectAutomation();
         detectGeolocationTampering();
 
+        // ==========================================================
+        // ANTI REMOTE ACCESS (TeamViewer / AnyDesk / RustDesk / RDP / VNC)
+        // ==========================================================
+        // Browser tidak bisa membaca proses komputer, jadi deteksi memakai sinyal:
+        // - Driver display virtual yang terpasang oleh aplikasi remote access
+        //   (sering muncul di string WebGL UNMASKED_RENDERER/VENDOR).
+        // - Nama aplikasi remote di user-agent.
+        // - Anomali resolusi layar (umum pada sesi remote control).
+        // Hasilnya dikirim ke server yang menggabungkannya dengan pemeriksaan
+        // konsistensi perangkat (IP, fingerprint, perubahan perangkat antar sesi).
+        // ==========================================================
+        const REMOTE_TOOL_KEYWORDS = [
+            'teamviewer', 'anydesk', 'rustdesk', 'parsec', 'moonlight', 'sunshine',
+            'splashtop', 'logmein', 'screenconnect', 'connectwise', 'dameware',
+            'ultravnc', 'realvnc', 'tightvnc', 'remotepc', 'ammyy', 'vnc',
+            'remote desktop', 'rdp', 'mstsc'
+        ];
+
+        let accountBanned = false;
+
+        function getWebGLInfo() {
+            try {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                if (!gl) return null;
+                const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+                if (!dbg) return null;
+                return {
+                    renderer: String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) || ''),
+                    vendor: String(gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) || '')
+                };
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function detectRemoteAccessTools() {
+            try {
+                const info = getWebGLInfo();
+                const haystack = (((info && info.renderer) || '') + ' ' + ((info && info.vendor) || '')).toLowerCase();
+                if (haystack.trim() !== '') {
+                    for (let i = 0; i < REMOTE_TOOL_KEYWORDS.length; i++) {
+                        if (haystack.indexOf(REMOTE_TOOL_KEYWORDS[i]) !== -1) {
+                            markSuspicion('driver_remote_desktop_terdeteksi:' + REMOTE_TOOL_KEYWORDS[i]);
+                            break;
+                        }
+                    }
+                }
+            } catch (e) {}
+
+            try {
+                const ua = (navigator.userAgent || '').toLowerCase();
+                for (let i = 0; i < REMOTE_TOOL_KEYWORDS.length; i++) {
+                    if (ua.indexOf(REMOTE_TOOL_KEYWORDS[i]) !== -1) {
+                        markSuspicion('user_agent_remote_tool_terdeteksi:' + REMOTE_TOOL_KEYWORDS[i]);
+                        break;
+                    }
+                }
+                if (/headlesschrome|phantomjs/i.test(navigator.userAgent || '')) {
+                    markSuspicion('headless_browser_terdeteksi');
+                }
+            } catch (e) {}
+        }
+
+        function detectScreenAnomalies() {
+            try {
+                if (window.outerWidth === 0 || window.outerHeight === 0) {
+                    markSuspicion('resolusi_layar_tidak_wajar');
+                } else if (screen.availWidth === 0 || screen.availHeight === 0) {
+                    markSuspicion('resolusi_layar_tidak_wajar');
+                }
+            } catch (e) {}
+        }
+
+        // Fingerprint perangkat dikirim ke server untuk cek konsistensi
+        // (check-in vs check-out, dan satu perangkat dipakai banyak akun).
+        function buildDeviceFingerprint() {
+            try {
+                const info = getWebGLInfo();
+                return {
+                    renderer: (info && info.renderer) ? info.renderer : '',
+                    vendor: (info && info.vendor) ? info.vendor : '',
+                    screen: screen.width + 'x' + screen.height,
+                    avail: screen.availWidth + 'x' + screen.availHeight,
+                    dpr: window.devicePixelRatio || 1,
+                    colorDepth: screen.colorDepth || 0,
+                    tz: (Intl.DateTimeFormat().resolvedOptions().timeZone) || '',
+                    lang: navigator.language || '',
+                    platform: navigator.platform || '',
+                    ua: navigator.userAgent || ''
+                };
+            } catch (e) {
+                return null;
+            }
+        }
+
+        detectRemoteAccessTools();
+        detectScreenAnomalies();
+
         // Server time
         let serverTimeOffsetMs = 0;
         let clockSynced = false;
@@ -682,6 +784,16 @@
         // ABSENSI
         // ==========================================================
         function performAbsensi(action) {
+            if (accountBanned) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Presensi Diblokir',
+                    text: 'Akun Anda sedang diblokir dari fitur presensi. Hubungi Superadmin / HR untuk peninjauan.',
+                    confirmButtonColor: '#ec1d1d'
+                });
+                return;
+            }
+
             if (!currentLocation) {
                 Swal.fire({
                     icon: 'warning',
@@ -720,7 +832,8 @@
                         latitude: currentLocation.latitude,
                         longitude: currentLocation.longitude,
                         accuracy: currentLocation.accuracy || 0,
-                        client_flags: Array.from(clientSuspicionFlags)
+                        client_flags: Array.from(clientSuspicionFlags),
+                        device_fingerprint: buildDeviceFingerprint()
                     })
                 })
                 .then(response => response.json().then(data => ({
@@ -771,6 +884,11 @@
                             if (data.reasons && data.reasons.length) {
                                 errorMsg += '\n\nAlasan: ' + data.reasons.join(', ');
                             }
+                        } else if (data.code === 'ACCOUNT_BANNED') {
+                            errorMsg = data.message || 'Akun Anda diblokir dari fitur presensi.';
+                            accountBanned = true;
+                        } else if (data.code === 'REMOTE_ACCESS_DETECTED') {
+                            errorMsg = data.message || 'Terindikasi penggunaan akses remote desktop (TeamViewer/AnyDesk/RDP).';
                         }
 
                         Swal.fire({
@@ -781,6 +899,11 @@
                         });
 
                         updateButtons();
+
+                        // Segarkan halaman agar banner blokir tampil langsung
+                        if (data.code === 'ACCOUNT_BANNED' || data.code === 'REMOTE_ACCESS_DETECTED') {
+                            setTimeout(() => window.location.reload(), 3000);
+                        }
                     }
                 })
                 .catch(error => {
@@ -810,6 +933,14 @@
             const btnCheckOut = document.getElementById('btnCheckOut');
             const checkInText = document.getElementById('checkInText').textContent;
             const checkOutText = document.getElementById('checkOutText').textContent;
+
+            if (accountBanned) {
+                btnCheckIn.disabled = true;
+                btnCheckOut.disabled = true;
+                btnCheckIn.title = 'Akun diblokir dari fitur presensi';
+                btnCheckOut.title = 'Akun diblokir dari fitur presensi';
+                return;
+            }
 
             if (!isLocationValid) {
                 btnCheckIn.disabled = true;
@@ -851,6 +982,11 @@
                 .then(data => {
                     if (data.success) {
                         const d = data.data;
+
+                        if (d.account_ban) {
+                            accountBanned = !!d.account_ban.is_banned;
+                        }
+
                         document.getElementById('statusText').textContent = d.status || '-';
                         document.getElementById('checkInText').textContent = d.check_in || '-';
                         document.getElementById('checkOutText').textContent = d.check_out || '-';

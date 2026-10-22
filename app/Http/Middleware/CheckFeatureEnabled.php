@@ -37,6 +37,32 @@ class CheckFeatureEnabled
             return response()->view('errors.feature-disabled', [
                 'feature' => $feature,
                 'meta' => $featureMeta,
+                'restricted' => false,
+            ], 403);
+        }
+
+        // Cek hak akses menu per karyawan (ditetapkan Superadmin)
+        if (Auth::check() && method_exists(Auth::user(), 'isMenuDisabled') && Auth::user()->isMenuDisabled($feature)) {
+            $featureMeta = SystemSetting::AVAILABLE_FEATURES[$feature] ?? [
+                'name' => ucfirst($feature),
+                'category' => 'Fitur Sistem',
+                'icon' => 'fa-ban',
+                'color' => '#ec1d1d',
+            ];
+
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'feature_disabled' => true,
+                    'restricted' => true,
+                    'message' => 'Akses Anda ke fitur ' . $featureMeta['name'] . ' dinonaktifkan oleh Super Administrator.',
+                ], 403);
+            }
+
+            return response()->view('errors.feature-disabled', [
+                'feature' => $feature,
+                'meta' => $featureMeta,
+                'restricted' => true,
             ], 403);
         }
 

@@ -3,6 +3,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -52,6 +53,14 @@ class Karyawan extends Authenticatable
         'alamat_domisili',
         'is_resigned',
         'tanggal_resign',
+        'suspend_start',
+        'suspend_end',
+        'suspend_reason',
+        'suspended_by',
+        'violation_count',
+        'banned_until',
+        'is_banned_permanent',
+        'ban_message',
         'is_continuing_education',
         'continuing_program',
         'continuing_perguruan_tinggi',
@@ -62,6 +71,9 @@ class Karyawan extends Authenticatable
         'kata_sandi',
         'remember_token',
     ];
+
+    /** Memo hak akses menu per instance (diisi lazy oleh disabledMenuKeys()). */
+    private ?array $disabledMenuKeysCache = null;
 
     public function getAuthPassword()
     {
@@ -99,7 +111,12 @@ class Karyawan extends Authenticatable
         'end_date' => 'date',
         'tanggal_pengangkatan_tetap' => 'date',
         'tanggal_resign' => 'date',
+        'suspend_start' => 'date',
+        'suspend_end' => 'date',
         'is_resigned' => 'boolean',
+        'violation_count' => 'integer',
+        'banned_until' => 'datetime',
+        'is_banned_permanent' => 'boolean',
         'is_continuing_education' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
@@ -144,5 +161,199 @@ class Karyawan extends Authenticatable
     public function scopeResigned($query)
     {
         return $query->where('is_resigned', true);
+    }
+
+    // ==========================================================
+    // ANTI REMOTE ACCESS: BLOKIR PRESENSI (BAN)
+    // ==========================================================
+
+    public function violations()
+    {
+        return $this->hasMany(RemoteAccessViolation::class, 'karyawan_id');
+    }
+
+    /**
+     * Status blokir presensi akun saat ini.
+     * Ban sementara yang masa berlakunya sudah lewat dibersihkan otomatis (auto-expiry).
+     */
+    public function isBanned(): bool
+    {
+        if ($this->is_banned_permanent) {
+            return true;
+        }
+
+        if ($this->banned_until) {
+            if ($this->banned_until->isFuture()) {
+                return true;
+            }
+
+            // Masa blokir sementara sudah berakhir → hapus otomatis
+            $this->banned_until = null;
+            $this->saveQuietly();
+        }
+
+        return false;
+    }
+
+    /**
+     * Sisa hari blokir sementara (null kalau permanen / tidak sedang diblokir).
+     */
+    public function banDaysRemaining(): ?int
+    {
+        if ($this->is_banned_permanent || !$this->banned_until) {
+            return null;
+        }
+
+        $secondsLeft = Carbon::now()->diffInSeconds($this->banned_until, false);
+
+        return $secondsLeft > 0 ? (int) ceil($secondsLeft / 86400) : 0;
+    }
+
+    /**
+     * Terapkan blokir presensi sesuai tangga pelanggaran:
+     * Pelanggaran ke-1 → 1 hari, ke-2 → 2 hari, ke-3 (dan seterusnya) → PERMANEN.
+     *
+     * @return int Nomor strike yang diterapkan (1, 2, atau 3+).
+     */
+    public function applyBan(): int
+    {
+        $strike = (int) $this->violation_count + 1;
+        $this->violation_count = $strike;
+
+        if ($strike >= 3) {
+            $this->is_banned_permanent = true;
+            $this->banned_until = null;
+        } else {
+            $this->is_banned_permanent = false;
+            $this->banned_until = Carbon::now()->addDays($strike);
+        }
+
+        $this->save();
+
+        return $strike;
+    }
+
+    /**
+     * Lepas blokir & reset hitungan pelanggaran ke 0 (hanya dipanggil Superadmin).
+     */
+    public function liftBan(): void
+    {
+        $this->is_banned_permanent = false;
+        $this->banned_until = null;
+        $this->violation_count = 0;
+        $this->ban_message = null;
+        $this->save();
+    }
+
+    /**
+     * Cabut satu strike ketika pelanggaran yang sudah terkonfirmasi ditinjau ulang
+     * dan dinyatakan false positive oleh Superadmin.
+     */
+    public function revokeStrike(): void
+    {
+        $this->violation_count = max(0, (int) $this->violation_count - 1);
+
+        if ($this->violation_count < 3) {
+            $this->is_banned_permanent = false;
+        }
+
+        // Blokir aktif yang disebabkan strike ini dilepas
+        $this->banned_until = null;
+        $this->save();
+    }
+
+    // ==========================================================
+    // SUSPEND AKUN (PENANGGUHAN LOGIN SAMPAI TANGGAL TERTENTU)
+    // ==========================================================
+
+    /**
+     * Status suspend akun: hari ini berada di rentang suspend_start..suspend_end.
+     * Masa suspend yang sudah lewat dibersihkan otomatis (auto-expiry),
+     * sehingga akun kembali bisa login tanpa perlu aksi Superadmin.
+     */
+    public function isSuspended(): bool
+    {
+        if (!$this->suspend_start || !$this->suspend_end) {
+            return false;
+        }
+
+        $today = now()->startOfDay();
+
+        // Masa suspend sudah berakhir → bersihkan otomatis
+        if ($this->suspend_end->copy()->startOfDay()->lt($today)) {
+            $this->forceFill([
+                'suspend_start' => null,
+                'suspend_end' => null,
+                'suspend_reason' => null,
+                'suspended_by' => null,
+            ])->saveQuietly();
+
+            return false;
+        }
+
+        // Rentang suspend belum dimulai → akun masih bebas
+        return $today->betweenIncluded(
+            $this->suspend_start->copy()->startOfDay(),
+            $this->suspend_end->copy()->startOfDay()
+        );
+    }
+
+    /**
+     * Sisa hari penangguhan (0 bila tidak sedang disuspend).
+     */
+    public function suspensionDaysRemaining(): int
+    {
+        if (!$this->suspend_end || !$this->isSuspended()) {
+            return 0;
+        }
+
+        return (int) max(0, now()->startOfDay()->diffInDays($this->suspend_end->copy()->startOfDay(), false));
+    }
+
+    /**
+     * Teks alasan suspend yang aman ditampilkan (null → teks default).
+     */
+    public function suspensionReasonLabel(): string
+    {
+        return $this->suspend_reason ?: 'Tidak ada alasan yang dicantumkan.';
+    }
+
+    // ==========================================================
+    // HAK AKSES MENU PER KARYAWAN
+    // ==========================================================
+
+    public function menuDisabled()
+    {
+        return $this->hasMany(KaryawanMenuDisabled::class, 'karyawan_id');
+    }
+
+    /**
+     * Daftar menu_key yang dinonaktifkan untuk karyawan ini (di-memo per instance).
+     */
+    public function disabledMenuKeys(): array
+    {
+        if ($this->disabledMenuKeysCache === null) {
+            $this->disabledMenuKeysCache = $this->relationLoaded('menuDisabled')
+                ? $this->menuDisabled->pluck('menu_key')->all()
+                : $this->menuDisabled()->pluck('menu_key')->all();
+        }
+
+        return $this->disabledMenuKeysCache;
+    }
+
+    /**
+     * Apakah menu/fitur tertentu dinonaktifkan khusus untuk karyawan ini?
+     */
+    public function isMenuDisabled(string $menuKey): bool
+    {
+        return in_array($menuKey, $this->disabledMenuKeys(), true);
+    }
+
+    /**
+     * Bersihkan memo hak akses — dipanggil setelah Superadmin mengubah menu.
+     */
+    public function flushMenuAccessCache(): void
+    {
+        $this->disabledMenuKeysCache = null;
     }
 }

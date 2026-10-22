@@ -4,7 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class SystemSetting extends Model
 {
@@ -87,7 +89,17 @@ class SystemSetting extends Model
     public static function getValue(string $key, $default = null)
     {
         return Cache::remember('sys_setting_' . $key, 60, function () use ($key, $default) {
-            $setting = self::where('key', $key)->first();
+            try {
+                $setting = self::where('key', $key)->first();
+            } catch (QueryException $e) {
+                // Tabel system_settings belum tersedia (mis. sebelum `php artisan migrate`
+                // atau DB sedang bermasalah). Pakai nilai default agar aplikasi tetap
+                // berjalan, alih-alih melempar 500 di semua halaman.
+                Log::warning('SystemSetting::getValue gagal membaca database: ' . $e->getMessage());
+
+                return $default;
+            }
+
             return $setting ? $setting->value : $default;
         });
     }

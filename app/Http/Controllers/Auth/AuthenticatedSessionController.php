@@ -55,6 +55,22 @@ class AuthenticatedSessionController extends Controller
                 ->with('resign', true);
         }
 
+        // Blokir login akun yang sedang ditangguhkan (suspend) oleh Superadmin
+        if (method_exists($user, 'isSuspended') && $user->isSuspended()) {
+            $sampai = $user->suspend_end ? $user->suspend_end->isoFormat('D MMM Y') : '-';
+            $alasan = method_exists($user, 'suspensionReasonLabel') ? $user->suspensionReasonLabel() : '-';
+
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('login')
+                ->with(
+                    'error',
+                    "Akun Anda ditangguhkan (suspend) sementara hingga {$sampai}. Alasan: {$alasan} Hubungi Superadmin untuk mengaktifkan kembali akun Anda."
+                );
+        }
+
         $request->session()->regenerate();
 
         // Cek posisi user
