@@ -649,7 +649,8 @@ class SuperAdminController extends Controller
 
     /**
      * Tandai pelanggaran sebagai false positive. Jika sebelumnya sudah
-     * terkonfirmasi (ban otomatis), strike & blokirnya dicabut kembali.
+     * dikonfirmasi Superadmin (ban sudah diterapkan), strike & blokirnya
+     * dicabut kembali.
      */
     public function violationsDismiss(Request $request, $id)
     {

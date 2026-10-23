@@ -102,28 +102,20 @@ class AbsensiController extends Controller
 
     /**
      * Response standar saat absensi ditolak karena terindikasi akses remote
-     * (TeamViewer / AnyDesk / RDP dll.) — pelanggaran sudah dicatat & ban diterapkan.
+     * (TeamViewer / AnyDesk / RDP dll.).
+     *
+     * PENTING: akun TIDAK diblokir/di-ban di sini. Pelanggaran hanya dicatat
+     * dan masuk antrean review Superadmin — blokir baru diterapkan SETELAH
+     * Superadmin mengonfirmasi pelanggaran (tangga 1 hari / 2 hari / permanen).
      */
     private function rejectRemoteAccess(Karyawan $user)
     {
-        $user->refresh();
-        $permanent = (bool) $user->is_banned_permanent;
-        $sisaHari = $user->banDaysRemaining();
-
-        $message = $permanent
-            ? 'Absensi ditolak! Sistem mendeteksi penggunaan akses remote desktop (TeamViewer/AnyDesk/RDP dll.) pada perangkat Anda. Akun Anda di-BLOKIR PERMANEN dari presensi dan dilaporkan ke Superadmin.'
-            : 'Absensi ditolak! Sistem mendeteksi penggunaan akses remote desktop (TeamViewer/AnyDesk/RDP dll.) pada perangkat Anda. Akun Anda diblokir presensi selama ' . ($sisaHari ?? 1) . ' hari (pelanggaran ke-' . $user->violation_count . ') dan dilaporkan ke Superadmin.';
-
         return response()->json(
             [
                 'success' => false,
-                'message' => $message,
+                'message' => 'Absensi ditolak! Sistem mendeteksi penggunaan akses remote desktop (TeamViewer/AnyDesk/RDP dll.) pada perangkat Anda. Pelanggaran telah dicatat dan dilaporkan ke Superadmin untuk ditinjau. Akun Anda belum diblokir selama menunggu review.',
                 'code' => 'REMOTE_ACCESS_DETECTED',
-                'ban' => [
-                    'permanent' => $permanent,
-                    'sisa_hari' => $sisaHari,
-                    'violation_count' => (int) $user->violation_count,
-                ],
+                'pending_review' => true,
             ],
             403,
         );
@@ -194,15 +186,16 @@ class AbsensiController extends Controller
 
         // ==========================================================
         // ANTI REMOTE ACCESS (TeamViewer / AnyDesk / RDP dll.)
-        // Risiko tinggi → tolak + catat pelanggaran + ban otomatis.
-        // Risiko rendah → absensi jalan, masuk antrean review Superadmin.
+        // Risiko tinggi → tolak percobaan + catat pelanggaran (TANPA blokir akun).
+        // Risiko rendah → absensi jalan, catat pelanggaran.
+        // Keduanya masuk antrean review Superadmin — blokir HANYA setelah konfirmasi.
         // ==========================================================
         $remoteAssessment = $this->remoteAccessDetector->assess($request, $user, 'checkin');
 
         if ($remoteAssessment['risk_level'] === RemoteAccessViolation::RISK_HIGH) {
-            $this->remoteAccessDetector->recordViolation($request, $user, 'checkin', $remoteAssessment, true);
+            $this->remoteAccessDetector->recordViolation($request, $user, 'checkin', $remoteAssessment);
 
-            Log::error('Check-in ditolak: terindikasi akses remote desktop', [
+            Log::error('Check-in ditolak: terindikasi akses remote desktop (menunggu review Superadmin)', [
                 'karyawan_id' => $user->id,
                 'signals' => array_column($remoteAssessment['signals'], 'code'),
                 'ip' => $request->ip(),
@@ -213,7 +206,7 @@ class AbsensiController extends Controller
 
         $remoteViolation = null;
         if ($remoteAssessment['risk_level'] === RemoteAccessViolation::RISK_LOW) {
-            $remoteViolation = $this->remoteAccessDetector->recordViolation($request, $user, 'checkin', $remoteAssessment, false);
+            $remoteViolation = $this->remoteAccessDetector->recordViolation($request, $user, 'checkin', $remoteAssessment);
         }
 
         $locationCheck = $this->isValidLocation((float) $request->latitude, (float) $request->longitude, $this->maxRadius, (float) $request->accuracy, $user->id);
@@ -341,15 +334,16 @@ class AbsensiController extends Controller
 
         // ==========================================================
         // ANTI REMOTE ACCESS (TeamViewer / AnyDesk / RDP dll.)
-        // Risiko tinggi → tolak + catat pelanggaran + ban otomatis.
-        // Risiko rendah → absensi jalan, masuk antrean review Superadmin.
+        // Risiko tinggi → tolak percobaan + catat pelanggaran (TANPA blokir akun).
+        // Risiko rendah → absensi jalan, catat pelanggaran.
+        // Keduanya masuk antrean review Superadmin — blokir HANYA setelah konfirmasi.
         // ==========================================================
         $remoteAssessment = $this->remoteAccessDetector->assess($request, $user, 'checkout');
 
         if ($remoteAssessment['risk_level'] === RemoteAccessViolation::RISK_HIGH) {
-            $this->remoteAccessDetector->recordViolation($request, $user, 'checkout', $remoteAssessment, true);
+            $this->remoteAccessDetector->recordViolation($request, $user, 'checkout', $remoteAssessment);
 
-            Log::error('Check-out ditolak: terindikasi akses remote desktop', [
+            Log::error('Check-out ditolak: terindikasi akses remote desktop (menunggu review Superadmin)', [
                 'karyawan_id' => $user->id,
                 'signals' => array_column($remoteAssessment['signals'], 'code'),
                 'ip' => $request->ip(),
@@ -360,7 +354,7 @@ class AbsensiController extends Controller
 
         $remoteViolation = null;
         if ($remoteAssessment['risk_level'] === RemoteAccessViolation::RISK_LOW) {
-            $remoteViolation = $this->remoteAccessDetector->recordViolation($request, $user, 'checkout', $remoteAssessment, false);
+            $remoteViolation = $this->remoteAccessDetector->recordViolation($request, $user, 'checkout', $remoteAssessment);
         }
 
         $locationCheck = $this->isValidLocation((float) $request->latitude, (float) $request->longitude, $this->maxRadius, (float) $request->accuracy, $user->id);

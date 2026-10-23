@@ -12,8 +12,9 @@ use Tests\TestCase;
 
 /**
  * Test mekanisme Anti Remote Access (TeamViewer / AnyDesk / RDP):
- * deteksi → pelanggaran tercatat ke Superadmin → tangga ban
- * (1× = 1 hari, 2× = 2 hari, 3× = permanen) → hanya Superadmin yang bisa unban.
+ * deteksi → pelanggaran masuk antrean review Superadmin (TANPA blokir otomatis)
+ * → Superadmin konfirmasi → tangga ban (1× = 1 hari, 2× = 2 hari, 3× = permanen)
+ * → hanya Superadmin yang bisa unban. Notifikasi pelanggaran HANYA Superadmin.
  */
 class RemoteAccessBanTest extends TestCase
 {
@@ -121,10 +122,10 @@ class RemoteAccessBanTest extends TestCase
     }
 
     // ==========================================================
-    // DETEKSI & AUTO-BAN
+    // DETEKSI → ANTREAN REVIEW SUPERADMIN (TANPA BAN OTOMATIS)
     // ==========================================================
 
-    public function test_high_risk_remote_signal_rejects_checkin_and_auto_bans(): void
+    public function test_high_risk_remote_signal_rejects_checkin_without_auto_ban(): void
     {
         $karyawan = $this->makeKaryawan();
 
@@ -135,30 +136,31 @@ class RemoteAccessBanTest extends TestCase
         $response->assertStatus(403)->assertJson([
             'success' => false,
             'code' => 'REMOTE_ACCESS_DETECTED',
-            'ban' => ['violation_count' => 1, 'permanent' => false],
+            'pending_review' => true,
         ]);
 
-        // Pelanggaran tercatat & terkonfirmasi otomatis, masuk log Superadmin
+        // Percobaan ditolak, tapi pelanggaran HANYA masuk antrean review Superadmin
+        // (TIDAK dikonfirmasi otomatis, TIDAK ada blokir/suspend akun)
         $violation = RemoteAccessViolation::where('karyawan_id', $karyawan->id)->first();
         $this->assertNotNull($violation);
-        $this->assertSame(RemoteAccessViolation::STATUS_CONFIRMED, $violation->status);
+        $this->assertSame(RemoteAccessViolation::STATUS_PENDING, $violation->status);
         $this->assertSame(RemoteAccessViolation::RISK_HIGH, $violation->risk_level);
-        $this->assertSame(1, $violation->strike_number);
+        $this->assertNull($violation->strike_number);
+        $this->assertNull($violation->reviewed_by);
         $this->assertSame('checkin', $violation->konteks);
         $this->assertNotEmpty($violation->signals);
 
-        // Ban 1 hari (strike ke-1) diterapkan
+        // Akun TIDAK diblokir sama sekali — menunggu review Superadmin
         $karyawan->refresh();
-        $this->assertSame(1, $karyawan->violation_count);
+        $this->assertSame(0, $karyawan->violation_count);
         $this->assertFalse($karyawan->is_banned_permanent);
-        $this->assertNotNull($karyawan->banned_until);
-        $this->assertTrue($karyawan->banned_until->isFuture());
+        $this->assertNull($karyawan->banned_until);
 
         // Absensi tidak boleh tercatat
         $this->assertNull(Absensi::where('karyawan_id', $karyawan->id)->first());
     }
 
-    public function test_high_risk_signal_on_checkout_also_rejects(): void
+    public function test_high_risk_signal_on_checkout_also_rejects_without_auto_ban(): void
     {
         $karyawan = $this->makeKaryawan();
 
@@ -177,8 +179,9 @@ class RemoteAccessBanTest extends TestCase
 
         $violation = RemoteAccessViolation::where('karyawan_id', $karyawan->id)->first();
         $this->assertSame('checkout', $violation->konteks);
-        $this->assertSame(RemoteAccessViolation::STATUS_CONFIRMED, $violation->status);
-        $this->assertSame(1, $karyawan->fresh()->violation_count);
+        $this->assertSame(RemoteAccessViolation::STATUS_PENDING, $violation->status);
+        $this->assertSame(0, $karyawan->fresh()->violation_count, 'Tidak boleh ada blokir/strike sebelum review Superadmin');
+        $this->assertNull($karyawan->fresh()->banned_until);
     }
 
     public function test_webgl_driver_remote_tool_in_fingerprint_is_high_risk(): void
@@ -202,8 +205,10 @@ class RemoteAccessBanTest extends TestCase
 
         $violation = RemoteAccessViolation::where('karyawan_id', $karyawan->id)->first();
         $this->assertSame(RemoteAccessViolation::RISK_HIGH, $violation->risk_level);
+        $this->assertSame(RemoteAccessViolation::STATUS_PENDING, $violation->status, 'Deteksi tinggi pun harus menunggu review Superadmin');
         $codes = array_column($violation->signals, 'code');
         $this->assertNotEmpty(array_filter($codes, fn ($c) => str_starts_with($c, 'driver_remote_desktop_terdeteksi')));
+        $this->assertSame(0, $karyawan->fresh()->violation_count, 'Tidak boleh ada ban otomatis');
     }
 
     public function test_low_risk_signal_creates_pending_violation_without_blocking(): void
@@ -247,24 +252,33 @@ class RemoteAccessBanTest extends TestCase
     }
 
     // ==========================================================
-    // TANGGA BAN: 1 HARI → 2 HARI → PERMANEN
+    // TANGGA BAN: 1 HARI → 2 HARI → PERMANEN (HANYA SETELAH KONFIRMASI SUPERADMIN)
     // ==========================================================
 
-    public function test_violation_ladder_progresses_to_permanent_ban(): void
+    public function test_violation_ladder_progresses_to_permanent_ban_after_superadmin_confirmation(): void
     {
+        $superadmin = $this->makeSuperadmin();
         $karyawan = $this->makeKaryawan();
 
-        // Pelanggaran ke-1 → ban 1 hari
+        // Pelanggaran ke-1 terdeteksi → TANPA blokir, menunggu review
         $this->actingAs($karyawan)->postJson(route('karyawan.absensi.checkin'), $this->checkinPayload([
             'client_flags' => ['driver_remote_desktop_terdeteksi:teamviewer'],
         ]))->assertStatus(403);
+
+        $karyawan->refresh();
+        $this->assertSame(0, $karyawan->violation_count, 'Deteksi tidak boleh langsung memblokir');
+        $this->assertNull($karyawan->banned_until);
+
+        // Superadmin konfirmasi → ban 1 hari (tangga ke-1)
+        $violation1 = RemoteAccessViolation::where('karyawan_id', $karyawan->id)->first();
+        $this->actingAs($superadmin)->post(route('superadmin.violations.confirm', $violation1->id))->assertSessionHas('success');
 
         $karyawan->refresh();
         $this->assertSame(1, $karyawan->violation_count);
         $this->assertFalse($karyawan->is_banned_permanent);
         $this->assertTrue($karyawan->banned_until->isFuture());
 
-        // Hari ke-2: ban sudah berakhir, pelanggaran lagi → ban 2 hari
+        // Hari ke-2: ban sudah berakhir, pelanggaran lagi → pending, lalu konfirmasi → ban 2 hari
         $this->travel(2)->days();
 
         $this->actingAs($karyawan->fresh())->postJson(route('karyawan.absensi.checkin'), $this->checkinPayload([
@@ -272,16 +286,25 @@ class RemoteAccessBanTest extends TestCase
         ]))->assertStatus(403);
 
         $karyawan->refresh();
+        $this->assertSame(1, $karyawan->violation_count, 'Belum bertambah sebelum dikonfirmasi Superadmin');
+
+        $violation2 = RemoteAccessViolation::where('karyawan_id', $karyawan->id)->latest('id')->first();
+        $this->actingAs($superadmin->fresh())->post(route('superadmin.violations.confirm', $violation2->id))->assertSessionHas('success');
+
+        $karyawan->refresh();
         $this->assertSame(2, $karyawan->violation_count);
         $this->assertFalse($karyawan->is_banned_permanent);
         $this->assertTrue($karyawan->banned_until->greaterThan(Carbon::now()->addDay()));
 
-        // Hari ke-5: ban berakhir, pelanggaran ketiga → PERMANEN
+        // Hari ke-5: ban berakhir, pelanggaran ketiga → konfirmasi → PERMANEN
         $this->travel(3)->days();
 
         $this->actingAs($karyawan->fresh())->postJson(route('karyawan.absensi.checkin'), $this->checkinPayload([
             'client_flags' => ['driver_remote_desktop_terdeteksi:rustdesk'],
         ]))->assertStatus(403);
+
+        $violation3 = RemoteAccessViolation::where('karyawan_id', $karyawan->id)->latest('id')->first();
+        $this->actingAs($superadmin->fresh())->post(route('superadmin.violations.confirm', $violation3->id))->assertSessionHas('success');
 
         $karyawan->refresh();
         $this->assertSame(3, $karyawan->violation_count);
@@ -293,22 +316,27 @@ class RemoteAccessBanTest extends TestCase
             ->assertStatus(403)
             ->assertJson(['code' => 'ACCOUNT_BANNED']);
 
-        // Tiga record pelanggaran tercatat, masing-masing terkonfirmasi
+        // Tiga record pelanggaran tercatat, masing-masing terkonfirmasi Superadmin
         $this->assertSame(3, RemoteAccessViolation::where('karyawan_id', $karyawan->id)
             ->where('status', RemoteAccessViolation::STATUS_CONFIRMED)->count());
     }
 
-    public function test_multiple_detections_same_day_only_count_one_strike(): void
+    public function test_multiple_detections_same_day_only_create_one_pending_violation(): void
     {
+        $superadmin = $this->makeSuperadmin();
         $karyawan = $this->makeKaryawan();
 
-        // Check-in ditolak (sinyal kuat) → strike 1
+        // Check-in ditolak (sinyal kuat) → pelanggaran pending, TANPA strike
         $this->actingAs($karyawan)->postJson(route('karyawan.absensi.checkin'), $this->checkinPayload([
             'client_flags' => ['driver_remote_desktop_terdeteksi:teamviewer'],
         ]))->assertStatus(403);
 
-        // Percobaan check-out di hari yang sama (dilakukan sebelum ban aktif
-        // sempat diblokir middleware, misalnya lewat request beruntun) → TANPA strike tambahan
+        $this->assertSame(0, $karyawan->fresh()->violation_count);
+        $this->assertSame(0, RemoteAccessViolation::where('karyawan_id', $karyawan->id)
+            ->where('status', RemoteAccessViolation::STATUS_CONFIRMED)->count());
+
+        // Percobaan check-out di hari yang sama (request beruntun sebelum sempat
+        // diblokir middleware) → TANPA record/strike tambahan
         Absensi::create([
             'karyawan_id' => $karyawan->id,
             'tanggal' => Carbon::today(),
@@ -320,9 +348,19 @@ class RemoteAccessBanTest extends TestCase
             'client_flags' => ['driver_remote_desktop_terdeteksi:anydesk'],
         ]))->assertStatus(403);
 
-        $karyawan->refresh();
-        $this->assertSame(1, $karyawan->violation_count, 'Deteksi berulang di hari yang sama tidak boleh menambah strike');
         $this->assertSame(1, RemoteAccessViolation::where('karyawan_id', $karyawan->id)->count());
+        $this->assertSame(0, $karyawan->fresh()->violation_count, 'Deteksi berulang di hari yang sama tidak boleh menambah strike');
+
+        // Konfirmasi Superadmin atas record gabungan itu → baru strike ke-1
+        $violation = RemoteAccessViolation::where('karyawan_id', $karyawan->id)->first();
+        $this->assertSame(RemoteAccessViolation::STATUS_PENDING, $violation->status);
+
+        $this->actingAs($superadmin)->post(route('superadmin.violations.confirm', $violation->id))->assertSessionHas('success');
+
+        $karyawan->refresh();
+        $this->assertSame(1, $karyawan->violation_count);
+        $this->assertSame(1, RemoteAccessViolation::where('karyawan_id', $karyawan->id)
+            ->where('status', RemoteAccessViolation::STATUS_CONFIRMED)->count());
     }
 
     // ==========================================================
@@ -556,10 +594,10 @@ class RemoteAccessBanTest extends TestCase
     }
 
     // ==========================================================
-    // NOTIFIKASI PELANGGARAN: HANYA SUPERADMIN & HR, BUKAN KARYAWAN
+    // NOTIFIKASI PELANGGARAN: HANYA SUPERADMIN (BUKAN HR, BUKAN KARYAWAN)
     // ==========================================================
 
-    public function test_pending_violation_notifies_superadmin_and_hr_but_not_karyawan(): void
+    public function test_pending_violation_notifies_superadmin_only_not_hr_not_karyawan(): void
     {
         $superadmin = $this->makeSuperadmin();
         $hr = $this->makeKaryawan(['posisi' => 'hr', 'nama_lengkap' => 'HR Tester']);
@@ -582,11 +620,11 @@ class RemoteAccessBanTest extends TestCase
         $responseSuper->assertSee('Karyawan Pelanggar', false);
         $responseSuper->assertSee('Menunggu review', false);
 
-        // HR juga menerima notifikasi yang sama
+        // HR TIDAK menerima notifikasi pelanggaran (khusus Superadmin)
         $responseHr = $this->actingAs($hr)->get(route('notifications.index'));
         $responseHr->assertOk();
-        $responseHr->assertSee('Pelanggaran Presensi Perlu Review', false);
-        $responseHr->assertSee('Karyawan Pelanggar', false);
+        $responseHr->assertDontSee('Pelanggaran Presensi', false);
+        $responseHr->assertDontSee('Menunggu review', false);
 
         // Karyawan yang melanggar TIDAK melihat notifikasi pelanggaran apa pun
         $responseKaryawan = $this->actingAs($pelaku)->get(route('notifications.index'));
@@ -598,45 +636,75 @@ class RemoteAccessBanTest extends TestCase
         $latest = $this->actingAs($pelaku)->getJson(route('notifications.latest'));
         $latest->assertOk();
         $this->assertNotContains('pelanggaran', array_column($latest->json('items'), 'type'));
+
+        // Dropdown lonceng HR juga tidak memuat notifikasi pelanggaran
+        $latestHr = $this->actingAs($hr)->getJson(route('notifications.latest'));
+        $latestHr->assertOk();
+        $this->assertNotContains('pelanggaran', array_column($latestHr->json('items'), 'type'));
     }
 
-    public function test_auto_confirmed_violation_appears_in_superadmin_and_hr_notifications_only(): void
+    public function test_high_risk_detection_queues_review_notification_for_superadmin_only(): void
     {
         $superadmin = $this->makeSuperadmin();
         $hr = $this->makeKaryawan(['posisi' => 'hr', 'nama_lengkap' => 'HR Tester 2']);
         $pelaku = $this->makeKaryawan(['nama_lengkap' => 'Karyawan Bobol']);
 
-        // Pelanggaran terkonfirmasi otomatis lewat percobaan check-in berisiko tinggi
+        // Percobaan check-in berisiko tinggi → ditolak, antre review (TANPA ban)
         $this->actingAs($pelaku)->postJson(route('karyawan.absensi.checkin'), $this->checkinPayload([
             'client_flags' => ['driver_remote_desktop_terdeteksi:teamviewer'],
         ]))->assertStatus(403);
 
+        $this->assertSame(0, $pelaku->fresh()->violation_count, 'Tidak boleh ada blokir otomatis');
+
+        // Superadmin menerima notifikasi "Perlu Review"
         $responseSuper = $this->actingAs($superadmin)->get(route('notifications.index'));
         $responseSuper->assertOk();
-        $responseSuper->assertSee('Pelanggaran Presensi Dikonfirmasi', false);
-        $responseSuper->assertSee('strike ke-1', false);
+        $responseSuper->assertSee('Pelanggaran Presensi Perlu Review', false);
         $responseSuper->assertSee('Karyawan Bobol', false);
+        $responseSuper->assertSee('Menunggu review', false);
 
+        // HR tidak menerima notifikasi pelanggaran
         $responseHr = $this->actingAs($hr)->get(route('notifications.index'));
         $responseHr->assertOk();
-        $responseHr->assertSee('Pelanggaran Presensi Dikonfirmasi', false);
+        $responseHr->assertDontSee('Pelanggaran Presensi', false);
 
         // Karyawan pelaku tidak melihat notifikasi pelanggaran di daftarnya
         $responseKaryawan = $this->actingAs($pelaku->fresh())->get(route('notifications.index'));
         $responseKaryawan->assertOk();
         $responseKaryawan->assertDontSee('Pelanggaran Presensi', false);
-        $responseKaryawan->assertDontSee('Karyawan Bobol terbukti', false);
+        $responseKaryawan->assertDontSee('terdeteksi memakai akses remote', false);
+
+        // Setelah Superadmin konfirmasi → notifikasi riwayat "Dikonfirmasi" (tetap Superadmin saja)
+        $violation = RemoteAccessViolation::where('karyawan_id', $pelaku->id)->first();
+        $this->assertSame(RemoteAccessViolation::STATUS_PENDING, $violation->status);
+
+        $this->actingAs($superadmin)->post(route('superadmin.violations.confirm', $violation->id))
+            ->assertSessionHas('success');
+
+        $responseConfirmed = $this->actingAs($superadmin->fresh())->get(route('notifications.index'));
+        $responseConfirmed->assertOk();
+        $responseConfirmed->assertSee('Pelanggaran Presensi Dikonfirmasi', false);
+        $responseConfirmed->assertSee('strike ke-1', false);
+
+        $responseHrAfter = $this->actingAs($hr->fresh())->get(route('notifications.index'));
+        $responseHrAfter->assertOk();
+        $responseHrAfter->assertDontSee('Pelanggaran Presensi', false);
     }
 
-    public function test_violation_filter_type_only_offered_to_superadmin_and_hr(): void
+    public function test_violation_filter_type_only_offered_to_superadmin(): void
     {
         $superadmin = $this->makeSuperadmin();
         $hr = $this->makeKaryawan(['posisi' => 'hr']);
         $karyawan = $this->makeKaryawan();
 
         $this->assertArrayHasKey('pelanggaran', app(\App\Services\NotificationService::class)->availableTypes($superadmin));
-        $this->assertArrayHasKey('pelanggaran', app(\App\Services\NotificationService::class)->availableTypes($hr));
+        $this->assertArrayNotHasKey('pelanggaran', app(\App\Services\NotificationService::class)->availableTypes($hr));
         $this->assertArrayNotHasKey('pelanggaran', app(\App\Services\NotificationService::class)->availableTypes($karyawan));
+
+        // Halaman HR tidak menampilkan filter "Pelanggaran Presensi"
+        $this->actingAs($hr)->get(route('notifications.index'))
+            ->assertOk()
+            ->assertDontSee('Pelanggaran Presensi', false);
 
         // Halaman karyawan tidak menampilkan filter "Pelanggaran Presensi"
         $this->actingAs($karyawan)->get(route('notifications.index'))

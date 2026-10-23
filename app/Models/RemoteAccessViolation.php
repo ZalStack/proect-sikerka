@@ -10,8 +10,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * (TeamViewer / AnyDesk / RustDesk / RDP / VNC dll.).
  *
  * Status:
- * - pending_review : sinyal lemah — menunggu review Superadmin (belum diblokir).
- * - confirmed      : pelanggaran terkonfirmasi — strike & ban sudah diterapkan.
+ * - pending_review : semua hasil deteksi (risiko rendah maupun tinggi) masuk ke
+ *                    sini — menunggu review Superadmin, karyawan BELUM diblokir.
+ * - confirmed      : pelanggaran ditinjau & dikonfirmasi Superadmin — strike &
+ *                    ban (tangga 1 hari / 2 hari / permanen) baru diterapkan.
  * - dismissed      : ditandai false positive oleh Superadmin.
  */
 class RemoteAccessViolation extends Model

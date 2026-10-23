@@ -18,7 +18,7 @@
                     Monitoring Pelanggaran Presensi
                 </h1>
                 <p class="text-xs sm:text-sm text-gray-500 font-light mt-0.5">
-                    Deteksi akses remote (TeamViewer / AnyDesk / RustDesk / RDP / VNC). Tangga ban: 1&times; = 1 hari, 2&times; = 2 hari, 3&times; = permanen.
+                    Deteksi akses remote (TeamViewer / AnyDesk / RustDesk / RDP / VNC). Pelanggaran selalu ditinjau Superadmin terlebih dahulu &mdash; blokir HANYA diterapkan setelah konfirmasi. Tangga ban: 1&times; = 1 hari, 2&times; = 2 hari, 3&times; = permanen.
                 </p>
             </div>
 
@@ -235,7 +235,7 @@
                                             <form action="{{ route('superadmin.violations.confirm', $v->id) }}" method="POST" class="inline-flex items-center gap-1.5">
                                                 @csrf
                                                 <input type="text" name="pesan" maxlength="1000" placeholder="Pesan alert (opsional)" class="w-36 px-2.5 py-1.5 rounded-lg border border-gray-200 text-[11px] focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500">
-                                                <button type="submit" onclick="return confirm('Konfirmasi pelanggaran ini? Ban akan diterapkan sesuai tangga (1 hari / 2 hari / permanen).')"
+                                                <button type="submit" onclick="return confirm('Konfirmasi pelanggaran ini? Ban akan diterapkan sesuai tangga (1 hari / 2 hari / permanen)/BLOKIR.')"
                                                     class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm transition-all">
                                                     <i class="fa-solid fa-gavel mr-1"></i>Konfirmasi
                                                 </button>

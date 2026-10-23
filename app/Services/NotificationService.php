@@ -47,9 +47,10 @@ class NotificationService
             $items = $items->merge($this->karyawanKhatamanReminder($user));
         }
 
-        // Pelanggaran presensi (anti remote access) → HANYA untuk Superadmin & HR.
+        // Pelanggaran presensi (anti remote access) → HANYA untuk Superadmin.
         // Karyawan yang melanggar TIDAK PERNAH melihat notifikasi ini di daftar
-        // notifikasinya (dia melihat status blokir lewat banner di dashboard).
+        // notifikasinya (dia melihat status blokir lewat banner di dashboard),
+        // dan HR juga tidak menerima notifikasi ini (review khusus Superadmin).
         $items = $items->merge($this->violationAlerts($user, $since));
 
         return $items->sortByDesc(fn ($item) => $item['created_at'])->values();
@@ -67,7 +68,6 @@ class NotificationService
                 'dinas' => 'Perjalanan Dinas',
                 'sunnah' => '7SPS',
                 'absensi' => 'Absensi Mencurigakan',
-                'pelanggaran' => 'Pelanggaran Presensi',
                 'profile' => 'Update Profil Karyawan',
             ];
         }
@@ -83,7 +83,7 @@ class NotificationService
         ];
 
         // Filter pelanggaran presensi hanya tersedia untuk Superadmin —
-        // karyawan tidak pernah diberi akses ke notifikasi pelanggaran.
+        // HR & karyawan tidak pernah diberi akses ke notifikasi pelanggaran.
         if ($user->posisi === 'superadmin') {
             $types['pelanggaran'] = 'Pelanggaran Presensi';
         }
@@ -135,25 +135,23 @@ class NotificationService
     // ==========================================================
 
     /**
-     * [Superadmin & HR] Pelanggaran presensi karena indikasi akses remote
+     * [Superadmin] Pelanggaran presensi karena indikasi akses remote
      * (TeamViewer / AnyDesk / RustDesk / RDP / VNC). Notifikasi ini HANYA untuk
-     * role superadmin & HR — tidak pernah dikirim ke daftar notifikasi karyawan
-     * yang melanggar (karyawan melihat status blokir via banner di dashboard).
+     * role superadmin — tidak pernah dikirim ke HR maupun daftar notifikasi
+     * karyawan yang melanggar (karyawan melihat status blokir via banner di dashboard).
      *
+     * Semua pelanggaran tercatat `pending_review` (TIDAK ada blokir otomatis):
      * - Pelanggaran `pending_review` → selalu tampil sampai ditinjau (antrean review).
      * - Pelanggaran `confirmed`      → tampil sebagai riwayat selama lookbackDays.
      */
     private function violationAlerts(Karyawan $user, Carbon $since): Collection
     {
-        if (!in_array($user->posisi, ['superadmin', 'hr'], true)) {
+        if ($user->posisi !== 'superadmin') {
             return collect();
         }
 
-        // Untuk superadmin, tautan menuju halaman review pelanggaran;
-        // untuk HR (hanya bisa melihat) tautan menuju daftar absensi.
-        $url = $user->posisi === 'superadmin'
-            ? route('superadmin.violations.index')
-            : route('hr.absensi.index');
+        // Tautan menuju halaman review pelanggaran khusus Superadmin.
+        $url = route('superadmin.violations.index');
 
         $items = collect();
 

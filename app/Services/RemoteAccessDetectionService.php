@@ -25,10 +25,15 @@ use Illuminate\Support\Facades\Log;
  *                          check-in/check-out, satu perangkat untuk banyak akun) dan
  *                          pola user-agent browser otomatis/headless.
  *
- * Risiko TINGGI (1 sinyal kuat ATAU ≥2 sinyal lemah) → check-in/out ditolak,
- * pelanggaran tercatat KONFIRMASI, ban otomatis diterapkan sesuai tangga.
- * Risiko RENDAH (tepat 1 sinyal lemah) → absensi tetap jalan, pelanggaran masuk
- * antrean review Superadmin.
+ * Risiko TINGGI (1 sinyal kuat ATAU ≥2 sinyal lemah) → percobaan check-in/out
+ * DITOLAK saat itu juga, pelanggaran masuk antrean review Superadmin.
+ * Risiko RENDAH (tepat 1 sinyal lemah) → absensi tetap jalan (ditandai
+ * mencurigakan), pelanggaran juga masuk antrean review Superadmin.
+ *
+ * PENTING: Sistem TIDAK PERNAH memblokir/men-suspend akun secara otomatis.
+ * Status pelanggaran selalu "pending_review" sampai ditinjau Superadmin —
+ * ban (tangga 1 hari / 2 hari / permanen) HANYA diterapkan saat Superadmin
+ * menekan tombol Konfirmasi di halaman Pelanggaran Presensi.
  */
 class RemoteAccessDetectionService
 {
@@ -184,13 +189,15 @@ class RemoteAccessDetectionService
     /**
      * Catat pelanggaran presensi untuk review Superadmin.
      *
-     * - $autoConfirm = true (risiko tinggi) → status confirmed + ban otomatis diterapkan.
-     * - $autoConfirm = false (risiko rendah) → status pending_review, karyawan TIDAK diblokir.
+     * SEMUA pelanggaran (risiko tinggi maupun rendah) dicatat dengan status
+     * `pending_review` dan TIDAK PERNAH menerapkan blokir/sendiri — Superadmin
+     * harus meninjau bukti dahulu, lalu memilih Konfirmasi (ban sesuai tangga)
+     * atau Tolak (false positive).
      *
      * Satu record per karyawan per hari: deteksi berulang di hari yang sama digabung
      * (bukti ditambahkan) dan TIDAK menambah strike untuk kedua kalinya.
      */
-    public function recordViolation(Request $request, Karyawan $user, string $context, array $assessment, bool $autoConfirm = false): RemoteAccessViolation
+    public function recordViolation(Request $request, Karyawan $user, string $context, array $assessment): RemoteAccessViolation
     {
         $signals = $assessment['signals'];
         $fingerprint = $assessment['fingerprint'] ?? null;
@@ -222,12 +229,15 @@ class RemoteAccessDetectionService
                 $violation->absensi_id = $todayAbsensi->id;
             }
 
-            // Deteksi baru berisiko tinggi & belum pernah dikonfirmasi
-            // (termasuk yang sebelumnya ditandai false positive) → konfirmasi + ban.
-            if ($isHigh && in_array($violation->status, [RemoteAccessViolation::STATUS_PENDING, RemoteAccessViolation::STATUS_DISMISSED], true)) {
+            // Deteksi berisiko tinggi pada record yang sudah pernah ditolak
+            // (false positive) → buka kembali antrean review Superadmin,
+            // TANPA blokir otomatis.
+            if ($isHigh) {
                 $violation->risk_level = RemoteAccessViolation::RISK_HIGH;
-                $violation->status = RemoteAccessViolation::STATUS_CONFIRMED;
-                $violation->strike_number = $user->fresh()->applyBan();
+
+                if ($violation->status === RemoteAccessViolation::STATUS_DISMISSED) {
+                    $violation->status = RemoteAccessViolation::STATUS_PENDING;
+                }
             }
 
             $violation->save();
@@ -238,8 +248,6 @@ class RemoteAccessDetectionService
             return $violation;
         }
 
-        $status = ($autoConfirm && $isHigh) ? RemoteAccessViolation::STATUS_CONFIRMED : RemoteAccessViolation::STATUS_PENDING;
-
         $violation = RemoteAccessViolation::create([
             'karyawan_id' => $user->id,
             'absensi_id' => $todayAbsensi?->id,
@@ -248,26 +256,20 @@ class RemoteAccessDetectionService
             'signals' => $signals,
             'risk_score' => min(255, (int) $assessment['risk_score']),
             'risk_level' => $riskLevel,
-            'status' => $status,
+            'status' => RemoteAccessViolation::STATUS_PENDING,
             'notes' => $this->buildEvidenceNote($fingerprint, $request),
         ]);
-
-        if ($status === RemoteAccessViolation::STATUS_CONFIRMED) {
-            $violation->strike_number = $user->fresh()->applyBan();
-            $violation->save();
-        }
 
         // Badge antrean review di sidebar superadmin ikut ter-update langsung
         Cache::forget('superadmin_pending_violations');
 
-        Log::warning('Pelanggaran presensi (indikasi akses remote) tercatat', [
+        Log::warning('Pelanggaran presensi (indikasi akses remote) tercatat — menunggu review Superadmin', [
             'karyawan_id' => $user->id,
             'violation_id' => $violation->id,
             'konteks' => $context,
             'risk_level' => $riskLevel,
             'risk_score' => $violation->risk_score,
             'status' => $violation->status,
-            'strike_number' => $violation->strike_number,
             'signals' => array_column($signals, 'code'),
             'ip' => $request->ip(),
         ]);
