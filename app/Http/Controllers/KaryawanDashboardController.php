@@ -294,7 +294,7 @@ class KaryawanDashboardController extends Controller
                 'type' => 'libur',
                 'title' => $hl->keterangan,
                 'message' => 'Tanggal Merah (' . $kategoriLabel . ')',
-                'color' => 'yellow',
+                'color' => 'red',
                 'url' => null,
                 'time' => 'Libur',
                 'time_ago' => $hl->tanggal->translatedFormat('l, d F Y'),

@@ -239,11 +239,11 @@
                             <span class="text-[10px] text-slate-400">7SPS</span>
                         </div>
                         <div class="flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full bg-[#F43F5E]"></span>
+                            <span class="w-2 h-2 rounded-full bg-[#EAB308]"></span>
                             <span class="text-[10px] text-slate-400">Alert</span>
                         </div>
                         <div class="flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full bg-[#EAB308]"></span>
+                            <span class="w-2 h-2 rounded-full bg-[#EF4444]"></span>
                             <span class="text-[10px] text-slate-400">Tanggal Merah</span>
                         </div>
                     </div>
@@ -681,12 +681,13 @@ function calendarModal() {
                 'amber': 'bg-amber-100 text-amber-600',
                 'violet': 'bg-violet-100 text-violet-600',
                 'emerald': 'bg-emerald-100 text-emerald-600',
-                'rose': 'bg-rose-100 text-rose-600',
+                'rose': 'bg-amber-100 text-amber-800 border border-amber-200',
                 'sky': 'bg-sky-100 text-sky-600',
                 'teal': 'bg-teal-100 text-teal-600',
                 'indigo': 'bg-indigo-100 text-indigo-600',
                 'cyan': 'bg-cyan-100 text-cyan-600',
                 'yellow': 'bg-yellow-100 text-yellow-800 border border-yellow-200',
+                'red': 'bg-rose-100 text-rose-700 border border-rose-200',
             };
             return map[color] || 'bg-slate-100 text-slate-600';
         }
@@ -707,9 +708,9 @@ function initFullCalendar() {
     const fcEvents = [];
     const colorMap = {
         'blue': '#3B82F6', 'amber': '#F59E0B', 'violet': '#8B5CF6',
-        'emerald': '#10B981', 'rose': '#F43F5E', 'sky': '#0EA5E9',
+        'emerald': '#10B981', 'rose': '#EAB308', 'sky': '#0EA5E9',
         'teal': '#14B8A6', 'indigo': '#6366F1', 'cyan': '#06B6D4',
-        'yellow': '#EAB308',
+        'yellow': '#EAB308', 'red': '#EF4444',
     };
 
     for (const [date, dayEvents] of Object.entries(allEvents)) {
@@ -718,7 +719,7 @@ function initFullCalendar() {
                 title: ev.title,
                 start: date,
                 color: colorMap[ev.color] || '#94A3B8',
-                textColor: ev.color === 'yellow' ? '#713F12' : '#FFFFFF',
+                textColor: (ev.color === 'yellow' || ev.color === 'rose') ? '#713F12' : '#FFFFFF',
                 extendedProps: { ...ev }
             });
         }
