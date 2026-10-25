@@ -10,6 +10,7 @@ use App\Models\PerjalananDinas;
 use App\Models\SunnahDaily;
 use App\Models\KhatamanAbsensi;
 use App\Models\Pengumuman;
+use App\Models\HariLibur;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -291,6 +292,29 @@ class HRDashboardController extends Controller
                 'time' => $n['created_at']->format('H:i'),
                 'time_ago' => $n['created_at']->diffForHumans(),
                 'icon' => $typeIcons[$n['type']] ?? 'fa-bell',
+            ];
+        }
+
+        // ==================== TANGGAL MERAH / HARI LIBUR ====================
+        $hariLiburs = HariLibur::orderBy('tanggal', 'asc')->get();
+        foreach ($hariLiburs as $hl) {
+            $dateKey = $hl->tanggal->format('Y-m-d');
+            $kategoriLabel = match ($hl->jenis) {
+                'cuti_bersama' => 'Cuti Bersama',
+                'khusus_kpm' => 'Libur Khusus KPM',
+                default => 'Libur Nasional',
+            };
+
+            $events[$dateKey][] = [
+                'id' => 'libur-' . $hl->id,
+                'type' => 'libur',
+                'title' => $hl->keterangan,
+                'message' => 'Tanggal Merah (' . $kategoriLabel . ')',
+                'color' => 'yellow',
+                'url' => null,
+                'time' => 'Libur',
+                'time_ago' => $hl->tanggal->translatedFormat('l, d F Y'),
+                'icon' => 'fa-calendar-day',
             ];
         }
 

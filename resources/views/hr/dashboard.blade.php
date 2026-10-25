@@ -242,6 +242,10 @@
                             <span class="w-2 h-2 rounded-full bg-[#F43F5E]"></span>
                             <span class="text-[10px] text-slate-400">Alert</span>
                         </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-[#EAB308]"></span>
+                            <span class="text-[10px] text-slate-400">Tanggal Merah</span>
+                        </div>
                     </div>
                 </div>
 
@@ -279,7 +283,8 @@
                                     </div>
                                 </template>
                                 <template x-for="event in modalEvents" :key="event.id">
-                                    <a :href="event.url"
+                                    <a :href="event.url || 'javascript:void(0)'"
+                                       :class="{'cursor-default hover:bg-white hover:border-slate-100': !event.url}"
                                        class="flex items-start gap-3 p-3 rounded-xl border border-slate-100 hover:border-slate-200 hover:bg-slate-50 transition-all duration-200 group">
                                         <div class="w-9 h-9 rounded-lg flex items-center justify-center text-sm shrink-0"
                                              :class="getEventColorClass(event.color)">
@@ -295,7 +300,7 @@
                                                 <span x-text="event.time_ago"></span>
                                             </p>
                                         </div>
-                                        <i class="fas fa-chevron-right text-[10px] text-slate-300 group-hover:text-[#27438D] transition-colors shrink-0 mt-2"></i>
+                                        <i x-show="event.url" class="fas fa-chevron-right text-[10px] text-slate-300 group-hover:text-[#27438D] transition-colors shrink-0 mt-2"></i>
                                     </a>
                                 </template>
                             </div>
@@ -681,6 +686,7 @@ function calendarModal() {
                 'teal': 'bg-teal-100 text-teal-600',
                 'indigo': 'bg-indigo-100 text-indigo-600',
                 'cyan': 'bg-cyan-100 text-cyan-600',
+                'yellow': 'bg-yellow-100 text-yellow-800 border border-yellow-200',
             };
             return map[color] || 'bg-slate-100 text-slate-600';
         }
@@ -703,6 +709,7 @@ function initFullCalendar() {
         'blue': '#3B82F6', 'amber': '#F59E0B', 'violet': '#8B5CF6',
         'emerald': '#10B981', 'rose': '#F43F5E', 'sky': '#0EA5E9',
         'teal': '#14B8A6', 'indigo': '#6366F1', 'cyan': '#06B6D4',
+        'yellow': '#EAB308',
     };
 
     for (const [date, dayEvents] of Object.entries(allEvents)) {
@@ -711,6 +718,7 @@ function initFullCalendar() {
                 title: ev.title,
                 start: date,
                 color: colorMap[ev.color] || '#94A3B8',
+                textColor: ev.color === 'yellow' ? '#713F12' : '#FFFFFF',
                 extendedProps: { ...ev }
             });
         }
