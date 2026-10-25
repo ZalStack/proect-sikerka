@@ -83,22 +83,45 @@ class Absensi extends Model
     }
 
     /**
+     * True kalau tanggal absensi jatuh di hari libur:
+     * - Hari Minggu (dayOfWeekIso = 7)
+     * - Hari Senin (dayOfWeekIso = 1)
+     * - Tanggal Merah / Libur Nasional yang terdaftar di tabel hari_liburs
+     */
+    public function getIsHariLiburAttribute(): bool
+    {
+        if (!$this->tanggal) {
+            return false;
+        }
+
+        return HariLibur::isHariLibur($this->tanggal);
+    }
+
+    /**
+     * Ambil keterangan libur jika tanggal absensi jatuh di hari libur.
+     */
+    public function getKeteranganLiburAttribute(): ?string
+    {
+        if (!$this->tanggal) {
+            return null;
+        }
+
+        return HariLibur::getKeteranganLibur($this->tanggal);
+    }
+
+    /**
      * Jumlah menit keterlambatan check-in, dihitung dari batas WORK_START_TIME (07:45).
-     * Kalau check-in dilakukan tepat atau sebelum jam 07:45, atau belum check-in
-     * sama sekali, hasilnya 0 (tidak dianggap terlambat).
+     * Kalau check-in dilakukan di hari libur (Minggu, Senin, atau Tanggal Merah),
+     * atau check-in tepat/sebelum jam 07:45, hasilnya selalu 0 (tidak dianggap terlambat).
      */
     public function getTerlambatMenitAttribute(): int
     {
-        if (!$this->check_in || !$this->tanggal) {
+        if (!$this->check_in || !$this->tanggal || $this->is_hari_libur) {
             return 0;
         }
 
         // Rekonstruksi jam check-in DI ATAS tanggal absensi (kolom `tanggal`),
         // bukan ikut tanggal yang tersimpan di kolom check_in itu sendiri.
-        // Kalau ada data check_in yang tanggalnya "meleset" dari kolom tanggal
-        // (mis. data lama/hasil input manual), perhitungan telat tetap dihitung
-        // dari JAM check-in-nya saja terhadap tanggal absensi yang benar --
-        // supaya tidak muncul angka telat yang tidak masuk akal (ribuan menit).
         $checkIn = Carbon::parse($this->tanggal->format('Y-m-d') . ' ' . $this->check_in->format('H:i:s'), $this->check_in->getTimezone());
         $batas = Carbon::parse($this->tanggal->format('Y-m-d') . ' ' . self::WORK_START_TIME, $checkIn->getTimezone());
 
@@ -115,18 +138,20 @@ class Absensi extends Model
 
     /**
      * Jumlah menit lembur, dihitung dari selisih check-out terhadap jam pulang
-     * standar (WORK_END_TIME / 16:00). Kalau belum check-out, atau pulang
-     * lebih awal/tepat waktu, hasilnya 0.
+     * standar (WORK_END_TIME / 16:00).
+     * 
+     * PERATURAN RESMI KPM:
+     * Untuk hari libur (Minggu, Senin, atau Tanggal Merah):
+     * Karyawan masuk dibayar dengan "Uang Sesi", sehingga TIDAK DIHITUNG LEMBUR (selalu 0 menit).
      */
     public function getLemburMenitAttribute(): int
     {
-        if (!$this->check_out || !$this->tanggal) {
+        if (!$this->check_out || !$this->tanggal || $this->is_hari_libur) {
             return 0;
         }
 
         // Sama seperti terlambat_menit di atas: pakai JAM check-out saja di atas
-        // tanggal absensi yang benar, supaya kebal terhadap data check_out yang
-        // tanggalnya meleset dari kolom tanggal.
+        // tanggal absensi yang benar.
         $checkOut = Carbon::parse($this->tanggal->format('Y-m-d') . ' ' . $this->check_out->format('H:i:s'), $this->check_out->getTimezone());
         $batas = Carbon::parse($this->tanggal->format('Y-m-d') . ' ' . self::WORK_END_TIME, $checkOut->getTimezone());
 

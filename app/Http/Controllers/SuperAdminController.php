@@ -10,6 +10,8 @@ use App\Models\Perizinan;
 use App\Models\RemoteAccessViolation;
 use App\Models\KaryawanMenuDisabled;
 use App\Models\SystemSetting;
+use App\Models\HariLibur;
+use App\Services\HariLiburService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -963,5 +965,99 @@ class SuperAdminController extends Controller
         }
 
         return redirect()->back()->with('success', $pesan);
+    }
+
+    // ==========================================
+    // KELOLA HARI LIBUR & TANGGAL MERAH
+    // ==========================================
+
+    /**
+     * Halaman manajemen hari libur & tanggal merah
+     */
+    public function hariLiburIndex(Request $request)
+    {
+        $currentYear = (int) Carbon::now()->year;
+        $selectedYear = (int) $request->input('tahun', $currentYear);
+
+        // Jika belum ada data sama sekali di database untuk tahun 2026, lakukan inisialisasi default
+        if (HariLibur::where('tahun', $selectedYear)->count() === 0 && $selectedYear === 2026) {
+            (new HariLiburService())->syncFromApi(2026);
+        }
+
+        $hariLiburs = HariLibur::where('tahun', $selectedYear)
+            ->orderBy('tanggal', 'asc')
+            ->get();
+
+        // Ambil tahun-tahun yang sudah tersimpan di database + tahun berjalan saat ini
+        $dbYears = HariLibur::select('tahun')
+            ->distinct()
+            ->pluck('tahun')
+            ->map(fn($y) => (int) $y)
+            ->toArray();
+
+        // Hanya sertakan tahun yang ada di database dan tahun berjalan saat ini (tidak memunculkan tahun depan yang belum tiba)
+        $availableYears = array_values(array_unique(array_merge($dbYears, [$currentYear, $selectedYear])));
+        rsort($availableYears);
+
+        return view('superadmin.hari-libur', compact('hariLiburs', 'selectedYear', 'availableYears'));
+    }
+
+    /**
+     * Tambah hari libur manual
+     */
+    public function hariLiburStore(Request $request)
+    {
+        $request->validate([
+            'tanggal' => 'required|date|unique:hari_liburs,tanggal',
+            'keterangan' => 'required|string|max:255',
+            'jenis' => 'required|in:nasional,khusus_kpm,cuti_bersama',
+        ], [
+            'tanggal.required' => 'Tanggal libur wajib diisi.',
+            'tanggal.unique' => 'Tanggal tersebut sudah terdaftar sebagai hari libur.',
+            'keterangan.required' => 'Keterangan libur wajib diisi.',
+        ]);
+
+        $tanggal = Carbon::parse($request->input('tanggal'));
+
+        HariLibur::create([
+            'tanggal' => $tanggal->format('Y-m-d'),
+            'keterangan' => trim($request->input('keterangan')),
+            'jenis' => $request->input('jenis'),
+            'tahun' => (int) $tanggal->format('Y'),
+        ]);
+
+        return redirect()->back()->with('success', 'Hari libur berhasil ditambahkan ke kalender sistem.');
+    }
+
+    /**
+     * Hapus hari libur
+     */
+    public function hariLiburDestroy($id)
+    {
+        $item = HariLibur::findOrFail($id);
+        $keterangan = $item->keterangan;
+        $tanggal = $item->tanggal->format('d/m/Y');
+        $item->delete();
+
+        return redirect()->back()->with('success', "Hari libur \"{$keterangan}\" ({$tanggal}) berhasil dihapus.");
+    }
+
+    /**
+     * Tarik libur nasional dari API / default source untuk tahun tertentu
+     */
+    public function hariLiburSync(Request $request)
+    {
+        $tahun = (int) $request->input('tahun', Carbon::now()->year);
+
+        $service = new HariLiburService();
+        $result = $service->syncFromApi($tahun);
+
+        if ($result['success']) {
+            return redirect()->route('superadmin.hari-libur.index', ['tahun' => $tahun])
+                ->with('success', $result['message']);
+        }
+
+        return redirect()->route('superadmin.hari-libur.index', ['tahun' => $tahun])
+            ->with('error', $result['message']);
     }
 }

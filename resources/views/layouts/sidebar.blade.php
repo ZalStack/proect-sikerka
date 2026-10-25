@@ -170,6 +170,15 @@
                             </span>
                         @endif
                     </a>
+
+                    <!-- Kelola Hari Libur & Tanggal Merah -->
+                    <a href="{{ route('superadmin.hari-libur.index') }}"
+                        class="{{ $menuBase }} {{ str_starts_with((string) $currentRoute, 'superadmin.hari-libur.') ? $menuActive : $menuIdle }}">
+                        <span class="{{ $iconChip }} {{ str_starts_with((string) $currentRoute, 'superadmin.hari-libur.') ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
+                            <i class="fa-solid fa-calendar-day text-sm"></i>
+                        </span>
+                        <span class="truncate">Hari Libur & Tgl Merah</span>
+                    </a>
                 </nav>
 
             @elseif ($isHr)

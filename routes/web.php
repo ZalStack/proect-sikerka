@@ -105,6 +105,12 @@ Route::middleware('auth')->group(function () {
             Route::post('/akses-karyawan/{id}/suspend', [SuperAdminController::class, 'accessSuspend'])->name('access.suspend');
             Route::post('/akses-karyawan/{id}/unsuspend', [SuperAdminController::class, 'accessUnsuspend'])->name('access.unsuspend');
             Route::post('/akses-karyawan/{id}/menus', [SuperAdminController::class, 'accessUpdateMenus'])->name('access.menus');
+
+            // Kelola Hari Libur & Tanggal Merah
+            Route::get('/hari-libur', [SuperAdminController::class, 'hariLiburIndex'])->name('hari-libur.index');
+            Route::post('/hari-libur', [SuperAdminController::class, 'hariLiburStore'])->name('hari-libur.store');
+            Route::delete('/hari-libur/{id}', [SuperAdminController::class, 'hariLiburDestroy'])->name('hari-libur.destroy');
+            Route::post('/hari-libur/sync', [SuperAdminController::class, 'hariLiburSync'])->name('hari-libur.sync');
         });
 
     // ==========================================

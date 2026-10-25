@@ -1241,20 +1241,25 @@ class AbsensiController extends Controller
                 $endMinute = 960; // 16:00
 
                 /**
-                 * CEK APAKAH HARI MINGGU ATAU SENIN (hari libur)
-                 * Hari Minggu = 7, Senin = 1 (menggunakan dayOfWeekIso)
+                 * CEK APAKAH HARI LIBUR (Minggu, Senin, atau Tanggal Merah)
+                 * - Hari Minggu = 7, Senin = 1
+                 * - Tanggal Merah terdaftar di tabel hari_liburs
                  *
-                 * Untuk hari Minggu & Senin, semua jam kerja dianggap LEMBUR
-                 * karena masuk di hari libur
+                 * ATURAN PENGGAJIAN KPM:
+                 * Karyawan yang masuk di hari libur dibayar melalui "Uang Sesi" terpisah.
+                 * Oleh karena itu:
+                 * - TETAP MENAMBAH HARI KERJA (Status Hadir)
+                 * - LEMBUR = 0 MENIT (TIDAK ADA LEMBUR HARIAN)
+                 * - TERLAMBAT & PULANG AWAL = 0 MENIT
                  */
-                $isHariLibur = in_array($absen->hari, ['Minggu', 'Senin']);
+                $isHariLibur = $absen->is_hari_libur;
 
                 // ==========================================================
                 // RUMUS 1: TERLAMBAT (Kolom G) - dalam MENIT
                 // ==========================================================
                 /**
                  * Logika:
-                 * - Untuk hari libur (Minggu/Senin): tidak ada terlambat
+                 * - Untuk hari libur (Minggu/Senin/Tanggal Merah): tidak ada terlambat (0 menit)
                  * - Untuk hari biasa: check-in > 07:45 dihitung selisih menit
                  */
                 if ($isHariLibur) {
@@ -1276,16 +1281,15 @@ class AbsensiController extends Controller
                 // ==========================================================
                 /**
                  * Logika:
-                 * 1. Jika hari Minggu atau Senin (hari libur):
-                 *    - SEMUA jam kerja dihitung sebagai lembur
-                 *    - Rumus: Total Jam Kerja (col H)
+                 * 1. Jika hari libur (Minggu, Senin, Tanggal Merah):
+                 *    - LEMBUR SELALU 0 MENIT (Kompensasi masuk uang sesi).
                  *
                  * 2. Jika hari biasa (Selasa - Sabtu):
-                 *    - Check-out > 16:00 dihitung selisih menit
+                 *    - Check-out > 16:00 dihitung selisih menit terhadap jam 16:00.
                  */
                 if ($isHariLibur) {
-                    // Hari libur: semua jam kerja = lembur
-                    $formulaLembur = "=IF({$colH}>0, {$colH}, 0)";
+                    // Hari libur: TIDAK ADA LEMBUR (0 menit)
+                    $formulaLembur = '=0';
                 } else {
                     // Hari biasa: lembur hanya jika check-out > 16:00
                     $formulaLembur = "=IF(AND({$colE}<>\"\", (HOUR({$colE})*60+MINUTE({$colE}))>{$endMinute}), (HOUR({$colE})*60+MINUTE({$colE}))-{$endMinute}, 0)";
@@ -1297,7 +1301,7 @@ class AbsensiController extends Controller
                 // ==========================================================
                 /**
                  * Logika:
-                 * - Untuk hari libur (Minggu/Senin): tidak dihitung pulang lebih awal
+                 * - Untuk hari libur: tidak dihitung pulang lebih awal (0 menit)
                  * - Untuk hari biasa: check-out < 16:00 dihitung selisih menit (16:00 - jam pulang)
                  */
                 if ($isHariLibur) {
@@ -1334,12 +1338,16 @@ class AbsensiController extends Controller
                     ->getNumberFormat()
                     ->setFormatCode('0');
 
-                // Tandai hari Minggu & Senin (hari libur) dengan warna khusus
+                // Tandai hari libur (Minggu, Senin, atau Tanggal Merah) dengan warna khusus
                 if ($isHariLibur) {
                     $sheet->getStyle("C{$row}")->applyFromArray([
                         'font' => ['bold' => true, 'color' => ['rgb' => 'C00000']],
                         'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorHariLibur]],
                     ]);
+                    // Tambahkan catatan libur di kolom keterangan jika kosong
+                    if ($absen->keterangan_libur && empty($sheet->getCell("K{$row}")->getValue())) {
+                        $sheet->setCellValue("K{$row}", $absen->keterangan_libur);
+                    }
                 }
 
                 // Warna badge status
@@ -1562,7 +1570,15 @@ class AbsensiController extends Controller
         $row++;
 
         // Grand Total menggunakan SUM dari semua baris data
-        $grandPairs = [['Jumlah Karyawan', "=SUMPRODUCT(1/COUNTIF(A{$grandTotalStartRow}:A{$grandTotalEndRow}, A{$grandTotalStartRow}:A{$grandTotalEndRow}))"], ['Total Hari Kerja', "=SUM(F{$grandTotalStartRow}:F{$grandTotalEndRow})"], ['Total Jam Kerja (menit)', "=SUM(H{$grandTotalStartRow}:H{$grandTotalEndRow})"], ['Total Lembur (menit)', "=SUM(I{$grandTotalStartRow}:I{$grandTotalEndRow})"], ['Total Keterlambatan (menit)', "=SUM(G{$grandTotalStartRow}:G{$grandTotalEndRow})"], ['Total Pulang Lebih Awal (menit)', "=SUM(J{$grandTotalStartRow}:J{$grandTotalEndRow})"]];
+        $totalKaryawanCount = $groups->count();
+        $grandPairs = [
+            ['Jumlah Karyawan', $totalKaryawanCount],
+            ['Total Hari Kerja', "=COUNTIF(F{$grandTotalStartRow}:F{$grandTotalEndRow},\"Hadir\")+COUNTIF(F{$grandTotalStartRow}:F{$grandTotalEndRow},\"Perjalanan Dinas\")"],
+            ['Total Jam Kerja (menit)', "=SUM(H{$grandTotalStartRow}:H{$grandTotalEndRow})"],
+            ['Total Lembur (menit)', "=SUM(I{$grandTotalStartRow}:I{$grandTotalEndRow})"],
+            ['Total Keterlambatan (menit)', "=SUM(G{$grandTotalStartRow}:G{$grandTotalEndRow})"],
+            ['Total Pulang Lebih Awal (menit)', "=SUM(J{$grandTotalStartRow}:J{$grandTotalEndRow})"]
+        ];
 
         foreach ($grandPairs as [$label, $formula]) {
             $sheet->mergeCells("A{$row}:F{$row}");
