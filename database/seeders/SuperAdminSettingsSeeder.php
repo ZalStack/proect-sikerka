@@ -50,6 +50,15 @@ class SuperAdminSettingsSeeder extends Seeder
         // Aktifkan semua fitur secara default (idempotent).
         SystemSetting::setAllFeatures(true);
 
+        // Nomor WhatsApp Admin untuk fitur Lupa Password
+        // (HR/Karyawan meminta link reset password ke nomor ini).
+        SystemSetting::setValue(
+            'admin_whatsapp',
+            '082123439604',
+            'general',
+            'Nomor WhatsApp Admin SIKEKAR - tujuan permintaan link reset password'
+        );
+
         $this->command->info('System settings berhasil diinisialisasi (maintenance OFF, semua fitur ON).');
     }
 

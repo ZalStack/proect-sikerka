@@ -43,12 +43,13 @@ Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name(
 
 // Guest password routes
 Route::middleware('guest')->group(function () {
-    // Forgot Password Routes
+    // Lupa Password: pengguna diminta menghubungi Admin SIKEKAR via WhatsApp
+    // untuk meminta link reset password (diterbitkan oleh Super Admin).
     Route::get('forgot-password', [ForgotPasswordController::class, 'showForgotForm'])->name('password.request');
-    Route::post('forgot-password/verify', [ForgotPasswordController::class, 'verifyEmail'])->name('password.verify');
-    Route::get('reset-password', [ForgotPasswordController::class, 'showResetForm'])->name('password.reset.form');
-    Route::post('reset-password', [ForgotPasswordController::class, 'resetPassword'])->name('password.reset');
-    Route::get('refresh-captcha', [ForgotPasswordController::class, 'refreshCaptcha'])->name('refresh.captcha');
+
+    // Reset password memakai link/token yang diterbitkan Super Admin (berlaku 60 menit)
+    Route::get('reset-password/{token}', [ForgotPasswordController::class, 'showResetForm'])->name('password.reset.form');
+    Route::post('reset-password/{token}', [ForgotPasswordController::class, 'resetPassword'])->name('password.reset');
 });
 
 // Auth routes
@@ -90,6 +91,9 @@ Route::middleware('auth')->group(function () {
             // Kelola Role Pengguna
             Route::get('/karyawan', [SuperAdminController::class, 'karyawanIndex'])->name('karyawan.index');
             Route::match(['PUT', 'POST'], '/karyawan/{id}/role', [SuperAdminController::class, 'karyawanUpdateRole'])->name('karyawan.update-role');
+
+            // Generate link reset password (lupa password) untuk karyawan / HR
+            Route::post('/karyawan/{id}/generate-reset-link', [SuperAdminController::class, 'generateResetLink'])->name('karyawan.generate-reset-link');
 
             // Pelanggaran Presensi (Anti Remote Access: TeamViewer / AnyDesk / RDP dll.)
             Route::get('/pelanggaran', [SuperAdminController::class, 'violationsIndex'])->name('violations.index');

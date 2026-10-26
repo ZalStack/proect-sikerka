@@ -57,8 +57,6 @@
             animation: spin 0.7s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        /* Subtle spin feedback on captcha refresh button */
-        .captcha-refreshing { animation: spin 0.6s linear; }
     </style>
 </head>
 <body class="font-['Poppins'] antialiased min-h-screen min-h-[100dvh] flex bg-slate-950 overflow-x-hidden">
@@ -141,13 +139,29 @@
                 <div class="glass-card rounded-3xl shadow-2xl shadow-slate-900/10 p-6 sm:p-8 md:p-10 border border-white/40 {{ ($errors->any() || session('error')) ? 'animate-shake' : '' }}">
 
                     <!-- Header -->
-                    <div class="mb-8">
+                    <div class="mb-6">
                         <span class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-cyan-700 bg-cyan-50 rounded-full mb-5 tracking-wide uppercase border border-cyan-200">
                             <span class="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
                             Lupa Password
                         </span>
-                        <h2 class="text-2xl sm:text-3xl font-['Poppins'] font-bold text-slate-800 leading-tight">Verifikasi Identitas</h2>
-                        <p class="text-gray-500 mt-2 text-sm">Masukkan email Anda untuk mereset password</p>
+                        <h2 class="text-2xl sm:text-3xl font-['Poppins'] font-bold text-slate-800 leading-tight">Minta Link Reset ke Admin</h2>
+                        <p class="text-gray-500 mt-2 text-sm">Link reset password hanya diterbitkan oleh Super Admin. Silakan hubungi Admin SIKEKAR melalui WhatsApp.</p>
+                    </div>
+
+                    <!-- Langkah singkat -->
+                    <div class="bg-cyan-50/70 border border-cyan-100 rounded-2xl p-4 mb-5 space-y-2.5">
+                        <div class="flex items-start gap-2.5">
+                            <span class="w-5 h-5 rounded-md bg-cyan-600 text-white text-[10px] font-extrabold flex items-center justify-center flex-shrink-0 mt-0.5">1</span>
+                            <p class="text-xs text-gray-600 leading-relaxed">Isi nama &amp; email akun Anda di bawah (opsional) agar pesan permintaan menjadi lengkap.</p>
+                        </div>
+                        <div class="flex items-start gap-2.5">
+                            <span class="w-5 h-5 rounded-md bg-cyan-600 text-white text-[10px] font-extrabold flex items-center justify-center flex-shrink-0 mt-0.5">2</span>
+                            <p class="text-xs text-gray-600 leading-relaxed">Tekan tombol WhatsApp — pesan permintaan link reset sudah siap terkirim ke Admin.</p>
+                        </div>
+                        <div class="flex items-start gap-2.5">
+                            <span class="w-5 h-5 rounded-md bg-cyan-600 text-white text-[10px] font-extrabold flex items-center justify-center flex-shrink-0 mt-0.5">3</span>
+                            <p class="text-xs text-gray-600 leading-relaxed">Super Admin akan mengirimkan link reset (berlaku 60 menit) — buka link tersebut untuk membuat password baru.</p>
+                        </div>
                     </div>
 
                     @if(session('error'))
@@ -159,49 +173,48 @@
                     </div>
                     @endif
 
-                    <form id="forgot-form" method="POST" action="{{ route('password.verify') }}" class="space-y-5">
-                        @csrf
-
-                        <!-- Email -->
+                    <div class="space-y-5">
+                        <!-- Nama (untuk pesan WhatsApp) -->
                         <div class="animate-slide-up delay-100 [animation-delay:100ms]">
-                            <label for="email" class="block text-sm font-semibold text-slate-700 mb-2 ml-1">Alamat Email</label>
+                            <label for="wa-name" class="block text-sm font-semibold text-slate-700 mb-2 ml-1">Nama Lengkap <span class="text-gray-400 font-normal text-xs">(opsional)</span></label>
+                            <div class="relative group">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                </div>
+                                <input id="wa-name" type="text" autocomplete="name" placeholder="Nama Anda"
+                                    class="w-full pl-12 pr-4 py-3.5 glass-input rounded-2xl focus:outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/20 transition-all duration-300 text-slate-800 placeholder-gray-400 text-sm font-medium">
+                            </div>
+                        </div>
+
+                        <!-- Email (untuk pesan WhatsApp) -->
+                        <div class="animate-slide-up delay-100 [animation-delay:100ms]">
+                            <label for="wa-email" class="block text-sm font-semibold text-slate-700 mb-2 ml-1">Email Akun <span class="text-gray-400 font-normal text-xs">(opsional)</span></label>
                             <div class="relative group">
                                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                     <svg class="w-5 h-5 text-gray-400 group-focus-within:text-cyan-600 transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"></path></svg>
                                 </div>
-                                <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus placeholder="nama@perusahaan.com"
-                                    class="w-full pl-12 pr-4 py-3.5 glass-input rounded-2xl focus:outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/20 transition-all duration-300 text-slate-800 placeholder-gray-400 text-sm font-medium @error('email') border-red-300 focus:border-red-400 focus:ring-red-400/20 @enderror">
-                                <div class="absolute inset-0 rounded-2xl opacity-0 group-focus-within:opacity-100 pointer-events-none transition-opacity duration-500 -z-10 blur-xl bg-cyan-400/10 @error('email') bg-red-400/10 @enderror"></div>
+                                <input id="wa-email" type="email" autocomplete="email" placeholder="nama@perusahaan.com"
+                                    class="w-full pl-12 pr-4 py-3.5 glass-input rounded-2xl focus:outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/20 transition-all duration-300 text-slate-800 placeholder-gray-400 text-sm font-medium">
+                                <div class="absolute inset-0 rounded-2xl opacity-0 group-focus-within:opacity-100 pointer-events-none transition-opacity duration-500 -z-10 blur-xl bg-cyan-400/10"></div>
                             </div>
-                            @error('email')<p class="mt-1.5 ml-1 text-xs text-red-500 font-medium">{{ $message }}</p>@enderror
                         </div>
+                    </div>
 
-                        <!-- CAPTCHA -->
-                        <div class="animate-slide-up delay-200 [animation-delay:200ms]">
-                            <label class="block text-sm font-semibold text-slate-700 mb-2 ml-1">Verifikasi Keamanan</label>
-                            <div class="flex items-center gap-3 bg-white/60 backdrop-blur-sm border border-gray-200 rounded-2xl p-3">
-                                <div class="flex-1 text-center">
-                                    <span class="text-xl sm:text-2xl font-['Poppins'] font-bold text-slate-800 tracking-wider break-all" id="captcha-text">{{ $captcha['text'] }}</span>
-                                </div>
-                                <button type="button" id="captcha-refresh-btn" onclick="refreshCaptcha()" class="p-2 rounded-xl text-gray-400 hover:text-cyan-600 hover:bg-cyan-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" id="captcha-refresh-icon"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                                </button>
-                            </div>
-                            <input type="text" name="captcha_input" required placeholder="Masukkan hasil perhitungan"
-                                class="w-full mt-3 px-4 py-3.5 glass-input rounded-2xl focus:outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/20 transition-all duration-300 text-slate-800 placeholder-gray-400 text-sm font-medium @error('captcha_input') border-red-300 @enderror">
-                            @error('captcha_input')<p class="mt-1.5 ml-1 text-xs text-red-500 font-medium">{{ $message }}</p>@enderror
-                        </div>
-
-                        <!-- Submit -->
+                        <!-- Tombol WhatsApp Admin -->
                         <div class="pt-2 animate-slide-up delay-300 [animation-delay:300ms]">
-                            <button type="submit" id="forgot-submit-btn"
-                                class="w-full relative bg-gradient-to-r from-slate-800 via-blue-900 to-cyan-700 text-white py-3.5 px-6 rounded-2xl font-semibold text-base flex items-center justify-center group overflow-hidden shadow-xl shadow-slate-800/20 hover:shadow-cyan-500/25 transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-xl">
-                                <span class="relative z-10 flex items-center gap-2" id="forgot-submit-label">
-                                    Verifikasi & Lanjutkan
-                                    <svg class="w-5 h-5 transform group-hover:translate-x-1.5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
-                                </span>
-                                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></div>
-                            </button>
+                            <a id="wa-admin-btn" href="https://wa.me/{{ $adminWhatsapp }}" target="_blank" rel="noopener noreferrer"
+                                class="w-full relative bg-gradient-to-r from-emerald-600 to-green-500 text-white py-3.5 px-6 rounded-2xl font-semibold text-base flex items-center justify-center gap-2.5 group overflow-hidden shadow-xl shadow-emerald-800/20 hover:shadow-emerald-500/30 transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-300">
+                                <svg class="w-6 h-6 relative z-10" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                                </svg>
+                                <span class="relative z-10">Chat WhatsApp Admin</span>
+                                <span class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></span>
+                            </a>
+
+                            <div class="flex items-center justify-center gap-2 mt-4 text-xs text-gray-500">
+                                <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12.05 21.785h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884"/></svg>
+                                <span>Nomor Admin: <span class="font-bold text-gray-700">+{{ $adminWhatsapp }}</span></span>
+                            </div>
                         </div>
 
                         <!-- Kembali ke Login -->
@@ -211,44 +224,38 @@
                                 Kembali ke Login
                             </a>
                         </div>
-                    </form>
                 </div>
                 <p class="text-center mt-6 text-xs text-gray-400 font-medium animate-fade-in delay-500 [animation-delay:500ms]">&copy; {{ date('Y') }} <span class="text-slate-700 font-bold">SIKEKAR</span> <span class="text-cyan-600 font-bold">KPM</span>. Hak cipta dilindungi.</p>
             </div>
         </div>
     </div>
 
+    <!-- Susun pesan permintaan link reset ke WhatsApp Admin -->
     <script>
-        function refreshCaptcha() {
-            const btn = document.getElementById('captcha-refresh-btn');
-            const icon = document.getElementById('captcha-refresh-icon');
-            btn.disabled = true;
-            icon.classList.add('captcha-refreshing');
-            fetch('{{ route("refresh.captcha") }}')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('captcha-text').textContent = data.text;
-                })
-                .catch(error => {
-                    console.error('Error refreshing captcha:', error);
-                    location.reload();
-                })
-                .finally(() => {
-                    btn.disabled = false;
-                    setTimeout(() => icon.classList.remove('captcha-refreshing'), 600);
-                });
-        }
-    </script>
+        (function () {
+            const btn = document.getElementById('wa-admin-btn');
+            const nameEl = document.getElementById('wa-name');
+            const emailEl = document.getElementById('wa-email');
+            if (!btn || !nameEl || !emailEl) return;
 
-    <!-- Submit Loading State -->
-    <script>
-        document.getElementById('forgot-form').addEventListener('submit', function () {
-            const btn = document.getElementById('forgot-submit-btn');
-            const label = document.getElementById('forgot-submit-label');
-            if (btn.disabled) return; // avoid double submit
-            btn.disabled = true;
-            label.innerHTML = '<span class="btn-spinner"></span><span>Memverifikasi...</span>';
-        });
+            const baseUrl = btn.getAttribute('href').split('?')[0];
+
+            function updateMessage() {
+                const name = nameEl.value.trim();
+                const email = emailEl.value.trim();
+
+                let msg = 'Halo Admin SIKEKAR, saya ingin meminta link reset password baru.';
+                if (name) msg += ' Nama: ' + name + '.';
+                if (email) msg += ' Email akun: ' + email + '.';
+                msg += ' Mohon kirimkan link reset password saya. Terima kasih.';
+
+                btn.href = baseUrl + '?text=' + encodeURIComponent(msg);
+            }
+
+            nameEl.addEventListener('input', updateMessage);
+            emailEl.addEventListener('input', updateMessage);
+            updateMessage();
+        })();
     </script>
 </body>
 </html>

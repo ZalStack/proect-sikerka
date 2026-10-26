@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Models\Absensi;
 use App\Models\Karyawan;
 use App\Models\Cuti;
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class SuperAdminController extends Controller
 {
@@ -527,6 +529,41 @@ class SuperAdminController extends Controller
         ];
 
         return redirect()->back()->with('success', "Role untuk {$karyawan->nama_lengkap} berhasil diubah menjadi {$roleLabels[$newRole]}.");
+    }
+
+    /**
+     * Generate link reset password (lupa password) untuk karyawan / HR.
+     * Link berlaku 60 menit dan sekali pakai, ditampilkan langsung kepada
+     * Super Admin untuk diteruskan ke pengguna (mis. via WhatsApp).
+     */
+    public function generateResetLink(Request $request, $id)
+    {
+        $karyawan = Karyawan::findOrFail($id);
+
+        if ($karyawan->is_resigned) {
+            return redirect()->back()->with('error', 'Tidak dapat membuat link reset password untuk akun yang sudah resign.');
+        }
+
+        // Token lama untuk akun ini dicabut agar hanya link terbaru yang berlaku
+        DB::table('password_resets')->where('email', $karyawan->email)->delete();
+
+        $token = Str::random(64);
+        DB::table('password_resets')->insert([
+            'email' => $karyawan->email,
+            'token' => $token,
+            'created_at' => now(),
+        ]);
+
+        $ttl = ForgotPasswordController::RESET_LINK_TTL_MINUTES;
+        $expiresAt = now()->addMinutes($ttl);
+
+        return redirect()->back()
+            ->with('success', "Link reset password untuk {$karyawan->nama_lengkap} berhasil dibuat dan berlaku {$ttl} menit.")
+            ->with('reset_link', route('password.reset.form', ['token' => $token]))
+            ->with('reset_link_name', $karyawan->nama_lengkap)
+            ->with('reset_link_email', $karyawan->email)
+            ->with('reset_link_expires', $expiresAt->isoFormat('D MMM Y, HH:mm'))
+            ->with('reset_link_wa', SystemSetting::normalizeWaNumber($karyawan->no_wa));
     }
 
     // ==========================================================

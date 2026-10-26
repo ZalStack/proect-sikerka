@@ -29,10 +29,8 @@ class CheckMaintenanceMode
             'superadmin.login.store',
             'logout',
             'password.request',
-            'password.verify',
             'password.reset.form',
             'password.reset',
-            'refresh.captcha',
         ];
 
         $currentRouteName = $request->route() ? $request->route()->getName() : '';

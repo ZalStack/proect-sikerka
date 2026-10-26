@@ -131,6 +131,7 @@ class SuperAdminAccessManagementTest extends TestCase
         $response = $this->post(route('login'), [
             'email' => $k->email,
             'password' => 'password',
+            'agree_policy' => '1',
         ]);
 
         $response->assertRedirect(route('login'));
@@ -167,6 +168,7 @@ class SuperAdminAccessManagementTest extends TestCase
         $this->post(route('login'), [
             'email' => $k->email,
             'password' => 'password',
+            'agree_policy' => '1',
         ])->assertRedirect(route('karyawan.dashboard'));
 
         $this->assertAuthenticated();
@@ -183,6 +185,7 @@ class SuperAdminAccessManagementTest extends TestCase
         $this->post(route('login'), [
             'email' => $k->email,
             'password' => 'password',
+            'agree_policy' => '1',
         ])->assertRedirect(route('karyawan.dashboard'));
 
         $this->assertAuthenticated();
@@ -203,7 +206,7 @@ class SuperAdminAccessManagementTest extends TestCase
         $this->suspendAsSuperadmin($sa, $k);
 
         // Pastikan login tertolak dulu
-        $this->post(route('login'), ['email' => $k->email, 'password' => 'password']);
+        $this->post(route('login'), ['email' => $k->email, 'password' => 'password', 'agree_policy' => '1']);
         $this->assertGuest();
 
         $this->actingAs($sa)
@@ -215,7 +218,7 @@ class SuperAdminAccessManagementTest extends TestCase
         $this->assertNull($k->suspend_end);
 
         // Login kembali berhasil
-        $this->post(route('login'), ['email' => $k->email, 'password' => 'password'])
+        $this->post(route('login'), ['email' => $k->email, 'password' => 'password', 'agree_policy' => '1'])
             ->assertRedirect(route('karyawan.dashboard'));
 
         $this->assertAuthenticated();

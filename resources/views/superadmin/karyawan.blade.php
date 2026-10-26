@@ -120,6 +120,7 @@
                             <th class="px-4 py-3.5">Divisi & Jabatan</th>
                             <th class="px-4 py-3.5">Role Saat Ini</th>
                             <th class="px-4 py-3.5 text-right">Ubah Hak Akses</th>
+                            <th class="px-4 py-3.5 text-right">Reset Password</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
@@ -167,10 +168,21 @@
                                         </button>
                                     </form>
                                 </td>
+                                <td class="px-4 py-3.5 text-right whitespace-nowrap">
+                                    <form action="{{ route('superadmin.karyawan.generate-reset-link', $k->id) }}" method="POST" class="inline-block"
+                                        onsubmit="return confirm({{ json_encode('Buat link reset password baru untuk ' . $k->nama_lengkap . '? Link lama (jika ada) otomatis dicabut dan link baru berlaku 60 menit.') }});">
+                                        @csrf
+                                        <button type="submit" title="Generate link reset password"
+                                            class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition-all inline-flex items-center gap-1.5">
+                                            <i class="fa-solid fa-key"></i>
+                                            <span>Reset</span>
+                                        </button>
+                                    </form>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center py-10 text-gray-400">
+                                <td colspan="6" class="text-center py-10 text-gray-400">
                                     Tidak ada data pengguna.
                                 </td>
                             </tr>
@@ -187,4 +199,103 @@
 
     </div>
 </div>
+
+<!-- ==================== MODAL LINK RESET PASSWORD ==================== -->
+@if(session('reset_link'))
+<div id="resetLinkModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 sm:p-7 border border-white/20" style="animation: scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;">
+        <div class="flex justify-center mb-4">
+            <div class="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+                <i class="fa-solid fa-key text-emerald-600 text-2xl"></i>
+            </div>
+        </div>
+
+        <h3 class="text-xl font-['Poppins'] font-bold text-slate-800 text-center mb-1">Link Reset Password</h3>
+        <p class="text-gray-500 text-center text-sm mb-5">
+            Untuk <span class="font-semibold text-slate-700">{{ session('reset_link_name') }}</span>
+            <span class="block text-xs text-gray-400">{{ session('reset_link_email') }}</span>
+        </p>
+
+        <label for="reset-link-input" class="block text-xs font-semibold text-gray-500 mb-1.5">Link Reset (klik "Salin" lalu kirimkan ke pengguna)</label>
+        <div class="flex items-stretch gap-2">
+            <input type="text" id="reset-link-input" readonly value="{{ session('reset_link') }}"
+                class="flex-1 min-w-0 px-3.5 py-3 rounded-xl border border-gray-200 bg-gray-50 text-xs text-gray-700 font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
+            <button type="button" id="copy-reset-link"
+                class="px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-all inline-flex items-center gap-1.5 whitespace-nowrap">
+                <i class="fa-regular fa-copy"></i>
+                <span id="copy-reset-label">Salin</span>
+            </button>
+        </div>
+
+        <div class="flex items-start gap-2 mt-3 text-xs text-gray-500">
+            <i class="fa-regular fa-clock mt-0.5 text-amber-500"></i>
+            <span>Berlaku hingga <span class="font-bold text-gray-700">{{ session('reset_link_expires') }}</span> dan hanya dapat dipakai sekali.</span>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-2.5 mt-5">
+            @if(session('reset_link_wa'))
+            <a href="https://wa.me/{{ session('reset_link_wa') }}?text={{ rawurlencode('Halo, berikut link reset password SIKEKAR untuk Anda. Berlaku 60 menit, jangan dibagikan ke siapa pun: ' . session('reset_link')) }}"
+                target="_blank" rel="noopener noreferrer"
+                class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-green-500 hover:shadow-lg hover:shadow-emerald-500/30 text-white text-xs font-bold transition-all">
+                <i class="fa-brands fa-whatsapp text-sm"></i>
+                Kirim via WhatsApp
+            </a>
+            @endif
+            <button type="button" onclick="closeResetLinkModal()"
+                class="flex-1 px-4 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold transition-all">
+                Tutup
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>@keyframes scale-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }</style>
+
+<script>
+    (function () {
+        const modal = document.getElementById('resetLinkModal');
+        if (!modal) return;
+        document.body.style.overflow = 'hidden';
+
+        const copyBtn = document.getElementById('copy-reset-link');
+        const copyLabel = document.getElementById('copy-reset-label');
+        const input = document.getElementById('reset-link-input');
+
+        copyBtn.addEventListener('click', async function () {
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(input.value);
+                } else {
+                    input.removeAttribute('readonly');
+                    input.select();
+                    input.setSelectionRange(0, 99999);
+                    document.execCommand('copy');
+                    input.setAttribute('readonly', 'readonly');
+                }
+                copyLabel.textContent = 'Tersalin!';
+                copyBtn.classList.add('bg-emerald-700');
+                setTimeout(() => {
+                    copyLabel.textContent = 'Salin';
+                    copyBtn.classList.remove('bg-emerald-700');
+                }, 2000);
+            } catch (e) {
+                input.focus();
+                input.select();
+            }
+        });
+
+        window.closeResetLinkModal = function () {
+            modal.style.opacity = '0';
+            modal.style.transition = 'opacity 0.25s ease';
+            setTimeout(() => {
+                modal.style.display = 'none';
+                document.body.style.overflow = '';
+            }, 250);
+        };
+
+        document.addEventListener('click', (e) => { if (e.target.id === 'resetLinkModal') closeResetLinkModal(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeResetLinkModal(); });
+    })();
+</script>
+@endif
 @endsection

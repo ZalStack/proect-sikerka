@@ -18,9 +18,24 @@ class LoginRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
+        $rules = [
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
+        ];
+
+        // Login HR & Karyawan (route /login) wajib menyetujui Kebijakan Sistem SIKEKAR
+        // terlebih dahulu. Portal Super Admin (/superadmin/login) tidak melewati ceklis ini.
+        if ($this->is('login')) {
+            $rules['agree_policy'] = ['accepted'];
+        }
+
+        return $rules;
+    }
+
+    public function messages(): array
+    {
+        return [
+            'agree_policy.accepted' => 'Anda harus menyetujui Kebijakan Sistem SIKEKAR sebelum login.',
         ];
     }
 

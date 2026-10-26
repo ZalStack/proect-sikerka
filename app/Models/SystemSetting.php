@@ -235,4 +235,40 @@ class SystemSetting extends Model
             self::setFeature($key, $enabled);
         }
     }
+
+    /**
+     * Nomor WhatsApp Admin SIKEKAR dalam format internasional (contoh: 6282123439604).
+     * Disimpan pada system_settings dengan key "admin_whatsapp",
+     * sehingga nomor bisa diubah lewat database tanpa menyentuh file view.
+     */
+    public static function adminWhatsapp(): string
+    {
+        $number = (string) self::getValue('admin_whatsapp', '082123439604');
+
+        return self::normalizeWaNumber($number) ?? '6282123439604';
+    }
+
+    /**
+     * Normalisasi nomor WhatsApp ke format internasional tanpa tanda "+".
+     * "082123439604" -> "6282123439604", "+62 821-2343-9604" -> "6282123439604".
+     * Mengembalikan null jika nomor kosong / tidak valid.
+     */
+    public static function normalizeWaNumber(?string $number): ?string
+    {
+        $digits = preg_replace('/\D+/', '', (string) $number);
+
+        if ($digits === null || $digits === '') {
+            return null;
+        }
+
+        // Sudah format internasional Indonesia (62...) -> biarkan
+        // Nomor lokal (08xx... / 8xx...) -> tambahkan kode negara 62
+        if (!str_starts_with($digits, '62')) {
+            $digits = str_starts_with($digits, '0')
+                ? '62' . substr($digits, 1)
+                : '62' . $digits;
+        }
+
+        return strlen($digits) >= 10 ? $digits : null;
+    }
 }

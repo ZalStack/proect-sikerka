@@ -4,145 +4,103 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\Karyawan;
+use App\Models\SystemSetting;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Str;
 
 class ForgotPasswordController extends Controller
 {
-    // Tampilkan form lupa password
+    /**
+     * Masa berlaku link reset password (dalam menit) sejak Super Admin membuatnya.
+     */
+    public const RESET_LINK_TTL_MINUTES = 60;
+
+    /**
+     * Halaman lupa password.
+     * Karena link reset hanya diterbitkan Super Admin, pengguna (HR / Karyawan)
+     * diarahkan untuk meminta link melalui WhatsApp Admin SIKEKAR.
+     */
     public function showForgotForm()
     {
-        // Generate CAPTCHA sederhana
-        $captcha = $this->generateCaptcha();
+        $adminWhatsapp = SystemSetting::adminWhatsapp();
 
-        return view('auth.forgot-password', compact('captcha'));
+        return view('auth.forgot-password', compact('adminWhatsapp'));
     }
 
-    // Proses verifikasi email dan CAPTCHA
-    public function verifyEmail(Request $request)
+    /**
+     * Tampilkan form buat password baru dari link/token yang diterbitkan Super Admin.
+     */
+    public function showResetForm(string $token)
     {
-        $request->validate([
-            'email' => 'required|email|exists:karyawans,email',
-            'captcha_input' => 'required|string',
-        ]);
-
-        // Verifikasi CAPTCHA
-        if (!$this->verifyCaptcha($request->captcha_input)) {
-            return back()->withErrors(['captcha_input' => 'Kode verifikasi salah. Silakan coba lagi.'])
-                ->withInput();
-        }
-
-        // Cek apakah email terdaftar
-        $karyawan = Karyawan::where('email', $request->email)->first();
+        $karyawan = $this->karyawanFromToken($token);
 
         if (!$karyawan) {
-            return back()->withErrors(['email' => 'Email tidak ditemukan.'])
-                ->withInput();
+            return redirect()->route('login')->with(
+                'error',
+                'Link reset password tidak valid atau sudah kedaluwarsa (berlaku ' . self::RESET_LINK_TTL_MINUTES . ' menit). Silakan minta link baru kepada Super Admin.'
+            );
         }
 
-        // Simpan email di session untuk reset password
-        Session::put('reset_email', $request->email);
-        Session::put('reset_verified', true);
-
-        return redirect()->route('password.reset.form')
-            ->with('success', 'Email terverifikasi. Silakan buat password baru.');
+        return view('auth.reset-password', compact('token', 'karyawan'));
     }
 
-    // Tampilkan form reset password
-    public function showResetForm()
+    /**
+     * Simpan password baru dari link/token (token sekali pakai).
+     */
+    public function resetPassword(Request $request, string $token)
     {
-        // Cek apakah sudah terverifikasi
-        if (!Session::get('reset_verified')) {
-            return redirect()->route('password.request')
-                ->with('error', 'Silakan verifikasi email Anda terlebih dahulu.');
+        $karyawan = $this->karyawanFromToken($token);
+
+        if (!$karyawan) {
+            return redirect()->route('login')->with(
+                'error',
+                'Link reset password tidak valid atau sudah kedaluwarsa (berlaku ' . self::RESET_LINK_TTL_MINUTES . ' menit). Silakan minta link baru kepada Super Admin.'
+            );
         }
 
-        $email = Session::get('reset_email');
-
-        return view('auth.reset-password', compact('email'));
-    }
-
-    // Proses reset password
-    public function resetPassword(Request $request)
-    {
         $request->validate([
-            'email' => 'required|email|exists:karyawans,email',
-            'password' => 'required|min:8|confirmed',
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
-        // Cek apakah email sesuai dengan session
-        if ($request->email !== Session::get('reset_email')) {
-            return back()->withErrors(['email' => 'Email tidak sesuai.'])
-                ->withInput();
-        }
-
-        // Update password
-        $karyawan = Karyawan::where('email', $request->email)->first();
         $karyawan->kata_sandi = Hash::make($request->password);
         $karyawan->save();
 
-        // Hapus session
-        Session::forget(['reset_email', 'reset_verified']);
+        // Token sekali pakai — habiskan semua token untuk akun ini
+        DB::table('password_resets')->where('email', $karyawan->email)->delete();
 
         return redirect()->route('login')
             ->with('success', 'Password berhasil direset. Silakan login dengan password baru Anda.');
     }
 
-    // Generate CAPTCHA sederhana
-    private function generateCaptcha()
+    /**
+     * Cari karyawan pemilik token yang masih berlaku.
+     * Token kedaluwarsa otomatis dihapus dari tabel password_resets.
+     */
+    private function karyawanFromToken(string $token): ?Karyawan
     {
-        // Buat angka random 2 digit
-        $num1 = rand(1, 9);
-        $num2 = rand(1, 9);
-        $operator = ['+', '-'][rand(0, 1)];
-
-        // Hitung hasil
-        if ($operator === '+') {
-            $result = $num1 + $num2;
-        } else {
-            // Pastikan hasil tidak negatif
-            if ($num1 < $num2) {
-                $temp = $num1;
-                $num1 = $num2;
-                $num2 = $temp;
-            }
-            $result = $num1 - $num2;
+        if ($token === '') {
+            return null;
         }
 
-        // Simpan di session
-        Session::put('captcha_result', $result);
-        Session::put('captcha_text', "$num1 $operator $num2 = ?");
+        $row = DB::table('password_resets')
+            ->where('token', $token)
+            ->orderByDesc('created_at')
+            ->first();
 
-        return [
-            'text' => "$num1 $operator $num2 = ?",
-            'result' => $result
-        ];
-    }
-
-    // Verifikasi CAPTCHA
-    private function verifyCaptcha($input)
-    {
-        $result = Session::get('captcha_result');
-
-        // Cek apakah input berupa angka
-        if (!is_numeric($input)) {
-            return false;
+        if (!$row) {
+            return null;
         }
 
-        // Bandingkan
-        return (int)$input === (int)$result;
-    }
+        $expiresAt = Carbon::parse($row->created_at)->addMinutes(self::RESET_LINK_TTL_MINUTES);
 
-    // Regenerate CAPTCHA (via AJAX)
-    public function refreshCaptcha()
-    {
-        $captcha = $this->generateCaptcha();
+        if ($expiresAt->isPast()) {
+            DB::table('password_resets')->where('token', $token)->delete();
 
-        return response()->json([
-            'text' => $captcha['text'],
-            'result' => $captcha['result']
-        ]);
+            return null;
+        }
+
+        return Karyawan::where('email', $row->email)->first();
     }
 }

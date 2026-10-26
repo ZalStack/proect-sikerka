@@ -183,6 +183,105 @@
             <div class="w-full max-w-md xl:max-w-lg relative z-10 animate-slide-up">
                 <div class="glass-card rounded-3xl shadow-2xl shadow-slate-900/10 p-6 sm:p-8 md:p-10 border border-white/40 {{ ($errors->any() || session('error')) ? 'animate-shake' : '' }}">
 
+                    @php
+                        // Ceklis Kebijakan Sistem hanya untuk login HR & Karyawan (route /login),
+                        // tidak berlaku untuk portal Super Admin (/superadmin/login).
+                        $requirePolicy = !request()->is('superadmin*');
+                        $showLogin = !$requirePolicy || (string) old('agree_policy') === '1';
+                    @endphp
+
+                    <!-- ==================== GATE KEBIJAKAN SISTEM (SEBELUM FORM LOGIN) ==================== -->
+                    @if($requirePolicy && !$showLogin)
+                    <div id="policy-gate" class="animate-slide-up">
+                        <div class="mb-6">
+                            <span class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-amber-800 bg-amber-50 rounded-full mb-4 tracking-wide uppercase border border-amber-200">
+                                <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                                Persetujuan Wajib
+                            </span>
+                            <h2 class="text-2xl sm:text-3xl font-['Poppins'] font-bold text-slate-800 leading-tight">
+                                Kebijakan Sistem SIKEKAR
+                            </h2>
+                            <p class="text-gray-500 mt-2 text-sm">Baca kebijakan berikut, lalu centang persetujuan untuk membuka form login.</p>
+                        </div>
+
+                        @if($errors->has('agree_policy'))
+                        <div class="bg-amber-50 border border-amber-200 p-3.5 mb-4 rounded-2xl flex items-start gap-2.5">
+                            <div class="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <svg class="w-3.5 h-3.5 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                            </div>
+                            <p class="text-sm text-amber-800 font-medium">{{ $errors->first('agree_policy') }}</p>
+                        </div>
+                        @endif
+
+                        <!-- Isi Kebijakan -->
+                        <div class="max-h-[42vh] overflow-y-auto rounded-2xl border border-white/70 bg-white/60 p-4 sm:p-5 text-left">
+                            <ol class="space-y-4">
+                                <li class="flex gap-3">
+                                    <span class="w-6 h-6 rounded-lg bg-cyan-50 border border-cyan-200 text-cyan-700 text-xs font-extrabold flex items-center justify-center flex-shrink-0 mt-0.5">1</span>
+                                    <div>
+                                        <h5 class="text-sm font-bold text-slate-800">Kerahasiaan Akun</h5>
+                                        <p class="text-xs text-gray-500 leading-relaxed mt-0.5">Jangan pernah membagikan email atau kata sandi Anda kepada siapa pun. Seluruh aktivitas yang dilakukan atas nama akun Anda menjadi tanggung jawab Anda.</p>
+                                    </div>
+                                </li>
+                                <li class="flex gap-3">
+                                    <span class="w-6 h-6 rounded-lg bg-cyan-50 border border-cyan-200 text-cyan-700 text-xs font-extrabold flex items-center justify-center flex-shrink-0 mt-0.5">2</span>
+                                    <div>
+                                        <h5 class="text-sm font-bold text-slate-800">Presensi yang Jujur</h5>
+                                        <p class="text-xs text-gray-500 leading-relaxed mt-0.5">Presensi harus dilakukan sendiri di lokasi yang ditentukan. Dilarang menggunakan akses remote (TeamViewer, AnyDesk, RDP, dan sejenisnya) maupun alat bantu lain untuk presensi.</p>
+                                    </div>
+                                </li>
+                                <li class="flex gap-3">
+                                    <span class="w-6 h-6 rounded-lg bg-cyan-50 border border-cyan-200 text-cyan-700 text-xs font-extrabold flex items-center justify-center flex-shrink-0 mt-0.5">3</span>
+                                    <div>
+                                        <h5 class="text-sm font-bold text-slate-800">Penggunaan Data</h5>
+                                        <p class="text-xs text-gray-500 leading-relaxed mt-0.5">Seluruh data di dalam SIKEKAR hanya boleh digunakan untuk keperluan pekerjaan. Dilarang menyalin atau menyebarkan data pribadi karyawan dan data perusahaan.</p>
+                                    </div>
+                                </li>
+                                <li class="flex gap-3">
+                                    <span class="w-6 h-6 rounded-lg bg-cyan-50 border border-cyan-200 text-cyan-700 text-xs font-extrabold flex items-center justify-center flex-shrink-0 mt-0.5">4</span>
+                                    <div>
+                                        <h5 class="text-sm font-bold text-slate-800">Sanksi Pelanggaran</h5>
+                                        <p class="text-xs text-gray-500 leading-relaxed mt-0.5">Pelanggaran dapat berakibat blokir presensi sementara maupun permanen, penangguhan (suspend) akun, pembatasan hak akses, hingga tindakan kepegawaian lebih lanjut sesuai aturan perusahaan.</p>
+                                    </div>
+                                </li>
+                                <li class="flex gap-3">
+                                    <span class="w-6 h-6 rounded-lg bg-cyan-50 border border-cyan-200 text-cyan-700 text-xs font-extrabold flex items-center justify-center flex-shrink-0 mt-0.5">5</span>
+                                    <div>
+                                        <h5 class="text-sm font-bold text-slate-800">Lupa Password</h5>
+                                        <p class="text-xs text-gray-500 leading-relaxed mt-0.5">Permintaan reset password hanya dapat diajukan melalui WhatsApp Admin. Link reset hanya diterbitkan oleh Super Admin dan memiliki masa berlaku terbatas.</p>
+                                    </div>
+                                </li>
+                                <li class="flex gap-3">
+                                    <span class="w-6 h-6 rounded-lg bg-cyan-50 border border-cyan-200 text-cyan-700 text-xs font-extrabold flex items-center justify-center flex-shrink-0 mt-0.5">6</span>
+                                    <div>
+                                        <h5 class="text-sm font-bold text-slate-800">Pernyataan Persetujuan</h5>
+                                        <p class="text-xs text-gray-500 leading-relaxed mt-0.5">Dengan mencentang kotak persetujuan di bawah, Anda dianggap telah membaca, memahami, dan menyetujui seluruh ketentuan Kebijakan Sistem SIKEKAR.</p>
+                                    </div>
+                                </li>
+                            </ol>
+                        </div>
+
+                        <!-- Ceklis Persetujuan -->
+                        <label for="policy-check" class="flex items-start gap-3 mt-5 cursor-pointer select-none">
+                            <input type="checkbox" id="policy-check" class="mt-0.5 w-5 h-5 rounded-lg border-2 border-gray-300 text-cyan-600 focus:ring-2 focus:ring-cyan-500/30 focus:ring-offset-0 transition-all duration-200 cursor-pointer checked:bg-cyan-600 checked:border-cyan-600">
+                            <span class="text-sm text-gray-700 font-medium leading-snug">Saya membaca, memahami, dan <span class="font-bold text-slate-800">menyetujui Kebijakan Sistem SIKEKAR</span> untuk dapat membuka form login.</span>
+                        </label>
+
+                        <button type="button" id="policy-continue" disabled
+                            class="mt-5 w-full relative bg-gradient-to-r from-slate-800 via-blue-900 to-cyan-700 text-white py-3.5 px-6 rounded-2xl font-semibold text-base flex items-center justify-center group overflow-hidden shadow-xl shadow-slate-800/20 hover:shadow-cyan-500/25 transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-xl">
+                            <span class="relative z-10 flex items-center gap-2">
+                                Setuju &amp; Lanjutkan
+                                <svg class="w-5 h-5 transform group-hover:translate-x-2 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                                </svg>
+                            </span>
+                        </button>
+
+                        <p class="text-center text-xs text-gray-400 mt-4">Belum memiliki akun? Silakan hubungi HRD / Admin perusahaan.</p>
+                    </div>
+                    @endif
+
+                    <div id="login-card-content" class="{{ $showLogin ? '' : 'hidden' }}">
                     <!-- Header -->
                     <div class="mb-8">
                         @if(request()->is('superadmin*'))
@@ -236,6 +335,11 @@
                     <!-- Form -->
                     <form id="login-form" method="POST" action="{{ request()->is('superadmin*') ? route('superadmin.login.store') : route('login') }}" class="space-y-5">
                         @csrf
+
+                        @if($requirePolicy)
+                        <!-- Nilai persetujuan kebijakan (diisi otomatis oleh tombol "Setuju & Lanjutkan") -->
+                        <input type="hidden" name="agree_policy" id="agree-policy-field" value="{{ old('agree_policy', '0') }}">
+                        @endif
 
                         <!-- Email -->
                         <div class="animate-slide-up delay-100 [animation-delay:100ms]">
@@ -321,6 +425,7 @@
                             </div>
                         </div>
                     </form>
+                    </div><!-- /#login-card-content -->
                 </div>
 
                 <!-- Footer copyright -->
@@ -386,5 +491,33 @@
             label.innerHTML = '<span class="btn-spinner"></span><span>Memproses...</span>';
         });
     </script>
+
+    <!-- Policy Gate: kunci form login sampai kebijakan disetujui (hanya /login) -->
+    @if($requirePolicy && !$showLogin)
+    <script>
+        (function () {
+            const gate = document.getElementById('policy-gate');
+            if (!gate) return; // portal Super Admin tidak memakai ceklis kebijakan
+
+            const check = document.getElementById('policy-check');
+            const btn = document.getElementById('policy-continue');
+            const content = document.getElementById('login-card-content');
+            const field = document.getElementById('agree-policy-field');
+
+            check.addEventListener('change', function () {
+                btn.disabled = !check.checked;
+            });
+
+            btn.addEventListener('click', function () {
+                if (!check.checked) return;
+                field.value = '1';
+                gate.classList.add('hidden');
+                content.classList.remove('hidden');
+                const email = document.getElementById('email');
+                if (email) email.focus();
+            });
+        })();
+    </script>
+    @endif
 </body>
 </html>

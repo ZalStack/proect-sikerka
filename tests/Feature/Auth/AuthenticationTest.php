@@ -45,6 +45,7 @@ class AuthenticationTest extends TestCase
         $response = $this->post('/login', [
             'email' => $karyawan->email,
             'password' => 'password',
+            'agree_policy' => '1',
         ]);
 
         $this->assertAuthenticated();
@@ -58,6 +59,7 @@ class AuthenticationTest extends TestCase
         $response = $this->post('/login', [
             'email' => $hr->email,
             'password' => 'password',
+            'agree_policy' => '1',
         ]);
 
         $this->assertAuthenticated();
@@ -71,6 +73,7 @@ class AuthenticationTest extends TestCase
         $response = $this->post('/login', [
             'email' => $superadmin->email,
             'password' => 'password',
+            'agree_policy' => '1',
         ]);
 
         $this->assertAuthenticated();
@@ -84,6 +87,7 @@ class AuthenticationTest extends TestCase
         $this->post('/login', [
             'email' => $karyawan->email,
             'password' => 'wrong-password',
+            'agree_policy' => '1',
         ])->assertSessionHasErrors('email');
 
         $this->assertGuest();
@@ -96,9 +100,57 @@ class AuthenticationTest extends TestCase
         $this->post('/login', [
             'email' => $resigned->email,
             'password' => 'password',
+            'agree_policy' => '1',
         ]);
 
         $this->assertGuest();
+    }
+
+    public function test_login_requires_policy_agreement_for_hr_and_karyawan_portal(): void
+    {
+        $karyawan = $this->makeKaryawan();
+
+        // Tanpa ceklis kebijakan -> login ditolak (validasi server-side)
+        $this->post('/login', [
+            'email' => $karyawan->email,
+            'password' => 'password',
+        ])->assertSessionHasErrors('agree_policy');
+
+        $this->assertGuest();
+
+        // Dengan ceklis kebijakan -> login berhasil
+        $this->post('/login', [
+            'email' => $karyawan->email,
+            'password' => 'password',
+            'agree_policy' => '1',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertAuthenticated();
+    }
+
+    public function test_superadmin_portal_login_does_not_require_policy_agreement(): void
+    {
+        $superadmin = $this->makeKaryawan(['posisi' => 'superadmin']);
+
+        $response = $this->post('/superadmin/login', [
+            'email' => $superadmin->email,
+            'password' => 'password',
+        ]);
+
+        $this->assertAuthenticated();
+        $response->assertRedirect(route('superadmin.dashboard', absolute: false));
+    }
+
+    public function test_login_screen_shows_policy_gate_but_superadmin_portal_does_not(): void
+    {
+        $this->get('/login')
+            ->assertOk()
+            ->assertSee('policy-gate', false)
+            ->assertSee('Kebijakan Sistem SIKEKAR');
+
+        $this->get('/superadmin/login')
+            ->assertOk()
+            ->assertDontSee('policy-gate', false);
     }
 
     public function test_users_can_logout(): void

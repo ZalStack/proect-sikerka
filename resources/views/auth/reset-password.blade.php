@@ -147,7 +147,12 @@
                         </span>
                         <h2 class="text-2xl sm:text-3xl font-['Poppins'] font-bold text-slate-800 leading-tight">Buat Password Baru</h2>
                         <p class="text-gray-500 mt-2 text-sm">
-                            Untuk akun <span class="font-semibold text-slate-700">{{ $email }}</span>
+                            Untuk akun <span class="font-semibold text-slate-700">{{ $karyawan->nama_lengkap }}</span>
+                            <span class="block text-xs text-gray-400">{{ $karyawan->email }}</span>
+                        </p>
+                        <p class="text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2 mt-3 inline-flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.828a1 1 0 001.414-1.414L11 9.586V6z" clip-rule="evenodd"/></svg>
+                            Link reset ini sekali pakai dan berlaku terbatas.
                         </p>
                     </div>
 
@@ -169,9 +174,8 @@
                     </div>
                     @endif
 
-                    <form id="reset-form" method="POST" action="{{ route('password.reset') }}" class="space-y-5">
+                    <form id="reset-form" method="POST" action="{{ route('password.reset', ['token' => $token]) }}" class="space-y-5">
                         @csrf
-                        <input type="hidden" name="email" value="{{ $email }}">
 
                         <!-- Password Baru -->
                         <div class="animate-slide-up delay-100 [animation-delay:100ms]">
