@@ -248,7 +248,7 @@
                                     <span class="w-6 h-6 rounded-lg bg-cyan-50 border border-cyan-200 text-cyan-700 text-xs font-extrabold flex items-center justify-center flex-shrink-0 mt-0.5">5</span>
                                     <div>
                                         <h5 class="text-sm font-bold text-slate-800">Lupa Password</h5>
-                                        <p class="text-xs text-gray-500 leading-relaxed mt-0.5">Permintaan reset password hanya dapat diajukan melalui WhatsApp Admin. Link reset hanya diterbitkan oleh Super Admin dan memiliki masa berlaku terbatas.</p>
+                                        <p class="text-xs text-gray-500 leading-relaxed mt-0.5">Permintaan reset password hanya dapat diajukan melalui WhatsApp Admin. Link reset hanya diterbitkan oleh Tim IT Support dan memiliki masa berlaku terbatas.</p>
                                     </div>
                                 </li>
                                 <li class="flex gap-3">
