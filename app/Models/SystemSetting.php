@@ -81,6 +81,13 @@ class SystemSetting extends Model
             'icon' => 'fa-bullhorn',
             'color' => '#ea580c',
         ],
+        'pelanggaran_presensi' => [
+            'name' => 'Deteksi Pelanggaran Presensi (Anti Remote)',
+            'description' => 'Mendeteksi indikasi akses remote desktop (TeamViewer/AnyDesk/RDP) saat presensi dan memasukkannya ke antrean review.',
+            'category' => 'Core Presensi',
+            'icon' => 'fa-shield-halved',
+            'color' => '#dc2626',
+        ],
     ];
 
     /**

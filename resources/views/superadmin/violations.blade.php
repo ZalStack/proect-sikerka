@@ -57,6 +57,36 @@
             </div>
         @endif
 
+        <!-- Feature Status Banner & Toggle On/Off -->
+        <div class="bg-white rounded-3xl p-5 shadow-sm border {{ ($isFeatureEnabled ?? true) ? 'border-gray-100' : 'border-rose-200 bg-rose-50/20' }} flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div class="flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-xl flex-shrink-0 {{ ($isFeatureEnabled ?? true) ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-600 border border-rose-500/20' }}">
+                    <i class="fa-solid {{ ($isFeatureEnabled ?? true) ? 'fa-shield-halved' : 'fa-shield-slash' }}"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-sm sm:text-base font-bold text-[#0F1245]">Status Sistem Deteksi Pelanggaran Presensi</h2>
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide {{ ($isFeatureEnabled ?? true) ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700' }}">
+                            {{ ($isFeatureEnabled ?? true) ? 'AKTIF' : 'NON-AKTIF' }}
+                        </span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-0.5">
+                        {{ ($isFeatureEnabled ?? true) 
+                            ? 'Sistem sedang aktif mendeteksi dan mencatat indikasi akses remote desktop saat karyawan presensi.' 
+                            : 'Sistem sedang NON-AKTIF. Karyawan bebas presensi tanpa diperiksa atau ditolak oleh deteksi akses remote.' }}
+                    </p>
+                </div>
+            </div>
+
+            <form action="{{ route('superadmin.features.toggle', 'pelanggaran_presensi') }}" method="POST" class="flex-shrink-0 w-full sm:w-auto">
+                @csrf
+                <button type="submit" class="w-full sm:w-auto px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-sm {{ ($isFeatureEnabled ?? true) ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20' }}">
+                    <i class="fa-solid {{ ($isFeatureEnabled ?? true) ? 'fa-toggle-off' : 'fa-toggle-on' }}"></i>
+                    <span>{{ ($isFeatureEnabled ?? true) ? 'Nonaktifkan Deteksi Pelanggaran' : 'Aktifkan Deteksi Pelanggaran' }}</span>
+                </button>
+            </form>
+        </div>
+
         <!-- KPI Cards -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div class="bg-white rounded-2xl p-4 border border-amber-200 shadow-sm bg-gradient-to-br from-white to-amber-50/40">

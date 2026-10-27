@@ -158,13 +158,20 @@
                     </a>
 
                     <!-- Pelanggaran Presensi (Anti Remote Access) -->
+                    @php
+                        $isViolationsEnabled = \App\Models\SystemSetting::isFeatureEnabled('pelanggaran_presensi');
+                    @endphp
                     <a href="{{ route('superadmin.violations.index') }}"
                         class="{{ $menuBase }} {{ $currentRoute === 'superadmin.violations.index' ? $menuActive : $menuIdle }}">
                         <span class="{{ $iconChip }} {{ $currentRoute === 'superadmin.violations.index' ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
                             <i class="fa-solid fa-user-shield text-sm"></i>
                         </span>
                         <span class="truncate flex-1">Pelanggaran Presensi</span>
-                        @if($pendingViolations > 0)
+                        @if(!$isViolationsEnabled)
+                            <span class="flex-shrink-0 bg-gray-500/80 text-white text-[8px] font-bold rounded-md px-1.5 py-0.5 uppercase tracking-wider">
+                                OFF
+                            </span>
+                        @elseif($pendingViolations > 0)
                             <span class="flex-shrink-0 bg-[#ec1d1d] text-white text-[9px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow-lg animate-pulse">
                                 {{ $pendingViolations > 99 ? '99+' : $pendingViolations }}
                             </span>

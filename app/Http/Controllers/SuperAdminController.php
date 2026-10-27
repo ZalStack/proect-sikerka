@@ -629,6 +629,8 @@ class SuperAdminController extends Controller
             ->orderBy('nama_lengkap')
             ->get();
 
+        $isFeatureEnabled = SystemSetting::isFeatureEnabled('pelanggaran_presensi');
+
         return view('superadmin.violations', compact(
             'violations',
             'stats',
@@ -636,7 +638,8 @@ class SuperAdminController extends Controller
             'status',
             'startDate',
             'endDate',
-            'search'
+            'search',
+            'isFeatureEnabled'
         ));
     }
 

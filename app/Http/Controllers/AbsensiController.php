@@ -189,24 +189,27 @@ class AbsensiController extends Controller
         // Risiko tinggi → tolak percobaan + catat pelanggaran (TANPA blokir akun).
         // Risiko rendah → absensi jalan, catat pelanggaran.
         // Keduanya masuk antrean review Superadmin — blokir HANYA setelah konfirmasi.
+        // Dijalankan HANYA jika fitur pelanggaran_presensi aktif.
         // ==========================================================
-        $remoteAssessment = $this->remoteAccessDetector->assess($request, $user, 'checkin');
-
-        if ($remoteAssessment['risk_level'] === RemoteAccessViolation::RISK_HIGH) {
-            $this->remoteAccessDetector->recordViolation($request, $user, 'checkin', $remoteAssessment);
-
-            Log::error('Check-in ditolak: terindikasi akses remote desktop (menunggu review Superadmin)', [
-                'karyawan_id' => $user->id,
-                'signals' => array_column($remoteAssessment['signals'], 'code'),
-                'ip' => $request->ip(),
-            ]);
-
-            return $this->rejectRemoteAccess($user);
-        }
-
         $remoteViolation = null;
-        if ($remoteAssessment['risk_level'] === RemoteAccessViolation::RISK_LOW) {
-            $remoteViolation = $this->remoteAccessDetector->recordViolation($request, $user, 'checkin', $remoteAssessment);
+        if (\App\Models\SystemSetting::isFeatureEnabled('pelanggaran_presensi')) {
+            $remoteAssessment = $this->remoteAccessDetector->assess($request, $user, 'checkin');
+
+            if ($remoteAssessment['risk_level'] === RemoteAccessViolation::RISK_HIGH) {
+                $this->remoteAccessDetector->recordViolation($request, $user, 'checkin', $remoteAssessment);
+
+                Log::error('Check-in ditolak: terindikasi akses remote desktop (menunggu review Superadmin)', [
+                    'karyawan_id' => $user->id,
+                    'signals' => array_column($remoteAssessment['signals'], 'code'),
+                    'ip' => $request->ip(),
+                ]);
+
+                return $this->rejectRemoteAccess($user);
+            }
+
+            if ($remoteAssessment['risk_level'] === RemoteAccessViolation::RISK_LOW) {
+                $remoteViolation = $this->remoteAccessDetector->recordViolation($request, $user, 'checkin', $remoteAssessment);
+            }
         }
 
         $locationCheck = $this->isValidLocation((float) $request->latitude, (float) $request->longitude, $this->maxRadius, (float) $request->accuracy, $user->id);
@@ -337,24 +340,27 @@ class AbsensiController extends Controller
         // Risiko tinggi → tolak percobaan + catat pelanggaran (TANPA blokir akun).
         // Risiko rendah → absensi jalan, catat pelanggaran.
         // Keduanya masuk antrean review Superadmin — blokir HANYA setelah konfirmasi.
+        // Dijalankan HANYA jika fitur pelanggaran_presensi aktif.
         // ==========================================================
-        $remoteAssessment = $this->remoteAccessDetector->assess($request, $user, 'checkout');
-
-        if ($remoteAssessment['risk_level'] === RemoteAccessViolation::RISK_HIGH) {
-            $this->remoteAccessDetector->recordViolation($request, $user, 'checkout', $remoteAssessment);
-
-            Log::error('Check-out ditolak: terindikasi akses remote desktop (menunggu review Superadmin)', [
-                'karyawan_id' => $user->id,
-                'signals' => array_column($remoteAssessment['signals'], 'code'),
-                'ip' => $request->ip(),
-            ]);
-
-            return $this->rejectRemoteAccess($user);
-        }
-
         $remoteViolation = null;
-        if ($remoteAssessment['risk_level'] === RemoteAccessViolation::RISK_LOW) {
-            $remoteViolation = $this->remoteAccessDetector->recordViolation($request, $user, 'checkout', $remoteAssessment);
+        if (\App\Models\SystemSetting::isFeatureEnabled('pelanggaran_presensi')) {
+            $remoteAssessment = $this->remoteAccessDetector->assess($request, $user, 'checkout');
+
+            if ($remoteAssessment['risk_level'] === RemoteAccessViolation::RISK_HIGH) {
+                $this->remoteAccessDetector->recordViolation($request, $user, 'checkout', $remoteAssessment);
+
+                Log::error('Check-out ditolak: terindikasi akses remote desktop (menunggu review Superadmin)', [
+                    'karyawan_id' => $user->id,
+                    'signals' => array_column($remoteAssessment['signals'], 'code'),
+                    'ip' => $request->ip(),
+                ]);
+
+                return $this->rejectRemoteAccess($user);
+            }
+
+            if ($remoteAssessment['risk_level'] === RemoteAccessViolation::RISK_LOW) {
+                $remoteViolation = $this->remoteAccessDetector->recordViolation($request, $user, 'checkout', $remoteAssessment);
+            }
         }
 
         $locationCheck = $this->isValidLocation((float) $request->latitude, (float) $request->longitude, $this->maxRadius, (float) $request->accuracy, $user->id);
