@@ -1426,11 +1426,11 @@ class AbsensiController extends Controller
             // RINGKASAN MENGGUNAKAN RUMUS DARI BARIS DATA
             // ==========================================================
 
-            // 1. Jumlah Hari Kerja (menghitung baris dengan status Hadir atau Perjalanan Dinas)
+            // 1. Jumlah Hari Kerja (menghitung baris dengan status Hadir, Perjalanan Dinas, atau Cuti)
             $sheet->mergeCells("A{$row}:F{$row}");
             $sheet->mergeCells("G{$row}:{$lastCol}{$row}");
-            $sheet->setCellValue("A{$row}", 'Jumlah Hari Kerja (Hadir + Perjalanan Dinas)');
-            $sheet->setCellValue("G{$row}", "=COUNTIF(F{$dataRowStart}:F{$dataRowEnd},\"Hadir\")+COUNTIF(F{$dataRowStart}:F{$dataRowEnd},\"Perjalanan Dinas\")");
+            $sheet->setCellValue("A{$row}", 'Jumlah Hari Kerja (Hadir + Perjalanan Dinas + Cuti)');
+            $sheet->setCellValue("G{$row}", "=COUNTIF(F{$dataRowStart}:F{$dataRowEnd},\"Hadir\")+COUNTIF(F{$dataRowStart}:F{$dataRowEnd},\"Perjalanan Dinas\")+COUNTIF(F{$dataRowStart}:F{$dataRowEnd},\"Cuti\")");
             $sheet->getStyle("A{$row}:{$lastCol}{$row}")->applyFromArray([
                 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $colorSummaryBg]],
                 'font' => ['size' => 10],
@@ -1573,7 +1573,7 @@ class AbsensiController extends Controller
         $totalKaryawanCount = $groups->count();
         $grandPairs = [
             ['Jumlah Karyawan', $totalKaryawanCount],
-            ['Total Hari Kerja', "=COUNTIF(F{$grandTotalStartRow}:F{$grandTotalEndRow},\"Hadir\")+COUNTIF(F{$grandTotalStartRow}:F{$grandTotalEndRow},\"Perjalanan Dinas\")"],
+            ['Total Hari Kerja (Hadir + Perjalanan Dinas + Cuti)', "=COUNTIF(F{$grandTotalStartRow}:F{$grandTotalEndRow},\"Hadir\")+COUNTIF(F{$grandTotalStartRow}:F{$grandTotalEndRow},\"Perjalanan Dinas\")+COUNTIF(F{$grandTotalStartRow}:F{$grandTotalEndRow},\"Cuti\")"],
             ['Total Jam Kerja (menit)', "=SUM(H{$grandTotalStartRow}:H{$grandTotalEndRow})"],
             ['Total Lembur (menit)', "=SUM(I{$grandTotalStartRow}:I{$grandTotalEndRow})"],
             ['Total Keterlambatan (menit)', "=SUM(G{$grandTotalStartRow}:G{$grandTotalEndRow})"],
