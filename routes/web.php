@@ -255,7 +255,7 @@ Route::middleware('auth')->group(function () {
             // 7SPS Sunnah
             Route::middleware('feature:sunnah')->group(function () {
                 Route::get('/sunnah', [SunnahController::class, 'dashboard'])->name('sunnah.dashboard');
-                Route::post('/sunnah/save', [SunnahController::class, 'saveDaily'])->name('sunnah.save')->middleware('throttle:10,1');
+                Route::post('/sunnah/save', [SunnahController::class, 'saveDaily'])->name('sunnah.save')->middleware('throttle:60,1');
             });
 
             // Cuti
