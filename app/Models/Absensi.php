@@ -173,10 +173,6 @@ class Absensi extends Model
             return 0;
         }
 
-        if ($tanggal && HariLibur::isHariLibur($tanggal)) {
-            return 0;
-        }
-
         try {
             $tglStr = $tanggal ? (is_string($tanggal) ? $tanggal : $tanggal->format('Y-m-d')) : date('Y-m-d');
             $cInStr = is_string($checkIn) ? (str_contains($checkIn, ':') && strlen($checkIn) <= 8 ? $tglStr . ' ' . $checkIn : $checkIn) : $checkIn->format('Y-m-d H:i:s');
@@ -206,10 +202,6 @@ class Absensi extends Model
             return 0;
         }
 
-        if ($tanggal && HariLibur::isHariLibur($tanggal)) {
-            return 0;
-        }
-
         try {
             $tglStr = $tanggal ? (is_string($tanggal) ? $tanggal : $tanggal->format('Y-m-d')) : date('Y-m-d');
             $cInStr = is_string($checkIn) ? (str_contains($checkIn, ':') && strlen($checkIn) <= 8 ? $tglStr . ' ' . $checkIn : $checkIn) : $checkIn->format('Y-m-d H:i:s');
@@ -233,9 +225,6 @@ class Absensi extends Model
      */
     public static function formatDurasiKerja($checkIn, $checkOut, $tanggal = null): string
     {
-        if ($tanggal && HariLibur::isHariLibur($tanggal)) {
-            return '0 Jam (Hari Libur)';
-        }
         $menit = self::calculateTotalMenitKerja($checkIn, $checkOut, $tanggal);
         if ($menit <= 0) return '0 Jam';
         $jam = floor($menit / 60);
@@ -250,28 +239,11 @@ class Absensi extends Model
     }
 
     /**
-     * Total jam kerja (dibulatkan dalam jam).
-     * 
-     * PERATURAN RESMI KPM:
-     * Untuk hari libur (Minggu, Senin, atau Tanggal Merah):
-     * Karyawan masuk dibayar dengan "Uang Sesi", sehingga TIDAK MENAMBAH JAM KERJA (selalu 0 jam).
-     */
-    public function getTotalJamKerjaAttribute($value): int
-    {
-        if ($this->is_hari_libur) {
-            return 0;
-        }
-
-        return (int) $value;
-    }
-
-    /**
      * Total menit kerja aktual, dihitung presisi per menit dari selisih check-in ke check-out.
-     * Untuk hari libur (Minggu, Senin, Tanggal Merah), selalu bernilai 0 menit.
      */
     public function getTotalMenitKerjaAttribute(): int
     {
-        if (!$this->check_in || !$this->check_out || $this->is_hari_libur) {
+        if (!$this->check_in || !$this->check_out) {
             return 0;
         }
 

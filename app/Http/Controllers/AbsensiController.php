@@ -410,7 +410,7 @@ class AbsensiController extends Controller
         }
 
         $checkInTime = Carbon::parse($absensi->check_in);
-        $totalJamKerja = $absensi->is_hari_libur ? 0 : max(0, (int) round($checkInTime->diffInMinutes($now) / 60));
+        $totalJamKerja = max(0, (int) round($checkInTime->diffInMinutes($now) / 60));
 
         $absensi->total_jam_kerja = $totalJamKerja;
         $absensi->check_out = $now;
@@ -1273,20 +1273,7 @@ class AbsensiController extends Controller
                 // ==========================================================
                 // RUMUS 2: TOTAL JAM KERJA (Kolom H) - dalam MENIT
                 // ==========================================================
-                /**
-                 * Logika:
-                 * 1. Jika hari libur (Minggu, Senin, Tanggal Merah):
-                 *    - TIDAK MENAMBAH JAM KERJA (Total Jam Kerja = 0 menit).
-                 *    - Kompensasi kehadiran hari libur dibayar terpisah via Uang Sesi.
-                 *
-                 * 2. Jika hari biasa (Selasa - Sabtu):
-                 *    - Total Jam Kerja = Check Out - Check In (dalam menit).
-                 */
-                if ($isHariLibur) {
-                    $formulaTotalJam = '=0';
-                } else {
-                    $formulaTotalJam = "=IF(AND({$colD}<>\"\", {$colE}<>\"\"), (HOUR({$colE})*60+MINUTE({$colE})) - (HOUR({$colD})*60+MINUTE({$colD})), 0)";
-                }
+                $formulaTotalJam = "=IF(AND({$colD}<>\"\", {$colE}<>\"\"), (HOUR({$colE})*60+MINUTE({$colE})) - (HOUR({$colD})*60+MINUTE({$colD})), 0)";
                 $sheet->setCellValue($colH, $formulaTotalJam);
 
                 // ==========================================================
@@ -2237,7 +2224,7 @@ class AbsensiController extends Controller
         $hrName = Auth::user()->nama_lengkap ?? 'HR';
 
         $checkInTime = Carbon::parse($absensi->check_in);
-        $totalJamKerja = $absensi->is_hari_libur ? 0 : max(0, (int) round($checkInTime->diffInMinutes($now) / 60));
+        $totalJamKerja = max(0, (int) round($checkInTime->diffInMinutes($now) / 60));
 
         $absensi->check_out = $now;
         $absensi->total_jam_kerja = $totalJamKerja;
@@ -2612,9 +2599,9 @@ class AbsensiController extends Controller
         $totalDinas = $absensis->where('status', 'Perjalanan Dinas')->count();
         $totalCuti = $absensis->where('status', 'Cuti')->count();
 
-        // Rata-rata jam kerja (hanya dari hari kerja biasa yang hadir & punya check_in & check_out)
+        // Rata-rata jam kerja (dari yang hadir & punya check_in & check_out)
         $rataRataJamKerja = 0;
-        $hadirWithTime = $absensis->filter(fn($a) => $a->status === 'Hadir' && $a->check_in && $a->check_out && !$a->is_hari_libur);
+        $hadirWithTime = $absensis->filter(fn($a) => $a->status === 'Hadir' && $a->check_in && $a->check_out);
         if ($hadirWithTime->count() > 0) {
             $totalMenitAll = $hadirWithTime->sum(fn($a) => $a->total_menit_kerja);
             $rataRataJamKerja = round($totalMenitAll / $hadirWithTime->count() / 60, 1);
