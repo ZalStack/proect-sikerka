@@ -239,6 +239,24 @@ class Absensi extends Model
     }
 
     /**
+     * Total jam kerja (dibulatkan dalam jam).
+     * Jika di database belum terisi atau 0 tapi sudah ada check-in & check-out,
+     * otomatis dihitung dari selisih waktu check-in dan check-out.
+     */
+    public function getTotalJamKerjaAttribute($value): int
+    {
+        if ((int) $value > 0) {
+            return (int) $value;
+        }
+
+        if ($this->check_in && $this->check_out) {
+            return self::calculateTotalJamKerja($this->check_in, $this->check_out, $this->tanggal);
+        }
+
+        return 0;
+    }
+
+    /**
      * Total menit kerja aktual, dihitung presisi per menit dari selisih check-in ke check-out.
      */
     public function getTotalMenitKerjaAttribute(): int
