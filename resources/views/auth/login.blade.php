@@ -190,6 +190,27 @@
                         $showLogin = !$requirePolicy || (string) old('agree_policy') === '1';
                     @endphp
 
+                    {{-- Banner pesan selalu tampil (di luar gate) supaya pengguna
+                         tidak pernah melewatinya, mis. hasil reset password
+                         atau link reset yang tidak valid/kedaluwarsa. --}}
+                    @if(session('success'))
+                    <div class="bg-emerald-50 border border-emerald-200 p-4 mb-5 rounded-2xl animate-scale-in flex items-start gap-3">
+                        <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                        </div>
+                        <p class="text-sm text-emerald-700 font-medium">{{ session('success') }}</p>
+                    </div>
+                    @endif
+
+                    @if(session('error'))
+                    <div class="bg-red-50 border border-red-200 p-4 mb-5 rounded-2xl animate-scale-in flex items-start gap-3">
+                        <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L9 10.586l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
+                        </div>
+                        <p class="text-sm text-red-700 font-medium">{{ session('error') }}</p>
+                    </div>
+                    @endif
+
                     <!-- ==================== GATE KEBIJAKAN SISTEM (SEBELUM FORM LOGIN) ==================== -->
                     @if($requirePolicy && !$showLogin)
                     <div id="policy-gate" class="animate-slide-up">
@@ -305,17 +326,7 @@
                         @endif
                     </div>
 
-                    <!-- Error Messages -->
-                    @if(session('error'))
-                    <div class="bg-red-50 border border-red-200 p-4 mb-6 rounded-2xl animate-scale-in flex items-start gap-3">
-                        <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-                            <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-                            </svg>
-                        </div>
-                        <p class="text-sm text-red-700 font-medium">{{ session('error') }}</p>
-                    </div>
-                    @endif
+                    <!-- Error Messages (validasi form — banner session ditampilkan di atas gate) -->
 
                     @if($errors->any())
                     <div class="bg-red-50 border border-red-200 p-4 mb-6 rounded-2xl animate-scale-in flex items-start gap-3">

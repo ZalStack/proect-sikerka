@@ -61,7 +61,7 @@ class PasswordResetTest extends TestCase
     public function test_reset_screen_requires_valid_token(): void
     {
         $this->get('/reset-password/token-tidak-ada')
-            ->assertRedirect(route('login', absolute: false))
+            ->assertRedirect(route('password.request', absolute: false))
             ->assertSessionHas('error');
     }
 
@@ -75,6 +75,7 @@ class PasswordResetTest extends TestCase
             'password_confirmation' => 'password-baru-123',
         ])
             ->assertSessionHasNoErrors()
+            ->assertSessionHas('success')
             ->assertRedirect(route('login', absolute: false));
 
         $this->assertTrue(Hash::check('password-baru-123', $karyawan->fresh()->kata_sandi));
@@ -98,7 +99,7 @@ class PasswordResetTest extends TestCase
         $token = $this->makeResetToken($karyawan, now()->subMinutes(61)->toDateTimeString());
 
         $this->get("/reset-password/{$token}")
-            ->assertRedirect(route('login', absolute: false))
+            ->assertRedirect(route('password.request', absolute: false))
             ->assertSessionHas('error');
 
         $this->assertDatabaseMissing('password_resets', ['token' => $token]);
@@ -135,8 +136,8 @@ class PasswordResetTest extends TestCase
         $token = basename((string) parse_url($link, PHP_URL_PATH));
         $this->assertDatabaseHas('password_resets', ['token' => $token, 'email' => $karyawan->email]);
 
-        // Link yang dihasilkan valid dan membuka form reset (keluar sesi dulu karena route bersifat guest)
-        $this->post('/logout');
+        // Link yang dihasilkan tetap membuka form reset walaupun Super Admin
+        // masih login di sesi yang sama (tanpa redirect ke dashboard).
         $this->get("/reset-password/{$token}")->assertOk();
     }
 
@@ -198,5 +199,69 @@ class PasswordResetTest extends TestCase
             ->assertSessionHas('error');
 
         $this->assertDatabaseCount('password_resets', 0);
+    }
+
+    public function test_full_reset_flow_works_while_superadmin_is_still_logged_in(): void
+    {
+        $superadmin = $this->makeKaryawan(['posisi' => 'superadmin']);
+        $karyawan = $this->makeKaryawan();
+
+        // Super Admin generate link lalu langsung membuka link-nya (tanpa logout)
+        $this->actingAs($superadmin)
+            ->post("/superadmin/karyawan/{$karyawan->id}/generate-reset-link");
+
+        $token = basename((string) parse_url((string) session('reset_link'), PHP_URL_PATH));
+
+        // Form reset WAJIB tampil, bukan ter-redirect ke dashboard
+        $this->get("/reset-password/{$token}")->assertOk();
+
+        // Simpan password baru
+        $this->post("/reset-password/{$token}", [
+            'password' => 'password-sangat-baru',
+            'password_confirmation' => 'password-sangat-baru',
+        ])
+            ->assertSessionHas('success')
+            ->assertRedirect(route('login', absolute: false));
+
+        // Sesi ditutup (guest) & password benar-benar berubah
+        $this->assertGuest();
+        $this->assertTrue(Hash::check('password-sangat-baru', $karyawan->fresh()->kata_sandi));
+
+        // Halaman login menampilkan pesan sukses
+        $this->get('/login')
+            ->assertOk()
+            ->assertSee('Password berhasil direset', false);
+    }
+
+    public function test_forgot_password_page_can_open_while_someone_is_logged_in(): void
+    {
+        $superadmin = $this->makeKaryawan(['posisi' => 'superadmin']);
+
+        $this->actingAs($superadmin)->get('/forgot-password')->assertOk();
+    }
+
+    public function test_invalid_link_error_is_visible_on_forgot_password_page(): void
+    {
+        $this->get('/reset-password/token-tidak-ada')
+            ->assertRedirect(route('password.request', absolute: false));
+
+        $this->get('/forgot-password')
+            ->assertOk()
+            ->assertSee('tidak valid', false);
+    }
+
+    public function test_login_flash_messages_are_rendered_above_the_policy_gate(): void
+    {
+        $html = $this->withSession(['error' => 'PESAN_ERROR_UNIK'])
+            ->get('/login')
+            ->assertOk()
+            ->getContent();
+
+        $posMessage = strpos($html, 'PESAN_ERROR_UNIK');
+        $posGate = strpos($html, 'id="policy-gate"');
+
+        $this->assertNotFalse($posMessage, 'Banner error tidak tampil di halaman login.');
+        $this->assertNotFalse($posGate, 'Gate kebijakan tidak tampil di halaman login.');
+        $this->assertLessThan($posGate, $posMessage, 'Banner error harus berada DI ATAS gate agar terlihat.');
     }
 }

@@ -7,6 +7,7 @@ use App\Models\Karyawan;
 use App\Models\SystemSetting;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
@@ -37,10 +38,7 @@ class ForgotPasswordController extends Controller
         $karyawan = $this->karyawanFromToken($token);
 
         if (!$karyawan) {
-            return redirect()->route('login')->with(
-                'error',
-                'Link reset password tidak valid atau sudah kedaluwarsa (berlaku ' . self::RESET_LINK_TTL_MINUTES . ' menit). Silakan minta link baru kepada Super Admin.'
-            );
+            return $this->invalidLinkResponse();
         }
 
         return view('auth.reset-password', compact('token', 'karyawan'));
@@ -54,10 +52,7 @@ class ForgotPasswordController extends Controller
         $karyawan = $this->karyawanFromToken($token);
 
         if (!$karyawan) {
-            return redirect()->route('login')->with(
-                'error',
-                'Link reset password tidak valid atau sudah kedaluwarsa (berlaku ' . self::RESET_LINK_TTL_MINUTES . ' menit). Silakan minta link baru kepada Super Admin.'
-            );
+            return $this->invalidLinkResponse();
         }
 
         $request->validate([
@@ -70,8 +65,28 @@ class ForgotPasswordController extends Controller
         // Token sekali pakai — habiskan semua token untuk akun ini
         DB::table('password_resets')->where('email', $karyawan->email)->delete();
 
+        // Sesi aktif diakhiri (mis. Super Admin yang sedang mengetes link)
+        // supaya pengguna diarahkan ke halaman login dan langsung
+        // melihat pesan sukses, bukan ter-bounce ke dashboard.
+        Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
         return redirect()->route('login')
             ->with('success', 'Password berhasil direset. Silakan login dengan password baru Anda.');
+    }
+
+    /**
+     * Respons untuk link yang tidak valid / kedaluwarsa.
+     * Dikirim ke halaman lupa password karena banner error di sana
+     * selalu terlihat oleh pengguna.
+     */
+    private function invalidLinkResponse(): \Illuminate\Http\RedirectResponse
+    {
+        return redirect()->route('password.request')->with(
+            'error',
+            'Link reset password tidak valid atau sudah kedaluwarsa (berlaku ' . self::RESET_LINK_TTL_MINUTES . ' menit). Silakan minta link baru melalui halaman ini.'
+        );
     }
 
     /**

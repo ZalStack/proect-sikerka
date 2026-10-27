@@ -41,16 +41,13 @@ Route::get('superadmin/login', [AuthenticatedSessionController::class, 'create']
 Route::post('superadmin/login', [AuthenticatedSessionController::class, 'store'])->name('superadmin.login.store');
 Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
-// Guest password routes
-Route::middleware('guest')->group(function () {
-    // Lupa Password: pengguna diminta menghubungi Admin SIKEKAR via WhatsApp
-    // untuk meminta link reset password (diterbitkan oleh Super Admin).
-    Route::get('forgot-password', [ForgotPasswordController::class, 'showForgotForm'])->name('password.request');
-
-    // Reset password memakai link/token yang diterbitkan Super Admin (berlaku 60 menit)
-    Route::get('reset-password/{token}', [ForgotPasswordController::class, 'showResetForm'])->name('password.reset.form');
-    Route::post('reset-password/{token}', [ForgotPasswordController::class, 'resetPassword'])->name('password.reset');
-});
+// Lupa password & reset password via link.
+// Sengaja TANPA middleware 'guest': halaman harus selalu bisa dibuka,
+// termasuk saat Super Admin sedang login (mis. mengetes link hasil generate)
+// atau saat sesi lama masih aktif — agar form reset tidak pernah ter-redirect.
+Route::get('forgot-password', [ForgotPasswordController::class, 'showForgotForm'])->name('password.request');
+Route::get('reset-password/{token}', [ForgotPasswordController::class, 'showResetForm'])->name('password.reset.form');
+Route::post('reset-password/{token}', [ForgotPasswordController::class, 'resetPassword'])->name('password.reset');
 
 // Auth routes
 Route::middleware('auth')->group(function () {
