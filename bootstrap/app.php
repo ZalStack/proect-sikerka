@@ -7,6 +7,7 @@ use App\Http\Middleware\CheckMaintenanceMode;
 use App\Http\Middleware\CheckFeatureEnabled;
 use App\Http\Middleware\CheckAttendanceBan;
 use App\Http\Middleware\CheckAccountSuspension;
+use App\Http\Middleware\AuditActivity;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             CheckMaintenanceMode::class,
             CheckAccountSuspension::class,
+            AuditActivity::class,
         ]);
 
         $middleware->alias([

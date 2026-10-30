@@ -2,7 +2,12 @@
 
 namespace App\Providers;
 
+use App\Models\ActivityLog;
 use Carbon\Carbon;
+use Illuminate\Auth\Events\Failed;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Auth\Events\Logout;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -43,5 +48,52 @@ class AppServiceProvider extends ServiceProvider
     {
         Carbon::setLocale('id');
         setlocale(LC_TIME, 'id_ID.utf8', 'id_ID', 'id', 'Indonesian');
+
+        Event::listen(Login::class, function (Login $event) {
+            ActivityLog::record(
+                'auth.login',
+                'Login berhasil ke sistem.',
+                [
+                    'user' => $event->user,
+                    'module' => 'auth',
+                    'metadata' => [
+                        'guard' => $event->guard,
+                        'remember' => $event->remember,
+                    ],
+                ]
+            );
+        });
+
+        Event::listen(Logout::class, function (Logout $event) {
+            if (!$event->user) {
+                return;
+            }
+
+            ActivityLog::record(
+                'auth.logout',
+                'Logout dari sistem.',
+                [
+                    'user' => $event->user,
+                    'module' => 'auth',
+                    'metadata' => ['guard' => $event->guard],
+                ]
+            );
+        });
+
+        Event::listen(Failed::class, function (Failed $event) {
+            if (!$event->user) {
+                return;
+            }
+
+            ActivityLog::record(
+                'auth.failed',
+                'Percobaan login gagal.',
+                [
+                    'user' => $event->user,
+                    'module' => 'auth',
+                    'metadata' => ['guard' => $event->guard],
+                ]
+            );
+        });
     }
 }

@@ -15,6 +15,10 @@ use App\Http\Controllers\PengumumanController;
 use App\Http\Controllers\PerjalananDinasController;
 use App\Http\Controllers\SunnahController;
 use App\Http\Controllers\SuperAdminController;
+use App\Http\Controllers\SuperAdmin\ActivityLogController;
+use App\Http\Controllers\SuperAdmin\BackupController;
+use App\Http\Controllers\SuperAdmin\SystemHealthController;
+use App\Http\Controllers\SuperAdmin\SystemStatisticController;
 use Illuminate\Support\Facades\Route;
 
 // Redirect root berdasarkan role
@@ -112,6 +116,32 @@ Route::middleware('auth')->group(function () {
             Route::post('/hari-libur', [SuperAdminController::class, 'hariLiburStore'])->name('hari-libur.store');
             Route::delete('/hari-libur/{id}', [SuperAdminController::class, 'hariLiburDestroy'])->name('hari-libur.destroy');
             Route::post('/hari-libur/sync', [SuperAdminController::class, 'hariLiburSync'])->name('hari-libur.sync');
+
+            // ==========================================
+            // PEMELIHARAAN IT
+            // ==========================================
+
+            // Backup Database
+            Route::get('/backup', [BackupController::class, 'index'])->name('backup.index');
+            Route::post('/backup', [BackupController::class, 'store'])->name('backup.store');
+            Route::get('/backup/{filename}/download', [BackupController::class, 'download'])
+                ->where('filename', '[A-Za-z0-9._-]+')
+                ->name('backup.download');
+            Route::delete('/backup/{filename}', [BackupController::class, 'destroy'])
+                ->where('filename', '[A-Za-z0-9._-]+')
+                ->name('backup.destroy');
+
+            // Statistik Penggunaan Sistem
+            Route::get('/statistik-penggunaan', [SystemStatisticController::class, 'index'])->name('stats.index');
+
+            // Log Aktivitas / Audit Trail
+            Route::get('/log-aktivitas', [ActivityLogController::class, 'index'])->name('logs.index');
+            Route::get('/log-aktivitas/export', [ActivityLogController::class, 'export'])->name('logs.export');
+
+            // Kesehatan Sistem & Tools Maintenance
+            Route::get('/kesehatan-sistem', [SystemHealthController::class, 'index'])->name('health.index');
+            Route::post('/kesehatan-sistem/cache', [SystemHealthController::class, 'clearCache'])->name('health.cache');
+            Route::post('/kesehatan-sistem/tool', [SystemHealthController::class, 'runTool'])->name('health.tool');
         });
 
     // ==========================================

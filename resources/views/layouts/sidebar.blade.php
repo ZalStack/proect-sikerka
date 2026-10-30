@@ -186,6 +186,52 @@
                         </span>
                         <span class="truncate">Hari Libur & Tgl Merah</span>
                     </a>
+
+                    <!-- ============================================== -->
+                    <!-- PEMELIHARAAN IT -->
+                    <!-- ============================================== -->
+                    <div class="pt-3 mt-3 border-t border-white/10">
+                        <h4 class="text-white/40 text-[10px] font-bold uppercase tracking-widest px-3 py-2 flex items-center gap-1.5">
+                            <i class="fa-solid fa-screwdriver-wrench text-[10px]"></i>
+                            <span>Pemeliharaan IT</span>
+                        </h4>
+                    </div>
+
+                    <!-- Backup Database -->
+                    <a href="{{ route('superadmin.backup.index') }}"
+                        class="{{ $menuBase }} {{ str_starts_with((string) $currentRoute, 'superadmin.backup.') ? $menuActive : $menuIdle }}">
+                        <span class="{{ $iconChip }} {{ str_starts_with((string) $currentRoute, 'superadmin.backup.') ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
+                            <i class="fa-solid fa-database text-sm"></i>
+                        </span>
+                        <span class="truncate">Backup Database</span>
+                    </a>
+
+                    <!-- Statistik Penggunaan -->
+                    <a href="{{ route('superadmin.stats.index') }}"
+                        class="{{ $menuBase }} {{ $currentRoute === 'superadmin.stats.index' ? $menuActive : $menuIdle }}">
+                        <span class="{{ $iconChip }} {{ $currentRoute === 'superadmin.stats.index' ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
+                            <i class="fa-solid fa-chart-pie text-sm"></i>
+                        </span>
+                        <span class="truncate">Statistik Penggunaan</span>
+                    </a>
+
+                    <!-- Log Aktivitas -->
+                    <a href="{{ route('superadmin.logs.index') }}"
+                        class="{{ $menuBase }} {{ str_starts_with((string) $currentRoute, 'superadmin.logs.') ? $menuActive : $menuIdle }}">
+                        <span class="{{ $iconChip }} {{ str_starts_with((string) $currentRoute, 'superadmin.logs.') ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
+                            <i class="fa-solid fa-clipboard-list text-sm"></i>
+                        </span>
+                        <span class="truncate">Log Aktivitas</span>
+                    </a>
+
+                    <!-- Kesehatan Sistem -->
+                    <a href="{{ route('superadmin.health.index') }}"
+                        class="{{ $menuBase }} {{ str_starts_with((string) $currentRoute, 'superadmin.health.') ? $menuActive : $menuIdle }}">
+                        <span class="{{ $iconChip }} {{ str_starts_with((string) $currentRoute, 'superadmin.health.') ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
+                            <i class="fa-solid fa-heart-pulse text-sm"></i>
+                        </span>
+                        <span class="truncate">Kesehatan Sistem</span>
+                    </a>
                 </nav>
 
             @elseif ($isHr)
