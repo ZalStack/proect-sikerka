@@ -274,6 +274,7 @@
                                             <!-- Tolak (false positive) -->
                                             <form action="{{ route('superadmin.violations.dismiss', $v->id) }}" method="POST" class="inline-flex items-center gap-1.5">
                                                 @csrf
+                                                <input type="text" name="catatan" maxlength="1000" placeholder="Catatan penolakan (opsional)" class="w-36 px-2.5 py-1.5 rounded-lg border border-gray-200 text-[11px] focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
                                                 <button type="submit" onclick="return confirm('Tandai pelanggaran ini sebagai false positive?')"
                                                     class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold shadow-sm transition-all">
                                                     <i class="fa-solid fa-check mr-1"></i>Tolak

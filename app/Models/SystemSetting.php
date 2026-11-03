@@ -91,6 +91,35 @@ class SystemSetting extends Model
     ];
 
     /**
+     * Menu yang BOLEH dibatasi per karyawan/HR pada halaman Manajemen Akses.
+     * Hanya fitur yang benar-benar tampil sebagai menu di sidebar karyawan/HR.
+     * Fitur superadmin-only (mis. 'pelanggaran_presensi' — monitoring anti remote
+     * access) tidak disertakan karena tidak memiliki menu/route untuk karyawan
+     * maupun HR, sehingga pembatasannya tidak akan berpengaruh apa pun.
+     */
+    const RESTRICTABLE_MENU_KEYS = [
+        'absensi',
+        'cuti',
+        'perjalanan_dinas',
+        'perizinan',
+        'sunnah',
+        'fhl',
+        'khataman',
+        'pengumuman',
+    ];
+
+    /**
+     * Ambil metadata menu yang dapat dibatasi (dipakai halaman Manajemen Akses).
+     */
+    public static function getRestrictableMenus(): array
+    {
+        return array_intersect_key(
+            self::AVAILABLE_FEATURES,
+            array_flip(self::RESTRICTABLE_MENU_KEYS)
+        );
+    }
+
+    /**
      * Ambil nilai pengaturan berdasarkan key.
      */
     public static function getValue(string $key, $default = null)

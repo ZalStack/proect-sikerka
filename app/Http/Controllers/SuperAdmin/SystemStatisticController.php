@@ -80,9 +80,12 @@ class SystemStatisticController extends Controller
             $newUsers = Karyawan::whereBetween('created_at', [$start, $end])->count();
 
             $trendStart = now()->subDays(13)->startOfDay();
+            $driver = DB::connection()->getDriverName();
+            // DATE() tidak ada di pgsql — pakai CAST agar lintas driver.
+            $dateExpression = $driver === 'pgsql' ? 'CAST(created_at AS DATE)' : 'DATE(created_at)';
             $trendRaw = (clone $loginQuery)
                 ->where('created_at', '>=', $trendStart)
-                ->selectRaw('DATE(created_at) as date, COUNT(*) as total')
+                ->selectRaw($dateExpression . ' as date, COUNT(*) as total')
                 ->groupBy('date')
                 ->pluck('total', 'date');
 
@@ -105,7 +108,6 @@ class SystemStatisticController extends Controller
                 ['key' => 'pengumuman', 'name' => 'Pengumuman', 'icon' => 'fa-bullhorn', 'color' => '#ea580c', 'count' => Pengumuman::whereBetween('created_at', [$start, $end])->count()],
             ];
 
-            $driver = DB::connection()->getDriverName();
             $hourExpression = match ($driver) {
                 'sqlite' => "strftime('%H', created_at)",
                 'pgsql' => 'EXTRACT(HOUR FROM created_at)',
@@ -118,10 +120,18 @@ class SystemStatisticController extends Controller
                 ->groupBy('hour')
                 ->pluck('total', 'hour');
 
+            // Normalisasi key jam: SQLite (strftime '%H') menghasilkan '00'..'09'
+            // sedangkan MySQL menghasilkan int 0..23 — tanpa normalisasi jam
+            // 00:00–09:00 selalu tampil 0 di driver SQLite.
+            $peakNormalized = [];
+            foreach ($peakRaw as $hourKey => $total) {
+                $peakNormalized[(int) $hourKey] = (int) $total;
+            }
+
             $peakHours = ['labels' => [], 'data' => []];
             for ($hour = 0; $hour < 24; $hour++) {
                 $peakHours['labels'][] = str_pad((string) $hour, 2, '0', STR_PAD_LEFT) . ':00';
-                $peakHours['data'][] = (int) ($peakRaw[$hour] ?? $peakRaw[(string) $hour] ?? 0);
+                $peakHours['data'][] = $peakNormalized[$hour] ?? 0;
             }
 
             $actionBreakdown = ActivityLog::query()
@@ -157,6 +167,9 @@ class SystemStatisticController extends Controller
                 'totalModuleUsage' => array_sum(array_column($moduleUsage, 'count')),
                 'peakHours' => $peakHours,
                 'actionBreakdown' => $actionBreakdown,
+                // Waktu data dihitung — dipakai agar label "Diperbarui ..." jujur
+                // (data di-cache 5 menit, jangan dilabeli seolah realtime).
+                'cachedAt' => now()->toDateTimeString(),
             ];
         });
 
@@ -164,7 +177,11 @@ class SystemStatisticController extends Controller
         // request agar tidak ikut terserialisasi ke dalam cache.
         $data['startDate'] = Carbon::parse($data['startDate'])->startOfDay();
         $data['endDate'] = Carbon::parse($data['endDate'])->endOfDay();
-        $data['generatedAt'] = now();
+        // Label "Diperbarui ..." harus mencerminkan umur data di-cache (5 menit),
+        // bukan waktu request sekarang.
+        $data['generatedAt'] = !empty($data['cachedAt'])
+            ? Carbon::parse($data['cachedAt'])
+            : now();
         $data['topUsers'] = ActivityLog::query()
             ->whereBetween('created_at', [$data['startDate'], $data['endDate']])
             ->whereNotNull('user_id')
@@ -173,7 +190,23 @@ class SystemStatisticController extends Controller
             ->orderByDesc('total')
             ->limit(10)
             ->get();
-        $data['backupStats'] = app(DatabaseBackupService::class)->stats();
+
+        // stats() melempar bila folder backup tidak dapat ditulis — jangan sampai
+        // halaman statistik ikut gagal 500 karena itu.
+        try {
+            $data['backupStats'] = app(DatabaseBackupService::class)->stats();
+        } catch (\Throwable $e) {
+            $data['backupStats'] = [
+                'count' => 0,
+                'total_size' => 0,
+                'total_size_human' => '0 B',
+                'last' => null,
+                'retention' => (int) config('backup.retention', 14),
+                'path' => (string) config('backup.path', storage_path('app/backups')),
+                'writable' => false,
+            ];
+        }
+
         $data['storageBytes'] = $this->directorySize(storage_path('app'));
         $data['logBytes'] = $this->directorySize(storage_path('logs'));
         $data['failedJobs'] = Schema::hasTable('failed_jobs') ? DB::table('failed_jobs')->count() : 0;

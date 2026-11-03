@@ -263,6 +263,14 @@ class SuperAdminAccessManagementTest extends TestCase
         ]);
         $target = $this->makeSuperadmin(['nama_lengkap' => 'Super Admin Terakhir']);
 
+        // Migration SA-003 menanamkan akun superadmin cadangan ke database uji,
+        // sehingga selalu ada superadmin aktif lain dan guard dengan benar tidak
+        // memblokir. Tandai semua superadmin selain actor & target sebagai resign
+        // agar target benar-benar satu-satunya Super Admin aktif.
+        Karyawan::where('posisi', 'superadmin')
+            ->whereNotIn('id', [$actor->id, $target->id])
+            ->update(['is_resigned' => true]);
+
         $response = $this->suspendAsSuperadmin($actor, $target);
 
         $response->assertSessionHas('error');
@@ -271,6 +279,50 @@ class SuperAdminAccessManagementTest extends TestCase
         $target->refresh();
         $this->assertNull($target->suspend_start);
         $this->assertNull($target->suspend_end);
+    }
+
+    /**
+     * Regresi CRITICAL: masa suspend yang sudah lewat (expired) dahulu membuat
+     * seluruh halaman Manajemen Akses gagal 500 — badge membaca suspend_end
+     * setelah auto-clear metode isSuspended() menghapusnya (isoFormat on null).
+     */
+    public function test_access_page_renders_when_someone_has_expired_suspension(): void
+    {
+        $sa = $this->makeSuperadmin();
+        $this->makeKaryawan([
+            'suspend_start' => now()->subDays(10)->toDateString(),
+            'suspend_end' => now()->subDays(3)->toDateString(),
+            'suspend_reason' => 'Masa suspend sudah berakhir',
+        ]);
+
+        $this->actingAs($sa)
+            ->get(route('superadmin.access.index'))
+            ->assertOk();
+    }
+
+    /**
+     * Regresi guard: suspend TERJADWAL (mulai besok) tetap dihitung Super Admin
+     * AKTIF karena akunnya masih bisa login sampai tanggal mulai tiba —
+     * dulu akun seperti ini salah dihitung sebagai tidak aktif.
+     */
+    public function test_scheduled_suspension_still_counts_as_active_superadmin(): void
+    {
+        $actor = $this->makeSuperadmin([
+            'suspend_start' => now()->addDay()->toDateString(),
+            'suspend_end' => now()->addDays(5)->toDateString(),
+            'suspend_reason' => 'Cuti panjang',
+        ]);
+        $target = $this->makeSuperadmin(['nama_lengkap' => 'Super Admin Target']);
+
+        Karyawan::where('posisi', 'superadmin')
+            ->whereNotIn('id', [$actor->id, $target->id])
+            ->update(['is_resigned' => true]);
+
+        // Actor masih AKTIF hari ini (suspend-nya baru besok) → target juga aktif
+        // → guard mengizinkan; tidak boleh salah memblokir.
+        $this->suspendAsSuperadmin($actor, $target)->assertSessionHasNoErrors();
+
+        $this->assertNotNull($target->fresh()->suspend_start);
     }
 
     public function test_suspend_validates_date_range(): void
@@ -355,10 +407,12 @@ class SuperAdminAccessManagementTest extends TestCase
         $this->restrictMenusAsSuperadmin($sa, $k, ['cuti']);
         $this->assertSame(7, KaryawanMenuDisabled::where('karyawan_id', $k->id)->count());
 
-        // Semua menu dikirim aktif (checkbox dicentang semua) → tanpa periode/alasan pun boleh
+        // Semua menu dikirim aktif (checkbox dicentang semua) → tanpa periode/alasan pun boleh.
+        // Daftar menu = RESTRICTABLE_MENU_KEYS (8 menu karyawan/HR yang dirender di modal),
+        // bukan AVAILABLE_FEATURES yang juga memuat fitur superadmin-only.
         $this->actingAs($sa)
             ->post(route('superadmin.access.menus', $k->id), [
-                'menus' => array_keys(\App\Models\SystemSetting::AVAILABLE_FEATURES),
+                'menus' => array_keys(\App\Models\SystemSetting::getRestrictableMenus()),
             ])
             ->assertSessionHasNoErrors();
 

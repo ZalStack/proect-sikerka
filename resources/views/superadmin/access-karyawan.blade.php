@@ -528,7 +528,7 @@
                 </div>
 
                 <p id="menuCountInfo" class="text-[11px] text-gray-500 bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5">
-                    0 dari 8 menu dinonaktifkan.
+                    0 dari {{ count($menuMeta) }} menu dinonaktifkan.
                 </p>
 
                 <!-- Periode & Alasan Pembatasan (sama seperti form Suspend Akun) -->

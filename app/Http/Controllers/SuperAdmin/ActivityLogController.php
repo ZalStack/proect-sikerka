@@ -11,11 +11,15 @@ use Illuminate\Support\Facades\DB;
 
 class ActivityLogController extends Controller
 {
+    /** Batas baris ekspor CSV agar tidak membanjiri memori/pengunduh. */
+    public const EXPORT_MAX_ROWS = 50000;
+
     public function index(Request $request)
     {
         $filters = $this->filters($request);
         $logs = $this->filteredQuery($filters)
             ->orderByDesc('created_at')
+            ->orderByDesc('id') // tiebreaker: banyak log tercipta pada detik yang sama
             ->paginate(25)
             ->withQueryString();
 
@@ -34,6 +38,7 @@ class ActivityLogController extends Controller
                     'violation.confirm',
                     'maintenance.toggle',
                     'karyawan.role_update',
+                    'auth.failed', // selaras dengan badge "kritis" pada tabel
                 ])
                 ->count(),
         ];
@@ -48,7 +53,10 @@ class ActivityLogController extends Controller
     public function export(Request $request)
     {
         $filters = $this->filters($request);
-        $query = $this->filteredQuery($filters)->orderByDesc('created_at');
+        $query = $this->filteredQuery($filters)
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->limit(self::EXPORT_MAX_ROWS);
 
         ActivityLog::record(
             'logs.export',
@@ -68,14 +76,14 @@ class ActivityLogController extends Controller
             foreach ($query->cursor() as $log) {
                 fputcsv($handle, [
                     optional($log->created_at)->format('Y-m-d H:i:s'),
-                    $log->user_name,
-                    $log->user_role,
-                    $log->module,
-                    $log->action,
-                    $log->description,
-                    $log->ip_address,
-                    $log->user_agent,
-                    $log->metadata ? json_encode($log->metadata, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null,
+                    $this->csvSafe($log->user_name),
+                    $this->csvSafe($log->user_role),
+                    $this->csvSafe($log->module),
+                    $this->csvSafe($log->action),
+                    $this->csvSafe($log->description),
+                    $this->csvSafe($log->ip_address),
+                    $this->csvSafe($log->user_agent),
+                    $log->metadata ? $this->csvSafe(json_encode($log->metadata, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) : null,
                 ]);
             }
 
@@ -85,16 +93,53 @@ class ActivityLogController extends Controller
         ]);
     }
 
+    /**
+     * Nilai yang diawali karakter formula (=, +, -, @, tab, CR) diprefiks
+     * apostrof agar tidak dieksekusi sebagai formula saat file CSV dibuka
+     * di Excel / Google Sheets (CSV formula injection).
+     */
+    protected function csvSafe($value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $value = (string) $value;
+
+        if ($value !== '' && preg_match('/^[=+\-@\t\r]/', $value)) {
+            return "'" . $value;
+        }
+
+        return $value;
+    }
+
     protected function filters(Request $request): array
     {
+        $request->validate([
+            'from' => 'nullable|date',
+            'to' => 'nullable|date',
+        ], [
+            'from.date' => 'Filter tanggal "Dari" tidak valid.',
+            'to.date' => 'Filter tanggal "Sampai" tidak valid.',
+        ]);
+
+        $from = $request->input('from') ?: null;
+        $to = $request->input('to') ?: null;
+
+        if ($from && $to && $to < $from) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'to' => 'Filter tanggal "Sampai" tidak boleh sebelum tanggal "Dari".',
+            ]);
+        }
+
         return [
             'q' => trim((string) $request->input('q', '')),
             'user_id' => $request->input('user_id'),
             'role' => $request->input('role'),
             'module' => $request->input('module'),
             'action' => $request->input('action'),
-            'from' => $request->input('from'),
-            'to' => $request->input('to'),
+            'from' => $from,
+            'to' => $to,
         ];
     }
 

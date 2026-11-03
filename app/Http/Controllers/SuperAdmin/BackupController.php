@@ -16,8 +16,30 @@ class BackupController extends Controller
 
     public function index()
     {
-        $backups = $this->backups->list();
-        $stats = $this->backups->stats();
+        // Folder backup bisa saja tidak terbaca/tidak dapat ditulis — jangan
+        // biarkan halaman daftar backup gagal 500 karena itu.
+        try {
+            $backups = $this->backups->list();
+            $stats = $this->backups->stats();
+        } catch (\Throwable $e) {
+            Log::error('Gagal membaca daftar backup: ' . $e->getMessage(), ['exception' => $e]);
+
+            $backups = [];
+            $stats = [
+                'count' => 0,
+                'total_size' => 0,
+                'total_size_human' => '0 B',
+                'last' => null,
+                'retention' => (int) config('backup.retention', 14),
+                'path' => (string) config('backup.path', storage_path('app/backups')),
+                'writable' => false,
+            ];
+
+            session()->now(
+                'error',
+                'Folder backup tidak dapat diakses. Periksa izin akses folder storage/app/backups pada server. (' . $e->getMessage() . ')'
+            );
+        }
 
         return view('superadmin.it.backup', compact('backups', 'stats'));
     }
@@ -56,7 +78,13 @@ class BackupController extends Controller
         } catch (\Throwable $e) {
             Log::error('Gagal membuat backup database: ' . $e->getMessage(), ['exception' => $e]);
 
-            return redirect()->back()->with('error', 'Backup gagal dibuat: ' . $e->getMessage());
+            // Pesan ramah dari service (RuntimeException) boleh ditampilkan;
+            // error teknis lain (PDO dll.) jangan bocor ke UI.
+            $message = $e instanceof \RuntimeException
+                ? $e->getMessage()
+                : 'Terjadi kesalahan tidak terduga saat membuat backup. Detail lengkap tersimpan di log sistem.';
+
+            return redirect()->back()->with('error', 'Backup gagal dibuat: ' . $message);
         }
     }
 

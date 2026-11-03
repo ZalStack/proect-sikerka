@@ -20,11 +20,37 @@ class DatabaseBackupService
     public function ensureDirectory(): void
     {
         if (!File::isDirectory($this->path())) {
-            File::makeDirectory($this->path(), 0755, true);
+            // 0700: dump database berisi data sensitif — hanya owner yang boleh akses.
+            File::makeDirectory($this->path(), 0700, true);
         }
 
         if (!is_writable($this->path())) {
             throw new RuntimeException('Folder backup tidak dapat ditulis. Periksa izin akses storage/app/backups.');
+        }
+
+        // Kencangkan izin folder yang sudah ada (mis. dibuat lama dengan 0755).
+        @chmod($this->path(), 0700);
+
+        $this->cleanupStaleTempFiles();
+    }
+
+    /**
+     * Hapus file dump sementara (.tmp-*) yang tertinggal dari proses backup
+     * yang gagal/terputus (timeout, OOM, dsb.) agar tidak menumpuk diam-diam
+     * — file itu tidak pernah tampil di daftar backup karena diawali titik.
+     */
+    protected function cleanupStaleTempFiles(): void
+    {
+        try {
+            $cutoff = now()->subHour()->getTimestamp();
+
+            foreach (File::files($this->path()) as $file) {
+                if (str_starts_with($file->getFilename(), '.tmp-') && $file->getMTime() < $cutoff) {
+                    @unlink($file->getPathname());
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Gagal membersihkan file backup sementara: ' . $e->getMessage());
         }
     }
 
@@ -36,7 +62,16 @@ class DatabaseBackupService
         $this->ensureDirectory();
 
         $startedAt = microtime(true);
-        $filename = 'sikekar-' . now()->format('Ymd-His') . '-' . Str::slug($label ?: 'manual') . '.sql.gz';
+        $baseName = 'sikekar-' . now()->format('Ymd-His') . '-' . Str::slug($label ?: 'manual');
+        $filename = $baseName . '.sql.gz';
+
+        // Cegah tabrakan nama bila backup dibuat dua kali dalam detik yang sama
+        // (double-klik / jadwal berdekatan) — file lama tidak boleh tertimpa.
+        $suffix = 1;
+        while (is_file($this->path() . DIRECTORY_SEPARATOR . $filename)) {
+            $filename = $baseName . '-' . $suffix++ . '.sql.gz';
+        }
+
         $finalPath = $this->path() . DIRECTORY_SEPARATOR . $filename;
         $tempPath = $this->path() . DIRECTORY_SEPARATOR . '.tmp-' . Str::random(16) . '.sql';
 
@@ -58,6 +93,9 @@ class DatabaseBackupService
                 throw new RuntimeException('File dump database kosong. Backup dibatalkan.');
             }
 
+            // Dump & file backup hanya boleh dibaca oleh owner (data sensitif).
+            @chmod($tempPath, 0600);
+
             $this->compress($tempPath, $finalPath);
 
             if (is_file($tempPath)) {
@@ -67,6 +105,8 @@ class DatabaseBackupService
             if (!is_file($finalPath) || filesize($finalPath) === 0) {
                 throw new RuntimeException('File backup gagal dibuat.');
             }
+
+            @chmod($finalPath, 0600);
 
             $size = (int) filesize($finalPath);
 
@@ -83,7 +123,10 @@ class DatabaseBackupService
             if (is_file($tempPath)) {
                 @unlink($tempPath);
             }
-            if (is_file($finalPath) && filesize($finalPath) === 0) {
+
+            // Buang file final parsial hasil kompresi yang gagal — nama file
+            // dijamin unik sehingga tidak mungkin menghapus backup lama.
+            if (is_file($finalPath)) {
                 @unlink($finalPath);
             }
 
@@ -355,10 +398,22 @@ class DatabaseBackupService
         try {
             while (!feof($input)) {
                 $chunk = fread($input, 1024 * 1024);
+
                 if ($chunk === false) {
-                    break;
+                    throw new RuntimeException('Gagal membaca file dump saat kompresi backup.');
                 }
-                gzwrite($output, $chunk);
+
+                if ($chunk === '') {
+                    continue;
+                }
+
+                $written = gzwrite($output, $chunk);
+
+                // Deteksi kegagalan tulis (disk penuh / izin ditolak) agar backup
+                // korup tidak dilaporkan sebagai sukses.
+                if ($written === false || $written < strlen($chunk)) {
+                    throw new RuntimeException('Gagal menulis file backup — periksa kapasitas disk dan izin folder backup.');
+                }
             }
         } finally {
             fclose($input);

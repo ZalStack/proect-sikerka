@@ -3,10 +3,16 @@
     $k = $k ?? null;
     $isResign = (bool) ($k->is_resigned ?? false);
     $today = \Carbon\Carbon::today();
-    $hasRange = $k->suspend_start && $k->suspend_end;
+
+    // Panggil isSuspended() TERLEBIH DAHULU: metode itu membersihkan (auto-clear)
+    // masa suspend yang sudah lewat sehingga atribut suspend_* menjadi null.
+    // Urutan ini penting — jika hasRange dihitung lebih dulu, $isSuspended bisa
+    // tetap true (stale) setelah auto-clear lalu render `isoFormat()` pada null → 500.
+    $isSuspended = !$isResign && $k !== null && method_exists($k, 'isSuspended') && $k->isSuspended();
+
+    $hasRange = $k !== null && $k->suspend_start && $k->suspend_end;
     $isScheduled = $hasRange && $k->suspend_start->gt($today);
-    $isSuspended = !$isResign && $hasRange && !$isScheduled;
-    $daysLeft = $isSuspended ? $k->suspensionDaysRemaining() : 0;
+    $daysLeft = $isSuspended && method_exists($k, 'suspensionDaysRemaining') ? $k->suspensionDaysRemaining() : 0;
     $disabledKeys = $k->disabledMenuKeys();
     $self = (int) $k->id === (int) auth()->id();
 @endphp

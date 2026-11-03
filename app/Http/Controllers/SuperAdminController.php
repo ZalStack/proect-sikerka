@@ -14,6 +14,7 @@ use App\Models\SystemSetting;
 use App\Models\HariLibur;
 use App\Services\HariLiburService;
 use Carbon\Carbon;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -35,7 +36,7 @@ class SuperAdminController extends Controller
         $totalSuperadmin = Karyawan::where('posisi', 'superadmin')->count();
         $totalHr = Karyawan::where('posisi', 'hr')->count();
 
-        $absensiHariIni = Absensi::where('tanggal', $today)->get();
+        $absensiHariIni = Absensi::whereDate('tanggal', $today)->get();
         $hadirHariIni = $absensiHariIni->where('status', 'Hadir')->count();
         $izinHariIni = $absensiHariIni->where('status', 'Izin')->count();
         $sakitHariIni = $absensiHariIni->where('status', 'Sakit')->count();
@@ -227,11 +228,11 @@ class SuperAdminController extends Controller
         $query = Absensi::with('karyawan');
 
         if ($startDate && $endDate) {
-            $query->whereBetween('tanggal', [$startDate, $endDate]);
+            $query->whereDate('tanggal', '>=', $startDate)->whereDate('tanggal', '<=', $endDate);
         } elseif ($startDate) {
-            $query->where('tanggal', '>=', $startDate);
+            $query->whereDate('tanggal', '>=', $startDate);
         } elseif ($endDate) {
-            $query->where('tanggal', '<=', $endDate);
+            $query->whereDate('tanggal', '<=', $endDate);
         } else {
             $query->whereMonth('tanggal', $selectedMonth)->whereYear('tanggal', $selectedYear);
         }
@@ -308,7 +309,7 @@ class SuperAdminController extends Controller
         ]);
 
         $existing = Absensi::where('karyawan_id', $request->karyawan_id)
-            ->where('tanggal', $request->tanggal)
+            ->whereDate('tanggal', $request->tanggal)
             ->first();
 
         if ($existing) {
@@ -367,7 +368,7 @@ class SuperAdminController extends Controller
 
         // Validasi Duplikasi: Cegah tabrakan data unik (karyawan_id + tanggal)
         $conflict = Absensi::where('karyawan_id', $absensi->karyawan_id)
-            ->where('tanggal', $tanggalStr)
+            ->whereDate('tanggal', $tanggalStr)
             ->where('id', '!=', $absensi->id)
             ->first();
 
@@ -594,11 +595,11 @@ class SuperAdminController extends Controller
         }
 
         if ($startDate && $endDate) {
-            $query->whereBetween('tanggal', [$startDate, $endDate]);
+            $query->whereDate('tanggal', '>=', $startDate)->whereDate('tanggal', '<=', $endDate);
         } elseif ($startDate) {
-            $query->where('tanggal', '>=', $startDate);
+            $query->whereDate('tanggal', '>=', $startDate);
         } elseif ($endDate) {
-            $query->where('tanggal', '<=', $endDate);
+            $query->whereDate('tanggal', '<=', $endDate);
         }
 
         if ($search) {
@@ -805,8 +806,13 @@ class SuperAdminController extends Controller
                 ->whereDate('suspend_start', '<=', $today)
                 ->whereDate('suspend_end', '>=', $today);
         } elseif ($status === 'active') {
+            // Aktif = tidak sedang disuspend hari ini. Suspend terjadwal
+            // (mulai di masa depan) masih dihitung aktif karena akunnya
+            // masih bisa login sampai tanggal mulai tiba.
             $query->where(function ($q) use ($today) {
-                $q->whereNull('suspend_end')->orWhereDate('suspend_end', '<', $today);
+                $q->whereNull('suspend_start')
+                    ->orWhereDate('suspend_start', '>', $today)
+                    ->orWhereDate('suspend_end', '<', $today);
             });
         }
 
@@ -834,7 +840,7 @@ class SuperAdminController extends Controller
             'aktif' => $totalCount - $suspendedCount,
         ];
 
-        $menuMeta = SystemSetting::AVAILABLE_FEATURES;
+        $menuMeta = SystemSetting::getRestrictableMenus();
 
         return view('superadmin.access-karyawan', compact(
             'karyawans',
@@ -876,10 +882,15 @@ class SuperAdminController extends Controller
         if ($karyawan->posisi === 'superadmin') {
             $today = now()->toDateString();
 
+            // Super Admin "aktif" = tidak sedang disuspend hari ini.
+            // Suspend terjadwal (mulai di masa depan) tetap dihitung aktif
+            // karena akunnya masih bisa login sampai tanggal mulai tiba.
             $activeSuperadmins = Karyawan::where('posisi', 'superadmin')
                 ->where('is_resigned', false)
                 ->where(function ($q) use ($today) {
-                    $q->whereNull('suspend_end')->orWhereDate('suspend_end', '<', $today);
+                    $q->whereNull('suspend_start')
+                        ->orWhereDate('suspend_start', '>', $today)
+                        ->orWhereDate('suspend_end', '<', $today);
                 })
                 ->count();
 
@@ -941,7 +952,7 @@ class SuperAdminController extends Controller
     {
         $karyawan = Karyawan::findOrFail($id);
 
-        $menuKeys = array_keys(SystemSetting::AVAILABLE_FEATURES);
+        $menuKeys = SystemSetting::RESTRICTABLE_MENU_KEYS;
 
         $request->validate([
             'menus' => 'nullable|array',
@@ -1048,23 +1059,43 @@ class SuperAdminController extends Controller
     public function hariLiburStore(Request $request)
     {
         $request->validate([
-            'tanggal' => 'required|date|unique:hari_liburs,tanggal',
+            // Validasi unik manual via whereDate: rule `unique` mentah membandingkan
+            // string mentah sehingga tidak cocok dengan nilai date di beberapa driver.
+            'tanggal' => [
+                'required',
+                'date',
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    if (HariLibur::whereDate('tanggal', $value)->exists()) {
+                        $fail('Tanggal tersebut sudah terdaftar sebagai hari libur.');
+                    }
+                },
+            ],
             'keterangan' => 'required|string|max:255',
             'jenis' => 'required|in:nasional,khusus_kpm,cuti_bersama',
         ], [
             'tanggal.required' => 'Tanggal libur wajib diisi.',
-            'tanggal.unique' => 'Tanggal tersebut sudah terdaftar sebagai hari libur.',
             'keterangan.required' => 'Keterangan libur wajib diisi.',
         ]);
 
         $tanggal = Carbon::parse($request->input('tanggal'));
 
-        HariLibur::create([
-            'tanggal' => $tanggal->format('Y-m-d'),
-            'keterangan' => trim($request->input('keterangan')),
-            'jenis' => $request->input('jenis'),
-            'tahun' => (int) $tanggal->format('Y'),
-        ]);
+        try {
+            HariLibur::create([
+                'tanggal' => $tanggal->format('Y-m-d'),
+                'keterangan' => trim($request->input('keterangan')),
+                'jenis' => $request->input('jenis'),
+                'tahun' => (int) $tanggal->format('Y'),
+            ]);
+        } catch (QueryException $e) {
+            // Race condition: pengguna lain menambahkan tanggal yang sama di detik yang sama.
+            if (($e->errorInfo[0] ?? null) === '23000' || str_contains($e->getMessage(), 'UNIQUE constraint failed')) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'Tanggal tersebut sudah terdaftar sebagai hari libur.');
+            }
+
+            throw $e;
+        }
 
         return redirect()->back()->with('success', 'Hari libur berhasil ditambahkan ke kalender sistem.');
     }

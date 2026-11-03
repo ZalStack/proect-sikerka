@@ -96,7 +96,7 @@
                             {{ $stats['writable'] ? 'Writable' : 'Read-only' }}
                         </p>
                         <p class="text-[11px] text-slate-400 mt-1 truncate max-w-[210px]" title="{{ $stats['path'] }}">
-                            storage/app/backups
+                            {{ $stats['path'] }}
                         </p>
                     </div>
                     <div class="w-11 h-11 rounded-2xl {{ $stats['writable'] ? 'bg-[#2E7D3E]/10 text-[#2E7D3E]' : 'bg-[#ec1d1d]/10 text-[#ec1d1d]' }} flex items-center justify-center text-lg shrink-0">
@@ -237,7 +237,7 @@
                         </div>
                         <div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100">
                             <span class="text-xs text-gray-500">Lokasi penyimpanan</span>
-                            <span class="text-xs font-bold text-gray-800">storage/app/backups</span>
+                            <span class="text-xs font-bold text-gray-800" title="{{ $stats['path'] }}">{{ $stats['path'] }}</span>
                         </div>
                     </div>
                 </div>
@@ -252,8 +252,14 @@
                     </p>
 
                     <div class="mt-4 space-y-2">
-                        <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Backup .sql.gz</p>
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Backup MySQL (.sql.gz)</p>
                         <pre class="bg-[#0F1245] text-emerald-300 text-[11px] rounded-xl p-3 overflow-x-auto leading-relaxed"><code>gunzip -c sikekar-YYYYmmdd-HHMMSS-manual.sql.gz | mysql -u root -p sikekar</code></pre>
+
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400 pt-2">Backup SQLite (driver sqlite)</p>
+                        <pre class="bg-[#0F1245] text-emerald-300 text-[11px] rounded-xl p-3 overflow-x-auto leading-relaxed"><code>gunzip -c sikekar-YYYYmmdd-HHMMSS-manual.sql.gz &gt; database/database.sqlite</code></pre>
+                        <p class="text-[10px] text-gray-400 leading-relaxed">
+                            File backup SQLite adalah salinan biner database (bukan teks SQL), jadi cara restore-nya adalah menimpa file <code class="bg-gray-100 px-1 rounded">database/database.sqlite</code> — bukan lewat mysql CLI.
+                        </p>
                     </div>
 
                     <div class="mt-3 p-3 rounded-xl bg-amber-50 border border-amber-100">

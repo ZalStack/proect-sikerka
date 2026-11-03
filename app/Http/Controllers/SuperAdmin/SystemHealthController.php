@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
 class SystemHealthController extends Controller
@@ -38,13 +39,47 @@ class SystemHealthController extends Controller
         $storageOk = is_dir($storagePath) && is_writable($storagePath);
         $backupWritable = is_dir($backupPath) && is_writable($backupPath);
 
-        $failedJobsCount = Schema::hasTable('failed_jobs') ? DB::table('failed_jobs')->count() : 0;
-        $pendingJobsCount = Schema::hasTable('jobs') ? DB::table('jobs')->count() : 0;
-        $failedJobs = Schema::hasTable('failed_jobs')
-            ? DB::table('failed_jobs')->orderByDesc('failed_at')->limit(10)->get()
-            : collect();
+        // Semua query di bawah membutuhkan koneksi database. Jika koneksi sudah
+        // gagal di atas, jangan dicoba lagi — cukup laporkan status kritis.
+        // (Begitu pula bila query berikutnya ikut gagal → tandai DB bermasalah.)
+        $failedJobsCount = 0;
+        $pendingJobsCount = 0;
+        $failedJobs = collect();
 
-        $backupStats = $backups->stats();
+        if ($dbOk) {
+            try {
+                $failedJobsCount = Schema::hasTable('failed_jobs') ? DB::table('failed_jobs')->count() : 0;
+                $pendingJobsCount = Schema::hasTable('jobs') ? DB::table('jobs')->count() : 0;
+                $failedJobs = Schema::hasTable('failed_jobs')
+                    ? DB::table('failed_jobs')->orderByDesc('failed_at')->limit(10)->get()
+                    : collect();
+            } catch (\Throwable $e) {
+                $dbOk = false;
+                $dbError = $dbError ?: $e->getMessage();
+                $failedJobsCount = 0;
+                $pendingJobsCount = 0;
+                $failedJobs = collect();
+            }
+        }
+
+        // stats() melempar RuntimeException bila folder backup tidak dapat
+        // ditulis — jangan sampai halaman monitoring ikut gagal 500.
+        $backupStats = [
+            'count' => 0,
+            'total_size' => 0,
+            'total_size_human' => '0 B',
+            'last' => null,
+            'retention' => (int) config('backup.retention', 14),
+            'path' => (string) config('backup.path', storage_path('app/backups')),
+            'writable' => false,
+        ];
+
+        try {
+            $backupStats = $backups->stats();
+        } catch (\Throwable $e) {
+            Log::warning('Gagal membaca statistik backup: ' . $e->getMessage());
+        }
+
         $lastBackup = $backupStats['last'] ?? null;
         $lastBackupAgeDays = $lastBackup
             ? now()->diffInDays($lastBackup['created_at'])
@@ -176,7 +211,9 @@ class SystemHealthController extends Controller
             'config' => ['config:clear'],
             'route' => ['route:clear'],
             'view' => ['view:clear'],
-            'all' => ['optimize:clear', 'config:clear', 'route:clear', 'view:clear'],
+            // 'all' juga membersihkan cache store aplikasi (proyek ini memakai
+            // CACHE_STORE=database) — 'optimize:clear' tidak menyentuhnya.
+            'all' => ['optimize:clear', 'config:clear', 'route:clear', 'view:clear', 'cache:clear'],
         };
 
         try {
@@ -195,7 +232,13 @@ class SystemHealthController extends Controller
 
             return redirect()->back()->with('success', 'Cache berhasil dibersihkan: ' . ucfirst($action) . '.');
         } catch (\Throwable $e) {
-            return redirect()->back()->with('error', 'Gagal membersihkan cache: ' . $e->getMessage());
+            Log::error('Gagal membersihkan cache: ' . $e->getMessage(), ['exception' => $e]);
+
+            $message = $e instanceof \RuntimeException
+                ? $e->getMessage()
+                : 'Terjadi kesalahan saat membersihkan cache. Detail lengkap tersimpan di log sistem.';
+
+            return redirect()->back()->with('error', 'Gagal membersihkan cache: ' . $message);
         }
     }
 
@@ -231,7 +274,13 @@ class SystemHealthController extends Controller
 
             return redirect()->back()->with('success', $output);
         } catch (\Throwable $e) {
-            return redirect()->back()->with('error', 'Tool sistem gagal dijalankan: ' . $e->getMessage());
+            Log::error('Tool sistem gagal dijalankan: ' . $e->getMessage(), ['exception' => $e]);
+
+            $message = $e instanceof \RuntimeException
+                ? $e->getMessage()
+                : 'Terjadi kesalahan saat menjalankan tool sistem. Detail lengkap tersimpan di log sistem.';
+
+            return redirect()->back()->with('error', 'Tool sistem gagal dijalankan: ' . $message);
         }
     }
 
@@ -242,22 +291,41 @@ class SystemHealthController extends Controller
         }
 
         try {
-            $file = new \SplFileObject($path, 'r');
-            $file->seek(PHP_INT_MAX);
-            $lastLine = $file->key();
-            $start = max(0, $lastLine - $lines);
-            $file->seek($start);
+            $filesize = (int) filesize($path);
 
-            $output = [];
-            while (!$file->eof()) {
-                $line = $file->fgets();
-                if ($line === false || $line === '') {
-                    break;
-                }
-                $output[] = rtrim($line);
+            if ($filesize === 0) {
+                return [];
             }
 
-            return array_slice($output, -$lines);
+            $handle = fopen($path, 'rb');
+
+            if ($handle === false) {
+                return [];
+            }
+
+            // Baca dari AKHIR file ke belakang (chunk 8 KB) agar tetap cepat
+            // untuk file log berukuran ratusan MB — tidak perlu seek O(n).
+            $buffer = '';
+            $pos = $filesize;
+            $chunkSize = 8192;
+
+            while ($pos > 0 && substr_count($buffer, "\n") <= $lines) {
+                $read = min($chunkSize, $pos);
+                $pos -= $read;
+                fseek($handle, $pos);
+                $buffer = (string) fread($handle, $read) . $buffer;
+            }
+
+            fclose($handle);
+
+            $output = explode("\n", $buffer);
+
+            // File yang diakhiri newline menghasilkan elemen kosong terakhir.
+            if (end($output) === '') {
+                array_pop($output);
+            }
+
+            return array_map(fn ($line) => rtrim($line, "\r"), array_slice($output, -$lines));
         } catch (\Throwable $e) {
             return ['Gagal membaca file log: ' . $e->getMessage()];
         }

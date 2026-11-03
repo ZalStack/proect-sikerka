@@ -138,7 +138,7 @@
 
                 <!-- Feature Mini Grid -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
-                    @foreach(array_slice($features, 0, 8) as $key => $feat)
+                    @foreach($features as $key => $feat)
                         <div class="p-2 rounded-xl border text-center transition-all {{ $feat['is_enabled'] ? 'bg-emerald-50/50 border-emerald-200 text-emerald-900' : 'bg-gray-50 border-gray-200 text-gray-400 opacity-60' }}">
                             <i class="fa-solid {{ $feat['icon'] }} text-xs mb-1 block" style="color: {{ $feat['is_enabled'] ? $feat['color'] : '#9ca3af' }}"></i>
                             <span class="text-[10px] font-medium truncate block">{{ $feat['name'] }}</span>
@@ -328,7 +328,7 @@
                                     </span>
                                 </td>
                                 <td class="px-4 py-3 text-right whitespace-nowrap">
-                                    <a href="{{ route('superadmin.absensi.index', ['karyawan_id' => $abs->karyawan_id, 'start_date' => $abs->tanggal->toDateString(), 'end_date' => $abs->tanggal->toDateString()]) }}" class="px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-[#00a2e9] hover:text-white text-gray-700 text-xs font-semibold transition-all inline-flex items-center gap-1.5">
+                                    <a href="{{ route('superadmin.absensi.index', ['karyawan_id' => $abs->karyawan_id, 'start_date' => optional($abs->tanggal)->toDateString(), 'end_date' => optional($abs->tanggal)->toDateString()]) }}" class="px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-[#00a2e9] hover:text-white text-gray-700 text-xs font-semibold transition-all inline-flex items-center gap-1.5">
                                         <i class="fa-solid fa-pen-to-square text-xs"></i>
                                         <span>Koreksi Jam</span>
                                     </a>
