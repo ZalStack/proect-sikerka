@@ -59,32 +59,34 @@
 
 {{-- Width MUST stay w-64 (256px) to match content pages' md:ml-64 offset. --}}
 <aside id="sidebar"
-    class="fixed inset-y-0 left-0 z-40 w-64 bg-[#0F1245] transform transition-transform duration-300 ease-in-out -translate-x-full md:translate-x-0 overflow-y-auto shadow-2xl md:shadow-xl sidebar-scroll border-r border-white/10">
-    {{-- Subtle inner glow --}}
-    <div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#161758]/40 via-transparent to-[#161758]/40"></div>
+    class="fixed inset-y-0 left-0 z-40 w-64 bg-[#0F1245] transform transition-transform duration-300 ease-in-out -translate-x-full md:translate-x-0 overflow-y-auto shadow-2xl md:shadow-xl sidebar-scroll border-r border-white/10 {{ $isSuperAdmin ? 'sa-sidebar' : '' }}">
+    {{-- Subtle inner glow (Super Admin memakai tekstur khusus dari .sa-sidebar) --}}
+    <div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#161758]/40 via-transparent to-[#161758]/40 {{ $isSuperAdmin ? 'hidden' : '' }}"></div>
 
     <div class="relative h-full flex flex-col pt-14 sm:pt-16">
         <div class="p-3 pb-24">
             <!-- User Profile Card -->
-            <div class="relative overflow-hidden rounded-2xl p-3 mb-5 border border-white/10 bg-white/[0.07] backdrop-blur-sm">
-                <div class="absolute -top-8 -right-8 w-24 h-24 rounded-full bg-[#00a2e9]/20 blur-xl"></div>
+            <div class="{{ $isSuperAdmin ? 'sa-user-card' : 'relative overflow-hidden rounded-2xl p-3 mb-5 border border-white/10 bg-white/[0.07] backdrop-blur-sm' }}">
+                @unless($isSuperAdmin)
+                    <div class="absolute -top-8 -right-8 w-24 h-24 rounded-full bg-[#00a2e9]/20 blur-xl"></div>
+                @endunless
                 <div class="relative flex items-center space-x-3">
                     <div class="relative shrink-0">
-                        <div class="w-11 h-11 rounded-full {{ $isSuperAdmin ? 'bg-gradient-to-br from-[#FCC626] to-[#f0a500] text-[#0F1245]' : 'bg-gradient-to-br from-[#00a2e9] to-[#0077b6] text-white' }} flex items-center justify-center text-lg font-bold overflow-hidden ring-2 ring-white/20 shadow-lg">
+                        <div class="w-11 h-11 rounded-full {{ $isSuperAdmin ? 'sa-avatar' : 'bg-gradient-to-br from-[#00a2e9] to-[#0077b6] text-white' }} flex items-center justify-center text-lg font-bold overflow-hidden ring-2 ring-white/20 shadow-lg">
                             @if ($userPhoto)
                                 <img src="{{ $userPhoto }}" alt="{{ $user->nama_lengkap }}" class="w-full h-full object-cover">
                             @else
                                 {{ $userInitial }}
                             @endif
                         </div>
-                        <span class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-400 ring-2 ring-[#0F1245]"></span>
+                        <span class="{{ $isSuperAdmin ? 'sa-avatar-dot' : 'absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-400 ring-2 ring-[#0F1245]' }}"></span>
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="text-white font-semibold text-[13px] truncate" title="{{ $user->nama_lengkap }}">
                             {{ $shortName }}
                         </p>
                         @if($isSuperAdmin)
-                            <span class="inline-flex items-center gap-1 text-[#FCC626] text-[10px] font-bold uppercase tracking-wider">
+                            <span class="sa-role-chip mt-1">
                                 <i class="fa-solid fa-crown text-[9px]"></i>
                                 Super Admin
                             </span>
@@ -101,7 +103,7 @@
             <!-- SUPER ADMIN EXCLUSIVE MENUS -->
             <!-- ============================================== -->
             @if ($isSuperAdmin)
-                <h3 class="text-[#FCC626] text-[10px] font-bold uppercase tracking-widest px-3 mb-2 flex items-center gap-1.5">
+                <h3 class="sa-side-label">
                     <i class="fa-solid fa-crown text-[10px]"></i>
                     <span>Super Admin Panel</span>
                 </h3>
@@ -109,8 +111,8 @@
                 <nav class="space-y-1 mb-5">
                     <!-- Dashboard Superadmin -->
                     <a href="{{ route('superadmin.dashboard') }}"
-                        class="{{ $menuBase }} {{ $currentRoute === 'superadmin.dashboard' ? $menuGoldActive : $menuIdle }}">
-                        <span class="{{ $iconChip }} {{ $currentRoute === 'superadmin.dashboard' ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
+                        class="sa-side-link {{ $currentRoute === 'superadmin.dashboard' ? 'is-active' : '' }}">
+                        <span class="sa-side-ico">
                             <i class="fa-solid fa-gauge text-sm"></i>
                         </span>
                         <span class="truncate">Dashboard Superadmin</span>
@@ -118,8 +120,8 @@
 
                     <!-- Kontrol Fitur & Maintenance -->
                     <a href="{{ route('superadmin.features.index') }}"
-                        class="{{ $menuBase }} {{ $currentRoute === 'superadmin.features.index' ? $menuActive : $menuIdle }}">
-                        <span class="{{ $iconChip }} {{ $currentRoute === 'superadmin.features.index' ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
+                        class="sa-side-link {{ $currentRoute === 'superadmin.features.index' ? 'is-active' : '' }}">
+                        <span class="sa-side-ico">
                             <i class="fa-solid fa-sliders text-sm"></i>
                         </span>
                         <span class="truncate">Fitur & Maintenance</span>
@@ -127,8 +129,8 @@
 
                     <!-- Kelola & Koreksi Jam Presensi -->
                     <a href="{{ route('superadmin.absensi.index') }}"
-                        class="{{ $menuBase }} {{ $currentRoute === 'superadmin.absensi.index' ? $menuActive : $menuIdle }}">
-                        <span class="{{ $iconChip }} {{ $currentRoute === 'superadmin.absensi.index' ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
+                        class="sa-side-link {{ $currentRoute === 'superadmin.absensi.index' ? 'is-active' : '' }}">
+                        <span class="sa-side-ico">
                             <i class="fa-solid fa-clock-rotate-left text-sm"></i>
                         </span>
                         <span class="truncate">Koreksi Presensi Karyawan</span>
@@ -136,8 +138,8 @@
 
                     <!-- Manajemen Role Pengguna -->
                     <a href="{{ route('superadmin.karyawan.index') }}"
-                        class="{{ $menuBase }} {{ $currentRoute === 'superadmin.karyawan.index' ? $menuActive : $menuIdle }}">
-                        <span class="{{ $iconChip }} {{ $currentRoute === 'superadmin.karyawan.index' ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
+                        class="sa-side-link {{ $currentRoute === 'superadmin.karyawan.index' ? 'is-active' : '' }}">
+                        <span class="sa-side-ico">
                             <i class="fa-solid fa-users-gear text-sm"></i>
                         </span>
                         <span class="truncate">Manajemen Role User</span>
@@ -145,8 +147,8 @@
 
                     <!-- Manajemen Akses: Suspend Akun & Hak Akses Menu -->
                     <a href="{{ route('superadmin.access.index') }}"
-                        class="{{ $menuBase }} {{ str_starts_with((string) $currentRoute, 'superadmin.access.') ? $menuActive : $menuIdle }}">
-                        <span class="{{ $iconChip }} {{ str_starts_with((string) $currentRoute, 'superadmin.access.') ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
+                        class="sa-side-link {{ str_starts_with((string) $currentRoute, 'superadmin.access.') ? 'is-active' : '' }}">
+                        <span class="sa-side-ico">
                             <i class="fa-solid fa-user-lock text-sm"></i>
                         </span>
                         <span class="truncate flex-1">Manajemen Akses</span>
@@ -162,8 +164,8 @@
                         $isViolationsEnabled = \App\Models\SystemSetting::isFeatureEnabled('pelanggaran_presensi');
                     @endphp
                     <a href="{{ route('superadmin.violations.index') }}"
-                        class="{{ $menuBase }} {{ $currentRoute === 'superadmin.violations.index' ? $menuActive : $menuIdle }}">
-                        <span class="{{ $iconChip }} {{ $currentRoute === 'superadmin.violations.index' ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
+                        class="sa-side-link {{ $currentRoute === 'superadmin.violations.index' ? 'is-active' : '' }}">
+                        <span class="sa-side-ico">
                             <i class="fa-solid fa-user-shield text-sm"></i>
                         </span>
                         <span class="truncate flex-1">Pelanggaran Presensi</span>
@@ -180,8 +182,8 @@
 
                     <!-- Kelola Hari Libur & Tanggal Merah -->
                     <a href="{{ route('superadmin.hari-libur.index') }}"
-                        class="{{ $menuBase }} {{ str_starts_with((string) $currentRoute, 'superadmin.hari-libur.') ? $menuActive : $menuIdle }}">
-                        <span class="{{ $iconChip }} {{ str_starts_with((string) $currentRoute, 'superadmin.hari-libur.') ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
+                        class="sa-side-link {{ str_starts_with((string) $currentRoute, 'superadmin.hari-libur.') ? 'is-active' : '' }}">
+                        <span class="sa-side-ico">
                             <i class="fa-solid fa-calendar-day text-sm"></i>
                         </span>
                         <span class="truncate">Hari Libur & Tgl Merah</span>
@@ -190,17 +192,15 @@
                     <!-- ============================================== -->
                     <!-- PEMELIHARAAN IT -->
                     <!-- ============================================== -->
-                    <div class="pt-3 mt-3 border-t border-white/10">
-                        <h4 class="text-white/40 text-[10px] font-bold uppercase tracking-widest px-3 py-2 flex items-center gap-1.5">
-                            <i class="fa-solid fa-screwdriver-wrench text-[10px]"></i>
-                            <span>Pemeliharaan IT</span>
-                        </h4>
-                    </div>
+                    <h4 class="sa-side-sublabel">
+                        <i class="fa-solid fa-screwdriver-wrench text-[10px]"></i>
+                        <span>Pemeliharaan IT</span>
+                    </h4>
 
                     <!-- Backup Database -->
                     <a href="{{ route('superadmin.backup.index') }}"
-                        class="{{ $menuBase }} {{ str_starts_with((string) $currentRoute, 'superadmin.backup.') ? $menuActive : $menuIdle }}">
-                        <span class="{{ $iconChip }} {{ str_starts_with((string) $currentRoute, 'superadmin.backup.') ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
+                        class="sa-side-link {{ str_starts_with((string) $currentRoute, 'superadmin.backup.') ? 'is-active' : '' }}">
+                        <span class="sa-side-ico">
                             <i class="fa-solid fa-database text-sm"></i>
                         </span>
                         <span class="truncate">Backup Database</span>
@@ -208,8 +208,8 @@
 
                     <!-- Statistik Penggunaan -->
                     <a href="{{ route('superadmin.stats.index') }}"
-                        class="{{ $menuBase }} {{ $currentRoute === 'superadmin.stats.index' ? $menuActive : $menuIdle }}">
-                        <span class="{{ $iconChip }} {{ $currentRoute === 'superadmin.stats.index' ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
+                        class="sa-side-link {{ $currentRoute === 'superadmin.stats.index' ? 'is-active' : '' }}">
+                        <span class="sa-side-ico">
                             <i class="fa-solid fa-chart-pie text-sm"></i>
                         </span>
                         <span class="truncate">Statistik Penggunaan</span>
@@ -217,8 +217,8 @@
 
                     <!-- Log Aktivitas -->
                     <a href="{{ route('superadmin.logs.index') }}"
-                        class="{{ $menuBase }} {{ str_starts_with((string) $currentRoute, 'superadmin.logs.') ? $menuActive : $menuIdle }}">
-                        <span class="{{ $iconChip }} {{ str_starts_with((string) $currentRoute, 'superadmin.logs.') ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
+                        class="sa-side-link {{ str_starts_with((string) $currentRoute, 'superadmin.logs.') ? 'is-active' : '' }}">
+                        <span class="sa-side-ico">
                             <i class="fa-solid fa-clipboard-list text-sm"></i>
                         </span>
                         <span class="truncate">Log Aktivitas</span>
@@ -226,8 +226,8 @@
 
                     <!-- Kesehatan Sistem -->
                     <a href="{{ route('superadmin.health.index') }}"
-                        class="{{ $menuBase }} {{ str_starts_with((string) $currentRoute, 'superadmin.health.') ? $menuActive : $menuIdle }}">
-                        <span class="{{ $iconChip }} {{ str_starts_with((string) $currentRoute, 'superadmin.health.') ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
+                        class="sa-side-link {{ str_starts_with((string) $currentRoute, 'superadmin.health.') ? 'is-active' : '' }}">
+                        <span class="sa-side-ico">
                             <i class="fa-solid fa-heart-pulse text-sm"></i>
                         </span>
                         <span class="truncate">Kesehatan Sistem</span>
@@ -525,10 +525,11 @@
             @endif
 
             <!-- Profile & Setting for all roles -->
-            <div class="pt-3 mt-3 border-t border-white/10">
+            @php $isProfileActive = $currentRoute === 'profile.show' || $currentRoute === 'profile.edit'; @endphp
+            <div class="{{ $isSuperAdmin ? 'sa-side-divider' : 'pt-3 mt-3 border-t border-white/10' }}">
                 <a href="{{ route('profile.show') }}"
-                    class="{{ $menuBase }} {{ $currentRoute === 'profile.show' || $currentRoute === 'profile.edit' ? $menuActive : $menuIdle }}">
-                    <span class="{{ $iconChip }} {{ $currentRoute === 'profile.show' || $currentRoute === 'profile.edit' ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20' }}">
+                    class="{{ $isSuperAdmin ? 'sa-side-link' : $menuBase }} {{ $isSuperAdmin ? ($isProfileActive ? 'is-active' : '') : ($isProfileActive ? $menuActive : $menuIdle) }}">
+                    <span class="{{ $isSuperAdmin ? 'sa-side-ico' : $iconChip . ' ' . ($isProfileActive ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20') }}">
                         <i class="fa-solid fa-user-gear text-sm"></i>
                     </span>
                     <span class="truncate">Profil Akun</span>

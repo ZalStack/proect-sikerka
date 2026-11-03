@@ -11,16 +11,20 @@
 
 {{-- Height MUST stay h-14 sm:h-16 (56/64px) to align with <main> pt-14 sm:pt-16
      and every content page's sticky top-14 sm:top-16 header. --}}
-<nav class="fixed top-0 left-0 right-0 z-50 h-14 sm:h-16 bg-[#0F1245]/85 backdrop-blur-xl border-b border-white/10 shadow-[0_8px_30px_-12px_rgba(15,18,69,0.45)]">
+<nav class="fixed top-0 left-0 right-0 z-50 h-14 sm:h-16 bg-[#0F1245]/85 backdrop-blur-xl border-b border-white/10 shadow-[0_8px_30px_-12px_rgba(15,18,69,0.45)] {{ $isSuperAdmin ? 'sa-topbar' : '' }}">
     {{-- Brand accent line --}}
-    <div class="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[#FCC626] via-[#00a2e9] to-[#27438D]"></div>
+    @if($isSuperAdmin)
+        <div class="sa-topbar-accent"></div>
+    @else
+        <div class="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[#FCC626] via-[#00a2e9] to-[#27438D]"></div>
+    @endif
 
     <div class="h-full px-3 sm:px-5 lg:px-7 flex items-center justify-between gap-3">
         <!-- Logo & Menu -->
         <div class="flex items-center gap-2 sm:gap-3 min-w-0">
             <!-- Mobile menu button -->
             <button id="mobile-menu-toggle" type="button" aria-label="Buka menu"
-                class="md:hidden shrink-0 text-white/80 hover:text-white focus:outline-none p-2 rounded-xl hover:bg-white/10 active:scale-95 transition-all duration-200">
+                class="md:hidden shrink-0 text-white/80 hover:text-white focus:outline-none p-2 rounded-xl hover:bg-white/10 active:scale-95 transition-all duration-200 {{ $isSuperAdmin ? 'sa-topbar-btn' : '' }}">
                 <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                 </svg>
@@ -40,6 +44,14 @@
                     </span>
                 </span>
             </a>
+
+            {{-- Penanda area kerja Super Admin --}}
+            @if($isSuperAdmin)
+                <span class="sa-topbar-chip">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span>Command Center</span>
+                </span>
+            @endif
         </div>
 
         <!-- Right Section -->
@@ -57,7 +69,7 @@
 
                 <!-- Bell Button -->
                 <button @click="toggle()" type="button"
-                    class="relative text-white/80 hover:text-white focus:outline-none p-2 rounded-xl hover:bg-white/10 active:scale-95 transition-all duration-200"
+                    class="relative text-white/80 hover:text-white focus:outline-none p-2 rounded-xl hover:bg-white/10 active:scale-95 transition-all duration-200 {{ $isSuperAdmin ? 'sa-topbar-btn' : '' }}"
                     aria-label="Notifikasi">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                         stroke="currentColor" class="w-5 h-5 sm:w-[22px] sm:h-[22px]">
@@ -198,8 +210,18 @@
             <!-- Profile Dropdown -->
             <div class="relative" x-data="{ open: false }" @keydown.escape.window="open = false">
                 <button @click="open = !open"
-                    class="flex items-center gap-1.5 sm:gap-2 focus:outline-none group p-1 rounded-xl hover:bg-white/10 active:scale-95 transition-all duration-200">
+                    class="flex items-center gap-1.5 sm:gap-2 focus:outline-none group p-1 rounded-xl hover:bg-white/10 active:scale-95 transition-all duration-200 {{ $isSuperAdmin ? 'sa-topbar-user' : '' }}">
                     <span class="relative w-8 h-8 sm:w-9 sm:h-9">
+                        @if($isSuperAdmin)
+                            <span class="sa-avatar-ring"></span>
+                            <span class="sa-avatar-inner">
+                                @if($userPhoto)
+                                    <img src="{{ $userPhoto }}" alt="{{ $user->nama_lengkap }}" class="w-full h-full object-cover">
+                                @else
+                                    {{ $userInitial }}
+                                @endif
+                            </span>
+                        @else
                         <span class="absolute -inset-0.5 rounded-full bg-gradient-to-br from-[#00a2e9] to-[#FCC626] opacity-70 group-hover:opacity-100 transition-opacity"></span>
                         <span class="relative w-full h-full rounded-full bg-gradient-to-br from-[#00a2e9] to-[#0077b6] flex items-center justify-center text-white font-bold overflow-hidden text-[11px] sm:text-xs shadow-md">
                             @if($userPhoto)
@@ -208,6 +230,7 @@
                                 {{ $userInitial }}
                             @endif
                         </span>
+                        @endif
                     </span>
                     <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/60 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>

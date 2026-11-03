@@ -363,9 +363,18 @@
         const data = JSON.parse(dataElement.textContent);
         const fontFamily = "'Poppins', sans-serif";
         Chart.defaults.font.family = fontFamily;
-        Chart.defaults.color = '#64748b';
+        Chart.defaults.color = '#94A3B8';
 
-        const gridColor = 'rgba(148, 163, 184, 0.12)';
+        const gridColor = 'rgba(148, 163, 184, 0.16)';
+
+        // Tooltip konsisten dengan tema Dark Command Center
+        const tooltipStyle = {
+            backgroundColor: '#111742',
+            borderColor: 'rgba(252, 198, 38, 0.45)',
+            borderWidth: 1,
+            titleColor: '#FCC626',
+            bodyColor: '#EAF0FF',
+        };
 
         // 1. Tren login
         const loginCanvas = document.getElementById('loginTrendChart');
@@ -400,7 +409,7 @@
                     plugins: {
                         legend: { display: false },
                         tooltip: {
-                            backgroundColor: '#0F1245',
+                            ...tooltipStyle,
                             titleFont: { size: 11, weight: '700' },
                             bodyFont: { size: 11 },
                             padding: 10,
@@ -434,7 +443,7 @@
                         data: data.roleDistribution.data,
                         backgroundColor: data.roleDistribution.colors,
                         borderWidth: 3,
-                        borderColor: '#ffffff',
+                        borderColor: '#0A0F30',
                         hoverOffset: 6,
                     }]
                 },
@@ -445,7 +454,7 @@
                     plugins: {
                         legend: { display: false },
                         tooltip: {
-                            backgroundColor: '#0F1245',
+                            ...tooltipStyle,
                             padding: 10,
                             cornerRadius: 10,
                         }
@@ -478,7 +487,7 @@
                     plugins: {
                         legend: { display: false },
                         tooltip: {
-                            backgroundColor: '#0F1245',
+                            ...tooltipStyle,
                             padding: 10,
                             cornerRadius: 10,
                             displayColors: false,
@@ -509,7 +518,7 @@
                     datasets: [{
                         label: 'Login',
                         data: data.peakHours.data,
-                        backgroundColor: data.peakHours.data.map((value, index) => value === Math.max(...data.peakHours.data) ? '#FCC626' : 'rgba(39, 67, 141, 0.55)'),
+                        backgroundColor: data.peakHours.data.map((value, index) => value === Math.max(...data.peakHours.data) ? '#FCC626' : 'rgba(0, 162, 233, 0.45)'),
                         borderRadius: 5,
                         borderSkipped: false,
                     }]
@@ -520,7 +529,7 @@
                     plugins: {
                         legend: { display: false },
                         tooltip: {
-                            backgroundColor: '#0F1245',
+                            ...tooltipStyle,
                             padding: 10,
                             cornerRadius: 10,
                             displayColors: false,

@@ -1,30 +1,50 @@
 {{-- views/layouts/app.blade.php --}}
+@php
+    // Penanda role: SELURUH tema kustom Super Admin di-scope ke class `sa-theme`
+    // pada <body> sehingga tampilan HRD & Karyawan tidak ikut berubah.
+    $isSuperAdmin = Auth::check() && Auth::user()->posisi === 'superadmin';
+@endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="theme-color" content="#0F1245">
+    <meta name="theme-color" content="{{ $isSuperAdmin ? '#05081A' : '#0F1245' }}">
     <title>{{ config('app.name', 'SIKEKAR') }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @if($isSuperAdmin)
+        {{-- Tema "Dark Command Center" — hanya untuk role Super Admin --}}
+        @include('layouts.superadmin-theme')
+    @endif
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.css">
 </head>
-<body class="font-['Poppins'] antialiased bg-[#eef2f9] overflow-x-hidden text-slate-800">
+<body class="font-['Poppins'] antialiased {{ $isSuperAdmin ? 'sa-theme' : 'bg-[#eef2f9] overflow-x-hidden text-slate-800' }}">
 
     {{-- ==================== DECORATIVE BACKGROUND (behind everything) ==================== --}}
-    <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <div class="absolute inset-0 bg-gradient-to-br from-[#eaf1ff] via-[#f3f5fb] to-[#e7edf9]"></div>
-        <div class="absolute -top-40 -left-32 w-[36rem] h-[36rem] rounded-full bg-[#00a2e9]/10 blur-3xl"></div>
-        <div class="absolute top-1/3 -right-40 w-[32rem] h-[32rem] rounded-full bg-[#FCC626]/10 blur-3xl"></div>
-        <div class="absolute -bottom-40 left-1/3 w-[30rem] h-[30rem] rounded-full bg-[#27438D]/10 blur-3xl"></div>
-        <div class="absolute inset-0 opacity-[0.035]"
-             style="background-image: radial-gradient(circle at 1px 1px, #161758 1px, transparent 0); background-size: 26px 26px;"></div>
-    </div>
+    @if($isSuperAdmin)
+        {{-- Latar khas Super Admin: navy pekat + grid halus + glow emas/violet/cyan --}}
+        <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+            <div class="sa-bg-glow sa-bg-glow-1"></div>
+            <div class="sa-bg-glow sa-bg-glow-2"></div>
+            <div class="sa-bg-glow sa-bg-glow-3"></div>
+            <div class="sa-bg-grid"></div>
+            <div class="sa-bg-vignette"></div>
+        </div>
+    @else
+        <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-br from-[#eaf1ff] via-[#f3f5fb] to-[#e7edf9]"></div>
+            <div class="absolute -top-40 -left-32 w-[36rem] h-[36rem] rounded-full bg-[#00a2e9]/10 blur-3xl"></div>
+            <div class="absolute top-1/3 -right-40 w-[32rem] h-[32rem] rounded-full bg-[#FCC626]/10 blur-3xl"></div>
+            <div class="absolute -bottom-40 left-1/3 w-[30rem] h-[30rem] rounded-full bg-[#27438D]/10 blur-3xl"></div>
+            <div class="absolute inset-0 opacity-[0.035]"
+                 style="background-image: radial-gradient(circle at 1px 1px, #161758 1px, transparent 0); background-size: 26px 26px;"></div>
+        </div>
+    @endif
 
     <div class="min-h-screen flex flex-col relative">
         @include('layouts.navigation')
