@@ -211,53 +211,72 @@ class SuperAdminController extends Controller
      */
     public function absensiIndex(Request $request)
     {
-        $karyawans = Karyawan::active()->orderBy('nama_lengkap')->get(['id', 'nama_lengkap', 'kode_pegawai', 'divisi', 'jabatan']);
-        $divisis = Karyawan::whereNotNull('divisi')->where('divisi', '!=', '')->distinct()->pluck('divisi');
+        // Ambil seluruh karyawan (termasuk yang berstatus resign dengan label, agar riwayatnya tetap dapat dilihat & dikoreksi)
+        $karyawans = Karyawan::orderBy('nama_lengkap')->get(['id', 'nama_lengkap', 'kode_pegawai', 'divisi', 'jabatan', 'is_resigned']);
+        $divisis = Karyawan::whereNotNull('divisi')->where('divisi', '!=', '')->distinct()->orderBy('divisi')->pluck('divisi');
         $kantorLocations = array_keys(Absensi::getOfficeLocations());
 
-        // Default tanggal: bulan berjalan jika filter tanggal tidak dispesifikasikan
-        $selectedMonth = $request->input('month', Carbon::now()->month);
-        $selectedYear = $request->input('year', Carbon::now()->year);
+        $selectedMonth = $request->filled('month') ? (int) $request->input('month') : null;
+        $selectedYear = $request->filled('year') ? (int) $request->input('year') : null;
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
         $karyawanId = $request->input('karyawan_id');
         $divisi = $request->input('divisi');
         $status = $request->input('status');
-        $search = $request->input('search');
+        $search = trim((string) $request->input('search', ''));
+        $sortBy = $request->input('sort_by', 'tanggal_desc');
+        $perPage = (int) $request->input('per_page', 20);
+        if ($perPage < 5 || $perPage > 200) {
+            $perPage = 20;
+        }
 
         $query = Absensi::with('karyawan');
 
+        // 1. FILTER TANGGAL:
+        // Prioritas 1: Rentang Tanggal Spesifik (Dari - Sampai)
         if ($startDate && $endDate) {
             $query->whereDate('tanggal', '>=', $startDate)->whereDate('tanggal', '<=', $endDate);
         } elseif ($startDate) {
             $query->whereDate('tanggal', '>=', $startDate);
         } elseif ($endDate) {
             $query->whereDate('tanggal', '<=', $endDate);
-        } else {
+        } elseif ($selectedMonth && $selectedYear) {
+            // Prioritas 2: Bulan & Tahun
             $query->whereMonth('tanggal', $selectedMonth)->whereYear('tanggal', $selectedYear);
+        } elseif ($selectedMonth) {
+            $query->whereMonth('tanggal', $selectedMonth);
+        } elseif ($selectedYear) {
+            $query->whereYear('tanggal', $selectedYear);
         }
+        // Catatan: Jika tidak ada filter tanggal yang diisi, semua data presensi akan ditampilkan secara utuh.
 
+        // 2. FILTER KARYAWAN:
         if ($karyawanId) {
             $query->where('karyawan_id', $karyawanId);
         }
 
-        if ($status) {
+        // 3. FILTER STATUS:
+        if ($status && $status !== 'semua') {
             $query->where('status', $status);
         }
 
-        if ($divisi) {
+        // 4. FILTER DIVISI:
+        if ($divisi && $divisi !== 'semua') {
             $query->whereHas('karyawan', function ($q) use ($divisi) {
                 $q->where('divisi', $divisi);
             });
         }
 
-        if ($search) {
+        // 5. PENCARIAN TEKS:
+        if ($search !== '') {
             $query->where(function ($q) use ($search) {
                 $q->whereHas('karyawan', function ($sub) use ($search) {
                     $sub->where('nama_lengkap', 'like', "%{$search}%")
-                        ->orWhere('kode_pegawai', 'like', "%{$search}%");
+                        ->orWhere('kode_pegawai', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
                 })->orWhere('keterangan', 'like', "%{$search}%")
-                  ->orWhere('kantor_cabang', 'like', "%{$search}%");
+                  ->orWhere('kantor_cabang', 'like', "%{$search}%")
+                  ->orWhere('status', 'like', "%{$search}%");
             });
         }
 
@@ -268,9 +287,35 @@ class SuperAdminController extends Controller
         $totalJamSemua = $allFiltered->sum('total_jam_kerja');
         $avgJam = $totalRecords > 0 ? round($totalJamSemua / $totalRecords, 1) : 0;
         $totalHadir = $allFiltered->where('status', 'Hadir')->count();
+        $totalIzin = $allFiltered->where('status', 'Izin')->count();
+        $totalSakit = $allFiltered->where('status', 'Sakit')->count();
+        $totalAlpha = $allFiltered->where('status', 'Alpha')->count();
+        $totalCuti = $allFiltered->where('status', 'Cuti')->count();
+        $totalDinas = $allFiltered->where('status', 'Perjalanan Dinas')->count();
         $totalTerlambat = $allFiltered->filter(fn($a) => $a->is_terlambat)->count();
 
-        $absensis = $query->orderByDesc('tanggal')->orderByDesc('check_in')->paginate(20)->withQueryString();
+        // 6. SORTING / PENGURUTAN:
+        if ($sortBy === 'tanggal_asc') {
+            $query->orderBy('tanggal', 'asc')->orderBy('check_in', 'asc')->orderBy('id', 'asc');
+        } elseif ($sortBy === 'nama') {
+            $query->join('karyawans', 'absensis.karyawan_id', '=', 'karyawans.id')
+                  ->orderBy('karyawans.nama_lengkap', 'asc')
+                  ->orderByDesc('absensis.tanggal')
+                  ->select('absensis.*');
+        } elseif ($sortBy === 'paling_telat') {
+            $query->orderByRaw("CASE WHEN check_in IS NOT NULL AND check_in > '" . Absensi::WORK_START_TIME . "' THEN TIME_TO_SEC(TIMEDIFF(check_in, '" . Absensi::WORK_START_TIME . "')) ELSE 0 END DESC")
+                  ->orderByDesc('tanggal');
+        } else {
+            $query->orderByDesc('tanggal')->orderByDesc('check_in')->orderByDesc('id');
+        }
+
+        $absensis = $query->paginate($perPage)->withQueryString();
+
+        // Daftar tahun untuk opsi filter
+        $currentYear = (int) Carbon::now()->year;
+        $dbYears = Absensi::selectRaw('DISTINCT YEAR(tanggal) as y')->pluck('y')->filter()->map(fn($y) => (int)$y)->toArray();
+        $availableYears = array_values(array_unique(array_merge([$currentYear, $currentYear - 1, $currentYear - 2, $currentYear - 3, $currentYear - 4], $dbYears)));
+        rsort($availableYears);
 
         return view('superadmin.absensi', compact(
             'absensis',
@@ -279,16 +324,24 @@ class SuperAdminController extends Controller
             'kantorLocations',
             'selectedMonth',
             'selectedYear',
+            'availableYears',
             'startDate',
             'endDate',
             'karyawanId',
             'divisi',
             'status',
             'search',
+            'sortBy',
+            'perPage',
             'totalRecords',
             'totalJamSemua',
             'avgJam',
             'totalHadir',
+            'totalIzin',
+            'totalSakit',
+            'totalAlpha',
+            'totalCuti',
+            'totalDinas',
             'totalTerlambat'
         ));
     }
@@ -301,38 +354,48 @@ class SuperAdminController extends Controller
         $request->validate([
             'karyawan_id' => 'required|exists:karyawans,id',
             'tanggal' => 'required|date',
-            'check_in' => 'nullable|date_format:H:i',
-            'check_out' => 'nullable|date_format:H:i',
+            'check_in' => 'nullable|string',
+            'check_out' => 'nullable|string',
             'status' => 'required|in:Hadir,Izin,Sakit,Alpha,Perjalanan Dinas,Cuti',
             'kantor_cabang' => 'nullable|string|max:50',
             'keterangan' => 'nullable|string|max:500',
         ]);
 
+        $tanggalStr = Carbon::parse($request->tanggal)->format('Y-m-d');
+
         $existing = Absensi::where('karyawan_id', $request->karyawan_id)
-            ->whereDate('tanggal', $request->tanggal)
+            ->whereDate('tanggal', $tanggalStr)
             ->first();
 
         if ($existing) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'Data presensi karyawan tersebut pada tanggal ' . Carbon::parse($request->tanggal)->translatedFormat('d F Y') . ' sudah ada. Silakan gunakan tombol edit.');
+                ->with('error', 'Data presensi karyawan tersebut pada tanggal ' . Carbon::parse($tanggalStr)->translatedFormat('d F Y') . ' sudah ada. Silakan gunakan tombol koreksi.');
         }
 
-        $tanggalStr = Carbon::parse($request->tanggal)->format('Y-m-d');
-        $checkInDatetime = $request->filled('check_in') ? Carbon::parse($tanggalStr . ' ' . $request->check_in . ':00') : null;
-        $checkOutDatetime = $request->filled('check_out') ? Carbon::parse($tanggalStr . ' ' . $request->check_out . ':00') : null;
+        $cleanIn = null;
+        if ($request->filled('check_in')) {
+            $cleanIn = trim($request->check_in);
+            if (strlen($cleanIn) === 5) $cleanIn .= ':00';
+        }
+
+        $cleanOut = null;
+        if ($request->filled('check_out')) {
+            $cleanOut = trim($request->check_out);
+            if (strlen($cleanOut) === 5) $cleanOut .= ':00';
+        }
 
         // Otomatis hitung total jam kerja
         $totalJamKerja = 0;
-        if ($checkInDatetime && $checkOutDatetime) {
-            $totalJamKerja = Absensi::calculateTotalJamKerja($checkInDatetime, $checkOutDatetime, $tanggalStr);
+        if ($cleanIn && $cleanOut) {
+            $totalJamKerja = Absensi::calculateTotalJamKerja($cleanIn, $cleanOut, $tanggalStr);
         }
 
         $absensi = new Absensi();
         $absensi->karyawan_id = $request->karyawan_id;
         $absensi->tanggal = $tanggalStr;
-        $absensi->check_in = $checkInDatetime;
-        $absensi->check_out = $checkOutDatetime;
+        $absensi->check_in = $cleanIn;
+        $absensi->check_out = $cleanOut;
         $absensi->status = $request->status;
         $absensi->kantor_cabang = $request->kantor_cabang ?? 'KPM LALADON';
         $absensi->keterangan = $request->keterangan ?? 'Diinput manual oleh Super Admin';

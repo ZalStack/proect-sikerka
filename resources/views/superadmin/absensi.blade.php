@@ -59,19 +59,54 @@
             </div>
         @endif
 
-        <!-- Filter Bar -->
-        <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-gray-100">
-            <form method="GET" action="{{ route('superadmin.absensi.index') }}" class="space-y-4">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <!-- Quick Presets & Filter Bar -->
+        <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-gray-100 space-y-4">
+            <!-- Preset Bar -->
+            <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-gray-100">
+                <div class="flex items-center gap-1.5 flex-wrap text-xs">
+                    <span class="text-gray-400 font-bold uppercase tracking-wider text-[11px] mr-1">Filter Cepat:</span>
+                    <a href="{{ route('superadmin.absensi.index') }}"
+                       class="px-3 py-1.5 rounded-xl font-bold transition-all {{ empty(request()->query()) ? 'bg-[#0F1245] text-white shadow-sm' : 'bg-gray-100 hover:bg-gray-200 text-gray-700' }}">
+                        <i class="fa-solid fa-layer-group mr-1 text-[10px]"></i>Semua Data Presensi
+                    </a>
+                    <a href="{{ route('superadmin.absensi.index', ['start_date' => now()->toDateString(), 'end_date' => now()->toDateString()]) }}"
+                       class="px-3 py-1.5 rounded-xl font-semibold transition-all {{ request('start_date') === now()->toDateString() && request('end_date') === now()->toDateString() ? 'bg-[#00a2e9] text-white shadow-sm' : 'bg-gray-100 hover:bg-gray-200 text-gray-700' }}">
+                        <i class="fa-solid fa-calendar-day mr-1 text-[10px]"></i>Hari Ini
+                    </a>
+                    <a href="{{ route('superadmin.absensi.index', ['month' => now()->month, 'year' => now()->year]) }}"
+                       class="px-3 py-1.5 rounded-xl font-semibold transition-all {{ (int)request('month') === (int)now()->month && (int)request('year') === (int)now()->year && !request('start_date') ? 'bg-[#00a2e9] text-white shadow-sm' : 'bg-gray-100 hover:bg-gray-200 text-gray-700' }}">
+                        <i class="fa-solid fa-calendar mr-1 text-[10px]"></i>Bulan Ini ({{ now()->translatedFormat('F Y') }})
+                    </a>
+                    <a href="{{ route('superadmin.absensi.index', ['month' => now()->subMonth()->month, 'year' => now()->subMonth()->year]) }}"
+                       class="px-3 py-1.5 rounded-xl font-semibold transition-all {{ (int)request('month') === (int)now()->subMonth()->month && (int)request('year') === (int)now()->subMonth()->year && !request('start_date') ? 'bg-[#00a2e9] text-white shadow-sm' : 'bg-gray-100 hover:bg-gray-200 text-gray-700' }}">
+                        <i class="fa-solid fa-clock-rotate-left mr-1 text-[10px]"></i>Bulan Lalu
+                    </a>
+                    <a href="{{ route('superadmin.absensi.index', array_merge(request()->query(), ['sort_by' => 'paling_telat'])) }}"
+                       class="px-3 py-1.5 rounded-xl font-semibold transition-all {{ request('sort_by') === 'paling_telat' ? 'bg-rose-600 text-white shadow-sm' : 'bg-rose-50 hover:bg-rose-100 text-rose-700' }}">
+                        <i class="fa-solid fa-clock mr-1 text-[10px]"></i>Paling Banyak Telat
+                    </a>
+                </div>
+
+                @if(count(array_filter(request()->query())) > 0)
+                    <a href="{{ route('superadmin.absensi.index') }}" class="text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1">
+                        <i class="fa-solid fa-rotate-left"></i>
+                        <span>Reset Semua Filter</span>
+                    </a>
+                @endif
+            </div>
+
+            <!-- Form Filter Lengkap -->
+            <form method="GET" action="{{ route('superadmin.absensi.index') }}" class="space-y-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3">
                     
                     <!-- Karyawan Select -->
                     <div>
-                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Karyawan</label>
-                        <select name="karyawan_id" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs font-medium focus:ring-2 focus:ring-[#00a2e9]/20 focus:border-[#00a2e9]">
+                        <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1">Karyawan</label>
+                        <select name="karyawan_id" class="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50/60 text-xs font-medium focus:bg-white focus:ring-2 focus:ring-[#00a2e9]/20 focus:border-[#00a2e9] outline-none transition-all">
                             <option value="">-- Semua Karyawan --</option>
                             @foreach($karyawans as $k)
                                 <option value="{{ $k->id }}" {{ $karyawanId == $k->id ? 'selected' : '' }}>
-                                    {{ $k->nama_lengkap }} ({{ $k->kode_pegawai }})
+                                    {{ $k->nama_lengkap }} ({{ $k->kode_pegawai }}) {{ $k->is_resigned ? '[Resign]' : '' }}
                                 </option>
                             @endforeach
                         </select>
@@ -79,8 +114,8 @@
 
                     <!-- Divisi Select -->
                     <div>
-                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Divisi</label>
-                        <select name="divisi" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs font-medium focus:ring-2 focus:ring-[#00a2e9]/20 focus:border-[#00a2e9]">
+                        <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1">Divisi</label>
+                        <select name="divisi" class="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50/60 text-xs font-medium focus:bg-white focus:ring-2 focus:ring-[#00a2e9]/20 focus:border-[#00a2e9] outline-none transition-all">
                             <option value="">-- Semua Divisi --</option>
                             @foreach($divisis as $d)
                                 <option value="{{ $d }}" {{ $divisi == $d ? 'selected' : '' }}>{{ $d }}</option>
@@ -90,8 +125,8 @@
 
                     <!-- Status Select -->
                     <div>
-                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Status Presensi</label>
-                        <select name="status" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs font-medium focus:ring-2 focus:ring-[#00a2e9]/20 focus:border-[#00a2e9]">
+                        <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1">Status Presensi</label>
+                        <select name="status" class="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50/60 text-xs font-medium focus:bg-white focus:ring-2 focus:ring-[#00a2e9]/20 focus:border-[#00a2e9] outline-none transition-all">
                             <option value="">-- Semua Status --</option>
                             @foreach(['Hadir', 'Izin', 'Sakit', 'Alpha', 'Perjalanan Dinas', 'Cuti'] as $st)
                                 <option value="{{ $st }}" {{ $status == $st ? 'selected' : '' }}>{{ $st }}</option>
@@ -99,62 +134,146 @@
                         </select>
                     </div>
 
+                    <!-- Bulan Select -->
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1">Bulan</label>
+                        @php
+                            $bulanList = [
+                                1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+                                5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+                                9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+                            ];
+                        @endphp
+                        <select name="month" class="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50/60 text-xs font-medium focus:bg-white focus:ring-2 focus:ring-[#00a2e9]/20 focus:border-[#00a2e9] outline-none transition-all">
+                            <option value="">-- Semua Bulan --</option>
+                            @foreach($bulanList as $num => $label)
+                                <option value="{{ $num }}" {{ (int)$selectedMonth === $num ? 'selected' : '' }}>
+                                    {{ $label }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Tahun Select -->
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1">Tahun</label>
+                        <select name="year" class="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50/60 text-xs font-medium focus:bg-white focus:ring-2 focus:ring-[#00a2e9]/20 focus:border-[#00a2e9] outline-none transition-all">
+                            <option value="">-- Semua Tahun --</option>
+                            @foreach($availableYears as $y)
+                                <option value="{{ $y }}" {{ (int)$selectedYear === (int)$y ? 'selected' : '' }}>
+                                    {{ $y }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Urutan / Sorting -->
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1">Urutan Data</label>
+                        <select name="sort_by" class="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50/60 text-xs font-medium focus:bg-white focus:ring-2 focus:ring-[#00a2e9]/20 focus:border-[#00a2e9] outline-none transition-all">
+                            <option value="tanggal_desc" {{ $sortBy === 'tanggal_desc' ? 'selected' : '' }}>Tanggal Terbaru</option>
+                            <option value="tanggal_asc" {{ $sortBy === 'tanggal_asc' ? 'selected' : '' }}>Tanggal Terlama</option>
+                            <option value="nama" {{ $sortBy === 'nama' ? 'selected' : '' }}>Nama Karyawan A-Z</option>
+                            <option value="paling_telat" {{ $sortBy === 'paling_telat' ? 'selected' : '' }}>🔴 Paling Banyak Telat</option>
+                        </select>
+                    </div>
+
                     <!-- Start Date -->
                     <div>
-                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Dari Tanggal</label>
-                        <input type="date" name="start_date" value="{{ $startDate }}" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs font-medium focus:ring-2 focus:ring-[#00a2e9]/20 focus:border-[#00a2e9]">
+                        <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1">Dari Tanggal</label>
+                        <input type="date" name="start_date" value="{{ $startDate }}" class="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50/60 text-xs font-medium focus:bg-white focus:ring-2 focus:ring-[#00a2e9]/20 focus:border-[#00a2e9] outline-none transition-all">
                     </div>
 
                     <!-- End Date -->
                     <div>
-                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Sampai Tanggal</label>
-                        <input type="date" name="end_date" value="{{ $endDate }}" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs font-medium focus:ring-2 focus:ring-[#00a2e9]/20 focus:border-[#00a2e9]">
+                        <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1">Sampai Tanggal</label>
+                        <input type="date" name="end_date" value="{{ $endDate }}" class="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50/60 text-xs font-medium focus:bg-white focus:ring-2 focus:ring-[#00a2e9]/20 focus:border-[#00a2e9] outline-none transition-all">
                     </div>
-                </div>
 
-                <!-- Search Input & Submit -->
-                <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-gray-100">
-                    <div class="w-full sm:w-80">
+                    <!-- Search Input -->
+                    <div class="sm:col-span-2">
+                        <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1">Cari Karyawan / Kata Kunci</label>
                         <div class="relative">
                             <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                            <input type="text" name="search" value="{{ $search }}" placeholder="Cari nama, NIP, keterangan..." class="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 text-xs font-medium focus:ring-2 focus:ring-[#00a2e9]/20 focus:border-[#00a2e9]">
+                            <input type="text" name="search" value="{{ $search }}" placeholder="Cari nama, NIP, kantor cabang, keterangan..." class="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 bg-gray-50/60 text-xs font-medium focus:bg-white focus:ring-2 focus:ring-[#00a2e9]/20 focus:border-[#00a2e9] outline-none transition-all">
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-2 w-full sm:w-auto">
-                        <a href="{{ route('superadmin.absensi.index') }}" class="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-semibold transition-all">
+                    <!-- Per Page & Actions -->
+                    <div class="sm:col-span-2 flex items-end gap-2">
+                        <div class="w-28">
+                            <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1">Baris/Hal</label>
+                            <select name="per_page" class="w-full px-3 py-2 rounded-xl border border-gray-200 bg-gray-50/60 text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-[#00a2e9]/20 focus:border-[#00a2e9] outline-none transition-all">
+                                <option value="15" {{ $perPage == 15 ? 'selected' : '' }}>15 Baris</option>
+                                <option value="20" {{ $perPage == 20 ? 'selected' : '' }}>20 Baris</option>
+                                <option value="50" {{ $perPage == 50 ? 'selected' : '' }}>50 Baris</option>
+                                <option value="100" {{ $perPage == 100 ? 'selected' : '' }}>100 Baris</option>
+                            </select>
+                        </div>
+                        <a href="{{ route('superadmin.absensi.index') }}" class="px-3.5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-semibold transition-all text-center">
                             Reset
                         </a>
-                        <button type="submit" class="px-5 py-2 rounded-xl bg-[#0F1245] hover:bg-[#161758] text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5">
+                        <button type="submit" class="flex-1 py-2 px-4 rounded-xl bg-[#0F1245] hover:bg-[#161758] text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5">
                             <i class="fa-solid fa-filter"></i>
                             <span>Terapkan Filter</span>
                         </button>
                     </div>
                 </div>
+
+                <!-- Petunjuk & Indikator Status Filter -->
+                <div class="pt-2 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                    <p class="text-gray-400">
+                        <i class="fa-solid fa-circle-info text-[#00a2e9] mr-1"></i>
+                        @if($startDate && $endDate)
+                            Menampilkan data presensi rentang <strong>{{ \Carbon\Carbon::parse($startDate)->translatedFormat('d M Y') }} s/d {{ \Carbon\Carbon::parse($endDate)->translatedFormat('d M Y') }}</strong>.
+                        @elseif($selectedMonth && $selectedYear)
+                            Menampilkan data presensi bulan <strong>{{ $bulanList[$selectedMonth] ?? $selectedMonth }} {{ $selectedYear }}</strong>.
+                        @elseif($selectedMonth)
+                            Menampilkan data presensi seluruh bulan <strong>{{ $bulanList[$selectedMonth] ?? $selectedMonth }}</strong>.
+                        @elseif($selectedYear)
+                            Menampilkan data presensi seluruh tahun <strong>{{ $selectedYear }}</strong>.
+                        @else
+                            Menampilkan <strong>SEMUA data presensi</strong> dari seluruh periode waktu.
+                        @endif
+                    </p>
+                    <span class="text-gray-500 font-semibold text-[11px]">
+                        Total Ditemukan: <strong class="text-[#0F1245]">{{ number_format($totalRecords) }}</strong> data
+                    </span>
+                </div>
             </form>
         </div>
 
         <!-- KPI Metrics from Filter -->
-        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
-            <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex flex-col justify-between">
                 <span class="text-[11px] font-medium text-gray-400">Total Baris Presensi</span>
                 <p class="text-xl font-extrabold text-[#0F1245] mt-1">{{ number_format($totalRecords) }}</p>
+                <span class="text-[10px] text-gray-400 mt-0.5">Sesuai filter</span>
             </div>
-            <div class="bg-white rounded-2xl p-4 border border-purple-100 shadow-sm">
-                <span class="text-[11px] font-medium text-purple-600">Total Akumulasi Jam Kerja</span>
-                <p class="text-xl font-extrabold text-purple-700 mt-1">{{ number_format($totalJamSemua) }} Jam</p>
-            </div>
-            <div class="bg-white rounded-2xl p-4 border border-blue-100 shadow-sm">
-                <span class="text-[11px] font-medium text-blue-600">Rata-Rata Jam Kerja</span>
-                <p class="text-xl font-extrabold text-blue-700 mt-1">{{ $avgJam }} Jam/Hari</p>
-            </div>
-            <div class="bg-white rounded-2xl p-4 border border-emerald-100 shadow-sm">
+            <div class="bg-white rounded-2xl p-4 border border-emerald-100 shadow-sm flex flex-col justify-between">
                 <span class="text-[11px] font-medium text-emerald-600">Status Hadir</span>
                 <p class="text-xl font-extrabold text-emerald-700 mt-1">{{ number_format($totalHadir) }}</p>
+                <span class="text-[10px] text-emerald-500 mt-0.5">Check-in tercatat</span>
             </div>
-            <div class="bg-white rounded-2xl p-4 border border-amber-100 shadow-sm">
+            <div class="bg-white rounded-2xl p-4 border border-amber-100 shadow-sm flex flex-col justify-between">
                 <span class="text-[11px] font-medium text-amber-600">Terlambat</span>
                 <p class="text-xl font-extrabold text-amber-700 mt-1">{{ number_format($totalTerlambat) }}</p>
+                <span class="text-[10px] text-amber-500 mt-0.5">> 07:45 WIB</span>
+            </div>
+            <div class="bg-white rounded-2xl p-4 border border-blue-100 shadow-sm flex flex-col justify-between">
+                <span class="text-[11px] font-medium text-blue-600">Izin &amp; Sakit</span>
+                <p class="text-xl font-extrabold text-blue-700 mt-1">{{ number_format($totalIzin + $totalSakit) }}</p>
+                <span class="text-[10px] text-blue-500 mt-0.5">Izin: {{ $totalIzin }} &bull; Sakit: {{ $totalSakit }}</span>
+            </div>
+            <div class="bg-white rounded-2xl p-4 border border-purple-100 shadow-sm flex flex-col justify-between">
+                <span class="text-[11px] font-medium text-purple-600">Cuti &amp; Dinas</span>
+                <p class="text-xl font-extrabold text-purple-700 mt-1">{{ number_format($totalCuti + $totalDinas) }}</p>
+                <span class="text-[10px] text-purple-500 mt-0.5">Cuti: {{ $totalCuti }} &bull; Dinas: {{ $totalDinas }}</span>
+            </div>
+            <div class="bg-white rounded-2xl p-4 border border-indigo-100 shadow-sm flex flex-col justify-between">
+                <span class="text-[11px] font-medium text-indigo-600">Total Jam Kerja</span>
+                <p class="text-xl font-extrabold text-indigo-700 mt-1">{{ number_format($totalJamSemua) }} Jam</p>
+                <span class="text-[10px] text-indigo-500 mt-0.5">Rata-rata: {{ $avgJam }} jam/hari</span>
             </div>
         </div>
 
