@@ -363,17 +363,16 @@
         const data = JSON.parse(dataElement.textContent);
         const fontFamily = "'Poppins', sans-serif";
         Chart.defaults.font.family = fontFamily;
-        Chart.defaults.color = '#94A3B8';
+        Chart.defaults.color = '#64748b';
 
-        const gridColor = 'rgba(148, 163, 184, 0.16)';
+        const gridColor = 'rgba(148, 163, 184, 0.14)';
 
-        // Tooltip konsisten dengan tema Dark Command Center
         const tooltipStyle = {
-            backgroundColor: '#111742',
-            borderColor: 'rgba(252, 198, 38, 0.45)',
+            backgroundColor: '#0F1245',
+            borderColor: 'rgba(252, 198, 38, 0.35)',
             borderWidth: 1,
             titleColor: '#FCC626',
-            bodyColor: '#EAF0FF',
+            bodyColor: '#FFFFFF',
         };
 
         // 1. Tren login
@@ -443,7 +442,7 @@
                         data: data.roleDistribution.data,
                         backgroundColor: data.roleDistribution.colors,
                         borderWidth: 3,
-                        borderColor: '#0A0F30',
+                        borderColor: '#ffffff',
                         hoverOffset: 6,
                     }]
                 },

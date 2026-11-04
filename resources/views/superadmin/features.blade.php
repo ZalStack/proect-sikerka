@@ -169,7 +169,7 @@
                     <div class="rounded-2xl p-5 border transition-all duration-200 {{ $feat['is_enabled'] ? 'bg-white border-gray-200/80 shadow-sm hover:shadow-md' : 'bg-gray-50/70 border-gray-200 opacity-75' }}">
                         <div class="flex items-start justify-between gap-4">
                             
-                            <div class="flex items-start gap-3.5">
+                            <div class="flex items-start gap-3.5 min-w-0 flex-1">
                                 <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-xl flex-shrink-0 shadow-sm" style="background-color: {{ $feat['color'] }}15; color: {{ $feat['color'] }}; border: 1px solid {{ $feat['color'] }}30;">
                                     <i class="fa-solid {{ $feat['icon'] }}"></i>
                                 </div>

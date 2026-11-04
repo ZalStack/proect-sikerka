@@ -1,5 +1,4 @@
-{{-- views/layouts/footer.blade.php --}}
-<footer class="relative mt-auto bg-[#0F1245] text-white overflow-hidden">
+<footer class="relative mt-auto bg-[#0F1245] text-white overflow-hidden transition-all duration-300 {{ (Auth::check() && in_array(Auth::user()->posisi, ['superadmin', 'hr'])) ? 'md:ml-64' : '' }}">
     {{-- Brand accent line --}}
     <div class="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[#FCC626] via-[#00a2e9] to-[#27438D]"></div>
     <div class="absolute -top-16 left-1/4 w-72 h-72 rounded-full bg-[#00a2e9]/10 blur-3xl pointer-events-none"></div>

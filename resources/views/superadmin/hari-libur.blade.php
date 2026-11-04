@@ -156,8 +156,8 @@
                         </p>
                     </div>
                 @else
-                    <div class="overflow-x-auto rounded-2xl border border-gray-100">
-                        <table class="w-full text-left text-xs">
+                    <div class="overflow-x-auto table-responsive-wrapper rounded-2xl border border-gray-100">
+                        <table class="w-full min-w-[560px] text-left text-xs">
                             <thead class="bg-gray-50/80 text-gray-600 uppercase font-bold text-[10px] tracking-wider border-b border-gray-100">
                                 <tr>
                                     <th class="px-4 py-3 text-center w-12">No</th>

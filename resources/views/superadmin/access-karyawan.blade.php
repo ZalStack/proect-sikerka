@@ -359,9 +359,9 @@
 <div id="suspendModal" class="hidden fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="suspendModalTitle">
     <div class="fixed inset-0 bg-[#0F1245]/60 backdrop-blur-sm" onclick="closeModal('suspendModal')"></div>
     <div class="relative min-h-full flex items-center justify-center p-4">
-        <div class="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden">
+        <div class="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden max-h-[90vh] flex flex-col my-auto">
             <!-- Header -->
-            <div class="bg-gradient-to-r from-[#0F1245] to-[#27438D] px-5 sm:px-6 py-4 flex items-center justify-between gap-3">
+            <div class="bg-gradient-to-r from-[#0F1245] to-[#27438D] px-5 sm:px-6 py-4 flex items-center justify-between gap-3 shrink-0">
                 <div class="flex items-center gap-3 min-w-0">
                     <span class="shrink-0 w-10 h-10 rounded-xl bg-white/15 text-white flex items-center justify-center">
                         <i class="fa-solid fa-user-lock"></i>
@@ -376,7 +376,7 @@
                 </button>
             </div>
 
-            <form id="suspendForm" method="POST" action="" class="p-5 sm:p-6 space-y-5">
+            <form id="suspendForm" method="POST" action="" class="p-5 sm:p-6 space-y-5 overflow-y-auto">
                 @csrf
 
                 <!-- Target -->
@@ -457,9 +457,9 @@
 <div id="menuModal" class="hidden fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="menuModalTitle">
     <div class="fixed inset-0 bg-[#0F1245]/60 backdrop-blur-sm" onclick="closeModal('menuModal')"></div>
     <div class="relative min-h-full flex items-center justify-center p-4">
-        <div class="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden">
+        <div class="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden max-h-[90vh] flex flex-col my-auto">
             <!-- Header -->
-            <div class="bg-gradient-to-r from-[#0F1245] to-[#27438D] px-5 sm:px-6 py-4 flex items-center justify-between gap-3">
+            <div class="bg-gradient-to-r from-[#0F1245] to-[#27438D] px-5 sm:px-6 py-4 flex items-center justify-between gap-3 shrink-0">
                 <div class="flex items-center gap-3 min-w-0">
                     <span class="shrink-0 w-10 h-10 rounded-xl bg-white/15 text-white flex items-center justify-center">
                         <i class="fa-solid fa-toggle-on"></i>
@@ -474,7 +474,7 @@
                 </button>
             </div>
 
-            <form id="menuForm" method="POST" action="" class="p-5 sm:p-6 space-y-4">
+            <form id="menuForm" method="POST" action="" class="p-5 sm:p-6 space-y-4 overflow-y-auto">
                 @csrf
 
                 <div class="flex items-center justify-between gap-3 flex-wrap">

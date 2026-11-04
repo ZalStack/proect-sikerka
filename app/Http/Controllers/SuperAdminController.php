@@ -313,7 +313,9 @@ class SuperAdminController extends Controller
 
         // Daftar tahun untuk opsi filter
         $currentYear = (int) Carbon::now()->year;
-        $dbYears = Absensi::selectRaw('DISTINCT YEAR(tanggal) as y')->pluck('y')->filter()->map(fn($y) => (int)$y)->toArray();
+        $driver = \Illuminate\Support\Facades\DB::getDriverName();
+        $rawYear = $driver === 'sqlite' ? "DISTINCT strftime('%Y', tanggal) as y" : 'DISTINCT YEAR(tanggal) as y';
+        $dbYears = Absensi::selectRaw($rawYear)->pluck('y')->filter()->map(fn($y) => (int)$y)->toArray();
         $availableYears = array_values(array_unique(array_merge([$currentYear, $currentYear - 1, $currentYear - 2, $currentYear - 3, $currentYear - 4], $dbYears)));
         rsort($availableYears);
 

@@ -148,7 +148,7 @@
                     </span>
                 </div>
 
-                <div class="overflow-x-auto rounded-2xl border border-gray-100">
+                <div class="overflow-x-auto table-responsive-wrapper rounded-2xl border border-gray-100">
                     <table class="w-full text-left text-xs sm:text-sm text-gray-600 min-w-[620px]">
                         <thead class="bg-gray-50/80 text-gray-700 font-semibold text-xs border-b border-gray-100">
                             <tr>

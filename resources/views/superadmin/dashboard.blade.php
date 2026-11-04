@@ -1,10 +1,44 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="flex">
+<div class="flex min-h-screen">
     @include('layouts.sidebar')
 
-    <div class="flex-1 min-w-0 md:ml-64 p-4 sm:p-6 lg:p-8 space-y-6">
+    <div class="flex-1 transition-all duration-300 md:ml-64">
+        
+        {{-- ==================== EXECUTIVE STICKY HEADER ==================== --}}
+        <div class="bg-white/90 backdrop-blur-md shadow-sm border-b border-slate-200/60 sticky top-14 sm:top-16 z-20">
+            <div class="px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div>
+                        <div class="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
+                            <span class="inline-flex items-center gap-1 text-amber-500 font-bold">
+                                <i class="fa-solid fa-crown text-[10px]"></i>
+                                Super Administrator
+                            </span>
+                            <span>/</span>
+                            <span class="text-gray-700">Command Center</span>
+                        </div>
+                        <h1 class="text-xl sm:text-2xl lg:text-3xl font-extrabold font-['Poppins'] text-[#0F1245]">
+                            Dashboard Superadmin
+                        </h1>
+                    </div>
+                    <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+                        <div class="inline-flex items-center gap-2 bg-white rounded-full px-3.5 py-1.5 shadow-sm border border-slate-200/80 text-xs font-semibold text-slate-700">
+                            <i class="fa-solid fa-calendar-day text-[#00a2e9]"></i>
+                            <span>{{ \Carbon\Carbon::now()->translatedFormat('l, d F Y') }}</span>
+                        </div>
+                        <a href="{{ route('superadmin.dashboard') }}"
+                            class="inline-flex items-center gap-1.5 bg-[#0F1245] hover:bg-[#161758] transition-all text-white rounded-full px-3.5 py-1.5 shadow-sm text-xs font-semibold">
+                            <i class="fa-solid fa-rotate text-[11px] text-[#FCC626]"></i>
+                            <span>Refresh</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4 sm:p-6 lg:p-8 space-y-6">
         
         <!-- Alerts / Flash Messages -->
         @if(session('success'))
@@ -273,8 +307,8 @@
             </div>
 
             <!-- Table Responsive -->
-            <div class="overflow-x-auto rounded-2xl border border-gray-100">
-                <table class="w-full text-left text-xs sm:text-sm text-gray-600">
+            <div class="overflow-x-auto table-responsive-wrapper rounded-2xl border border-gray-100">
+                <table class="w-full min-w-[760px] text-left text-xs sm:text-sm text-gray-600">
                     <thead class="bg-gray-50/80 text-gray-700 font-semibold text-xs border-b border-gray-100">
                         <tr>
                             <th class="px-4 py-3">Karyawan</th>
@@ -347,6 +381,7 @@
             </div>
         </div>
 
+        </div>
     </div>
 </div>
 @endsection

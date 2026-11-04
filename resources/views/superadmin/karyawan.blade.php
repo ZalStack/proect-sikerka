@@ -111,8 +111,8 @@
 
         <!-- Users Table -->
         <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-gray-100 space-y-4">
-            <div class="overflow-x-auto rounded-2xl border border-gray-100">
-                <table class="w-full text-left text-xs sm:text-sm text-gray-600">
+            <div class="overflow-x-auto table-responsive-wrapper rounded-2xl border border-gray-100">
+                <table class="w-full min-w-[760px] text-left text-xs sm:text-sm text-gray-600">
                     <thead class="bg-gray-50/80 text-gray-700 font-semibold text-xs border-b border-gray-100">
                         <tr>
                             <th class="px-4 py-3.5">Nama & NIP</th>
@@ -203,7 +203,7 @@
 <!-- ==================== MODAL LINK RESET PASSWORD ==================== -->
 @if(session('reset_link'))
 <div id="resetLinkModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-    <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 sm:p-7 border border-white/20" style="animation: scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 sm:p-7 border border-gray-100 max-h-[90vh] overflow-y-auto my-auto" style="animation: scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;">
         <div class="flex justify-center mb-4">
             <div class="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center">
                 <i class="fa-solid fa-key text-emerald-600 text-2xl"></i>

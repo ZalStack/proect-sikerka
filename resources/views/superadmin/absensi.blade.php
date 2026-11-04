@@ -288,8 +288,8 @@
                 <span class="text-xs text-gray-500 font-medium">Menampilkan {{ $absensis->firstItem() ?? 0 }} - {{ $absensis->lastItem() ?? 0 }} dari {{ $absensis->total() }} data</span>
             </div>
 
-            <div class="overflow-x-auto rounded-2xl border border-gray-100">
-                <table class="w-full text-left text-xs sm:text-sm text-gray-600">
+            <div class="overflow-x-auto table-responsive-wrapper rounded-2xl border border-gray-100">
+                <table class="w-full min-w-[800px] text-left text-xs sm:text-sm text-gray-600">
                     <thead class="bg-gray-50/80 text-gray-700 font-semibold text-xs border-b border-gray-100">
                         <tr>
                             <th class="px-4 py-3.5">Karyawan</th>
@@ -412,15 +412,15 @@
 <!-- MODAL KOREKSI / EDIT PRESENSI (LIVE CALCULATOR) -->
 <!-- ======================================================== -->
 <div id="editModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-gray-100 space-y-5 transform transition-all">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-7 shadow-2xl border border-gray-100 max-h-[90vh] flex flex-col my-auto">
         
-        <div class="flex items-center justify-between pb-4 border-b border-gray-100">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100 shrink-0">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-2xl bg-blue-50 text-[#00a2e9] flex items-center justify-center text-lg">
                     <i class="fa-solid fa-clock-rotate-left"></i>
                 </div>
                 <div>
-                    <h3 class="text-lg font-bold text-gray-900">Koreksi Presensi & Jam Kerja</h3>
+                    <h3 class="text-base sm:text-lg font-bold text-gray-900">Koreksi Presensi & Jam Kerja</h3>
                     <p id="editKaryawanNama" class="text-xs text-gray-500 font-medium">Nama Karyawan</p>
                 </div>
             </div>
@@ -429,7 +429,7 @@
             </button>
         </div>
 
-        <form id="editForm" method="POST" action="" class="space-y-4">
+        <form id="editForm" method="POST" action="" class="space-y-4 overflow-y-auto pt-3">
             @csrf
             @method('PUT')
 
@@ -520,15 +520,15 @@
 <!-- MODAL TAMBAH PRESENSI MANUAL -->
 <!-- ======================================================== -->
 <div id="addModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-gray-100 space-y-5 transform transition-all">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-7 shadow-2xl border border-gray-100 max-h-[90vh] flex flex-col my-auto">
         
-        <div class="flex items-center justify-between pb-4 border-b border-gray-100">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100 shrink-0">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">
                     <i class="fa-solid fa-user-plus"></i>
                 </div>
                 <div>
-                    <h3 class="text-lg font-bold text-gray-900">Tambah Presensi Manual</h3>
+                    <h3 class="text-base sm:text-lg font-bold text-gray-900">Tambah Presensi Manual</h3>
                     <p class="text-xs text-gray-500">Input data presensi untuk karyawan tertentu</p>
                 </div>
             </div>
@@ -537,7 +537,7 @@
             </button>
         </div>
 
-        <form method="POST" action="{{ route('superadmin.absensi.store') }}" class="space-y-4">
+        <form method="POST" action="{{ route('superadmin.absensi.store') }}" class="space-y-4 overflow-y-auto pt-3">
             @csrf
 
             <!-- Pilih Karyawan -->
