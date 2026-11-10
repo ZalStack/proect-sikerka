@@ -191,6 +191,26 @@
                                                 <span>Unduh</span>
                                             </a>
 
+                                            @if(!empty($offsite['enabled']))
+                                                <form action="{{ route('superadmin.backup.offsite', $backup['filename']) }}" method="POST"
+                                                    onsubmit="return confirm('Kirim file backup {{ $backup['filename'] }} ke storage offsite?')">
+                                                    @csrf
+                                                    <button type="submit" class="px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5">
+                                                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                                                        <span>Offsite</span>
+                                                    </button>
+                                                </form>
+                                            @endif
+
+                                            <form action="{{ route('superadmin.backup.restore', $backup['filename']) }}" method="POST"
+                                                onsubmit="return promptRestore('{{ $backup['filename'] }}')">
+                                                @csrf
+                                                <button type="submit" class="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-500 text-amber-600 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5">
+                                                    <i class="fa-solid fa-clock-rotate-left"></i>
+                                                    <span>Restore</span>
+                                                </button>
+                                            </form>
+
                                             <form action="{{ route('superadmin.backup.destroy', $backup['filename']) }}" method="POST"
                                                 onsubmit="return confirm('Hapus file backup {{ $backup['filename'] }}? Tindakan ini tidak dapat dibatalkan.')">
                                                 @csrf
@@ -244,18 +264,19 @@
 
                 <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-gray-100">
                     <h3 class="text-base font-bold text-[#0F1245] flex items-center gap-2">
-                        <i class="fa-solid fa-rotate-left text-[#d49b06]"></i>
-                        Panduan Restore
+                        <i class="fa-solid fa-clock-rotate-left text-[#d49b06]"></i>
+                        Restore Database
                     </h3>
                     <p class="text-xs text-gray-500 mt-2 leading-relaxed">
-                        Restore dari halaman ini sengaja tidak disediakan untuk mencegah kesalahan operasional. Lakukan restore melalui CLI server dengan file backup yang sudah diunduh.
+                        Klik tombol <strong>Restore</strong> pada file backup, lalu ketik <code class="bg-gray-100 px-1 rounded">RESTORE</code> sebagai konfirmasi.
+                        Sistem otomatis membuat backup kondisi terkini <strong>sebelum</strong> menimpa data (backup pra-restore), sehingga selalu ada jalan kembali.
                     </p>
 
                     <div class="mt-4 space-y-2">
-                        <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Backup MySQL (.sql.gz)</p>
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Manual via CLI — MySQL</p>
                         <pre class="bg-[#0F1245] text-emerald-300 text-[11px] rounded-xl p-3 overflow-x-auto leading-relaxed"><code>gunzip -c sikekar-YYYYmmdd-HHMMSS-manual.sql.gz | mysql -u root -p sikekar</code></pre>
 
-                        <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400 pt-2">Backup SQLite (driver sqlite)</p>
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400 pt-2">Manual via CLI — SQLite</p>
                         <pre class="bg-[#0F1245] text-emerald-300 text-[11px] rounded-xl p-3 overflow-x-auto leading-relaxed"><code>gunzip -c sikekar-YYYYmmdd-HHMMSS-manual.sql.gz &gt; database/database.sqlite</code></pre>
                         <p class="text-[10px] text-gray-400 leading-relaxed">
                             File backup SQLite adalah salinan biner database (bukan teks SQL), jadi cara restore-nya adalah menimpa file <code class="bg-gray-100 px-1 rounded">database/database.sqlite</code> — bukan lewat mysql CLI.
@@ -265,13 +286,102 @@
                     <div class="mt-3 p-3 rounded-xl bg-amber-50 border border-amber-100">
                         <p class="text-[11px] text-amber-800 leading-relaxed">
                             <i class="fa-solid fa-triangle-exclamation mr-1"></i>
-                            Selalu buat backup baru sebelum melakukan restore. Pastikan aplikasi dalam mode maintenance agar tidak ada perubahan data saat proses restore.
+                            Aktifkan mode maintenance sebelum restore agar tidak ada perubahan data selama proses berjalan. Koneksi database di-reset otomatis setelah restore selesai.
                         </p>
                     </div>
                 </div>
+
+                <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-gray-100">
+                    <h3 class="text-base font-bold text-[#0F1245] flex items-center gap-2">
+                        <i class="fa-solid fa-cloud-arrow-up text-indigo-500"></i>
+                        Backup Offsite
+                    </h3>
+                    <div class="mt-3 flex items-center justify-between gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100">
+                        <span class="text-xs text-gray-500">Status</span>
+                        <span class="text-xs font-bold {{ !empty($offsite['enabled']) ? 'text-emerald-600' : 'text-gray-500' }}">
+                            {{ !empty($offsite['enabled']) ? 'Aktif → ' . ($offsite['disk'] ?? 's3') : 'Nonaktif' }}
+                        </span>
+                    </div>
+                    <p class="text-[11px] text-gray-400 mt-2 leading-relaxed">
+                        {{ !empty($offsite['enabled'])
+                            ? 'Setiap backup baru otomatis disalin ke disk ' . ($offsite['disk'] ?? 's3') . ' (prefix: ' . ($offsite['prefix'] ?? '-') . '), retensi ' . ($offsite['max_age_days'] ?? 0) . ' hari.'
+                            : 'Aktifkan lewat BACKUP_OFFSITE_ENABLED=true beserta kredensial AWS_* pada .env untuk menyimpan salinan backup di storage remote.' }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIWAYAT EKSEKUSI BACKUP -->
+        <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-gray-100 space-y-4">
+            <div>
+                <h3 class="text-base font-bold text-[#0F1245] flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-[#00a2e9]"></i>
+                    Log Eksekusi Backup
+                </h3>
+                <p class="text-xs text-gray-500 mt-0.5">Riwayat backup manual/otomatis, restore, dan pengiriman offsite — termasuk yang gagal.</p>
+            </div>
+
+            <div class="overflow-x-auto rounded-2xl border border-gray-100">
+                <table class="w-full text-left text-xs sm:text-sm text-gray-600 min-w-[680px]">
+                    <thead class="bg-gray-50/80 text-gray-700 font-semibold text-xs border-b border-gray-100">
+                        <tr>
+                            <th class="px-4 py-3">Waktu</th>
+                            <th class="px-4 py-3">File</th>
+                            <th class="px-4 py-3">Jenis</th>
+                            <th class="px-4 py-3">Status</th>
+                            <th class="px-4 py-3">Keterangan</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @forelse($logs as $log)
+                            <tr class="hover:bg-blue-50/25">
+                                <td class="px-4 py-3 whitespace-nowrap text-xs">{{ $log->created_at?->format('d M Y H:i:s') }}</td>
+                                <td class="px-4 py-3 text-[11px] font-mono max-w-[220px] truncate" title="{{ $log->filename }}">{{ $log->filename ?? '-' }}</td>
+                                <td class="px-4 py-3">
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase {{ $log->trigger === 'restore' ? 'bg-amber-100 text-amber-700' : ($log->trigger === 'offsite' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600') }}">
+                                        {{ $log->trigger }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase {{ $log->status === 'success' ? 'bg-emerald-100 text-emerald-700' : ($log->status === 'partial' ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700') }}">
+                                        {{ $log->statusLabel() }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 text-[11px] text-gray-500 max-w-[340px]">{{ $log->message }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="px-4 py-8 text-center text-xs text-gray-400">Belum ada aktivitas backup tercatat.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
         </div>
 
     </div>
 </div>
+
+<script>
+function promptRestore(filename) {
+    const typed = prompt(
+        'RESTORE DATABASE\n\n' +
+        'Anda akan mengembalikan seluruh data dari file:\n' + filename + '\n\n' +
+        'Data yang dibuat SETELAH file backup ini akan HILANG.\n' +
+        'Backup otomatis kondisi saat ini akan dibuat lebih dulu.\n\n' +
+        'Ketik RESTORE (huruf kapital) untuk melanjutkan:'
+    );
+
+    if (typed === null) {
+        return false;
+    }
+
+    if (typed.trim() !== 'RESTORE') {
+        alert('Konfirmasi dibatalkan. Proses restore tidak dijalankan.');
+        return false;
+    }
+
+    return true;
+}
+</script>
 @endsection

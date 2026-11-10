@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\ActivityLog;
+use App\Models\LoginHistory;
 use Carbon\Carbon;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
@@ -49,6 +50,14 @@ class AppServiceProvider extends ServiceProvider
         Carbon::setLocale('id');
         setlocale(LC_TIME, 'id_ID.utf8', 'id_ID', 'id', 'Indonesian');
 
+        // Pengaturan SMTP dari UI (Fitur B9) menimpa .env agar berlaku
+        // tanpa restart. Aman bila tabel belum ada (sebelum migrate).
+        try {
+            \App\Models\SystemSetting::applyMailConfig();
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
         Event::listen(Login::class, function (Login $event) {
             ActivityLog::record(
                 'auth.login',
@@ -62,6 +71,17 @@ class AppServiceProvider extends ServiceProvider
                     ],
                 ]
             );
+
+            // Riwayat login terstruktur (Fitur C11) — untuk halaman
+            // "Riwayat Login" & deteksi login mencurigakan.
+            LoginHistory::record([
+                'karyawan_id' => $event->user->id ?? null,
+                'email' => $event->user->email ?? request()->input('email'),
+                'ip_address' => request()->ip(),
+                'user_agent' => (string) request()->userAgent(),
+                'success' => true,
+                'guard' => $event->guard,
+            ]);
         });
 
         Event::listen(Logout::class, function (Logout $event) {
@@ -78,22 +98,48 @@ class AppServiceProvider extends ServiceProvider
                     'metadata' => ['guard' => $event->guard],
                 ]
             );
+
+            LoginHistory::record([
+                'karyawan_id' => $event->user->id ?? null,
+                'email' => $event->user->email ?? null,
+                'ip_address' => request()->ip(),
+                'user_agent' => (string) request()->userAgent(),
+                'success' => true,
+                'failure_reason' => 'logout',
+                'guard' => $event->guard,
+            ]);
         });
 
         Event::listen(Failed::class, function (Failed $event) {
-            if (!$event->user) {
-                return;
+            // Event Failed di Laravel tidak membawa exception — gunakan
+            // kredensial yang dicoba sebagai konteks penyebab kegagalan.
+            $reason = 'Kredensial tidak cocok';
+
+            if ($event->user) {
+                ActivityLog::record(
+                    'auth.failed',
+                    'Percobaan login gagal.',
+                    [
+                        'user' => $event->user,
+                        'module' => 'auth',
+                        'metadata' => ['guard' => $event->guard, 'reason' => $reason],
+                    ]
+                );
             }
 
-            ActivityLog::record(
-                'auth.failed',
-                'Percobaan login gagal.',
-                [
-                    'user' => $event->user,
-                    'module' => 'auth',
-                    'metadata' => ['guard' => $event->guard],
-                ]
-            );
+            $triedEmail = is_array($event->credentials)
+                ? ($event->credentials['email'] ?? null)
+                : null;
+
+            LoginHistory::record([
+                'karyawan_id' => $event->user->id ?? null,
+                'email' => $event->user->email ?? $triedEmail ?? request()->input('email'),
+                'ip_address' => request()->ip(),
+                'user_agent' => (string) request()->userAgent(),
+                'success' => false,
+                'failure_reason' => $reason,
+                'guard' => $event->guard,
+            ]);
         });
     }
 }

@@ -23,12 +23,15 @@ class Cuti extends Model
         'status',
         'tanggal_pengajuan',
         'catatan_hr',
+        'approved_by',
+        'approved_at',
     ];
 
     protected $casts = [
         'tanggal_mulai' => 'date',
         'tanggal_selesai' => 'date',
         'tanggal_pengajuan' => 'date',
+        'approved_at' => 'datetime',
     ];
 
     public function karyawan()

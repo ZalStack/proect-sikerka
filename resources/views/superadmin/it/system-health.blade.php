@@ -409,6 +409,54 @@
                                 <i class="fa-solid fa-chevron-right text-gray-300 text-[10px] shrink-0"></i>
                             </button>
                         </form>
+
+                        <form action="{{ route('superadmin.health.tool') }}" method="POST"
+                            onsubmit="return confirm('Proses job berikutnya dari antrean queue sekarang?')">
+                            @csrf
+                            <input type="hidden" name="tool" value="queue_work_once">
+                            <button type="submit" class="w-full flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-indigo-50 border border-gray-100 hover:border-indigo-200 transition-all text-left group">
+                                <span class="w-8 h-8 rounded-lg bg-white border border-gray-100 text-indigo-500 flex items-center justify-center text-xs shrink-0 group-hover:bg-indigo-500 group-hover:text-white transition-all">
+                                    <i class="fa-solid fa-list-ol"></i>
+                                </span>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-xs font-bold text-gray-800">Proses Queue Sekarang</p>
+                                    <p class="text-[10px] text-gray-400 truncate">Jalankan worker sampai antrean kosong</p>
+                                </div>
+                                <i class="fa-solid fa-chevron-right text-gray-300 text-[10px] shrink-0"></i>
+                            </button>
+                        </form>
+
+                        <form action="{{ route('superadmin.health.tool') }}" method="POST"
+                            onsubmit="return confirm('Bersihkan sesi login yang sudah kedaluwarsa dari database?')">
+                            @csrf
+                            <input type="hidden" name="tool" value="session_prune">
+                            <button type="submit" class="w-full flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-sky-50 border border-gray-100 hover:border-sky-200 transition-all text-left group">
+                                <span class="w-8 h-8 rounded-lg bg-white border border-gray-100 text-sky-500 flex items-center justify-center text-xs shrink-0 group-hover:bg-sky-500 group-hover:text-white transition-all">
+                                    <i class="fa-solid fa-broom"></i>
+                                </span>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-xs font-bold text-gray-800">Bersihkan Sesi Kedaluwarsa</p>
+                                    <p class="text-[10px] text-gray-400 truncate">Prune tabel sessions</p>
+                                </div>
+                                <i class="fa-solid fa-chevron-right text-gray-300 text-[10px] shrink-0"></i>
+                            </button>
+                        </form>
+
+                        <form action="{{ route('superadmin.health.tool') }}" method="POST"
+                            onsubmit="return confirm('Hapus seluruh cache bootstrap (config/route/view)? Halaman berikutnya akan dirender ulang.')">
+                            @csrf
+                            <input type="hidden" name="tool" value="optimize_clear">
+                            <button type="submit" class="w-full flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-emerald-50 border border-gray-100 hover:border-emerald-200 transition-all text-left group">
+                                <span class="w-8 h-8 rounded-lg bg-white border border-gray-100 text-emerald-600 flex items-center justify-center text-xs shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition-all">
+                                    <i class="fa-solid fa-eraser"></i>
+                                </span>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-xs font-bold text-gray-800">Optimize: Clear</p>
+                                    <p class="text-[10px] text-gray-400 truncate">Reset cache config/route/view</p>
+                                </div>
+                                <i class="fa-solid fa-chevron-right text-gray-300 text-[10px] shrink-0"></i>
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>

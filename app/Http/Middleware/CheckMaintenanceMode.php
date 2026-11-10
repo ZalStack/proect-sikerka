@@ -12,8 +12,8 @@ class CheckMaintenanceMode
 {
     public function handle(Request $request, Closure $next): Response
     {
-        // Jika maintenance tidak aktif, lanjutkan request
-        if (!SystemSetting::isMaintenance()) {
+        // Jika maintenance tidak aktif (manual MAUPUN jadwal), lanjutkan request.
+        if (!SystemSetting::isMaintenanceActive()) {
             return $next($request);
         }
 

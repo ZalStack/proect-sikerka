@@ -61,6 +61,56 @@ class ActivityLog extends Model
         'system.cache_clear' => 'Bersihkan Cache',
         'system.tool' => 'Jalankan Tool Sistem',
         'logs.export' => 'Ekspor Log Aktivitas',
+
+        // Keamanan & akses (Fase 1)
+        'security.2fa_enabled' => 'Aktifkan 2FA',
+        'security.2fa_disabled' => 'Nonaktifkan 2FA',
+        'security.2fa_challenge_passed' => 'Verifikasi 2FA',
+        'security.whitelist_updated' => 'Ubah Whitelist IP',
+        'security.session_revoked' => 'Keluarkan Sesi',
+        'security.session_revoked_others' => 'Keluarkan Semua Sesi Lain',
+        'access.impersonate_start' => 'Mulai Impersonasi',
+        'access.impersonate_stop' => 'Akhiri Impersonasi',
+        'access.ip_blocked' => 'Akses IP Ditolak',
+        'admin.create' => 'Tambah Akun Admin',
+        'admin.update' => 'Ubah Akun Admin',
+        'admin.delete' => 'Hapus Akun Admin',
+        'admin.password_reset' => 'Reset Kata Sandi Admin',
+
+        // Data master, cuti, offboarding (Fase 5 & 7)
+        'master.create' => 'Tambah Data Master',
+        'master.update' => 'Ubah Data Master',
+        'master.delete' => 'Hapus Data Master',
+        'cuti.policy_update' => 'Ubah Kebijakan Cuti',
+        'cuti.type_create' => 'Tambah Jenis Cuti',
+        'cuti.type_update' => 'Ubah Jenis Cuti',
+        'cuti.type_delete' => 'Hapus Jenis Cuti',
+        'karyawan.import' => 'Import Massal Karyawan',
+        'karyawan.offboard' => 'Offboarding Karyawan',
+        'karyawan.delete' => 'Hapus Karyawan',
+
+        // Backup & pelaporan (Fase 2 & 3)
+        'backup.restore' => 'Restore Backup',
+        'backup.offsite_push' => 'Kirim Backup Offsite',
+        'report.scheduled_run' => 'Jalankan Laporan Terjadwal',
+        'report.generate' => 'Buat Laporan',
+        'report.create' => 'Tambah Jadwal Laporan',
+        'report.update' => 'Ubah Jadwal Laporan',
+        'report.delete' => 'Hapus Jadwal Laporan',
+        'report.download' => 'Unduh Laporan',
+
+        // Template & penugasan fitur (Fase 6)
+        'template.create' => 'Tambah Template Pesan',
+        'template.update' => 'Ubah Template Pesan',
+        'template.delete' => 'Hapus Template Pesan',
+        'feature.assignment' => 'Ubah Penugasan Fitur',
+        'broadcast.send' => 'Kirim Broadcast',
+        'broadcast.delete' => 'Hapus Broadcast',
+        'report.run' => 'Jalankan Laporan Manual',
+        'settings.smtp_update' => 'Ubah Pengaturan SMTP',
+        'settings.smtp_test' => 'Uji Kirim Email SMTP',
+        'settings.maintenance_schedule' => 'Ubah Jadwal Maintenance',
+
         'http.post' => 'Aksi POST',
         'http.put' => 'Aksi PUT',
         'http.patch' => 'Aksi PATCH',
@@ -78,6 +128,11 @@ class ActivityLog extends Model
         'violations' => 'Pelanggaran Presensi',
         'holidays' => 'Hari Libur',
         'system' => 'Sistem',
+        'security' => 'Keamanan',
+        'reports' => 'Pelaporan',
+        'master' => 'Data Master',
+        'cuti' => 'Manajemen Cuti',
+        'settings' => 'Pengaturan',
         'http' => 'Aktivitas HTTP',
     ];
 

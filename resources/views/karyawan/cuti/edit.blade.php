@@ -54,9 +54,9 @@
                         <!-- Jenis Cuti -->
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Jenis Cuti</label>
-                            <input type="text" value="Cuti Tahunan" disabled
+                            <input type="text" value="{{ $cuti->jenis_cuti }}" disabled
                                    class="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-sm">
-                            <input type="hidden" name="jenis_cuti" value="Cuti Tahunan">
+                            <input type="hidden" name="jenis_cuti" value="{{ $cuti->jenis_cuti }}">
                         </div>
 
                         <!-- Durasi Sebelumnya -->

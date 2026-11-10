@@ -25,6 +25,15 @@ return [
         'base_url' => env('ENGLISH_TODAY_API_URL', 'https://englishtoday.read1kpmseikhlasnya.com/api'),
     ],
 
+    /*
+    | API eksternal aplikasi SUDOKU.
+    | Bila kosong, seluruh route /api/* DITOLAK (fail-closed) — bukan
+    | dilewati autentikasinya seperti perilaku lama.
+    */
+    'sudoku' => [
+        'api_key' => (string) env('SUDOKU_API_KEY', ''),
+    ],
+
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),

@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use Carbon\Carbon;
+use App\Models\BackupLog;
+use App\Models\Karyawan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
@@ -224,6 +226,370 @@ class DatabaseBackupService
     public function isValidFilename(string $filename): bool
     {
         return (bool) preg_match('/^sikekar-\d{8}-\d{6}-[A-Za-z0-9._-]+\.sql\.gz$/', $filename);
+    }
+
+    // ==========================================================
+    // RESTORE (Fitur B1)
+    // ==========================================================
+
+    /**
+     * Restore database dari file backup.
+     *
+     * Urutan pengaman:
+     *  1. Validasi nama & keberadaan file backup.
+     *  2. Buat backup otomatis SEBELUM restore (pre-restore safety net).
+     *  3. Decompress ke file .sql sementara (izin 0600).
+     *  4. Eksekusi dump sesuai driver database.
+     *  5. Bersihkan file sementara (selalu, walau gagal).
+     *
+     * @return array metadata restore (termasuk pre_restore_backup)
+     * @throws RuntimeException bila restore gagal / driver tidak didukung
+     */
+    public function restore(string $filename, ?int $userId = null): array
+    {
+        $startedAt = microtime(true);
+
+        $path = $this->resolvePath($filename);
+
+        if (!$path || !is_file($path)) {
+            throw new RuntimeException('File backup tidak ditemukan atau nama file tidak valid.');
+        }
+
+        if (filesize($path) === 0) {
+            throw new RuntimeException('File backup kosong — restore dibatalkan.');
+        }
+
+        // 1. Backup otomatis kondisi saat ini SEBELUM menimpa apapun.
+        $preRestore = $this->create('pre-restore');
+
+        $driver = DB::connection()->getDriverName();
+        $sqlPath = $this->path() . DIRECTORY_SEPARATOR . '.tmp-restore-' . Str::random(16) . '.sql';
+        $errorPath = $sqlPath . '.err';
+
+        try {
+            // 2. Decompress
+            $this->decompress($path, $sqlPath);
+
+            if (!is_file($sqlPath) || filesize($sqlPath) === 0) {
+                throw new RuntimeException('File backup gagal didecompress atau isinya kosong.');
+            }
+
+            @chmod($sqlPath, 0600);
+
+            // 3. Eksekusi restore
+            if ($driver === 'sqlite') {
+                $this->restoreSqlite($sqlPath);
+            } elseif (in_array($driver, ['mysql', 'mariadb'], true)) {
+                $this->restoreMysql($sqlPath, $errorPath);
+            } else {
+                throw new RuntimeException("Driver database '{$driver}' belum didukung untuk restore.");
+            }
+
+            $duration = round(microtime(true) - $startedAt, 2);
+
+            BackupLog::record([
+                'filename' => $filename,
+                'trigger' => 'restore',
+                'local_success' => true,
+                'offsite_success' => false,
+                'size' => (int) filesize($path),
+                'status' => 'success',
+                'message' => 'Restore berhasil dalam ' . $duration . ' detik. Backup pra-restore: ' . $preRestore['filename'],
+                'created_by' => $userId,
+            ]);
+
+            // Koneksi dibuang agar struktur/schema baru terbaca pada request berikutnya.
+            try {
+                DB::purge();
+            } catch (\Throwable $e) {
+                report($e);
+            }
+
+            return [
+                'filename' => $filename,
+                'pre_restore_backup' => $preRestore['filename'],
+                'duration' => $duration,
+                'driver' => $driver,
+            ];
+        } catch (\Throwable $e) {
+            BackupLog::record([
+                'filename' => $filename,
+                'trigger' => 'restore',
+                'local_success' => false,
+                'size' => (int) filesize($path),
+                'status' => 'failed',
+                'message' => 'Restore gagal: ' . $e->getMessage(),
+                'created_by' => $userId,
+            ]);
+
+            $this->notifyFailure(
+                'Restore database GAGAL',
+                'Pengembalian database dari file ' . $filename . ' gagal: ' . $e->getMessage()
+                . '. Backup pra-restore tersedia: ' . ($preRestore['filename'] ?? '-')
+            );
+
+            throw $e;
+        } finally {
+            foreach ([$sqlPath, $errorPath] as $tmp) {
+                if (is_file($tmp)) {
+                    @unlink($tmp);
+                }
+            }
+        }
+    }
+
+    /** Decompress .sql.gz → .sql. */
+    protected function decompress(string $source, string $destination): void
+    {
+        if (!function_exists('gzopen')) {
+            throw new RuntimeException('Ekstensi zlib tidak tersedia untuk decompress backup.');
+        }
+
+        $input = gzopen($source, 'rb');
+        $output = fopen($destination, 'wb');
+
+        if ($input === false || $output === false) {
+            throw new RuntimeException('Tidak dapat membuka file backup untuk restore.');
+        }
+
+        try {
+            while (!gzeof($input)) {
+                $chunk = gzread($input, 1024 * 1024);
+
+                if ($chunk === false) {
+                    throw new RuntimeException('Gagal membaca isi file backup (file rusak).');
+                }
+
+                if ($chunk === '') {
+                    continue;
+                }
+
+                if (fwrite($output, $chunk) === false) {
+                    throw new RuntimeException('Gagal menulis file sementara restore — periksa izin folder backup.');
+                }
+            }
+        } finally {
+            gzclose($input);
+            fclose($output);
+        }
+    }
+
+    /**
+     * Restore SQLite: dump SQLite dari service ini adalah salinan file database
+     * mentah, jadi restore = menyalinnya kembali (setelah backup pra-restore).
+     */
+    protected function restoreSqlite(string $sqlPath): void
+    {
+        $database = DB::connection()->getDatabaseName();
+
+        if (!$database || $database === ':memory:') {
+            throw new RuntimeException('Database SQLite in-memory tidak dapat di-restore. Gunakan file database.');
+        }
+
+        try {
+            DB::purge();
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        $target = $database;
+        $targetDir = dirname($target);
+
+        if (!is_dir($targetDir) || !is_writable($targetDir)) {
+            throw new RuntimeException('Folder database SQLite tidak dapat ditulis.');
+        }
+
+        // Salinan file sudah diverifikasi isinya (hasil decompress).
+        if (!@copy($sqlPath, $target)) {
+            throw new RuntimeException('Gagal menyalin file backup ke lokasi database SQLite.');
+        }
+
+        // Buang berkas WAL/SHM lama agar tidak mencampur data pra-restore.
+        foreach ([$target . '-wal', $target . '-shm'] as $side) {
+            if (is_file($side)) {
+                @unlink($side);
+            }
+        }
+    }
+
+    /** Restore MySQL/MariaDB dengan menjalankan klien `mysql`. */
+    protected function restoreMysql(string $sqlPath, string $errorPath): void
+    {
+        $binary = (string) config('backup.mysql', 'mysql');
+
+        if (!$this->binaryExists($binary)) {
+            throw new RuntimeException(
+                'Klien mysql tidak ditemukan di server. Isi MYSQL_BINARY_PATH pada .env atau restore dilakukan manual.'
+            );
+        }
+
+        $config = config('database.connections.' . DB::connection()->getName(), []);
+
+        $command = sprintf(
+            '%s --host=%s --port=%s --user=%s --default-character-set=utf8mb4 %s < %s 2> %s',
+            escapeshellarg($binary),
+            escapeshellarg((string) ($config['host'] ?? '127.0.0.1')),
+            escapeshellarg((string) ($config['port'] ?? '3306')),
+            escapeshellarg((string) ($config['username'] ?? 'root')),
+            escapeshellarg((string) ($config['database'] ?? '')),
+            escapeshellarg($sqlPath),
+            escapeshellarg($errorPath)
+        );
+
+        $process = Process::fromShellCommandline(
+            $command,
+            base_path(),
+            ['MYSQL_PWD' => (string) ($config['password'] ?? '')],
+            null,
+            (float) config('backup.timeout', 300)
+        );
+        $process->run();
+
+        $errorOutput = is_file($errorPath) ? trim((string) file_get_contents($errorPath)) : '';
+
+        if (!$process->isSuccessful()) {
+            throw new RuntimeException('Eksekusi restore MySQL gagal: ' . ($errorOutput ?: $process->getErrorOutput() ?: 'detail tidak tersedia'));
+        }
+    }
+
+    // ==========================================================
+    // BACKUP OFFSITE (Fitur B4)
+    // ==========================================================
+
+    /**
+     * Salin satu file backup ke storage remote (offsite).
+     *
+     * @return array ['status' => success|failed|skipped|disabled, 'message' => string]
+     */
+    public function pushOffsite(string $filename, ?int $userId = null): array
+    {
+        $cfg = (array) config('backup.offsite', []);
+
+        if (empty($cfg['enabled'])) {
+            return ['status' => 'disabled', 'message' => 'Backup offsite belum diaktifkan.'];
+        }
+
+        $disk = (string) ($cfg['disk'] ?? 's3');
+        $prefix = trim((string) ($cfg['prefix'] ?? 'sikekar-backups'), '/');
+
+        $path = $this->resolvePath($filename);
+
+        if (!$path || !is_file($path)) {
+            return ['status' => 'failed', 'message' => 'File backup tidak ditemukan: ' . $filename];
+        }
+
+        try {
+            $filesystem = \Illuminate\Support\Facades\Storage::disk($disk);
+            $target = ($prefix !== '' ? $prefix . '/' : '') . $filename;
+
+            $handle = fopen($path, 'rb');
+
+            if ($handle === false) {
+                throw new RuntimeException('Tidak dapat membaca file backup.');
+            }
+
+            try {
+                // Stream agar file backup besar tidak membebani memori.
+                $filesystem->writeStream($target, $handle);
+            } finally {
+                @fclose($handle);
+            }
+
+            if (!$filesystem->exists($target)) {
+                throw new RuntimeException('File tidak ditemukan setelah diunggah — koneksi remote bermasalah.');
+            }
+
+            $this->pruneOffsite($filesystem, $prefix, (int) ($cfg['max_age_days'] ?? 30));
+
+            BackupLog::record([
+                'filename' => $filename,
+                'trigger' => 'offsite',
+                'local_success' => true,
+                'offsite_success' => true,
+                'offsite_disk' => $disk,
+                'size' => (int) filesize($path),
+                'status' => 'success',
+                'message' => 'Backup offsite berhasil dikirim ke disk ' . $disk . ' (' . $target . ').',
+                'created_by' => $userId,
+            ]);
+
+            return ['status' => 'success', 'message' => 'Backup offsite berhasil dikirim ke ' . $target . '.'];
+        } catch (\Throwable $e) {
+            $message = 'Backup offsite GAGAL: ' . $e->getMessage();
+
+            BackupLog::record([
+                'filename' => $filename,
+                'trigger' => 'offsite',
+                'local_success' => true,
+                'offsite_success' => false,
+                'offsite_disk' => $disk,
+                'size' => (int) filesize($path),
+                'status' => 'failed',
+                'message' => $message,
+                'created_by' => $userId,
+            ]);
+
+            $this->notifyFailure('Backup Offsite Gagal', $message);
+
+            return ['status' => 'failed', 'message' => $message];
+        }
+    }
+
+    /** Hapus salinan offsite yang sudah melewati masa retensi. */
+    protected function pruneOffsite($filesystem, string $prefix, int $maxAgeDays): void
+    {
+        if ($maxAgeDays <= 0) {
+            return;
+        }
+
+        try {
+            foreach ($filesystem->files($prefix) as $remote) {
+                $lastModified = $filesystem->lastModified($remote);
+
+                if ($lastModified && Carbon::createFromTimestamp($lastModified)->lt(now()->subDays($maxAgeDays))) {
+                    $filesystem->delete($remote);
+                }
+            }
+        } catch (\Throwable $e) {
+            // Prune bersifat konsolidasi — kegagalannya tidak menggagalkan upload.
+            Log::warning('Gagal prune backup offsite: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Kirim notifikasi email kegagalan ke seluruh Super Admin aktif.
+     * Best-effort: kegagalan pengiriman tidak pernah melempar exception.
+     */
+    protected function notifyFailure(string $subject, string $body): void
+    {
+        if (!config('backup.notify_failure', true)) {
+            return;
+        }
+
+        try {
+            $recipients = Karyawan::where('posisi', 'superadmin')
+                ->where('is_resigned', false)
+                ->pluck('email')
+                ->filter()
+                ->values();
+
+            if ($recipients->isEmpty()) {
+                return;
+            }
+
+            foreach ($recipients as $email) {
+                \Illuminate\Support\Facades\Mail::raw(
+                    $body . "\n\nWaktu: " . now()->toDateTimeString()
+                        . "\nAplikasi: " . config('app.name')
+                        . "\n\nEmail ini dikirim otomatis oleh SIKEKAR.",
+                    function ($message) use ($email, $subject) {
+                        $message->to($email)->subject('[SIKEKAR] ' . $subject);
+                    }
+                );
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Gagal mengirim notifikasi kegagalan backup: ' . $e->getMessage());
+        }
     }
 
     /**

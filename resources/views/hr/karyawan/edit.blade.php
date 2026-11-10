@@ -566,7 +566,13 @@
                                                 class="text-[#ec1d1d]">*</span></label>
                                         <input type="text" name="jabatan"
                                             value="{{ old('jabatan', $karyawan->jabatan) }}" required
+                                            list="jabatan-options"
                                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                                        <datalist id="jabatan-options">
+                                            @foreach(($jabatanOptions ?? []) as $opt)
+                                                <option value="{{ $opt }}">
+                                            @endforeach
+                                        </datalist>
                                         @error('jabatan')
                                             <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p>
                                         @enderror
@@ -577,10 +583,32 @@
                                                 class="text-[#ec1d1d]">*</span></label>
                                         <input type="text" name="divisi" id="divisi_input"
                                             value="{{ old('divisi', $karyawan->divisi) }}" required
+                                            list="divisi-options"
                                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                                        <datalist id="divisi-options">
+                                            @foreach(($divisiOptions ?? []) as $opt)
+                                                <option value="{{ $opt }}">
+                                            @endforeach
+                                        </datalist>
                                         <p class="text-xs text-[#27438D] mt-1">* Jika diisi "HRD", posisi akan otomatis
                                             menjadi HR</p>
                                         @error('divisi')
+                                            <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Golongan</label>
+                                        <input type="text" name="golongan"
+                                            value="{{ old('golongan', $karyawan->golongan) }}"
+                                            list="golongan-options"
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                                        <datalist id="golongan-options">
+                                            @foreach(($golonganOptions ?? []) as $opt)
+                                                <option value="{{ $opt }}">
+                                            @endforeach
+                                        </datalist>
+                                        @error('golongan')
                                             <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p>
                                         @enderror
                                     </div>

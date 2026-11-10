@@ -127,6 +127,88 @@
             </form>
         </div>
 
+        <!-- SECTION 1b: JADWAL MAINTENANCE OTOMATIS (Fitur B10) -->
+        <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border {{ $scheduleActive ? 'border-amber-200 ring-2 ring-amber-400/20' : 'border-gray-100' }} space-y-5">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-gray-100">
+                <div class="flex items-start gap-4">
+                    <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 {{ $scheduleActive ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30' : 'bg-gray-100 text-gray-600' }}">
+                        <i class="fa-solid fa-calendar-check"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2.5 flex-wrap">
+                            <h2 class="text-xl font-bold text-gray-900">Jadwal Maintenance Otomatis</h2>
+                            <span class="px-3 py-0.5 rounded-full text-xs font-extrabold tracking-wide uppercase
+                                {{ !$scheduleEnabled ? 'bg-gray-100 text-gray-500'
+                                    : ($scheduleActive ? 'bg-amber-100 text-amber-700 animate-pulse' : 'bg-emerald-100 text-emerald-700') }}">
+                                {{ !$scheduleEnabled ? 'Jadwal Nonaktif'
+                                    : ($scheduleActive ? 'Sedang Berjalan' : 'Terjadwal') }}
+                            </span>
+                        </div>
+                        <p class="text-xs sm:text-sm text-gray-500 mt-1 max-w-2xl">
+                            Sistem akan <b>otomatis</b> masuk mode pemeliharaan pada rentang waktu yang ditentukan — tanpa perlu menekan sakelar manual. Setelah waktu selesai, sistem kembali online sendiri.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <form action="{{ route('superadmin.maintenance.schedule') }}" method="POST" class="space-y-5">
+                @csrf
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div>
+                        <label for="starts_at" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                            Mulai Pemeliharaan
+                        </label>
+                        <input type="datetime-local" name="starts_at" id="starts_at"
+                               value="{{ old('starts_at', $schedule['starts_at'] ? \Illuminate\Support\Str::replace(' ', 'T', substr($schedule['starts_at'], 0, 16)) : '') }}"
+                               class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#00a2e9] focus:ring-2 focus:ring-[#00a2e9]/20 text-sm font-medium transition-all">
+                        @error('starts_at')<p class="text-xs text-rose-600 mt-1">{{ $message }}</p>@enderror
+                    </div>
+
+                    <div>
+                        <label for="ends_at" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                            Selesai Pemeliharaan
+                        </label>
+                        <input type="datetime-local" name="ends_at" id="ends_at"
+                               value="{{ old('ends_at', $schedule['ends_at'] ? \Illuminate\Support\Str::replace(' ', 'T', substr($schedule['ends_at'], 0, 16)) : '') }}"
+                               class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#00a2e9] focus:ring-2 focus:ring-[#00a2e9]/20 text-sm font-medium transition-all">
+                        @error('ends_at')<p class="text-xs text-rose-600 mt-1">{{ $message }}</p>@enderror
+                    </div>
+
+                    <div class="flex items-end pb-1">
+                        <label class="flex items-center gap-3 text-sm text-gray-700 cursor-pointer">
+                            <input type="hidden" name="schedule_enabled" value="0">
+                            <input type="checkbox" name="schedule_enabled" value="1"
+                                   {{ $scheduleEnabled ? 'checked' : '' }}
+                                   class="w-5 h-5 rounded border-gray-300 text-[#00a2e9] focus:ring-[#00a2e9]">
+                            <span class="font-semibold">Aktifkan jadwal ini</span>
+                        </label>
+                    </div>
+                </div>
+
+                @if($scheduleActive)
+                    <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-2.5">
+                        <i class="fa-solid fa-triangle-exclamation text-amber-600 mt-0.5"></i>
+                        <p class="text-xs text-amber-800 leading-relaxed">
+                            <b>Jadwal sedang berlaku.</b> Seluruh karyawan &amp; HR sedang melihat halaman pemeliharaan. Nonaktifkan sakelar di atas atau ubah rentang waktu untuk mengembalikan akses.
+                        </p>
+                    </div>
+                @endif
+
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-gray-100">
+                    <p class="text-xs text-gray-400">
+                        <i class="fa-solid fa-circle-info text-[#00a2e9] mr-1"></i>
+                        Rentang tanpa sakelar aktif = jadwal disimpan namun belum berlaku.
+                    </p>
+
+                    <button type="submit" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#0F1245] hover:bg-[#161758] text-white text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        <span>Simpan Jadwal Maintenance</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
 
         <!-- SECTION 2: GRANULAR FEATURE TOGGLES -->
         <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-100 space-y-6">
@@ -142,8 +224,14 @@
                 </div>
 
                 <!-- Master Bulk Toggles -->
-                <div class="flex items-center gap-2 flex-wrap">
-                    <form action="{{ route('superadmin.features.toggle-all') }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin MEMATIKAN SEMUA FITUR sistem? Pengguna biasa tidak akan bisa mengakses modul terkait.')">
+            <div class="flex items-center gap-2 flex-wrap">
+                <a href="{{ route('superadmin.features.assignments.index') }}"
+                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#00a2e9] hover:bg-[#008cc4] text-white text-xs font-bold transition-all shadow-md shadow-[#00a2e9]/20">
+                    <i class="fa-solid fa-user-tag"></i>
+                    <span>Penugasan per Role / Divisi / Karyawan</span>
+                </a>
+
+                <form action="{{ route('superadmin.features.toggle-all') }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin MEMATIKAN SEMUA FITUR sistem? Pengguna biasa tidak akan bisa mengakses modul terkait.')">
                         @csrf
                         <input type="hidden" name="action" value="disable_all">
                         <button type="submit" class="px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm">

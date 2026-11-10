@@ -8,7 +8,7 @@
         <div class="p-4 sm:p-6">
             <div class="mb-6">
                 <h1 class="text-xl sm:text-2xl font-bold font-['Poppins'] text-[#161758]">Ajukan Cuti</h1>
-                <p class="text-[#27438D] text-sm sm:text-base">Isi form untuk mengajukan cuti tahunan</p>
+                <p class="text-[#27438D] text-sm sm:text-base">Isi form untuk mengajukan cuti</p>
             </div>
 
             @if(session('error'))
@@ -33,10 +33,17 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div class="mb-4">
-                            <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Jenis Cuti</label>
-                            <input type="text" value="Cuti Tahunan (12 hari)" disabled
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100">
-                            <input type="hidden" name="jenis_cuti" value="Cuti Tahunan">
+                            <label class="block text-sm font-medium text-[#1B1B1B] mb-1">Jenis Cuti <span class="text-[#ec1d1d]">*</span></label>
+                            <select name="jenis_cuti" id="jenis_cuti" required
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9] bg-white text-sm">
+                                <option value="">-- Pilih Jenis Cuti --</option>
+                                @foreach($typesWithKuota as $type)
+                                    <option value="{{ $type['nama'] }}" {{ old('jenis_cuti') === $type['nama'] ? 'selected' : '' }}>
+                                        {{ $type['nama'] }} (Sisa: {{ $type['sisa_cuti'] }} hari)
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('jenis_cuti') <p class="mt-1 text-sm text-[#ec1d1d]">{{ $message }}</p> @enderror
                         </div>
 
                         <div class="mb-4">

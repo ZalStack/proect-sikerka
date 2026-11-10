@@ -8,6 +8,10 @@ use App\Http\Middleware\CheckFeatureEnabled;
 use App\Http\Middleware\CheckAttendanceBan;
 use App\Http\Middleware\CheckAccountSuspension;
 use App\Http\Middleware\AuditActivity;
+use App\Http\Middleware\AuthenticateSudokuApi;
+use App\Http\Middleware\SuperAdminIpWhitelist;
+use App\Http\Middleware\ConfirmTwoFactor;
+use App\Http\Middleware\Impersonation;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -33,6 +37,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'maintenance' => CheckMaintenanceMode::class,
             'feature' => CheckFeatureEnabled::class,
             'presensi.banned' => CheckAttendanceBan::class,
+
+            // Keamanan & fitur baru (Fase 1-6)
+            'sudoku.api' => AuthenticateSudokuApi::class,
+            'superadmin.ip' => SuperAdminIpWhitelist::class,
+            'twofactor' => ConfirmTwoFactor::class,
+            'impersonate' => Impersonation::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

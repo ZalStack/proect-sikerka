@@ -4,12 +4,13 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class Karyawan extends Authenticatable
 {
-    use Notifiable;
+    use Notifiable, SoftDeletes;
 
     protected $table = 'karyawans';
     protected $primaryKey = 'id';
@@ -22,6 +23,7 @@ class Karyawan extends Authenticatable
         'posisi',
         'jabatan',
         'divisi',
+        'golongan',
         'golongan_darah',
         'no_kk',
         'jumlah_anak',

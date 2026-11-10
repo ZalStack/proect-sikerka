@@ -16,7 +16,21 @@ use App\Http\Controllers\PerjalananDinasController;
 use App\Http\Controllers\SunnahController;
 use App\Http\Controllers\SuperAdminController;
 use App\Http\Controllers\SuperAdmin\ActivityLogController;
+use App\Http\Controllers\SuperAdmin\AdminAccountController;
+use App\Http\Controllers\SuperAdmin\AnalyticsController;
 use App\Http\Controllers\SuperAdmin\BackupController;
+use App\Http\Controllers\SuperAdmin\BroadcastController;
+use App\Http\Controllers\SuperAdmin\CutiPolicyController;
+use App\Http\Controllers\SuperAdmin\FeatureAssignmentController;
+use App\Http\Controllers\SuperAdmin\ImpersonationController;
+use App\Http\Controllers\SuperAdmin\KaryawanImportController;
+use App\Http\Controllers\SuperAdmin\ManajemenCutiController;
+use App\Http\Controllers\SuperAdmin\MasterDataController;
+use App\Http\Controllers\SuperAdmin\MessageTemplateController;
+use App\Http\Controllers\SuperAdmin\OffboardingController;
+use App\Http\Controllers\SuperAdmin\ScheduledReportController;
+use App\Http\Controllers\SuperAdmin\SecurityController;
+use App\Http\Controllers\SuperAdmin\SmtpSettingsController;
 use App\Http\Controllers\SuperAdmin\SystemHealthController;
 use App\Http\Controllers\SuperAdmin\SystemStatisticController;
 use Illuminate\Support\Facades\Route;
@@ -67,21 +81,117 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifications/latest', [NotificationController::class, 'latest'])->name('notifications.latest');
     Route::post('/notifications/mark-read', [NotificationController::class, 'markRead'])->name('notifications.mark-read');
 
+    // Akhiri impersonasi.
+    // Sengaja DI LUAR grup middleware `superadmin`: selama impersonasi berjalan,
+    // posisi aktif user adalah posisi target (bukan superadmin), sehingga
+    // middleware superadmin memblokir permintaan berhenti ini.
+    Route::post('/impersonate/stop', [ImpersonationController::class, 'stop'])
+        ->middleware('impersonate')
+        ->name('superadmin.impersonate.stop');
+
     // ==========================================
     // SUPER ADMIN ROUTES
     // ==========================================
-    Route::middleware('superadmin')
+    Route::middleware(['superadmin', 'superadmin.ip'])
         ->prefix('superadmin')
         ->name('superadmin.')
         ->group(function () {
             Route::get('/dashboard', [SuperAdminController::class, 'dashboard'])->name('dashboard');
 
+            // ==========================================
+            // KEAMANAN AKUN (Fase 1)
+            // ==========================================
+            Route::get('/keamanan', [SecurityController::class, 'index'])->name('security.index');
+            Route::post('/keamanan/pengaturan', [SecurityController::class, 'updateWhitelist'])->name('security.whitelist.update');
+            Route::get('/keamanan/2fa', [SecurityController::class, 'twoFactorShow'])->name('security.two-factor');
+            Route::post('/keamanan/2fa/enable', [SecurityController::class, 'twoFactorEnable'])->name('security.two-factor.enable');
+            Route::post('/keamanan/2fa/disable', [SecurityController::class, 'twoFactorDisable'])->name('security.two-factor.disable');
+            Route::get('/keamanan/2fa/challenge', [SecurityController::class, 'twoFactorChallenge'])->name('security.two-factor-challenge');
+            Route::post('/keamanan/2fa/challenge', [SecurityController::class, 'twoFactorChallengeStore'])->name('security.two-factor-challenge.store');
+            Route::delete('/keamanan/sesi/{sessionId}', [SecurityController::class, 'sessionDestroy'])
+                ->where('sessionId', '[A-Za-z0-9_-]+')
+                ->name('security.sessions.destroy');
+            Route::post('/keamanan/sesi/revoke-others', [SecurityController::class, 'sessionRevokeOthers'])->name('security.sessions.revoke-others');
+
+            // Kelola akun admin (Super Admin & HR): buat, ubah, reset sandi, hapus
+            Route::get('/akun-admin', [AdminAccountController::class, 'index'])->name('admins.index');
+            Route::post('/akun-admin', [AdminAccountController::class, 'store'])
+                ->middleware('twofactor')
+                ->name('admins.store');
+            Route::match(['PUT', 'POST'], '/akun-admin/{id}', [AdminAccountController::class, 'update'])
+                ->middleware('twofactor')
+                ->name('admins.update');
+            Route::delete('/akun-admin/{id}', [AdminAccountController::class, 'destroy'])
+                ->middleware('twofactor')
+                ->name('admins.destroy');
+            Route::post('/akun-admin/{id}/reset-password', [AdminAccountController::class, 'resetPassword'])
+                ->middleware('twofactor')
+                ->name('admins.reset-password');
+
+            // Impersonation: masuk sebagai karyawan/HR untuk verifikasi laporan
+            Route::post('/karyawan/{id}/impersonate', [ImpersonationController::class, 'start'])
+                ->middleware('twofactor')
+                ->name('karyawan.impersonate');
+
             // Kontrol Fitur & Maintenance
             Route::get('/features', [SuperAdminController::class, 'featuresIndex'])->name('features.index');
             Route::post('/features/toggle-all', [SuperAdminController::class, 'featureToggleAll'])->name('features.toggle-all');
             Route::post('/features/{feature}/toggle', [SuperAdminController::class, 'featureToggle'])->name('features.toggle');
+
+            // Penugasan fitur per cakupan: role / divisi / karyawan (Fitur F22)
+            Route::get('/features/assignments', [FeatureAssignmentController::class, 'index'])->name('features.assignments.index');
+            Route::post('/features/assignments', [FeatureAssignmentController::class, 'store'])->name('features.assignments.store');
+            Route::delete('/features/assignments/{assignment}', [FeatureAssignmentController::class, 'destroy'])->name('features.assignments.destroy');
+
+            // Template pesan siap pakai: ban / pelanggaran / broadcast (Fitur F23)
+            Route::get('/template-pesan', [MessageTemplateController::class, 'index'])->name('message-templates.index');
+            Route::post('/template-pesan', [MessageTemplateController::class, 'store'])->name('message-templates.store');
+            Route::match(['PUT', 'POST'], '/template-pesan/{messageTemplate}', [MessageTemplateController::class, 'update'])->name('message-templates.update');
+            Route::delete('/template-pesan/{messageTemplate}', [MessageTemplateController::class, 'destroy'])->name('message-templates.destroy');
             Route::post('/maintenance/toggle', [SuperAdminController::class, 'maintenanceToggle'])->name('maintenance.toggle');
             Route::match(['POST', 'PUT'], '/maintenance/update', [SuperAdminController::class, 'maintenanceUpdate'])->name('maintenance.update');
+            Route::post('/maintenance/schedule', [SuperAdminController::class, 'maintenanceScheduleUpdate'])->name('maintenance.schedule');
+
+            // Pengaturan SMTP (Fitur B9)
+            Route::get('/smtp', [SmtpSettingsController::class, 'index'])->name('smtp.index');
+            Route::post('/smtp', [SmtpSettingsController::class, 'update'])->name('smtp.update');
+            Route::post('/smtp/test', [SmtpSettingsController::class, 'test'])->name('smtp.test');
+
+            // ==========================================
+            // DATA KARYAWAN & ORGANISASI (Fase 5)
+            // ==========================================
+
+            // Import massal karyawan (CSV/XLSX): preview dulu, commit kemudian
+            Route::get('/karyawan-import', [KaryawanImportController::class, 'index'])->name('karyawan-import.index');
+            Route::post('/karyawan-import/preview', [KaryawanImportController::class, 'preview'])->name('karyawan-import.preview');
+            Route::post('/karyawan-import/commit', [KaryawanImportController::class, 'commit'])->name('karyawan-import.commit');
+
+            // Data master divisi / jabatan / golongan
+            Route::get('/master-data', [MasterDataController::class, 'index'])->name('master-data.index');
+            Route::post('/master-data', [MasterDataController::class, 'store'])->name('master-data.store');
+            Route::match(['PUT', 'POST'], '/master-data/{masterData}', [MasterDataController::class, 'update'])->name('master-data.update');
+            Route::delete('/master-data/{masterData}', [MasterDataController::class, 'destroy'])->name('master-data.destroy');
+
+            // Kebijakan & kuota cuti per tahun
+            Route::get('/kebijakan-cuti', [CutiPolicyController::class, 'index'])->name('cuti-policies.index');
+            Route::post('/kebijakan-cuti', [CutiPolicyController::class, 'store'])->name('cuti-policies.store');
+            Route::match(['PUT', 'POST'], '/kebijakan-cuti/{cutiPolicy}', [CutiPolicyController::class, 'update'])->name('cuti-policies.update');
+            Route::delete('/kebijakan-cuti/{cutiPolicy}', [CutiPolicyController::class, 'destroy'])->name('cuti-policies.destroy');
+
+            // Manajemen Cuti Superadmin (Hub 2 tab: Pengaturan Jenis + Pengajuan Karyawan)
+            Route::get('/manajemen-cuti', [ManajemenCutiController::class, 'index'])->name('manajemen-cuti.index');
+            Route::post('/manajemen-cuti/type', [ManajemenCutiController::class, 'storeType'])->name('manajemen-cuti.type.store');
+            Route::match(['PUT', 'POST'], '/manajemen-cuti/type/{cutiType}', [ManajemenCutiController::class, 'updateType'])->name('manajemen-cuti.type.update');
+            Route::delete('/manajemen-cuti/type/{cutiType}', [ManajemenCutiController::class, 'destroyType'])->name('manajemen-cuti.type.destroy');
+            Route::post('/manajemen-cuti/approve/{id}', [CutiController::class, 'approve'])->name('manajemen-cuti.approve');
+            Route::post('/manajemen-cuti/bulk-approve', [CutiController::class, 'bulkApprove'])->name('manajemen-cuti.bulk-approve');
+
+            // Offboarding terpusat (resign, arsip, pulihkan)
+            Route::get('/offboarding', [OffboardingController::class, 'index'])->name('offboarding.index');
+            Route::post('/offboarding/{karyawan}/resign', [OffboardingController::class, 'offboard'])->name('offboarding.offboard');
+            Route::post('/offboarding/{karyawan}/reactivate', [OffboardingController::class, 'reactivate'])->name('offboarding.reactivate');
+            Route::post('/offboarding/{karyawan}/archive', [OffboardingController::class, 'archive'])->name('offboarding.archive');
+            Route::post('/offboarding/{id}/restore', [OffboardingController::class, 'restore'])->name('offboarding.restore');
 
             // Kelola & Koreksi Jam Presensi Karyawan
             Route::get('/absensi', [SuperAdminController::class, 'absensiIndex'])->name('absensi.index');
@@ -91,7 +201,9 @@ Route::middleware('auth')->group(function () {
 
             // Kelola Role Pengguna
             Route::get('/karyawan', [SuperAdminController::class, 'karyawanIndex'])->name('karyawan.index');
-            Route::match(['PUT', 'POST'], '/karyawan/{id}/role', [SuperAdminController::class, 'karyawanUpdateRole'])->name('karyawan.update-role');
+            Route::match(['PUT', 'POST'], '/karyawan/{id}/role', [SuperAdminController::class, 'karyawanUpdateRole'])
+                ->middleware('twofactor')
+                ->name('karyawan.update-role');
 
             // Generate link reset password (lupa password) untuk karyawan / HR
             Route::post('/karyawan/{id}/generate-reset-link', [SuperAdminController::class, 'generateResetLink'])->name('karyawan.generate-reset-link');
@@ -127,12 +239,37 @@ Route::middleware('auth')->group(function () {
             Route::get('/backup/{filename}/download', [BackupController::class, 'download'])
                 ->where('filename', '[A-Za-z0-9._-]+')
                 ->name('backup.download');
+            Route::post('/backup/{filename}/restore', [BackupController::class, 'restore'])
+                ->where('filename', '[A-Za-z0-9._-]+')
+                ->middleware('twofactor')
+                ->name('backup.restore');
+            Route::post('/backup/{filename}/offsite', [BackupController::class, 'pushOffsite'])
+                ->where('filename', '[A-Za-z0-9._-]+')
+                ->name('backup.offsite');
             Route::delete('/backup/{filename}', [BackupController::class, 'destroy'])
                 ->where('filename', '[A-Za-z0-9._-]+')
+                ->middleware('twofactor')
                 ->name('backup.destroy');
 
             // Statistik Penggunaan Sistem
             Route::get('/statistik-penggunaan', [SystemStatisticController::class, 'index'])->name('stats.index');
+
+            // Analitik HR & Kehadiran (Chart.js)
+            Route::get('/analitik-hr', [AnalyticsController::class, 'index'])->name('analytics.index');
+
+            // Broadcast pengumuman ke seluruh / karyawan tertentu
+            Route::get('/broadcast', [BroadcastController::class, 'index'])->name('broadcast.index');
+            Route::post('/broadcast', [BroadcastController::class, 'store'])->name('broadcast.store');
+            Route::delete('/broadcast/{id}', [BroadcastController::class, 'destroy'])->name('broadcast.destroy');
+
+            // Laporan Terjadwal (generate otomatis oleh scheduler)
+            Route::get('/laporan-terjadwal', [ScheduledReportController::class, 'index'])->name('reports.index');
+            Route::post('/laporan-terjadwal', [ScheduledReportController::class, 'store'])->name('reports.store');
+            Route::match(['PUT', 'POST'], '/laporan-terjadwal/{id}', [ScheduledReportController::class, 'update'])->name('reports.update');
+            Route::delete('/laporan-terjadwal/{id}', [ScheduledReportController::class, 'destroy'])->name('reports.destroy');
+            Route::post('/laporan-terjadwal/{id}/run', [ScheduledReportController::class, 'runNow'])->name('reports.run');
+            Route::get('/laporan-terjadwal/riwayat', [ScheduledReportController::class, 'history'])->name('reports.history');
+            Route::get('/laporan-terjadwal/unduh/{id}', [ScheduledReportController::class, 'download'])->name('reports.download');
 
             // Log Aktivitas / Audit Trail
             Route::get('/log-aktivitas', [ActivityLogController::class, 'index'])->name('logs.index');

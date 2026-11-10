@@ -264,6 +264,14 @@
                                             <!-- Konfirmasi (terapkan ban) -->
                                             <form action="{{ route('superadmin.violations.confirm', $v->id) }}" method="POST" class="inline-flex items-center gap-1.5">
                                                 @csrf
+                                                @if(count($violationTemplates) > 0)
+                                                    <select class="violation-template-picker w-36 px-2 py-1.5 rounded-lg border border-gray-200 text-[11px] focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500" title="Pilih template pesan">
+                                                        <option value="">— Template —</option>
+                                                        @foreach($violationTemplates as $t)
+                                                            <option value="{{ $t->body }}">{{ $t->title }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                @endif
                                                 <input type="text" name="pesan" maxlength="1000" placeholder="Pesan alert (opsional)" class="w-36 px-2.5 py-1.5 rounded-lg border border-gray-200 text-[11px] focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500">
                                                 <button type="submit" onclick="return confirm('Konfirmasi pelanggaran ini? Ban akan diterapkan sesuai tangga (1 hari / 2 hari / permanen)/BLOKIR.')"
                                                     class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm transition-all">
@@ -348,9 +356,19 @@
                         @csrf
                         <div class="flex-1">
                             <label class="text-[11px] font-bold uppercase tracking-wider text-gray-400"><i class="fa-solid fa-message mr-1"></i>Pesan Alert (tampil otomatis di dashboard karyawan)</label>
-                            <input type="text" name="ban_message" maxlength="1000" value="{{ $b->ban_message }}"
-                                placeholder="Contoh: Pelanggaran kedua. Pemblokian berlaku 2 hari. Jangan ulangi akses remote saat absensi!"
-                                class="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500">
+                            <div class="flex gap-2 mt-1">
+                                @if(count($banTemplates) > 0)
+                                    <select class="ban-template-picker w-40 px-2 py-2 rounded-xl border border-gray-200 text-[11px] focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 flex-shrink-0" title="Pilih template pesan ban">
+                                        <option value="">— Template —</option>
+                                        @foreach($banTemplates as $t)
+                                            <option value="{{ $t->body }}">{{ $t->title }}</option>
+                                        @endforeach
+                                    </select>
+                                @endif
+                                <input type="text" name="ban_message" maxlength="1000" value="{{ $b->ban_message }}"
+                                    placeholder="Contoh: Pelanggaran kedua. Pemblokian berlaku 2 hari. Jangan ulangi akses remote saat absensi!"
+                                    class="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500">
+                            </div>
                         </div>
                         <button type="submit" class="px-4 py-2 rounded-xl bg-[#0F1245] hover:bg-[#161758] text-white text-xs font-bold shadow-sm transition-all self-end">
                             Kirim
@@ -374,4 +392,26 @@
 
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Template pesan pelanggaran → isi input "Pesan alert" pada form yang sama.
+    document.querySelectorAll('.violation-template-picker').forEach(function (picker) {
+        picker.addEventListener('change', function () {
+            if (!this.value) return;
+            const input = this.closest('form').querySelector('input[name="pesan"]');
+            if (input) input.value = this.value;
+        });
+    });
+
+    // Template pesan ban → isi input "ban_message" pada form yang sama.
+    document.querySelectorAll('.ban-template-picker').forEach(function (picker) {
+        picker.addEventListener('change', function () {
+            if (!this.value) return;
+            const input = this.closest('form').querySelector('input[name="ban_message"]');
+            if (input) input.value = this.value;
+        });
+    });
+});
+</script>
 @endsection

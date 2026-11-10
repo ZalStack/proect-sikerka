@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Models\Absensi;
+use App\Models\ActivityLog;
 use App\Models\Karyawan;
 use App\Models\Cuti;
 use App\Models\PerjalananDinas;
@@ -98,7 +99,20 @@ class SuperAdminController extends Controller
         $allEnabled = collect($features)->every(fn($f) => $f['is_enabled'] === true);
         $allDisabled = collect($features)->every(fn($f) => $f['is_enabled'] === false);
 
-        return view('superadmin.features', compact('maintenanceInfo', 'features', 'allEnabled', 'allDisabled'));
+        // Jadwal maintenance otomatis (Fitur B10).
+        $schedule = SystemSetting::maintenanceSchedule();
+        $scheduleEnabled = SystemSetting::isMaintenanceScheduleEnabled();
+        $scheduleActive = SystemSetting::isMaintenanceScheduleActive();
+
+        return view('superadmin.features', compact(
+            'maintenanceInfo',
+            'features',
+            'allEnabled',
+            'allDisabled',
+            'schedule',
+            'scheduleEnabled',
+            'scheduleActive'
+        ));
     }
 
     /**
@@ -152,6 +166,74 @@ class SuperAdminController extends Controller
         );
 
         return redirect()->back()->with('success', 'Pengaturan halaman pemeliharaan sistem berhasil diperbarui.');
+    }
+
+    /**
+     * Update jadwal maintenance OTOMATIS (Fitur B10).
+     *
+     * Berbeda dari sakelar manual, jadwal ini menentukan rentang waktu
+     * sistem otomatis masuk mode maintenance tanpa perlu diingatkan.
+     */
+    public function maintenanceScheduleUpdate(Request $request)
+    {
+        $request->validate([
+            'schedule_enabled' => ['nullable', 'boolean'],
+            'starts_at' => ['required_with:starts_at,ends_at', 'nullable', 'date'],
+            'ends_at' => ['required_with:starts_at,ends_at', 'nullable', 'date', 'after:starts_at'],
+        ], [
+            'ends_at.after' => 'Waktu selesai harus setelah waktu mulai jadwal.',
+            'starts_at.required_with' => 'Isi waktu mulai jadwal maintenance.',
+            'ends_at.required_with' => 'Isi waktu selesai jadwal maintenance.',
+        ]);
+
+        $enabled = $request->boolean('schedule_enabled');
+        $starts = $request->input('starts_at');
+        $ends = $request->input('ends_at');
+
+        if (!$enabled) {
+            // Sakelar mati → jadwal disimpan tapi tidak berlaku.
+            SystemSetting::setMaintenanceSchedule($starts ?: null, $ends ?: null, false);
+
+            ActivityLog::record(
+                'settings.maintenance_schedule',
+                'Jadwal maintenance dinonaktifkan (' . ($starts ?: '-') . ' s/d ' . ($ends ?: '-') . ').',
+                ['module' => 'system', 'metadata' => ['starts_at' => $starts, 'ends_at' => $ends, 'enabled' => false]]
+            );
+
+            return redirect()->route('superadmin.features.index')
+                ->with('success', 'Jadwal maintenance disimpan dalam status NONAKTIF.');
+        }
+
+        if (empty($starts) || empty($ends)) {
+            return redirect()->route('superadmin.features.index')
+                ->withErrors(['starts_at' => 'Jadwal aktif membutuhkan waktu mulai dan selesai.'])
+                ->withInput();
+        }
+
+        SystemSetting::setMaintenanceSchedule($starts, $ends, true);
+
+        ActivityLog::record(
+            'settings.maintenance_schedule',
+            'Jadwal maintenance diaktifkan (' . $starts . ' s/d ' . $ends . ').',
+            [
+                'module' => 'system',
+                'metadata' => [
+                    'starts_at' => $starts,
+                    'ends_at' => $ends,
+                    'enabled' => true,
+                ],
+            ]
+        );
+
+        $info = SystemSetting::getMaintenanceInfo();
+
+        return redirect()->route('superadmin.features.index')->with(
+            'success',
+            'Jadwal maintenance berhasil disimpan. '
+            . ($info['is_active']
+                ? 'Saat ini jadwal SEDANG BERLAKU — sistem sedang dalam pemeliharaan.'
+                : 'Sistem akan otomatis masuk maintenance pada rentang tersebut.')
+        );
     }
 
     /**
@@ -697,6 +779,16 @@ class SuperAdminController extends Controller
 
         $isFeatureEnabled = SystemSetting::isFeatureEnabled('pelanggaran_presensi');
 
+        // Template pesan siap pakai (Fitur F23) untuk form konfirmasi & pesan ban.
+        $violationTemplates = \App\Models\MessageTemplate::where('type', 'violation')
+            ->where('is_active', true)
+            ->orderByDesc('is_default')
+            ->get();
+        $banTemplates = \App\Models\MessageTemplate::where('type', 'ban')
+            ->where('is_active', true)
+            ->orderByDesc('is_default')
+            ->get();
+
         return view('superadmin.violations', compact(
             'violations',
             'stats',
@@ -705,7 +797,9 @@ class SuperAdminController extends Controller
             'startDate',
             'endDate',
             'search',
-            'isFeatureEnabled'
+            'isFeatureEnabled',
+            'violationTemplates',
+            'banTemplates'
         ));
     }
 

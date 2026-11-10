@@ -127,6 +127,33 @@
                         <span class="truncate">Fitur & Maintenance</span>
                     </a>
 
+                    <!-- Penugasan Fitur per Pengguna (F22) -->
+                    <a href="{{ route('superadmin.features.assignments.index') }}"
+                        class="sa-side-link {{ str_starts_with((string) $currentRoute, 'superadmin.features.assignments.') ? 'is-active' : '' }}">
+                        <span class="sa-side-ico">
+                            <i class="fa-solid fa-user-tag text-sm"></i>
+                        </span>
+                        <span class="truncate">Penugasan Fitur</span>
+                    </a>
+
+                    <!-- Template Pesan (F23) -->
+                    <a href="{{ route('superadmin.message-templates.index') }}"
+                        class="sa-side-link {{ str_starts_with((string) $currentRoute, 'superadmin.message-templates.') ? 'is-active' : '' }}">
+                        <span class="sa-side-ico">
+                            <i class="fa-solid fa-note-sticky text-sm"></i>
+                        </span>
+                        <span class="truncate">Template Pesan</span>
+                    </a>
+
+                    <!-- Pengaturan SMTP -->
+                    <a href="{{ route('superadmin.smtp.index') }}"
+                        class="sa-side-link {{ $currentRoute === 'superadmin.smtp.index' ? 'is-active' : '' }}">
+                        <span class="sa-side-ico">
+                            <i class="fa-solid fa-envelope-open-text text-sm"></i>
+                        </span>
+                        <span class="truncate">Pengaturan Email</span>
+                    </a>
+
                     <!-- Kelola & Koreksi Jam Presensi -->
                     <a href="{{ route('superadmin.absensi.index') }}"
                         class="sa-side-link {{ $currentRoute === 'superadmin.absensi.index' ? 'is-active' : '' }}">
@@ -187,6 +214,120 @@
                             <i class="fa-solid fa-calendar-day text-sm"></i>
                         </span>
                         <span class="truncate">Hari Libur & Tgl Merah</span>
+                    </a>
+
+                    <!-- ============================================== -->
+                    <!-- DATA KARYAWAN & ORGANISASI (Fase 5) -->
+                    <!-- ============================================== -->
+                    <h4 class="sa-side-sublabel">
+                        <i class="fa-solid fa-folder-tree text-[10px]"></i>
+                        <span>Data Karyawan</span>
+                    </h4>
+
+                    <!-- Import Massal Karyawan -->
+                    <a href="{{ route('superadmin.karyawan-import.index') }}"
+                        class="sa-side-link {{ str_starts_with((string) $currentRoute, 'superadmin.karyawan-import.') ? 'is-active' : '' }}">
+                        <span class="sa-side-ico">
+                            <i class="fa-solid fa-file-import text-sm"></i>
+                        </span>
+                        <span class="truncate">Import Karyawan</span>
+                    </a>
+
+                    <!-- Data Master: Divisi / Jabatan / Golongan -->
+                    <a href="{{ route('superadmin.master-data.index') }}"
+                        class="sa-side-link {{ str_starts_with((string) $currentRoute, 'superadmin.master-data.') ? 'is-active' : '' }}">
+                        <span class="sa-side-ico">
+                            <i class="fa-solid fa-sitemap text-sm"></i>
+                        </span>
+                        <span class="truncate">Data Master</span>
+                    </a>
+
+                    <!-- Kebijakan & Kuota Cuti -->
+                    <a href="{{ route('superadmin.cuti-policies.index') }}"
+                        class="sa-side-link {{ str_starts_with((string) $currentRoute, 'superadmin.cuti-policies.') ? 'is-active' : '' }}">
+                        <span class="sa-side-ico">
+                            <i class="fa-solid fa-umbrella-beach text-sm"></i>
+                        </span>
+                        <span class="truncate">Kebijakan Cuti</span>
+                    </a>
+
+                    <!-- Manajemen Cuti: Jenis Cuti & Pengajuan Karyawan -->
+                    <a href="{{ route('superadmin.manajemen-cuti.index') }}"
+                        class="sa-side-link {{ str_starts_with((string) $currentRoute, 'superadmin.manajemen-cuti.') ? 'is-active' : '' }}">
+                        <span class="sa-side-ico">
+                            <i class="fa-solid fa-calendar-check text-sm"></i>
+                        </span>
+                        <span class="truncate">Manajemen Cuti</span>
+                    </a>
+
+                    <!-- Offboarding Terpusat -->
+                    <a href="{{ route('superadmin.offboarding.index') }}"
+                        class="sa-side-link {{ str_starts_with((string) $currentRoute, 'superadmin.offboarding.') ? 'is-active' : '' }}">
+                        <span class="sa-side-ico">
+                            <i class="fa-solid fa-door-open text-sm"></i>
+                        </span>
+                        <span class="truncate">Offboarding</span>
+                    </a>
+
+                    <!-- ============================================== -->
+                    <!-- KEAMANAN & AKUN (Fase 1) -->
+                    <!-- ============================================== -->
+                    <h4 class="sa-side-sublabel">
+                        <i class="fa-solid fa-user-shield text-[10px]"></i>
+                        <span>Keamanan & Akun</span>
+                    </h4>
+
+                    <!-- Pusat Keamanan: 2FA, Whitelist IP, Sesi Aktif -->
+                    <a href="{{ route('superadmin.security.index') }}"
+                        class="sa-side-link {{ str_starts_with((string) $currentRoute, 'superadmin.security.') ? 'is-active' : '' }}">
+                        <span class="sa-side-ico">
+                            <i class="fa-solid fa-shield-halved text-sm"></i>
+                        </span>
+                        <span class="truncate">Pusat Keamanan</span>
+                    </a>
+
+                    <!-- Kelola Akun Admin -->
+                    <a href="{{ route('superadmin.admins.index') }}"
+                        class="sa-side-link {{ str_starts_with((string) $currentRoute, 'superadmin.admins.') ? 'is-active' : '' }}">
+                        <span class="sa-side-ico">
+                            <i class="fa-solid fa-user-tie text-sm"></i>
+                        </span>
+                        <span class="truncate">Akun Admin</span>
+                    </a>
+
+                    <!-- ============================================== -->
+                    <!-- ANALITIK, BROADCAST & LAPORAN (Fase 3) -->
+                    <!-- ============================================== -->
+                    <h4 class="sa-side-sublabel">
+                        <i class="fa-solid fa-chart-column text-[10px]"></i>
+                        <span>Analitik &amp; Informasi</span>
+                    </h4>
+
+                    <!-- Analitik Kehadiran -->
+                    <a href="{{ route('superadmin.analytics.index') }}"
+                        class="sa-side-link {{ $currentRoute === 'superadmin.analytics.index' ? 'is-active' : '' }}">
+                        <span class="sa-side-ico">
+                            <i class="fa-solid fa-chart-line text-sm"></i>
+                        </span>
+                        <span class="truncate">Analitik Kehadiran</span>
+                    </a>
+
+                    <!-- Broadcast Pengumuman -->
+                    <a href="{{ route('superadmin.broadcast.index') }}"
+                        class="sa-side-link {{ str_starts_with((string) $currentRoute, 'superadmin.broadcast.') ? 'is-active' : '' }}">
+                        <span class="sa-side-ico">
+                            <i class="fa-solid fa-bullhorn text-sm"></i>
+                        </span>
+                        <span class="truncate">Broadcast</span>
+                    </a>
+
+                    <!-- Laporan Terjadwal -->
+                    <a href="{{ route('superadmin.reports.index') }}"
+                        class="sa-side-link {{ str_starts_with((string) $currentRoute, 'superadmin.reports.') ? 'is-active' : '' }}">
+                        <span class="sa-side-ico">
+                            <i class="fa-solid fa-file-lines text-sm"></i>
+                        </span>
+                        <span class="truncate">Laporan Terjadwal</span>
                     </a>
 
                     <!-- ============================================== -->

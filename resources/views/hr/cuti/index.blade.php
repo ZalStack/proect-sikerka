@@ -70,13 +70,23 @@
                             @endforeach
                         </select>
                     </div>
+                    <div class="flex-1 min-w-[140px] sm:min-w-[150px]">
+                        <select name="jenis_cuti" class="w-full px-3 sm:px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9] bg-white">
+                            <option value="">Semua Jenis Cuti</option>
+                            @foreach($types ?? [] as $t)
+                                <option value="{{ $t->nama }}" {{ request('jenis_cuti') === $t->nama ? 'selected' : '' }}>
+                                    {{ $t->nama }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                     <button type="submit" class="inline-flex items-center bg-[#27438D] text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-[#161758] transition-colors text-sm">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path fill-rule="evenodd" d="M2.628 1.601C5.028 1.206 7.49 1 10 1s4.973.206 7.372.601a.75.75 0 01.628.74v2.288a2.25 2.25 0 01-.659 1.59l-4.682 4.683a2.25 2.25 0 00-.659 1.59v3.037c0 .684-.31 1.33-.844 1.757l-1.937 1.55A.75.75 0 018 18.25v-5.757a2.25 2.25 0 00-.659-1.591L2.659 6.22A2.25 2.25 0 012 4.629V2.34a.75.75 0 01.628-.74z" clip-rule="evenodd" />
                         </svg>
                         Filter
                     </button>
-                    @if(request('status') || request('karyawan_id'))
+                    @if(request('status') || request('karyawan_id') || request('jenis_cuti'))
                         <a href="{{ route('hr.cuti.index') }}" class="inline-flex items-center bg-gray-500 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors text-sm">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                 <path fill-rule="evenodd" d="M9.53 2.47a.75.75 0 010 1.06L5.81 7.25H15a6.75 6.75 0 010 13.5h-3a.75.75 0 010-1.5h3a5.25 5.25 0 100-10.5H5.81l3.72 3.72a.75.75 0 11-1.06 1.06l-5-5a.75.75 0 010-1.06l5-5a.75.75 0 011.06 0z" clip-rule="evenodd" />
@@ -131,6 +141,7 @@
                                 </th>
                                 <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">No</th>
                                 <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Karyawan</th>
+                                <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Jenis Cuti</th>
                                 <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Tanggal</th>
                                 <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Durasi</th>
                                 <th class="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-[#1B1B1B]">Sisa Cuti</th>
@@ -154,6 +165,11 @@
                                         </div>
                                         <span class="text-xs sm:text-sm font-medium">{{ $item->karyawan->nama_lengkap }}</span>
                                     </div>
+                                </td>
+                                <td class="px-3 sm:px-4 py-2 sm:py-3">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-blue-50 text-[#00a2e9]">
+                                        {{ $item->jenis_cuti }}
+                                    </span>
                                 </td>
                                 <td class="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
                                     {{ $item->tanggal_mulai ? $item->tanggal_mulai->format('d/m/Y') : '-' }}
@@ -206,7 +222,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="8" class="px-4 py-8 text-center text-[#1B1B1B]">
+                                <td colspan="9" class="px-4 py-8 text-center text-[#1B1B1B]">
                                     <div class="flex flex-col items-center">
                                         <svg class="w-12 sm:w-16 h-12 sm:h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
@@ -239,6 +255,8 @@
                             </span>
                         </div>
                         <div class="grid grid-cols-2 gap-1 text-[11px]">
+                            <span class="text-gray-500">Jenis:</span>
+                            <span class="text-[#00a2e9] font-bold text-right">{{ $item->jenis_cuti }}</span>
                             <span class="text-gray-500">Tanggal:</span>
                             <span class="text-[#1B1B1B] font-medium text-right">
                                 {{ $item->tanggal_mulai ? $item->tanggal_mulai->format('d/m/Y') : '-' }}

@@ -13,17 +13,22 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        Karyawan::create([
+        // Akun Super Admin + inisialisasi System Setting (idempoten, kredensial
+        // diambil dari environment SUPERADMIN_EMAIL / SUPERADMIN_PASSWORD).
+        $this->call(SuperAdminSettingsSeeder::class);
+        $this->call(CutiTypeSeeder::class);
+
+        Karyawan::updateOrCreate([
             'kode_pegawai' => 'HRD001',
+        ], [
             'email' => 'hrd@company.com',
-            'kata_sandi' => Hash::make('password123'),
+            'kata_sandi' => Hash::make(env('HR_SEED_PASSWORD', 'password123')),
             'nama_lengkap' => 'Budi Santoso',
             'posisi' => 'hr',
             'jabatan' => 'Kepala HRD',
             'divisi' => 'HRD',
             'golongan_darah' => 'A',
             'no_kk' => '1234567890123456',
-            'sedang_melanjutkan_pendidikan' => 'S2 Manajemen SDM',
             'jumlah_anak' => 2,
             'foto_profil' => null,
             'nomor_telepon' => '081234567890',
@@ -40,7 +45,6 @@ class DatabaseSeeder extends Seeder
             'agama' => 'Islam',
             'status_pernikahan' => 'Menikah',
             'pendidikan_terakhir' => 'S2',
-            'pendidikan_terakhir_new' => 'S2',
             // Kolom baru dari migrasi continuing education
             'is_continuing_education' => true,
             'continuing_program' => 'S2',
@@ -587,22 +591,20 @@ class DatabaseSeeder extends Seeder
             ],
         ];
 
-        // Insert data karyawan
+        // Insert data karyawan (idempoten — aman dijalankan berulang kali;
+        // kata sandi hanya diisi saat baris pertama kali dibuat).
         foreach ($karyawanData as $data) {
             // Generate email from nama_lengkap
             $email = $this->generateEmail($data['nama_lengkap']);
 
-            Karyawan::create([
-                'kode_pegawai' => $data['kode_pegawai'],
+            $payload = [
                 'email' => $email,
-                'kata_sandi' => Hash::make('password123'),
                 'nama_lengkap' => $data['nama_lengkap'],
                 'posisi' => 'karyawan',
                 'jabatan' => $data['jabatan'],
                 'divisi' => $data['divisi'],
                 'golongan_darah' => null,
                 'no_kk' => null,
-                'sedang_melanjutkan_pendidikan' => null,
                 'jumlah_anak' => 0,
                 'foto_profil' => null,
                 'nomor_telepon' => null,
@@ -619,7 +621,6 @@ class DatabaseSeeder extends Seeder
                 'agama' => null,
                 'status_pernikahan' => null,
                 'pendidikan_terakhir' => null,
-                'pendidikan_terakhir_new' => null,
                 // Kolom baru dari migrasi continuing education (default kosong untuk karyawan)
                 'is_continuing_education' => false,
                 'continuing_program' => null,
@@ -638,12 +639,27 @@ class DatabaseSeeder extends Seeder
                 'alamat_domisili' => null,
                 'is_resigned' => false,
                 'tanggal_resign' => null,
-            ]);
+            ];
+
+            $existing = Karyawan::where('kode_pegawai', $data['kode_pegawai'])->first();
+
+            if ($existing) {
+                // Jangan timpa email/kata sandi yang sudah dipakai di lingkungan nyata.
+                unset($payload['email']);
+                $existing->fill($payload)->save();
+                continue;
+            }
+
+            Karyawan::create(array_merge(
+                ['kode_pegawai' => $data['kode_pegawai']],
+                $payload,
+                ['kata_sandi' => Hash::make(env('KARYAWAN_SEED_PASSWORD', 'password123'))]
+            ));
         }
 
-        $this->command->info('✅ Database seeding completed successfully!');
-        $this->command->info('👤 HR Account: hrd@company.com / password123');
-        $this->command->info('👥 Total ' . count($karyawanData) . ' employees seeded.');
+        $this->command?->info('✅ Database seeding completed successfully!');
+        $this->command?->info('👤 HR Account: hrd@company.com');
+        $this->command?->info('👥 Total ' . count($karyawanData) . ' employees seeded.');
     }
 
     /**

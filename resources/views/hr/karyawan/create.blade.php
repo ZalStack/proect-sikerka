@@ -219,19 +219,50 @@
                         <div class="mb-4">
                             <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Jabatan <span class="text-[#ec1d1d]">*</span></label>
                             <input type="text" name="jabatan" value="{{ old('jabatan') }}" required
+                                list="jabatan-options" placeholder="Pilih dari daftar atau ketik baru"
                                 class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                            <datalist id="jabatan-options">
+                                @foreach(($jabatanOptions ?? []) as $opt)
+                                    <option value="{{ $opt }}">
+                                @endforeach
+                            </datalist>
+                            @if(!empty($jabatanOptions))
+                                <p class="text-[10px] sm:text-xs text-[#27438D] mt-1">* Pilih dari data master atau ketik jabatan baru</p>
+                            @endif
                             @error('jabatan')
                                 <p class="mt-1 text-xs sm:text-sm text-[#ec1d1d]">{{ $message }}</p>
                             @enderror
                         </div>
 
-                        <!-- Divisi (input text) -->
+                        <!-- Divisi (input text + saran data master) -->
                         <div class="mb-4">
                             <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Divisi <span class="text-[#ec1d1d]">*</span></label>
                             <input type="text" name="divisi" id="divisi_input" value="{{ old('divisi') }}" required
+                                list="divisi-options" placeholder="Pilih dari daftar atau ketik baru"
                                 class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                            <datalist id="divisi-options">
+                                @foreach(($divisiOptions ?? []) as $opt)
+                                    <option value="{{ $opt }}">
+                                @endforeach
+                            </datalist>
                             <p class="text-[10px] sm:text-xs text-[#27438D] mt-1">* Jika diisi "HRD", posisi akan otomatis menjadi HR</p>
                             @error('divisi')
+                                <p class="mt-1 text-xs sm:text-sm text-[#ec1d1d]">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Golongan (opsional, sumber kebijakan cuti) -->
+                        <div class="mb-4">
+                            <label class="block text-xs sm:text-sm font-medium text-[#1B1B1B] mb-1">Golongan</label>
+                            <input type="text" name="golongan" value="{{ old('golongan') }}"
+                                list="golongan-options" placeholder="Opsional — dipakai kebijakan kuota cuti"
+                                class="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a2e9]">
+                            <datalist id="golongan-options">
+                                @foreach(($golonganOptions ?? []) as $opt)
+                                    <option value="{{ $opt }}">
+                                @endforeach
+                            </datalist>
+                            @error('golongan')
                                 <p class="mt-1 text-xs sm:text-sm text-[#ec1d1d]">{{ $message }}</p>
                             @enderror
                         </div>

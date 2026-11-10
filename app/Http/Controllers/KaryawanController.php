@@ -41,7 +41,12 @@ class KaryawanController extends Controller
 
     public function create()
     {
-        return view('hr.karyawan.create');
+        // Opsi dropdown dari data master (Fitur D13).
+        $divisiOptions = \App\Models\MasterData::options('divisi');
+        $jabatanOptions = \App\Models\MasterData::options('jabatan');
+        $golonganOptions = \App\Models\MasterData::options('golongan');
+
+        return view('hr.karyawan.create', compact('divisiOptions', 'jabatanOptions', 'golonganOptions'));
     }
 
     public function store(Request $request)
@@ -53,6 +58,7 @@ class KaryawanController extends Controller
             'nama_lengkap' => 'required|string|max:100',
             'jabatan' => 'required|string|max:100',
             'divisi' => 'required|string|max:50', 
+            'golongan' => 'nullable|string|max:100',
             'status' => 'required|in:Karyawan Tetap,Contract,Internship',
             'tanggal_bergabung' => 'required|date',
             'tempat_lahir' => 'nullable|string|max:50',
@@ -117,7 +123,13 @@ class KaryawanController extends Controller
     public function edit($id)
     {
         $karyawan = Karyawan::findOrFail($id);
-        return view('hr.karyawan.edit', compact('karyawan'));
+
+        // Opsi dropdown dari data master (Fitur D13).
+        $divisiOptions = \App\Models\MasterData::options('divisi');
+        $jabatanOptions = \App\Models\MasterData::options('jabatan');
+        $golonganOptions = \App\Models\MasterData::options('golongan');
+
+        return view('hr.karyawan.edit', compact('karyawan', 'divisiOptions', 'jabatanOptions', 'golonganOptions'));
     }
 
     public function update(Request $request, $id)
@@ -130,6 +142,7 @@ class KaryawanController extends Controller
             'nama_lengkap' => 'required|string|max:100',
             'jabatan' => 'required|string|max:100',
             'divisi' => 'required|string|max:50', // Ubah menjadi string
+            'golongan' => 'nullable|string|max:100',
             'status' => 'required|in:Karyawan Tetap,Contract,Internship',
             'tanggal_bergabung' => 'required|date',
             'end_date' => 'nullable|date|after:tanggal_bergabung',
@@ -202,12 +215,24 @@ class KaryawanController extends Controller
     public function destroy($id)
     {
         $karyawan = Karyawan::findOrFail($id);
-        if ($karyawan->foto_profil) {
-            Storage::disk('public')->delete($karyawan->foto_profil);
-        }
+
+        // Soft delete (model memakai trait SoftDeletes): foto SENGAJA tidak
+        // dihapus permanen agar karyawan yang dipulihkan dari arsip tetap
+        // punya foto profil. Penghapusan file hanya terjadi bila di-restore
+        // lalu dihapus ulang, atau lewat offboarding.
         $karyawan->delete();
 
-        return redirect()->route('hr.karyawan.index')->with('success', 'Karyawan berhasil dihapus');
+        \App\Models\ActivityLog::record(
+            'karyawan.delete',
+            'Karyawan ' . $karyawan->nama_lengkap . ' (' . $karyawan->kode_pegawai . ') dihapus (diarsipkan).',
+            [
+                'module' => 'users',
+                'subject_type' => \App\Models\Karyawan::class,
+                'subject_id' => $karyawan->id,
+            ]
+        );
+
+        return redirect()->route('hr.karyawan.index')->with('success', 'Karyawan berhasil diarsipkan (dapat dipulihkan).');
     }
 
     private function determinePosisi($divisi)

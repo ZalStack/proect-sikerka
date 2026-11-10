@@ -20,14 +20,46 @@ use Illuminate\Support\Facades\Hash;
  */
 class SuperAdminSettingsSeeder extends Seeder
 {
-    /** Email resmi akun Super Admin. */
+    /** Email default akun Super Admin (dapat di-override via SUPERADMIN_EMAIL). */
     private const SUPERADMIN_EMAIL = 'superadmin@sikekar.com';
-
-    /** Kata sandi default akun Super Admin. */
-    private const SUPERADMIN_PASSWORD = 'superadmin123';
 
     /** Kode pegawai awal untuk akun Super Admin yang baru dibuat. */
     private const SUPERADMIN_KODE_AWAL = 'SA-001';
+
+    /**
+     * Ambil kata sandi superadmin dari environment SUPERADMIN_PASSWORD.
+     * Bila tidak di-set, dibuat acak dan dicatat ke log server (bukan
+     * kredensial publik) — operator mengambilnya dari log untuk login
+     * pertama kali, lalu menggantinya lewat menu profil.
+     */
+    private function superadminPassword(): string
+    {
+        $password = (string) env('SUPERADMIN_PASSWORD', '');
+
+        if ($password !== '') {
+            return $password;
+        }
+
+        $generated = bin2hex(random_bytes(12));
+
+        // $this->command bisa null bila dipanggil langsung dari migrasi.
+        $this->command?->warn(
+            'SUPERADMIN_PASSWORD tidak di-set — kata sandi acak dibuat dan dicatat ke storage/logs/laravel.log.'
+        );
+        \Illuminate\Support\Facades\Log::warning(
+            'Kata sandi akun superadmin dibuat acak oleh seeder: ' . $generated
+            . ' (email: ' . ($this->superadminEmail()) . ')'
+        );
+
+        return $generated;
+    }
+
+    private function superadminEmail(): string
+    {
+        $email = (string) env('SUPERADMIN_EMAIL', self::SUPERADMIN_EMAIL);
+
+        return $email !== '' ? $email : self::SUPERADMIN_EMAIL;
+    }
 
     public function run(): void
     {
@@ -67,19 +99,22 @@ class SuperAdminSettingsSeeder extends Seeder
      */
     private function seedSuperAdmin(): void
     {
+        $email = $this->superadminEmail();
+
         $superadmin = Karyawan::query()
-            ->where(function ($query) {
-                $query->where('email', self::SUPERADMIN_EMAIL)
+            ->where(function ($query) use ($email) {
+                $query->where('email', $email)
                     ->orWhere('posisi', 'superadmin');
             })
             ->orderBy('id')
             ->first();
 
         if (!$superadmin) {
+            // Akun baru → kata sandi diambil dari env (atau dibuat acak).
             $superadmin = Karyawan::create([
                 'kode_pegawai' => $this->kodePegawaiUnik(),
-                'email' => self::SUPERADMIN_EMAIL,
-                'kata_sandi' => Hash::make(self::SUPERADMIN_PASSWORD),
+                'email' => $email,
+                'kata_sandi' => Hash::make($this->superadminPassword()),
                 'nama_lengkap' => 'Super Administrator',
                 'posisi' => 'superadmin',
                 'jabatan' => 'Super Administrator Sistem',
@@ -92,7 +127,7 @@ class SuperAdminSettingsSeeder extends Seeder
                 'is_resigned' => false,
             ]);
 
-            $this->command->info('Akun Super Admin baru dibuat: ' . self::SUPERADMIN_EMAIL . ' / ' . self::SUPERADMIN_PASSWORD);
+            $this->command?->info('Akun Super Admin baru dibuat: ' . $email);
 
             return;
         }
@@ -101,20 +136,13 @@ class SuperAdminSettingsSeeder extends Seeder
         $superadmin->posisi = 'superadmin';
         $superadmin->is_resigned = false;
 
-        // Jika ini akun Super Admin bawaan seeder, sinkronkan kata sandinya
-        // agar kredensial yang terdokumentasi selalu valid.
-        if (strcasecmp($superadmin->email, self::SUPERADMIN_EMAIL) === 0) {
-            $superadmin->kata_sandi = Hash::make(self::SUPERADMIN_PASSWORD);
-        }
-
+        // Kata sandi TIDAK pernah di-reset saat seeder dijalankan ulang, agar
+        // kredensial yang sudah diganti operator tetap berlaku (idempoten).
         if ($superadmin->isDirty()) {
             $superadmin->save();
         }
 
-        $this->command->info('Akun Super Admin sudah tersedia: ' . $superadmin->email);
-        if (strcasecmp($superadmin->email, self::SUPERADMIN_EMAIL) === 0) {
-            $this->command->info('Kredensial: ' . self::SUPERADMIN_EMAIL . ' / ' . self::SUPERADMIN_PASSWORD);
-        }
+        $this->command?->info('Akun Super Admin sudah tersedia: ' . $superadmin->email);
     }
 
     /**

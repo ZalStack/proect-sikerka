@@ -32,20 +32,23 @@
                 </div>
             @endif
 
-            <!-- Sisa Cuti -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 mb-6">
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-3 sm:p-6 text-center border-l-4 border-[#00a2e9]">
-                    <p class="text-xs sm:text-sm text-[#1B1B1B]">Jatah Cuti Tahunan</p>
-                    <p class="text-xl sm:text-2xl font-bold text-[#161758]">{{ $cutiTahunan->jatah_cuti ?? 12 }} hari</p>
-                </div>
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-3 sm:p-6 text-center border-l-4 border-[#2E7D3E]">
-                    <p class="text-xs sm:text-sm text-[#1B1B1B]">Cuti Digunakan</p>
-                    <p class="text-xl sm:text-2xl font-bold text-[#161758]">{{ $cutiTahunan->cuti_digunakan ?? 0 }} hari</p>
-                </div>
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-3 sm:p-6 text-center border-l-4 border-[#FCC626]">
-                    <p class="text-xs sm:text-sm text-[#1B1B1B]">Sisa Cuti</p>
-                    <p class="text-xl sm:text-2xl font-bold text-[#161758]">{{ $cutiTahunan->sisa_cuti ?? 0 }} hari</p>
-                </div>
+            <!-- Kuota Cuti per Jenis -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+                @foreach($kuotaCards ?? [$cutiTahunan] as $kuota)
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 p-4 border-l-4 border-l-[#00a2e9]">
+                        <p class="text-xs font-bold text-gray-500 uppercase tracking-wider truncate">{{ $kuota->jenis_cuti }}</p>
+                        <div class="flex items-baseline justify-between mt-2">
+                            <div>
+                                <span class="text-2xl font-extrabold text-[#161758]">{{ $kuota->sisa_cuti }}</span>
+                                <span class="text-xs text-gray-400 font-medium">/ {{ $kuota->jatah_cuti }} hari</span>
+                            </div>
+                            <span class="text-[11px] font-semibold text-gray-400">
+                                Pakai: {{ $kuota->cuti_digunakan }}
+                            </span>
+                        </div>
+                        <p class="text-[10px] text-gray-400 mt-1">Sisa Kuota Cuti</p>
+                    </div>
+                @endforeach
             </div>
 
             <!-- Riwayat Cuti -->
@@ -57,6 +60,14 @@
                 @forelse($cuti as $item)
                 {{-- Mobile Card View --}}
                 <div class="sm:hidden border-b border-gray-200 p-3 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-[#00a2e9]">
+                            {{ $item->jenis_cuti }}
+                        </span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap {{ $item->status_badge }}">
+                            {{ $item->status_label }}
+                        </span>
+                    </div>
                     <div class="flex items-center justify-between">
                         <span class="text-[11px] text-gray-500">Tanggal</span>
                         <span class="text-[11px] font-semibold text-[#1B1B1B]">
@@ -73,14 +84,8 @@
                         <span class="text-[11px] text-gray-500">Keterangan</span>
                         <span class="text-[11px] text-gray-500 truncate ml-2 text-right max-w-[60%]">{{ $item->keterangan ?? '-' }}</span>
                     </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-[11px] text-gray-500">Status</span>
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap {{ $item->status_badge }}">
-                            {{ $item->status_label }}
-                        </span>
-                    </div>
                     @if($item->status === 'pending')
-                    <div class="flex items-center gap-3 pt-1">
+                    <div class="flex items-center gap-3 pt-1 border-t border-gray-100">
                         <a href="{{ route('karyawan.cuti.edit', $item->id) }}"
                            class="inline-flex items-center text-[#00a2e9] text-xs font-medium">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 mr-1" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -122,6 +127,7 @@
                         <table class="min-w-full">
                             <thead class="bg-[#F5F5F5]">
                                 <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-[#1B1B1B]">Jenis Cuti</th>
                                     <th class="px-4 py-3 text-left text-xs font-semibold text-[#1B1B1B]">Tanggal</th>
                                     <th class="px-4 py-3 text-left text-xs font-semibold text-[#1B1B1B]">Durasi</th>
                                     <th class="px-4 py-3 text-left text-xs font-semibold text-[#1B1B1B]">Keterangan</th>
@@ -132,6 +138,9 @@
                             <tbody>
                                 @foreach($cuti as $item)
                                 <tr class="border-b border-gray-200 hover:bg-[#F5F5F5]">
+                                    <td class="px-4 py-3 text-xs font-bold text-[#00a2e9]">
+                                        {{ $item->jenis_cuti }}
+                                    </td>
                                     <td class="px-4 py-3 text-xs">
                                         {{ $item->tanggal_mulai ? $item->tanggal_mulai->format('d/m/Y') : '-' }}
                                         <span class="text-gray-400">→</span>
@@ -143,6 +152,7 @@
                                         <span class="px-2 py-1 rounded-full text-[10px] font-medium {{ $item->status_badge }}">
                                             {{ $item->status_label }}
                                         </span>
+                                    </td>
                                     </td>
                                     <td class="px-4 py-3">
                                         @if($item->status === 'pending')

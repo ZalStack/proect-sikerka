@@ -16,20 +16,28 @@ class CutiController extends Controller
      * Ambil (atau buat jika belum ada) baris kuota cuti tahunan milik seorang karyawan.
      * Baris kuota dibedakan dari pengajuan asli lewat tanggal_mulai yang kosong,
      * supaya tidak pernah tertukar dengan pengajuan yang kebetulan sudah "approved".
+     *
+     * Kuota diambil dari kebijakan cuti tahun berjalan bila ada (Fitur D14),
+     * selain itu memakai default 12 hari.
      */
-    private function getOrCreateKuota(int $karyawanId): Cuti
+    private function getOrCreateKuota(int $karyawanId, string $jenisCuti = 'Cuti Tahunan'): Cuti
     {
         $kuota = Cuti::kuota()
             ->where('karyawan_id', $karyawanId)
-            ->where('jenis_cuti', 'Cuti Tahunan')
+            ->where('jenis_cuti', $jenisCuti)
             ->first();
 
         if (!$kuota) {
+            $karyawan = Karyawan::find($karyawanId);
+            $jatah = $karyawan
+                ? \App\Models\CutiPolicy::kuotaFor($karyawan, now()->year, $jenisCuti)
+                : 12;
+
             $kuota = Cuti::create([
                 'karyawan_id' => $karyawanId,
-                'jenis_cuti' => 'Cuti Tahunan',
-                'jatah_cuti' => 12,
-                'sisa_cuti' => 12,
+                'jenis_cuti' => $jenisCuti,
+                'jatah_cuti' => $jatah,
+                'sisa_cuti' => $jatah,
                 'cuti_digunakan' => 0,
                 'status' => 'approved',
                 'tanggal_pengajuan' => Carbon::now(),
@@ -40,14 +48,14 @@ class CutiController extends Controller
     }
 
     /**
-     * Cari baris kuota tanpa membuat baru. Dipakai di alur HR (restore sisa cuti)
+     * Cari baris kuota tanpa membuat baru. Dipakai di alur HR/Superadmin (restore sisa cuti)
      * yang seharusnya tidak membuat kuota baru kalau memang belum pernah ada.
      */
-    private function findKuota(int $karyawanId): ?Cuti
+    private function findKuota(int $karyawanId, string $jenisCuti = 'Cuti Tahunan'): ?Cuti
     {
         return Cuti::kuota()
             ->where('karyawan_id', $karyawanId)
-            ->where('jenis_cuti', 'Cuti Tahunan')
+            ->where('jenis_cuti', $jenisCuti)
             ->first();
     }
 
@@ -129,7 +137,7 @@ class CutiController extends Controller
     // Dashboard Cuti untuk HR
     public function index(Request $request)
     {
-        $query = Cuti::pengajuan()->with('karyawan')->where('jenis_cuti', 'Cuti Tahunan');
+        $query = Cuti::pengajuan()->with('karyawan');
 
         // Filter status
         if ($request->filled('status')) {
@@ -141,18 +149,24 @@ class CutiController extends Controller
             $query->where('karyawan_id', $request->karyawan_id);
         }
 
-        $cuti = $query->orderBy('created_at', 'desc')->paginate(10);
+        // Filter jenis cuti
+        if ($request->filled('jenis_cuti')) {
+            $query->where('jenis_cuti', $request->jenis_cuti);
+        }
+
+        $cuti = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
         $karyawans = Karyawan::orderBy('nama_lengkap')->get();
+        $types = \App\Models\CutiType::ordered()->get();
 
         // Statistik (hanya pengajuan asli, bukan baris kuota)
         $statistik = [
-            'total' => Cuti::pengajuan()->where('jenis_cuti', 'Cuti Tahunan')->count(),
-            'pending' => Cuti::pengajuan()->where('jenis_cuti', 'Cuti Tahunan')->where('status', 'pending')->count(),
-            'approved' => Cuti::pengajuan()->where('jenis_cuti', 'Cuti Tahunan')->where('status', 'approved')->count(),
-            'rejected' => Cuti::pengajuan()->where('jenis_cuti', 'Cuti Tahunan')->where('status', 'rejected')->count(),
+            'total' => Cuti::pengajuan()->count(),
+            'pending' => Cuti::pengajuan()->where('status', 'pending')->count(),
+            'approved' => Cuti::pengajuan()->where('status', 'approved')->count(),
+            'rejected' => Cuti::pengajuan()->where('status', 'rejected')->count(),
         ];
 
-        return view('hr.cuti.index', compact('cuti', 'karyawans', 'statistik'));
+        return view('hr.cuti.index', compact('cuti', 'karyawans', 'statistik', 'types'));
     }
 
     // Dashboard Cuti untuk Karyawan
@@ -163,14 +177,22 @@ class CutiController extends Controller
         // Ambil data cuti karyawan (hanya pengajuan asli, bukan baris kuota)
         $cuti = Cuti::pengajuan()
             ->where('karyawan_id', $user->id)
-            ->where('jenis_cuti', 'Cuti Tahunan')
             ->orderBy('created_at', 'desc')
             ->get();
 
         // Baris kuota cuti tahunan (dibuat otomatis kalau belum ada)
-        $cutiTahunan = $this->getOrCreateKuota($user->id);
+        $cutiTahunan = $this->getOrCreateKuota($user->id, 'Cuti Tahunan');
 
-        return view('karyawan.cuti.dashboard', compact('cuti', 'cutiTahunan'));
+        $activeTypes = \App\Models\CutiType::active()->ordered()->get();
+        if ($activeTypes->isEmpty()) {
+            $kuotaCards = collect([$cutiTahunan]);
+        } else {
+            $kuotaCards = $activeTypes->map(function ($type) use ($user) {
+                return $this->getOrCreateKuota($user->id, $type->nama);
+            });
+        }
+
+        return view('karyawan.cuti.dashboard', compact('cuti', 'cutiTahunan', 'kuotaCards'));
     }
 
     // Form Pengajuan Cuti (Karyawan)
@@ -178,9 +200,24 @@ class CutiController extends Controller
     {
         $user = Auth::user();
 
-        $cutiTahunan = $this->getOrCreateKuota($user->id);
+        $cutiTahunan = $this->getOrCreateKuota($user->id, 'Cuti Tahunan');
 
-        return view('karyawan.cuti.create', compact('cutiTahunan'));
+        $activeTypes = \App\Models\CutiType::active()->ordered()->get();
+        if ($activeTypes->isEmpty()) {
+            \App\Models\CutiType::seedDefaults();
+            $activeTypes = \App\Models\CutiType::active()->ordered()->get();
+        }
+
+        $typesWithKuota = $activeTypes->map(function ($type) use ($user) {
+            $kuota = $this->getOrCreateKuota($user->id, $type->nama);
+            return [
+                'nama' => $type->nama,
+                'sisa_cuti' => $kuota->sisa_cuti,
+                'jatah_cuti' => $kuota->jatah_cuti,
+            ];
+        });
+
+        return view('karyawan.cuti.create', compact('cutiTahunan', 'typesWithKuota'));
     }
 
     // Store Pengajuan Cuti
@@ -189,6 +226,16 @@ class CutiController extends Controller
         $user = Auth::user();
 
         $request->validate([
+            'jenis_cuti' => ['required', 'string', function ($attribute, $value, $fail) {
+                $type = \App\Models\CutiType::where('nama', $value)->where('is_active', true)->first();
+                if (!$type && \App\Models\CutiType::count() === 0 && $value === 'Cuti Tahunan') {
+                    \App\Models\CutiType::seedDefaults();
+                    $type = \App\Models\CutiType::where('nama', $value)->where('is_active', true)->first();
+                }
+                if (!$type) {
+                    $fail('Jenis cuti yang dipilih tidak valid atau sedang dinonaktifkan.');
+                }
+            }],
             'tanggal_mulai' => 'required|date|after_or_equal:today',
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
             'keterangan' => 'required|string|max:500',
@@ -202,19 +249,20 @@ class CutiController extends Controller
             return back()->withInput()->with('error', 'Anda sudah memiliki pengajuan cuti pada rentang tanggal tersebut.');
         }
 
-        $cutiTahunan = $this->getOrCreateKuota($user->id);
+        $jenisCuti = $request->jenis_cuti;
+        $kuota = $this->getOrCreateKuota($user->id, $jenisCuti);
 
-        if ($cutiTahunan->sisa_cuti < $durasi) {
-            return back()->withInput()->with('error', 'Sisa cuti Anda tidak mencukupi. Sisa cuti: ' . $cutiTahunan->sisa_cuti . ' hari');
+        if ($kuota->sisa_cuti < $durasi) {
+            return back()->withInput()->with('error', 'Sisa cuti ' . $jenisCuti . ' Anda tidak mencukupi. Sisa cuti: ' . $kuota->sisa_cuti . ' hari');
         }
 
-        DB::transaction(function () use ($user, $durasi, $request, $cutiTahunan) {
+        DB::transaction(function () use ($user, $durasi, $request, $kuota, $jenisCuti) {
             $cutiBaru = Cuti::create([
                 'karyawan_id' => $user->id,
-                'jenis_cuti' => 'Cuti Tahunan',
-                'jatah_cuti' => $cutiTahunan->jatah_cuti,
-                'sisa_cuti' => $cutiTahunan->sisa_cuti - $durasi,
-                'cuti_digunakan' => $cutiTahunan->cuti_digunakan + $durasi,
+                'jenis_cuti' => $jenisCuti,
+                'jatah_cuti' => $kuota->jatah_cuti,
+                'sisa_cuti' => $kuota->sisa_cuti - $durasi,
+                'cuti_digunakan' => $kuota->cuti_digunakan + $durasi,
                 'tanggal_mulai' => $request->tanggal_mulai,
                 'tanggal_selesai' => $request->tanggal_selesai,
                 'keterangan' => $request->keterangan,
@@ -222,16 +270,16 @@ class CutiController extends Controller
                 'tanggal_pengajuan' => Carbon::now(),
             ]);
 
-            $cutiTahunan->update([
-                'sisa_cuti' => $cutiTahunan->sisa_cuti - $durasi,
-                'cuti_digunakan' => $cutiTahunan->cuti_digunakan + $durasi,
+            $kuota->update([
+                'sisa_cuti' => $kuota->sisa_cuti - $durasi,
+                'cuti_digunakan' => $kuota->cuti_digunakan + $durasi,
             ]);
 
             $this->syncAbsensiCuti($cutiBaru);
         });
 
         return redirect()->route('karyawan.cuti.dashboard')
-            ->with('success', 'Pengajuan cuti berhasil dikirim. Menunggu persetujuan HR.');
+            ->with('success', 'Pengajuan cuti berhasil dikirim. Menunggu persetujuan.');
     }
 
     // Form Edit Cuti untuk Karyawan
@@ -272,17 +320,17 @@ class CutiController extends Controller
             return back()->withInput()->with('error', 'Anda sudah memiliki pengajuan cuti lain pada rentang tanggal tersebut.');
         }
 
-        $cutiTahunan = $this->findKuota($user->id);
+        $kuota = $this->findKuota($user->id, $cuti->jenis_cuti);
 
-        if (!$cutiTahunan) {
-            return back()->with('error', 'Data cuti tahunan tidak ditemukan.');
+        if (!$kuota) {
+            return back()->with('error', 'Data kuota cuti tidak ditemukan.');
         }
 
         $durasiLama = $cuti->durasi;
         $selisihDurasi = $durasiBaru - $durasiLama;
 
-        if ($selisihDurasi > 0 && $cutiTahunan->sisa_cuti < $selisihDurasi) {
-            return back()->withInput()->with('error', 'Sisa cuti tidak mencukupi untuk penambahan durasi. Sisa cuti: ' . $cutiTahunan->sisa_cuti . ' hari');
+        if ($selisihDurasi > 0 && $kuota->sisa_cuti < $selisihDurasi) {
+            return back()->withInput()->with('error', 'Sisa cuti tidak mencukupi untuk penambahan durasi. Sisa cuti: ' . $kuota->sisa_cuti . ' hari');
         }
 
         $tanggalMulaiLama = $cuti->tanggal_mulai;
@@ -295,9 +343,9 @@ class CutiController extends Controller
         ]);
 
         if ($selisihDurasi != 0) {
-            $cutiTahunan->update([
-                'sisa_cuti' => $cutiTahunan->sisa_cuti - $selisihDurasi,
-                'cuti_digunakan' => $cutiTahunan->cuti_digunakan + $selisihDurasi,
+            $kuota->update([
+                'sisa_cuti' => $kuota->sisa_cuti - $selisihDurasi,
+                'cuti_digunakan' => $kuota->cuti_digunakan + $selisihDurasi,
             ]);
 
             $cuti->update([
@@ -323,12 +371,12 @@ class CutiController extends Controller
             ->where('status', 'pending')
             ->firstOrFail();
 
-        $cutiTahunan = $this->findKuota($user->id);
+        $kuota = $this->findKuota($user->id, $cuti->jenis_cuti);
 
-        if ($cutiTahunan) {
-            $cutiTahunan->update([
-                'sisa_cuti' => $cutiTahunan->sisa_cuti + $cuti->durasi,
-                'cuti_digunakan' => $cutiTahunan->cuti_digunakan - $cuti->durasi,
+        if ($kuota) {
+            $kuota->update([
+                'sisa_cuti' => $kuota->sisa_cuti + $cuti->durasi,
+                'cuti_digunakan' => $kuota->cuti_digunakan - $cuti->durasi,
             ]);
         }
 
@@ -391,16 +439,19 @@ class CutiController extends Controller
             'keterangan' => $request->keterangan,
             'status' => $request->status,
             'catatan_hr' => $request->catatan_hr,
+            // Atribusi keputusan (Fitur D14): siapa & kapan menyetujui.
+            'approved_by' => $request->status === 'approved' ? Auth::id() : null,
+            'approved_at' => $request->status === 'approved' ? now() : null,
         ]);
 
-        // Jika HR mengubah status pengajuan yang sebelumnya pending menjadi rejected,
-        // kembalikan jatah cuti tahunan milik karyawan yang bersangkutan.
+        // Jika status pengajuan yang sebelumnya pending diubah menjadi rejected,
+        // kembalikan jatah cuti milik karyawan yang bersangkutan untuk jenis cuti tersebut.
         if ($oldStatus === 'pending' && $request->status === 'rejected') {
-            $cutiTahunan = $this->findKuota($karyawanIdLama);
-            if ($cutiTahunan) {
-                $cutiTahunan->update([
-                    'sisa_cuti' => $cutiTahunan->sisa_cuti + $durasiLama,
-                    'cuti_digunakan' => $cutiTahunan->cuti_digunakan - $durasiLama,
+            $kuota = $this->findKuota($karyawanIdLama, $cuti->jenis_cuti);
+            if ($kuota) {
+                $kuota->update([
+                    'sisa_cuti' => $kuota->sisa_cuti + $durasiLama,
+                    'cuti_digunakan' => $kuota->cuti_digunakan - $durasiLama,
                 ]);
             }
         }
@@ -410,11 +461,15 @@ class CutiController extends Controller
         // (pending/approved -> tetap tampil sebagai Cuti, rejected -> dihapus).
         $this->syncAbsensiUntukCuti($cuti, $karyawanIdLama, $tanggalMulaiLama, $tanggalSelesaiLama);
 
-        return redirect()->route('hr.cuti.index')
+        $redirectUrl = (Auth::user()?->isSuperAdmin())
+            ? route('superadmin.manajemen-cuti.index', ['tab' => 'pengajuan'])
+            : route('hr.cuti.index');
+
+        return redirect($redirectUrl)
             ->with('success', 'Data cuti berhasil diperbarui.');
     }
 
-    // Approve Cuti (HR)
+    // Approve Cuti (HR & Superadmin)
     public function approve(Request $request, $id)
     {
         $request->validate([
@@ -427,31 +482,45 @@ class CutiController extends Controller
 
         $cuti->status = $request->status;
         $cuti->catatan_hr = $request->catatan_hr;
+
+        // Atribusi keputusan (Fitur D14): siapa & kapan memutus.
+        if ($request->status === 'approved') {
+            $cuti->approved_by = Auth::id();
+            $cuti->approved_at = now();
+        } elseif ($request->status === 'pending') {
+            $cuti->approved_by = null;
+            $cuti->approved_at = null;
+        }
+
         $cuti->save();
 
         if ($request->status === 'rejected' && $oldStatus === 'pending') {
-            $cutiTahunan = $this->findKuota($cuti->karyawan_id);
+            $kuota = $this->findKuota($cuti->karyawan_id, $cuti->jenis_cuti);
 
-            if ($cutiTahunan) {
-                $cutiTahunan->update([
-                    'sisa_cuti' => $cutiTahunan->sisa_cuti + $cuti->durasi,
-                    'cuti_digunakan' => $cutiTahunan->cuti_digunakan - $cuti->durasi,
+            if ($kuota) {
+                $kuota->update([
+                    'sisa_cuti' => $kuota->sisa_cuti + $cuti->durasi,
+                    'cuti_digunakan' => $kuota->cuti_digunakan - $cuti->durasi,
                 ]);
             }
         }
 
         // Sinkronkan tabel Absensi: kalau ditolak, baris "Cuti" yang sudah dibuat
         // sejak pengajuan (status pending) akan dihapus; kalau disetujui/menunggu,
-        // keterangannya disesuaikan (menunggu persetujuan -> disetujui HR).
+        // keterangannya disesuaikan (menunggu persetujuan -> disetujui).
         $this->syncAbsensiUntukCuti($cuti);
 
         $statusLabel = $request->status === 'approved' ? 'Disetujui' : ($request->status === 'rejected' ? 'Ditolak' : 'Menunggu');
 
-        return redirect()->route('hr.cuti.index')
+        $redirectUrl = (Auth::user()?->isSuperAdmin())
+            ? route('superadmin.manajemen-cuti.index', ['tab' => 'pengajuan'])
+            : route('hr.cuti.index');
+
+        return redirect($redirectUrl)
             ->with('success', "Pengajuan cuti berhasil {$statusLabel}");
     }
 
-    // Bulk Approve (HR)
+    // Bulk Approve (HR & Superadmin)
     public function bulkApprove(Request $request)
     {
         $request->validate([
@@ -478,15 +547,21 @@ class CutiController extends Controller
                 if ($cuti && $cuti->status === 'pending') {
                     $cuti->status = $targetStatus;
                     $cuti->catatan_hr = $catatanHr;
+
+                    if ($targetStatus === 'approved') {
+                        $cuti->approved_by = Auth::id();
+                        $cuti->approved_at = now();
+                    }
+
                     $cuti->save();
 
                     if ($targetStatus === 'rejected') {
-                        $cutiTahunan = $this->findKuota($cuti->karyawan_id);
+                        $kuota = $this->findKuota($cuti->karyawan_id, $cuti->jenis_cuti);
 
-                        if ($cutiTahunan) {
-                            $cutiTahunan->update([
-                                'sisa_cuti' => $cutiTahunan->sisa_cuti + $cuti->durasi,
-                                'cuti_digunakan' => $cutiTahunan->cuti_digunakan - $cuti->durasi,
+                        if ($kuota) {
+                            $kuota->update([
+                                'sisa_cuti' => $kuota->sisa_cuti + $cuti->durasi,
+                                'cuti_digunakan' => $kuota->cuti_digunakan - $cuti->durasi,
                             ]);
                         }
                     }
@@ -499,23 +574,27 @@ class CutiController extends Controller
 
         $statusLabel = $targetStatus === 'approved' ? 'Disetujui' : 'Ditolak';
 
-        return redirect()->route('hr.cuti.index')
+        $redirectUrl = (Auth::user()?->isSuperAdmin())
+            ? route('superadmin.manajemen-cuti.index', ['tab' => 'pengajuan'])
+            : route('hr.cuti.index');
+
+        return redirect($redirectUrl)
             ->with('success', "{$processed} pengajuan cuti berhasil {$statusLabel}");
     }
 
-    // Delete Cuti (HR)
+    // Delete Cuti (HR & Superadmin)
     public function destroy($id)
     {
         $cuti = Cuti::pengajuan()->findOrFail($id);
 
         DB::transaction(function () use ($cuti) {
             if ($cuti->status === 'pending') {
-                $cutiTahunan = $this->findKuota($cuti->karyawan_id);
+                $kuota = $this->findKuota($cuti->karyawan_id, $cuti->jenis_cuti);
 
-                if ($cutiTahunan) {
-                    $cutiTahunan->update([
-                        'sisa_cuti' => $cutiTahunan->sisa_cuti + $cuti->durasi,
-                        'cuti_digunakan' => $cutiTahunan->cuti_digunakan - $cuti->durasi,
+                if ($kuota) {
+                    $kuota->update([
+                        'sisa_cuti' => $kuota->sisa_cuti + $cuti->durasi,
+                        'cuti_digunakan' => $kuota->cuti_digunakan - $cuti->durasi,
                     ]);
                 }
             }
@@ -524,7 +603,11 @@ class CutiController extends Controller
             $cuti->delete();
         });
 
-        return redirect()->route('hr.cuti.index')
+        $redirectUrl = (Auth::user()?->isSuperAdmin())
+            ? route('superadmin.manajemen-cuti.index', ['tab' => 'pengajuan'])
+            : route('hr.cuti.index');
+
+        return redirect($redirectUrl)
             ->with('success', 'Data cuti berhasil dihapus.');
     }
 }

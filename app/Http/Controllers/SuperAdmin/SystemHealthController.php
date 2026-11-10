@@ -245,7 +245,7 @@ class SystemHealthController extends Controller
     public function runTool(Request $request)
     {
         $validated = $request->validate([
-            'tool' => 'required|in:storage_link,retry_failed,flush_failed',
+            'tool' => 'required|in:storage_link,retry_failed,flush_failed,queue_work_once,session_prune,optimize_clear',
         ]);
 
         $tool = $validated['tool'];
@@ -261,6 +261,15 @@ class SystemHealthController extends Controller
                 'flush_failed' => Artisan::call('queue:flush') === 0
                     ? 'Semua failed job berhasil dihapus.'
                     : 'Flush failed job selesai dengan peringatan.',
+                // Proses SATU job dari antrean — cara aman memastikan worker
+                // berfungsi tanpa menjalankan proses daemon panjang dari web.
+                'queue_work_once' => Artisan::call('queue:work', ['--once' => true, '--stop-when-empty' => true]) === 0
+                    ? 'Worker queue memproses job berikutnya sampai antrean kosong.'
+                    : 'Proses satu job selesai dengan peringatan (cek failed_jobs).',
+                'session_prune' => $this->pruneExpiredSessions(),
+                'optimize_clear' => Artisan::call('optimize:clear') === 0
+                    ? 'Cache bootstrap (config/route/view) dibersihkan.'
+                    : 'Pembersihan cache selesai dengan peringatan.',
             };
 
             ActivityLog::record(
@@ -284,9 +293,28 @@ class SystemHealthController extends Controller
         }
     }
 
-    protected function tailFile(string $path, int $lines = 120): array
+    /**
+     * Bersihkan baris sesi yang sudah melewati masa berlaku dari tabel
+     * `sessions` (driver database). Laravel 13 tidak lagi menyediakan
+     * command `session:prune`, jadi dilakukan langsung dengan aman.
+     */
+    protected function pruneExpiredSessions(): string
     {
-        if (!is_file($path)) {
+        if (!Schema::hasTable('sessions')) {
+            return 'Tabel sesi tidak ditemukan (driver sesi aktif tidak menyimpan sesi di database).';
+        }
+
+        $cutoff = time() - ((int) config('session.lifetime', 120) * 60);
+
+        $deleted = DB::table('sessions')->where('last_activity', '<', $cutoff)->delete();
+
+        return $deleted > 0
+            ? $deleted . ' sesi kedaluwarsa berhasil dibersihkan dari database.'
+            : 'Tidak ada sesi kedaluwarsa untuk dibersihkan.';
+    }
+
+    protected function tailFile(string $path, int $lines = 120): array
+    {        if (!is_file($path)) {
             return [];
         }
 

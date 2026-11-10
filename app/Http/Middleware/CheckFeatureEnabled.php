@@ -17,8 +17,10 @@ class CheckFeatureEnabled
             return $next($request);
         }
 
-        // Cek status fitur
-        if (!SystemSetting::isFeatureEnabled($feature)) {
+        // Cek status fitur: sakelar global + penugasan per cakupan
+        // (role / divisi / karyawan — Fitur F22). Sakelar global NONAKTIF
+        // selalu mengalahkan seluruh penugasan.
+        if (!SystemSetting::isFeatureEnabledFor(Auth::user(), $feature)) {
             $featureMeta = SystemSetting::AVAILABLE_FEATURES[$feature] ?? [
                 'name' => ucfirst($feature),
                 'category' => 'Fitur Sistem',

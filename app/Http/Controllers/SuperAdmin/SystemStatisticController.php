@@ -98,13 +98,13 @@ class SystemStatisticController extends Controller
             }
 
             $moduleUsage = [
-                ['key' => 'absensi', 'name' => 'Presensi', 'icon' => 'fa-clock', 'color' => '#00a2e9', 'count' => Absensi::whereBetween('tanggal', [$start->toDateString(), $end->toDateString()])->count()],
+                ['key' => 'absensi', 'name' => 'Presensi', 'icon' => 'fa-clock', 'color' => '#00a2e9', 'count' => Absensi::whereDate('tanggal', '>=', $start->toDateString())->whereDate('tanggal', '<=', $end->toDateString())->count()],
                 ['key' => 'cuti', 'name' => 'Cuti', 'icon' => 'fa-calendar-check', 'color' => '#2E7D3E', 'count' => Cuti::whereBetween('created_at', [$start, $end])->count()],
                 ['key' => 'perizinan', 'name' => 'Perizinan', 'icon' => 'fa-file-signature', 'color' => '#9333ea', 'count' => Perizinan::whereBetween('created_at', [$start, $end])->count()],
                 ['key' => 'perjalanan_dinas', 'name' => 'Perjalanan Dinas', 'icon' => 'fa-plane-departure', 'color' => '#d49b06', 'count' => PerjalananDinas::whereBetween('created_at', [$start, $end])->count()],
-                ['key' => 'fhl', 'name' => 'FHL', 'icon' => 'fa-heart', 'color' => '#ec1d1d', 'count' => FhlAbsensi::whereBetween('tanggal', [$start->toDateString(), $end->toDateString()])->count()],
-                ['key' => 'khataman', 'name' => 'Khataman', 'icon' => 'fa-book-quran', 'color' => '#2563eb', 'count' => KhatamanAbsensi::whereBetween('tanggal', [$start->toDateString(), $end->toDateString()])->count()],
-                ['key' => 'sunnah', 'name' => '7SPS', 'icon' => 'fa-kaaba', 'color' => '#059669', 'count' => SunnahDaily::whereBetween('tanggal', [$start->toDateString(), $end->toDateString()])->count()],
+                ['key' => 'fhl', 'name' => 'FHL', 'icon' => 'fa-heart', 'color' => '#ec1d1d', 'count' => FhlAbsensi::whereDate('tanggal', '>=', $start->toDateString())->whereDate('tanggal', '<=', $end->toDateString())->count()],
+                ['key' => 'khataman', 'name' => 'Khataman', 'icon' => 'fa-book-quran', 'color' => '#2563eb', 'count' => KhatamanAbsensi::whereDate('tanggal', '>=', $start->toDateString())->whereDate('tanggal', '<=', $end->toDateString())->count()],
+                ['key' => 'sunnah', 'name' => '7SPS', 'icon' => 'fa-kaaba', 'color' => '#059669', 'count' => SunnahDaily::whereDate('tanggal', '>=', $start->toDateString())->whereDate('tanggal', '<=', $end->toDateString())->count()],
                 ['key' => 'pengumuman', 'name' => 'Pengumuman', 'icon' => 'fa-bullhorn', 'color' => '#ea580c', 'count' => Pengumuman::whereBetween('created_at', [$start, $end])->count()],
             ];
 
