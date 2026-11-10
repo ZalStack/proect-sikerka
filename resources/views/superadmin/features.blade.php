@@ -225,11 +225,6 @@
 
                 <!-- Master Bulk Toggles -->
             <div class="flex items-center gap-2 flex-wrap">
-                <a href="{{ route('superadmin.features.assignments.index') }}"
-                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#00a2e9] hover:bg-[#008cc4] text-white text-xs font-bold transition-all shadow-md shadow-[#00a2e9]/20">
-                    <i class="fa-solid fa-user-tag"></i>
-                    <span>Penugasan per Role / Divisi / Karyawan</span>
-                </a>
 
                 <form action="{{ route('superadmin.features.toggle-all') }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin MEMATIKAN SEMUA FITUR sistem? Pengguna biasa tidak akan bisa mengakses modul terkait.')">
                         @csrf

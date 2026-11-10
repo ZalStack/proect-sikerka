@@ -127,32 +127,6 @@
                         <span class="truncate">Fitur & Maintenance</span>
                     </a>
 
-                    <!-- Penugasan Fitur per Pengguna (F22) -->
-                    <a href="{{ route('superadmin.features.assignments.index') }}"
-                        class="sa-side-link {{ str_starts_with((string) $currentRoute, 'superadmin.features.assignments.') ? 'is-active' : '' }}">
-                        <span class="sa-side-ico">
-                            <i class="fa-solid fa-user-tag text-sm"></i>
-                        </span>
-                        <span class="truncate">Penugasan Fitur</span>
-                    </a>
-
-                    <!-- Template Pesan (F23) -->
-                    <a href="{{ route('superadmin.message-templates.index') }}"
-                        class="sa-side-link {{ str_starts_with((string) $currentRoute, 'superadmin.message-templates.') ? 'is-active' : '' }}">
-                        <span class="sa-side-ico">
-                            <i class="fa-solid fa-note-sticky text-sm"></i>
-                        </span>
-                        <span class="truncate">Template Pesan</span>
-                    </a>
-
-                    <!-- Pengaturan SMTP -->
-                    <a href="{{ route('superadmin.smtp.index') }}"
-                        class="sa-side-link {{ $currentRoute === 'superadmin.smtp.index' ? 'is-active' : '' }}">
-                        <span class="sa-side-ico">
-                            <i class="fa-solid fa-envelope-open-text text-sm"></i>
-                        </span>
-                        <span class="truncate">Pengaturan Email</span>
-                    </a>
 
                     <!-- Kelola & Koreksi Jam Presensi -->
                     <a href="{{ route('superadmin.absensi.index') }}"
