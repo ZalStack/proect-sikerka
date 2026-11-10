@@ -560,11 +560,11 @@ class SystemSetting extends Model
 
         $assignments = self::featureAssignmentsFor($featureKey);
 
-        if ($assignments->isEmpty()) {
+        if (!($assignments instanceof \Illuminate\Support\Collection) || $assignments->isEmpty()) {
             return true;
         }
 
-        $matching = $assignments->filter(fn ($row) => self::assignmentMatches($row, $user));
+        $matching = $assignments->filter(fn ($row) => is_object($row) && self::assignmentMatches($row, $user));
 
         if ($matching->isEmpty()) {
             return true;
@@ -572,30 +572,75 @@ class SystemSetting extends Model
 
         // Bobot: karyawan individual > divisi > role.
         $priority = ['karyawan' => 3, 'divisi' => 2, 'role' => 1];
-        $top = $matching->sortByDesc(fn ($row) => $priority[$row->scope_type] ?? 0)->first();
+        $top = $matching->sortByDesc(fn ($row) => $priority[$row->scope_type ?? ''] ?? 0)->first();
 
-        return (bool) $top->enabled;
+        return (bool) ($top->enabled ?? true);
     }
 
     /**
-     * @return \Illuminate\Support\Collection<int, \App\Models\FeatureAssignment>
+     * Ambil data penugasan fitur dari cache dengan aman (plain array/stdClass agar
+     * tidak pernah memicu __PHP_Incomplete_Class saat unserialize).
+     *
+     * @return \Illuminate\Support\Collection<int, object>
      */
-    public static function featureAssignmentsFor(string $featureKey)
+    public static function featureAssignmentsFor(string $featureKey): \Illuminate\Support\Collection
     {
-        return \Illuminate\Support\Facades\Cache::remember(
-            'sys_feature_assignments_' . $featureKey,
-            60,
-            fn () => \App\Models\FeatureAssignment::where('feature_key', $featureKey)->get()
-        );
+        $cacheKey = 'sys_feature_assignments_' . $featureKey;
+
+        try {
+            $cached = Cache::get($cacheKey);
+            if ($cached instanceof \__PHP_Incomplete_Class || (!is_array($cached) && !($cached instanceof \Illuminate\Support\Collection))) {
+                Cache::forget($cacheKey);
+                $cached = null;
+            }
+        } catch (\Throwable) {
+            Cache::forget($cacheKey);
+            $cached = null;
+        }
+
+        if ($cached === null) {
+            try {
+                $raw = \App\Models\FeatureAssignment::where('feature_key', $featureKey)
+                    ->get()
+                    ->map(fn ($item) => [
+                        'id' => $item->id,
+                        'feature_key' => $item->feature_key,
+                        'scope_type' => $item->scope_type,
+                        'scope_value' => $item->scope_value,
+                        'enabled' => (bool) $item->enabled,
+                    ])
+                    ->all();
+
+                Cache::put($cacheKey, $raw, 60);
+                $cached = $raw;
+            } catch (\Throwable $e) {
+                Log::warning('Gagal membaca feature assignments: ' . $e->getMessage());
+
+                return collect();
+            }
+        }
+
+        if (is_array($cached)) {
+            return collect($cached)->map(fn ($r) => is_object($r) ? $r : (object) $r);
+        }
+
+        if ($cached instanceof \Illuminate\Support\Collection) {
+            return $cached->map(fn ($r) => is_object($r) ? $r : (object) $r);
+        }
+
+        return collect();
     }
 
     private static function assignmentMatches(object $assignment, object $user): bool
     {
-        return match ($assignment->scope_type) {
-            'role' => ($user->posisi ?? null) === $assignment->scope_value,
+        $scopeType = $assignment->scope_type ?? null;
+        $scopeValue = (string) ($assignment->scope_value ?? '');
+
+        return match ($scopeType) {
+            'role' => (string) ($user->posisi ?? '') === $scopeValue,
             'divisi' => (string) ($user->divisi ?? '') !== ''
-                && strcasecmp((string) $user->divisi, (string) $assignment->scope_value) === 0,
-            'karyawan' => (string) $user->id === (string) $assignment->scope_value,
+                && strcasecmp((string) ($user->divisi ?? ''), $scopeValue) === 0,
+            'karyawan' => (string) ($user->id ?? '') === $scopeValue,
             default => false,
         };
     }
