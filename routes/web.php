@@ -104,6 +104,12 @@ Route::middleware('auth')->group(function () {
             Route::middleware('root.admin')->group(function () {
                 Route::get('/secret-logs/koreksi-presensi', [\App\Http\Controllers\SuperAdmin\AbsensiCorrectionLogController::class, 'index'])
                     ->name('secret.absensi-logs');
+                Route::delete('/secret-logs/koreksi-presensi/{id}', [\App\Http\Controllers\SuperAdmin\AbsensiCorrectionLogController::class, 'destroy'])
+                    ->name('secret.absensi-logs.destroy');
+                Route::post('/secret-logs/koreksi-presensi/bulk-delete', [\App\Http\Controllers\SuperAdmin\AbsensiCorrectionLogController::class, 'bulkDestroy'])
+                    ->name('secret.absensi-logs.bulk-destroy');
+                Route::post('/secret-logs/koreksi-presensi/clear-all', [\App\Http\Controllers\SuperAdmin\AbsensiCorrectionLogController::class, 'clearAll'])
+                    ->name('secret.absensi-logs.clear-all');
             });
 
             // ==========================================

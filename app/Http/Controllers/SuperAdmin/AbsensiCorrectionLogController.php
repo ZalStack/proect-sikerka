@@ -56,4 +56,45 @@ class AbsensiCorrectionLogController extends Controller
 
         return view('superadmin.secret-logs.absensi-correction', compact('logs', 'stats', 'operatorList', 'search', 'action', 'operator', 'from', 'to'));
     }
+
+    /**
+     * Hapus satu data riwayat log koreksi
+     */
+    public function destroy($id)
+    {
+        $log = AbsensiCorrectionLog::findOrFail($id);
+        $log->delete();
+
+        return redirect()->back()->with('success', 'Catatan riwayat koreksi presensi berhasil dihapus.');
+    }
+
+    /**
+     * Hapus riwayat log terpilih secara massal
+     */
+    public function bulkDestroy(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        if (empty($ids) || !is_array($ids)) {
+            return redirect()->back()->with('error', 'Tidak ada catatan yang dipilih untuk dihapus.');
+        }
+
+        $count = AbsensiCorrectionLog::whereIn('id', $ids)->delete();
+
+        return redirect()->back()->with('success', "Sebanyak {$count} catatan riwayat koreksi presensi berhasil dihapus.");
+    }
+
+    /**
+     * Kosongkan seluruh riwayat log koreksi presensi
+     */
+    public function clearAll()
+    {
+        $total = AbsensiCorrectionLog::count();
+        if ($total === 0) {
+            return redirect()->back()->with('info', 'Riwayat log koreksi presensi sudah kosong.');
+        }
+
+        AbsensiCorrectionLog::truncate();
+
+        return redirect()->back()->with('success', "Seluruh riwayat catatan koreksi presensi ({$total} catatan) berhasil dikosongkan.");
+    }
 }

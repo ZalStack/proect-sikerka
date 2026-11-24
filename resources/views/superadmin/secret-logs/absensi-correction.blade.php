@@ -29,7 +29,21 @@
                 </p>
             </div>
 
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
+                <!-- Tombol Hapus Terpilih (Muncul saat ada checkbox terpilih) -->
+                <button type="button" id="btnBulkDelete" onclick="confirmBulkDelete()" class="hidden items-center gap-2 px-3.5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-sm">
+                    <i class="fa-solid fa-trash-can"></i>
+                    <span>Hapus Terpilih (<span id="selectedCount">0</span>)</span>
+                </button>
+
+                <!-- Tombol Kosongkan Semua -->
+                @if($stats['total'] > 0)
+                    <button type="button" onclick="confirmClearAll()" class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-700 text-xs font-bold transition-all shadow-sm">
+                        <i class="fa-solid fa-broom"></i>
+                        <span>Kosongkan Semua</span>
+                    </button>
+                @endif
+
                 <a href="{{ route('superadmin.absensi.index') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-semibold transition-all shadow-sm">
                     <i class="fa-solid fa-clock-rotate-left text-[#00a2e9]"></i>
                     <span>Menu Koreksi Presensi</span>
@@ -143,6 +157,9 @@
                 <table class="w-full text-left border-collapse text-xs">
                     <thead>
                         <tr class="bg-slate-50 border-b border-gray-100 text-gray-400 uppercase text-[10px] tracking-wider font-bold">
+                            <th class="py-3 px-3 w-10 text-center">
+                                <input type="checkbox" id="selectAllCheckbox" class="rounded border-gray-300 text-rose-600 focus:ring-rose-500 cursor-pointer" title="Pilih Semua">
+                            </th>
                             <th class="py-3 px-4">Waktu & IP</th>
                             <th class="py-3 px-4">Operator Pengubah</th>
                             <th class="py-3 px-4">Target Karyawan</th>
@@ -150,6 +167,7 @@
                             <th class="py-3 px-4">Tindakan</th>
                             <th class="py-3 px-4 min-w-[340px]">Rincian Perubahan (Nilai Awal ➔ Nilai Terakhir)</th>
                             <th class="py-3 px-4">Alasan / Ket</th>
+                            <th class="py-3 px-4 text-center w-16">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
@@ -173,6 +191,10 @@
                         @endphp
                         @forelse($logs as $log)
                             <tr class="hover:bg-slate-50/80 transition-colors">
+                                <td class="py-3.5 px-3 text-center">
+                                    <input type="checkbox" value="{{ $log->id }}" class="log-item-checkbox rounded border-gray-300 text-rose-600 focus:ring-rose-500 cursor-pointer">
+                                </td>
+
                                 <td class="py-3.5 px-4 whitespace-nowrap">
                                     <div class="font-bold text-gray-800">{{ $log->created_at ? $log->created_at->format('d/m/Y H:i:s') : '-' }}</div>
                                     <div class="text-[10px] text-gray-400 font-mono">{{ $log->ip_address ?: '127.0.0.1' }}</div>
@@ -334,10 +356,20 @@
                                 <td class="py-3.5 px-4 text-gray-600 max-w-[200px] truncate" title="{{ $log->keterangan }}">
                                     {{ $log->keterangan ?: '-' }}
                                 </td>
+
+                                <td class="py-3.5 px-4 text-center whitespace-nowrap">
+                                    <form action="{{ route('superadmin.secret.absensi-logs.destroy', $log->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus catatan log ini?');" class="inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="w-8 h-8 rounded-lg bg-gray-50 hover:bg-rose-50 text-gray-400 hover:text-rose-600 border border-gray-200 hover:border-rose-200 transition-colors inline-flex items-center justify-center text-xs" title="Hapus catatan ini">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </form>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="py-12 text-center">
+                                <td colspan="9" class="py-12 text-center">
                                     <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3 text-lg">
                                         <i class="fa-solid fa-clock-rotate-left"></i>
                                     </div>
@@ -357,6 +389,84 @@
             @endif
         </div>
 
+        <!-- Hidden Forms untuk Hapus Massal & Kosongkan Semua -->
+        <form id="clearAllForm" action="{{ route('superadmin.secret.absensi-logs.clear-all') }}" method="POST" class="hidden">
+            @csrf
+        </form>
+
+        <form id="bulkDeleteForm" action="{{ route('superadmin.secret.absensi-logs.bulk-destroy') }}" method="POST" class="hidden">
+            @csrf
+            <div id="bulkDeleteIdsContainer"></div>
+        </form>
+
     </div>
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const selectAll = document.getElementById('selectAllCheckbox');
+    const checkboxes = document.querySelectorAll('.log-item-checkbox');
+    const btnBulk = document.getElementById('btnBulkDelete');
+    const countSpan = document.getElementById('selectedCount');
+
+    function updateBulkButton() {
+        const checked = document.querySelectorAll('.log-item-checkbox:checked');
+        const count = checked.length;
+        if (countSpan) countSpan.textContent = count;
+        if (btnBulk) {
+            if (count > 0) {
+                btnBulk.classList.remove('hidden');
+                btnBulk.classList.add('inline-flex');
+            } else {
+                btnBulk.classList.add('hidden');
+                btnBulk.classList.remove('inline-flex');
+            }
+        }
+        if (selectAll && checkboxes.length > 0) {
+            selectAll.checked = checked.length === checkboxes.length;
+        }
+    }
+
+    if (selectAll) {
+        selectAll.addEventListener('change', function () {
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            updateBulkButton();
+        });
+    }
+
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', updateBulkButton);
+    });
+
+    window.confirmBulkDelete = function () {
+        const checked = document.querySelectorAll('.log-item-checkbox:checked');
+        if (checked.length === 0) {
+            alert('Pilih setidaknya satu catatan untuk dihapus.');
+            return;
+        }
+
+        if (confirm('Apakah Anda yakin ingin menghapus ' + checked.length + ' catatan riwayat yang dipilih?')) {
+            const form = document.getElementById('bulkDeleteForm');
+            const container = document.getElementById('bulkDeleteIdsContainer');
+            container.innerHTML = '';
+            checked.forEach(cb => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'ids[]';
+                input.value = cb.value;
+                container.appendChild(input);
+            });
+            form.submit();
+        }
+    };
+
+    window.confirmClearAll = function () {
+        if (confirm('PERINGATAN: Apakah Anda yakin ingin MENGOSONGKAN SELURUH riwayat log koreksi presensi? Tindakan ini permanen dan tidak dapat dibatalkan.')) {
+            document.getElementById('clearAllForm').submit();
+        }
+    };
+});
+</script>
+@endpush
 @endsection

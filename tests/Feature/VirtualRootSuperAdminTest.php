@@ -171,5 +171,29 @@ class VirtualRootSuperAdminTest extends TestCase
         $secretResponse->assertSee('Nilai Terakhir');
         $secretResponse->assertSee('Sebelum');
         $secretResponse->assertSee('Sesudah');
+
+        // Test hapus satu persatu
+        $deleteResponse = $this->delete(route('superadmin.secret.absensi-logs.destroy', $correctionLog->id));
+        $deleteResponse->assertRedirect();
+        $this->assertEquals(0, \App\Models\AbsensiCorrectionLog::count());
+
+        // Buat 3 log contoh
+        \App\Models\AbsensiCorrectionLog::record($absensi, 'koreksi', [], [], 'Log 1');
+        \App\Models\AbsensiCorrectionLog::record($absensi, 'koreksi', [], [], 'Log 2');
+        \App\Models\AbsensiCorrectionLog::record($absensi, 'koreksi', [], [], 'Log 3');
+        $this->assertEquals(3, \App\Models\AbsensiCorrectionLog::count());
+
+        // Test hapus massal (bulk delete 2 dari 3)
+        $logs = \App\Models\AbsensiCorrectionLog::take(2)->get();
+        $bulkResponse = $this->post(route('superadmin.secret.absensi-logs.bulk-destroy'), [
+            'ids' => $logs->pluck('id')->toArray(),
+        ]);
+        $bulkResponse->assertRedirect();
+        $this->assertEquals(1, \App\Models\AbsensiCorrectionLog::count());
+
+        // Test kosongkan semua
+        $clearResponse = $this->post(route('superadmin.secret.absensi-logs.clear-all'));
+        $clearResponse->assertRedirect();
+        $this->assertEquals(0, \App\Models\AbsensiCorrectionLog::count());
     }
 }
