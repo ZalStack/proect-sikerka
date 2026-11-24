@@ -23,8 +23,7 @@ class AdminAccountController extends Controller
 
     public function index()
     {
-        $admins = Karyawan::withTrashed()
-            ->whereIn('posisi', self::ADMIN_ROLES)
+        $admins = Karyawan::whereIn('posisi', self::ADMIN_ROLES)
             ->orderBy('posisi')
             ->orderBy('nama_lengkap')
             ->get();
@@ -166,7 +165,7 @@ class AdminAccountController extends Controller
         }
 
         $email = $karyawan->email;
-        $karyawan->delete();
+        $karyawan->forceDelete();
 
         ActivityLog::record(
             'admin.delete',
@@ -175,7 +174,7 @@ class AdminAccountController extends Controller
         );
 
         return redirect()->route('superadmin.admins.index')
-            ->with('success', 'Akun admin berhasil dihapus.');
+            ->with('success', 'Akun admin berhasil dihapus secara permanen.');
     }
 
     /** Reset kata sandi akun admin → kata sandi acak yang ditampilkan sekali. */
