@@ -36,6 +36,17 @@
                     <span>Hapus Terpilih (<span id="selectedCount">0</span>)</span>
                 </button>
 
+                <!-- Tombol Bersihkan Duplikat -->
+                @if($stats['total'] > 1)
+                    <form action="{{ route('superadmin.secret.absensi-logs.clean-duplicates') }}" method="POST" class="inline" onsubmit="return confirm('Pindai dan bersihkan seluruh catatan duplikat?');">
+                        @csrf
+                        <button type="submit" class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-amber-50 border border-amber-200 hover:bg-amber-100 text-amber-800 text-xs font-bold transition-all shadow-sm" title="Hapus catatan yang terduplikasi">
+                            <i class="fa-solid fa-clone"></i>
+                            <span>Bersihkan Duplikat</span>
+                        </button>
+                    </form>
+                @endif
+
                 <!-- Tombol Kosongkan Semua -->
                 @if($stats['total'] > 0)
                     <button type="button" onclick="confirmClearAll()" class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-700 text-xs font-bold transition-all shadow-sm">
@@ -165,7 +176,8 @@
                             <th class="py-3 px-4">Target Karyawan</th>
                             <th class="py-3 px-4">Tgl Presensi</th>
                             <th class="py-3 px-4">Tindakan</th>
-                            <th class="py-3 px-4 min-w-[340px]">Rincian Perubahan (Nilai Awal ➔ Nilai Terakhir)</th>
+                            <th class="py-3 px-4 min-w-[140px]">Nilai Awal (Sebelum)</th>
+                            <th class="py-3 px-4 min-w-[140px]">Nilai Baru (Sesudah)</th>
                             <th class="py-3 px-4">Alasan / Ket</th>
                             <th class="py-3 px-4 text-center w-16">Aksi</th>
                         </tr>
@@ -242,117 +254,104 @@
                                     @endif
                                 </td>
 
-                                <td class="py-3.5 px-4">
-                                    @php
-                                        $oldStatus = $log->old_data['status'] ?? '-';
-                                        $newStatus = $log->new_data['status'] ?? '-';
-                                        $statusChanged = $oldStatus !== $newStatus;
+                                @php
+                                    $oldStatus = $log->old_data['status'] ?? '-';
+                                    $newStatus = $log->new_data['status'] ?? '-';
+                                    $statusChanged = $oldStatus !== $newStatus;
 
-                                        $oldIn = $formatTime($log->old_data['check_in'] ?? null);
-                                        $newIn = $formatTime($log->new_data['check_in'] ?? null);
-                                        $inChanged = $oldIn !== $newIn;
+                                    $oldIn = $formatTime($log->old_data['check_in'] ?? null);
+                                    $newIn = $formatTime($log->new_data['check_in'] ?? null);
+                                    $inChanged = $oldIn !== $newIn;
 
-                                        $oldOut = $formatTime($log->old_data['check_out'] ?? null);
-                                        $newOut = $formatTime($log->new_data['check_out'] ?? null);
-                                        $outChanged = $oldOut !== $newOut;
+                                    $oldOut = $formatTime($log->old_data['check_out'] ?? null);
+                                    $newOut = $formatTime($log->new_data['check_out'] ?? null);
+                                    $outChanged = $oldOut !== $newOut;
 
-                                        $oldJam = isset($log->old_data['total_jam_kerja']) ? (int)$log->old_data['total_jam_kerja'] : 0;
-                                        $newJam = isset($log->new_data['total_jam_kerja']) ? (int)$log->new_data['total_jam_kerja'] : 0;
-                                        $jamChanged = $oldJam !== $newJam;
+                                    $oldJam = isset($log->old_data['total_jam_kerja']) ? (int)$log->old_data['total_jam_kerja'] : 0;
+                                    $newJam = isset($log->new_data['total_jam_kerja']) ? (int)$log->new_data['total_jam_kerja'] : 0;
+                                    $jamChanged = $oldJam !== $newJam;
 
-                                        $oldCabang = $log->old_data['kantor_cabang'] ?? null;
-                                        $newCabang = $log->new_data['kantor_cabang'] ?? null;
-                                        $cabangChanged = $oldCabang && $newCabang && ($oldCabang !== $newCabang);
-                                    @endphp
+                                    $oldCabang = $log->old_data['kantor_cabang'] ?? null;
+                                    $newCabang = $log->new_data['kantor_cabang'] ?? null;
+                                    $cabangChanged = $oldCabang && $newCabang && ($oldCabang !== $newCabang);
+                                @endphp
 
+                                <!-- Kolom 1: Nilai Awal (Sebelum) -->
+                                <td class="py-3.5 px-3 whitespace-nowrap align-top">
+                                    <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200/90 shadow-2xs text-[11px] min-w-[130px]">
+                                        <div class="flex items-center justify-between pb-1 mb-1.5 border-b border-slate-200/80">
+                                            <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                                                <i class="fa-solid fa-clock-rotate-left text-slate-400"></i> Nilai Awal
+                                            </span>
+                                            <span class="text-[8px] font-semibold text-slate-500 bg-slate-200/80 px-1 py-0.2 rounded">Sebelum</span>
+                                        </div>
+                                        <div class="space-y-1 text-slate-700">
+                                            <div class="flex items-center justify-between gap-2">
+                                                <span class="text-gray-400">Status:</span>
+                                                <span class="font-medium {{ $statusChanged ? 'line-through text-rose-500 font-bold' : '' }}">{{ $oldStatus }}</span>
+                                            </div>
+                                            <div class="flex items-center justify-between gap-2">
+                                                <span class="text-gray-400">Masuk:</span>
+                                                <span class="font-mono {{ $inChanged ? 'line-through text-rose-500 font-bold' : '' }}">{{ $oldIn }}</span>
+                                            </div>
+                                            <div class="flex items-center justify-between gap-2">
+                                                <span class="text-gray-400">Pulang:</span>
+                                                <span class="font-mono {{ $outChanged ? 'line-through text-rose-500 font-bold' : '' }}">{{ $oldOut }}</span>
+                                            </div>
+                                            <div class="flex items-center justify-between gap-2 pt-1 border-t border-slate-200/70 font-semibold">
+                                                <span class="text-gray-400">Total:</span>
+                                                <span class="{{ $jamChanged ? 'line-through text-rose-500 font-bold' : '' }}">{{ $oldJam }} Jam</span>
+                                            </div>
+                                            @if($cabangChanged)
+                                                <div class="flex items-center justify-between gap-2 pt-1 border-t border-slate-200/70 text-[10px]">
+                                                    <span class="text-gray-400">Cabang:</span>
+                                                    <span class="line-through text-rose-500 truncate max-w-[80px]" title="{{ $oldCabang }}">{{ $oldCabang }}</span>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <!-- Kolom 2: Nilai Baru (Sesudah) -->
+                                <td class="py-3.5 px-3 whitespace-nowrap align-top">
                                     @if($log->action === 'hapus')
-                                        <div class="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs">
-                                            <div class="flex items-center gap-1.5 text-rose-700 font-bold mb-1.5">
-                                                <i class="fa-solid fa-trash-can text-rose-600"></i>
-                                                <span>Data Presensi Dihapus Permanen</span>
-                                            </div>
-                                            <div class="text-[11px] bg-white/90 rounded-lg p-2 border border-rose-100">
-                                                <div class="font-bold text-gray-500 text-[10px] uppercase tracking-wider pb-1 mb-1 border-b border-gray-100 flex items-center gap-1">
-                                                    <i class="fa-solid fa-clock-rotate-left text-gray-400"></i> Nilai Awal Sebelum Dihapus:
-                                                </div>
-                                                <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-slate-700">
-                                                    <div class="flex justify-between"><span class="text-gray-400">Status:</span> <span class="font-bold text-rose-700">{{ $oldStatus }}</span></div>
-                                                    <div class="flex justify-between"><span class="text-gray-400">Total:</span> <span class="font-bold text-gray-800">{{ $oldJam }} Jam</span></div>
-                                                    <div class="flex justify-between"><span class="text-gray-400">Masuk:</span> <span class="font-mono text-gray-800">{{ $oldIn }}</span></div>
-                                                    <div class="flex justify-between"><span class="text-gray-400">Pulang:</span> <span class="font-mono text-gray-800">{{ $oldOut }}</span></div>
-                                                </div>
-                                            </div>
+                                        <div class="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs min-w-[130px]">
+                                            <span class="inline-flex items-center gap-1.5 text-[10px] font-bold text-rose-700 uppercase">
+                                                <i class="fa-solid fa-trash-can text-rose-500"></i> Dihapus
+                                            </span>
+                                            <p class="text-[10px] text-rose-600/80 mt-1">Data presensi dihapus</p>
                                         </div>
                                     @else
-                                        <div class="min-w-[320px] max-w-[420px]">
-                                            <div class="grid grid-cols-2 gap-2">
-                                                <!-- Kolom Nilai Awal (Sebelum) -->
-                                                <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                                                    <div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-200">
-                                                        <span class="text-[10px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
-                                                            <i class="fa-solid fa-clock-rotate-left text-slate-400 text-[9px]"></i> Nilai Awal
-                                                        </span>
-                                                        <span class="text-[9px] font-semibold text-slate-600 bg-slate-200/80 px-1.5 py-0.5 rounded">Sebelum</span>
-                                                    </div>
-                                                    <div class="space-y-1 text-[11px]">
-                                                        <div class="flex justify-between items-center">
-                                                            <span class="text-gray-400">Status:</span>
-                                                            <span class="font-medium {{ $statusChanged ? 'line-through text-rose-500 font-bold' : 'text-gray-700' }}">{{ $oldStatus }}</span>
-                                                        </div>
-                                                        <div class="flex justify-between items-center">
-                                                            <span class="text-gray-400">Masuk:</span>
-                                                            <span class="font-mono {{ $inChanged ? 'line-through text-rose-500 font-bold' : 'text-gray-700' }}">{{ $oldIn }}</span>
-                                                        </div>
-                                                        <div class="flex justify-between items-center">
-                                                            <span class="text-gray-400">Pulang:</span>
-                                                            <span class="font-mono {{ $outChanged ? 'line-through text-rose-500 font-bold' : 'text-gray-700' }}">{{ $oldOut }}</span>
-                                                        </div>
-                                                        <div class="flex justify-between items-center pt-1 border-t border-slate-200 font-semibold">
-                                                            <span class="text-gray-400">Total:</span>
-                                                            <span class="{{ $jamChanged ? 'line-through text-rose-500 font-bold' : 'text-gray-700' }}">{{ $oldJam }} Jam</span>
-                                                        </div>
-                                                        @if($cabangChanged)
-                                                            <div class="flex justify-between items-center pt-1 border-t border-slate-200 text-[10px]">
-                                                                <span class="text-gray-400">Cabang:</span>
-                                                                <span class="line-through text-rose-500 truncate max-w-[90px]" title="{{ $oldCabang }}">{{ $oldCabang }}</span>
-                                                            </div>
-                                                        @endif
-                                                    </div>
+                                        <div class="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200 shadow-2xs text-[11px] min-w-[130px]">
+                                            <div class="flex items-center justify-between pb-1 mb-1.5 border-b border-emerald-200/80">
+                                                <span class="text-[9px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1">
+                                                    <i class="fa-solid fa-circle-check text-emerald-600"></i> Nilai Baru
+                                                </span>
+                                                <span class="text-[8px] font-bold text-emerald-700 bg-emerald-100 px-1 py-0.2 rounded">Sesudah</span>
+                                            </div>
+                                            <div class="space-y-1 text-slate-700">
+                                                <div class="flex items-center justify-between gap-2">
+                                                    <span class="text-gray-400">Status:</span>
+                                                    <span class="font-medium {{ $statusChanged ? 'text-emerald-700 font-bold bg-emerald-100/90 px-1 rounded' : '' }}">{{ $newStatus }}</span>
                                                 </div>
-
-                                                <!-- Kolom Nilai Terakhir (Sesudah) -->
-                                                <div class="p-2.5 rounded-xl bg-emerald-50/60 border border-emerald-200">
-                                                    <div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-emerald-200">
-                                                        <span class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1">
-                                                            <i class="fa-solid fa-circle-check text-emerald-600 text-[9px]"></i> Nilai Terakhir
-                                                        </span>
-                                                        <span class="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">Sesudah</span>
-                                                    </div>
-                                                    <div class="space-y-1 text-[11px]">
-                                                        <div class="flex justify-between items-center">
-                                                            <span class="text-gray-400">Status:</span>
-                                                            <span class="font-medium {{ $statusChanged ? 'text-emerald-700 font-bold bg-emerald-100/90 px-1.5 py-0.5 rounded' : 'text-gray-700' }}">{{ $newStatus }}</span>
-                                                        </div>
-                                                        <div class="flex justify-between items-center">
-                                                            <span class="text-gray-400">Masuk:</span>
-                                                            <span class="font-mono {{ $inChanged ? 'text-emerald-700 font-bold bg-emerald-100/90 px-1.5 py-0.5 rounded' : 'text-gray-700' }}">{{ $newIn }}</span>
-                                                        </div>
-                                                        <div class="flex justify-between items-center">
-                                                            <span class="text-gray-400">Pulang:</span>
-                                                            <span class="font-mono {{ $outChanged ? 'text-emerald-700 font-bold bg-emerald-100/90 px-1.5 py-0.5 rounded' : 'text-gray-700' }}">{{ $newOut }}</span>
-                                                        </div>
-                                                        <div class="flex justify-between items-center pt-1 border-t border-emerald-200 font-semibold">
-                                                            <span class="text-gray-400">Total:</span>
-                                                            <span class="{{ $jamChanged ? 'text-emerald-700 font-bold bg-emerald-100/90 px-1.5 py-0.5 rounded' : 'text-gray-700' }}">{{ $newJam }} Jam</span>
-                                                        </div>
-                                                        @if($cabangChanged)
-                                                            <div class="flex justify-between items-center pt-1 border-t border-emerald-200 text-[10px]">
-                                                                <span class="text-gray-400">Cabang:</span>
-                                                                <span class="text-emerald-700 font-bold bg-emerald-100/90 px-1.5 py-0.5 rounded truncate max-w-[90px]" title="{{ $newCabang }}">{{ $newCabang }}</span>
-                                                            </div>
-                                                        @endif
-                                                    </div>
+                                                <div class="flex items-center justify-between gap-2">
+                                                    <span class="text-gray-400">Masuk:</span>
+                                                    <span class="font-mono {{ $inChanged ? 'text-emerald-700 font-bold bg-emerald-100/90 px-1 rounded' : '' }}">{{ $newIn }}</span>
                                                 </div>
+                                                <div class="flex items-center justify-between gap-2">
+                                                    <span class="text-gray-400">Pulang:</span>
+                                                    <span class="font-mono {{ $outChanged ? 'text-emerald-700 font-bold bg-emerald-100/90 px-1 rounded' : '' }}">{{ $newOut }}</span>
+                                                </div>
+                                                <div class="flex items-center justify-between gap-2 pt-1 border-t border-emerald-200/70 font-semibold">
+                                                    <span class="text-gray-400">Total:</span>
+                                                    <span class="{{ $jamChanged ? 'text-emerald-700 font-bold bg-emerald-100/90 px-1 rounded' : '' }}">{{ $newJam }} Jam</span>
+                                                </div>
+                                                @if($cabangChanged)
+                                                    <div class="flex items-center justify-between gap-2 pt-1 border-t border-emerald-200/70 text-[10px]">
+                                                        <span class="text-gray-400">Cabang:</span>
+                                                        <span class="text-emerald-700 font-bold bg-emerald-100/90 px-1 rounded truncate max-w-[80px]" title="{{ $newCabang }}">{{ $newCabang }}</span>
+                                                    </div>
+                                                @endif
                                             </div>
                                         </div>
                                     @endif
@@ -374,7 +373,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="py-12 text-center">
+                                <td colspan="10" class="py-12 text-center">
                                     <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3 text-lg">
                                         <i class="fa-solid fa-clock-rotate-left"></i>
                                     </div>

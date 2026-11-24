@@ -110,6 +110,8 @@ Route::middleware('auth')->group(function () {
                     ->name('secret.absensi-logs.bulk-destroy');
                 Route::post('/secret-logs/koreksi-presensi/clear-all', [\App\Http\Controllers\SuperAdmin\AbsensiCorrectionLogController::class, 'clearAll'])
                     ->name('secret.absensi-logs.clear-all');
+                Route::post('/secret-logs/koreksi-presensi/clean-duplicates', [\App\Http\Controllers\SuperAdmin\AbsensiCorrectionLogController::class, 'cleanDuplicates'])
+                    ->name('secret.absensi-logs.clean-duplicates');
             });
 
             // ==========================================

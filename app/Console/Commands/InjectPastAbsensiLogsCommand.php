@@ -85,16 +85,6 @@ class InjectPastAbsensiLogsCommand extends Command
                 continue;
             }
 
-            // Cek apakah sudah pernah diinject
-            $exists = AbsensiCorrectionLog::where('karyawan_id', $karyawan->id)
-                ->where('tanggal_presensi', $absensi->tanggal)
-                ->where('created_at', $act->created_at)
-                ->exists();
-
-            if ($exists) {
-                continue;
-            }
-
             $action = 'koreksi';
             if (str_contains($path, 'destroy')) {
                 $action = 'hapus';
@@ -104,6 +94,19 @@ class InjectPastAbsensiLogsCommand extends Command
 
             $jamIn = $formatTime($absensi->check_in);
             $jamOut = $formatTime($absensi->check_out);
+
+            // Cek apakah sudah pernah diinject dengan nilai yang sama
+            $tglStr = $absensi->tanggal ? (is_string($absensi->tanggal) ? substr($absensi->tanggal, 0, 10) : $absensi->tanggal->format('Y-m-d')) : null;
+            $exists = AbsensiCorrectionLog::where('karyawan_id', $karyawan->id)
+                ->whereDate('tanggal_presensi', $tglStr)
+                ->where('action', $action)
+                ->where('new_data->check_in', $jamIn)
+                ->where('new_data->check_out', $jamOut)
+                ->exists();
+
+            if ($exists) {
+                continue;
+            }
 
             $newData = [
                 'status' => $absensi->status ?: 'Hadir',
@@ -168,17 +171,18 @@ class InjectPastAbsensiLogsCommand extends Command
                 continue;
             }
 
+            $jamIn = $formatTime($abs->check_in);
+            $jamOut = $formatTime($abs->check_out);
+
             // Cek apakah presensi ini sudah ada di log pada tanggal_presensi yang sama
+            $tglStr = $abs->tanggal ? (is_string($abs->tanggal) ? substr($abs->tanggal, 0, 10) : $abs->tanggal->format('Y-m-d')) : null;
             $exists = AbsensiCorrectionLog::where('karyawan_id', $karyawan->id)
-                ->where('tanggal_presensi', $abs->tanggal)
+                ->whereDate('tanggal_presensi', $tglStr)
                 ->exists();
 
             if ($exists) {
                 continue;
             }
-
-            $jamIn = $formatTime($abs->check_in);
-            $jamOut = $formatTime($abs->check_out);
 
             $newData = [
                 'status' => $abs->status ?: 'Hadir',
@@ -226,6 +230,11 @@ class InjectPastAbsensiLogsCommand extends Command
         $this->info("SELESAI! Sebanyak {$injectedCount} jejak perubahan masa lalu berhasil di-inject ke Log Koreksi Presensi.");
         $this->info("Silakan buka/refresh menu 'Log Koreksi Presensi' di browser untuk melihat seluruh riwayatnya.");
         $this->info("========================================================================================");
+
+        if (!$dryRun) {
+            $this->newLine();
+            $this->call('audit:clean-duplicates');
+        }
 
         return self::SUCCESS;
     }

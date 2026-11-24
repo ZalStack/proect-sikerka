@@ -97,4 +97,41 @@ class AbsensiCorrectionLogController extends Controller
 
         return redirect()->back()->with('success', "Seluruh riwayat catatan koreksi presensi ({$total} catatan) berhasil dikosongkan.");
     }
+
+    /**
+     * Bersihkan rekaman duplikat pada log koreksi
+     */
+    public function cleanDuplicates()
+    {
+        $allLogs = AbsensiCorrectionLog::orderBy('id')->get();
+        $seen = [];
+        $toDelete = [];
+
+        foreach ($allLogs as $log) {
+            $tgl = $log->tanggal_presensi ? (is_string($log->tanggal_presensi) ? substr($log->tanggal_presensi, 0, 10) : $log->tanggal_presensi->format('Y-m-d')) : '';
+            $karyawanId = (string) $log->karyawan_id;
+            $action = (string) $log->action;
+            $newIn = $log->new_data['check_in'] ?? '';
+            $newOut = $log->new_data['check_out'] ?? '';
+            $newStatus = $log->new_data['status'] ?? '';
+            $newJam = $log->new_data['total_jam_kerja'] ?? '';
+
+            $key = "{$karyawanId}_{$tgl}_{$action}_{$newIn}_{$newOut}_{$newStatus}_{$newJam}";
+
+            if (isset($seen[$key])) {
+                $toDelete[] = $log->id;
+            } else {
+                $seen[$key] = $log->id;
+            }
+        }
+
+        $duplicateCount = count($toDelete);
+
+        if ($duplicateCount > 0) {
+            AbsensiCorrectionLog::whereIn('id', $toDelete)->delete();
+            return redirect()->back()->with('success', "Sebanyak {$duplicateCount} catatan duplikat berhasil dibersihkan.");
+        }
+
+        return redirect()->back()->with('info', 'Tidak ditemukan data duplikat. Seluruh log sudah unik.');
+    }
 }
