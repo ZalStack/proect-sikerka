@@ -528,10 +528,27 @@ class SuperAdminController extends Controller
         }
 
         try {
+            $formatTimeValue = function ($val) {
+                if (empty($val)) return null;
+                if ($val instanceof \Carbon\CarbonInterface) {
+                    return $val->format('H:i');
+                }
+                $val = (string) $val;
+                if (str_contains($val, ' ') || str_contains($val, 'T')) {
+                    try {
+                        return Carbon::parse($val)->format('H:i');
+                    } catch (\Throwable $e) {}
+                }
+                if (preg_match('/^(\d{2}:\d{2})/', $val, $m)) {
+                    return $m[1];
+                }
+                return substr($val, 0, 5);
+            };
+
             $oldData = [
                 'tanggal' => $absensi->tanggal ? (is_string($absensi->tanggal) ? $absensi->tanggal : $absensi->tanggal->format('Y-m-d')) : null,
-                'check_in' => $absensi->check_in,
-                'check_out' => $absensi->check_out,
+                'check_in' => $formatTimeValue($absensi->check_in),
+                'check_out' => $formatTimeValue($absensi->check_out),
                 'status' => $absensi->status,
                 'kantor_cabang' => $absensi->kantor_cabang,
                 'total_jam_kerja' => $absensi->total_jam_kerja,
@@ -571,8 +588,8 @@ class SuperAdminController extends Controller
 
             $newData = [
                 'tanggal' => $tanggalStr,
-                'check_in' => $cleanIn,
-                'check_out' => $cleanOut,
+                'check_in' => $formatTimeValue($cleanIn),
+                'check_out' => $formatTimeValue($cleanOut),
                 'status' => $absensi->status,
                 'kantor_cabang' => $absensi->kantor_cabang,
                 'total_jam_kerja' => $totalJamKerja,
@@ -620,10 +637,27 @@ class SuperAdminController extends Controller
         $nama = $absensi->karyawan->nama_lengkap ?? 'Karyawan';
         $tgl = $absensi->tanggal ? $absensi->tanggal->translatedFormat('d M Y') : '';
 
+        $formatTimeValue = function ($val) {
+            if (empty($val)) return null;
+            if ($val instanceof \Carbon\CarbonInterface) {
+                return $val->format('H:i');
+            }
+            $val = (string) $val;
+            if (str_contains($val, ' ') || str_contains($val, 'T')) {
+                try {
+                    return Carbon::parse($val)->format('H:i');
+                } catch (\Throwable $e) {}
+            }
+            if (preg_match('/^(\d{2}:\d{2})/', $val, $m)) {
+                return $m[1];
+            }
+            return substr($val, 0, 5);
+        };
+
         $oldData = [
             'tanggal' => $absensi->tanggal ? (is_string($absensi->tanggal) ? $absensi->tanggal : $absensi->tanggal->format('Y-m-d')) : null,
-            'check_in' => $absensi->check_in,
-            'check_out' => $absensi->check_out,
+            'check_in' => $formatTimeValue($absensi->check_in),
+            'check_out' => $formatTimeValue($absensi->check_out),
             'status' => $absensi->status,
             'total_jam_kerja' => $absensi->total_jam_kerja,
             'keterangan' => $absensi->keterangan,

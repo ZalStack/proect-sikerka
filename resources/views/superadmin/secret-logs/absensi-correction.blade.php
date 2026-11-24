@@ -148,11 +148,29 @@
                             <th class="py-3 px-4">Target Karyawan</th>
                             <th class="py-3 px-4">Tgl Presensi</th>
                             <th class="py-3 px-4">Tindakan</th>
-                            <th class="py-3 px-4 min-w-[280px]">Rincian Perubahan (Sebelum ➔ Sesudah)</th>
+                            <th class="py-3 px-4 min-w-[340px]">Rincian Perubahan (Nilai Awal ➔ Nilai Terakhir)</th>
                             <th class="py-3 px-4">Alasan / Ket</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
+                        @php
+                            $formatTime = function ($val) {
+                                if (empty($val) || $val === '-') return '-';
+                                if ($val instanceof \Carbon\CarbonInterface) {
+                                    return $val->format('H:i');
+                                }
+                                $str = (string) $val;
+                                if (str_contains($str, ' ') || str_contains($str, 'T')) {
+                                    try {
+                                        return \Carbon\Carbon::parse($str)->format('H:i');
+                                    } catch (\Throwable $e) {}
+                                }
+                                if (preg_match('/^(\d{2}:\d{2})/', $str, $m)) {
+                                    return $m[1];
+                                }
+                                return substr($str, 0, 5);
+                            };
+                        @endphp
                         @forelse($logs as $log)
                             <tr class="hover:bg-slate-50/80 transition-colors">
                                 <td class="py-3.5 px-4 whitespace-nowrap">
@@ -198,68 +216,117 @@
                                 </td>
 
                                 <td class="py-3.5 px-4">
+                                    @php
+                                        $oldStatus = $log->old_data['status'] ?? '-';
+                                        $newStatus = $log->new_data['status'] ?? '-';
+                                        $statusChanged = $oldStatus !== $newStatus;
+
+                                        $oldIn = $formatTime($log->old_data['check_in'] ?? null);
+                                        $newIn = $formatTime($log->new_data['check_in'] ?? null);
+                                        $inChanged = $oldIn !== $newIn;
+
+                                        $oldOut = $formatTime($log->old_data['check_out'] ?? null);
+                                        $newOut = $formatTime($log->new_data['check_out'] ?? null);
+                                        $outChanged = $oldOut !== $newOut;
+
+                                        $oldJam = isset($log->old_data['total_jam_kerja']) ? (int)$log->old_data['total_jam_kerja'] : 0;
+                                        $newJam = isset($log->new_data['total_jam_kerja']) ? (int)$log->new_data['total_jam_kerja'] : 0;
+                                        $jamChanged = $oldJam !== $newJam;
+
+                                        $oldCabang = $log->old_data['kantor_cabang'] ?? null;
+                                        $newCabang = $log->new_data['kantor_cabang'] ?? null;
+                                        $cabangChanged = $oldCabang && $newCabang && ($oldCabang !== $newCabang);
+                                    @endphp
+
                                     @if($log->action === 'hapus')
-                                        <div class="text-rose-600 font-medium">Data presensi dihapus dari sistem.</div>
-                                        <div class="text-[11px] text-gray-500 mt-1">
-                                            Status sebelumnya: <span class="font-bold">{{ $log->old_data['status'] ?? '-' }}</span> |
-                                            Masuk: {{ $log->old_data['check_in'] ?? '-' }} |
-                                            Pulang: {{ $log->old_data['check_out'] ?? '-' }}
+                                        <div class="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs">
+                                            <div class="flex items-center gap-1.5 text-rose-700 font-bold mb-1.5">
+                                                <i class="fa-solid fa-trash-can text-rose-600"></i>
+                                                <span>Data Presensi Dihapus Permanen</span>
+                                            </div>
+                                            <div class="text-[11px] bg-white/90 rounded-lg p-2 border border-rose-100">
+                                                <div class="font-bold text-gray-500 text-[10px] uppercase tracking-wider pb-1 mb-1 border-b border-gray-100 flex items-center gap-1">
+                                                    <i class="fa-solid fa-clock-rotate-left text-gray-400"></i> Nilai Awal Sebelum Dihapus:
+                                                </div>
+                                                <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-slate-700">
+                                                    <div class="flex justify-between"><span class="text-gray-400">Status:</span> <span class="font-bold text-rose-700">{{ $oldStatus }}</span></div>
+                                                    <div class="flex justify-between"><span class="text-gray-400">Total:</span> <span class="font-bold text-gray-800">{{ $oldJam }} Jam</span></div>
+                                                    <div class="flex justify-between"><span class="text-gray-400">Masuk:</span> <span class="font-mono text-gray-800">{{ $oldIn }}</span></div>
+                                                    <div class="flex justify-between"><span class="text-gray-400">Pulang:</span> <span class="font-mono text-gray-800">{{ $oldOut }}</span></div>
+                                                </div>
+                                            </div>
                                         </div>
                                     @else
-                                        <div class="space-y-1">
-                                            {{-- Status --}}
-                                            @if(($log->old_data['status'] ?? '') !== ($log->new_data['status'] ?? ''))
-                                                <div class="flex items-center gap-1.5">
-                                                    <span class="text-gray-400 font-semibold text-[10px] w-12">Status:</span>
-                                                    <span class="px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-medium line-through">{{ $log->old_data['status'] ?? '-' }}</span>
-                                                    <i class="fa-solid fa-arrow-right text-[9px] text-gray-400"></i>
-                                                    <span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">{{ $log->new_data['status'] ?? '-' }}</span>
+                                        <div class="min-w-[320px] max-w-[420px]">
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <!-- Kolom Nilai Awal (Sebelum) -->
+                                                <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+                                                    <div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-200">
+                                                        <span class="text-[10px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
+                                                            <i class="fa-solid fa-clock-rotate-left text-slate-400 text-[9px]"></i> Nilai Awal
+                                                        </span>
+                                                        <span class="text-[9px] font-semibold text-slate-600 bg-slate-200/80 px-1.5 py-0.5 rounded">Sebelum</span>
+                                                    </div>
+                                                    <div class="space-y-1 text-[11px]">
+                                                        <div class="flex justify-between items-center">
+                                                            <span class="text-gray-400">Status:</span>
+                                                            <span class="font-medium {{ $statusChanged ? 'line-through text-rose-500 font-bold' : 'text-gray-700' }}">{{ $oldStatus }}</span>
+                                                        </div>
+                                                        <div class="flex justify-between items-center">
+                                                            <span class="text-gray-400">Masuk:</span>
+                                                            <span class="font-mono {{ $inChanged ? 'line-through text-rose-500 font-bold' : 'text-gray-700' }}">{{ $oldIn }}</span>
+                                                        </div>
+                                                        <div class="flex justify-between items-center">
+                                                            <span class="text-gray-400">Pulang:</span>
+                                                            <span class="font-mono {{ $outChanged ? 'line-through text-rose-500 font-bold' : 'text-gray-700' }}">{{ $oldOut }}</span>
+                                                        </div>
+                                                        <div class="flex justify-between items-center pt-1 border-t border-slate-200 font-semibold">
+                                                            <span class="text-gray-400">Total:</span>
+                                                            <span class="{{ $jamChanged ? 'line-through text-rose-500 font-bold' : 'text-gray-700' }}">{{ $oldJam }} Jam</span>
+                                                        </div>
+                                                        @if($cabangChanged)
+                                                            <div class="flex justify-between items-center pt-1 border-t border-slate-200 text-[10px]">
+                                                                <span class="text-gray-400">Cabang:</span>
+                                                                <span class="line-through text-rose-500 truncate max-w-[90px]" title="{{ $oldCabang }}">{{ $oldCabang }}</span>
+                                                            </div>
+                                                        @endif
+                                                    </div>
                                                 </div>
-                                            @else
-                                                <div class="text-[11px] text-gray-500">Status: <span class="font-medium text-gray-700">{{ $log->new_data['status'] ?? '-' }}</span></div>
-                                            @endif
 
-                                            {{-- Jam Masuk --}}
-                                            @php
-                                                $oldIn = isset($log->old_data['check_in']) ? substr($log->old_data['check_in'], 0, 5) : '-';
-                                                $newIn = isset($log->new_data['check_in']) ? substr($log->new_data['check_in'], 0, 5) : '-';
-                                            @endphp
-                                            @if($oldIn !== $newIn)
-                                                <div class="flex items-center gap-1.5">
-                                                    <span class="text-gray-400 font-semibold text-[10px] w-12">Masuk:</span>
-                                                    <span class="px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-mono line-through">{{ $oldIn }}</span>
-                                                    <i class="fa-solid fa-arrow-right text-[9px] text-gray-400"></i>
-                                                    <span class="px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 font-mono font-bold">{{ $newIn }}</span>
+                                                <!-- Kolom Nilai Terakhir (Sesudah) -->
+                                                <div class="p-2.5 rounded-xl bg-emerald-50/60 border border-emerald-200">
+                                                    <div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-emerald-200">
+                                                        <span class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1">
+                                                            <i class="fa-solid fa-circle-check text-emerald-600 text-[9px]"></i> Nilai Terakhir
+                                                        </span>
+                                                        <span class="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">Sesudah</span>
+                                                    </div>
+                                                    <div class="space-y-1 text-[11px]">
+                                                        <div class="flex justify-between items-center">
+                                                            <span class="text-gray-400">Status:</span>
+                                                            <span class="font-medium {{ $statusChanged ? 'text-emerald-700 font-bold bg-emerald-100/90 px-1.5 py-0.5 rounded' : 'text-gray-700' }}">{{ $newStatus }}</span>
+                                                        </div>
+                                                        <div class="flex justify-between items-center">
+                                                            <span class="text-gray-400">Masuk:</span>
+                                                            <span class="font-mono {{ $inChanged ? 'text-emerald-700 font-bold bg-emerald-100/90 px-1.5 py-0.5 rounded' : 'text-gray-700' }}">{{ $newIn }}</span>
+                                                        </div>
+                                                        <div class="flex justify-between items-center">
+                                                            <span class="text-gray-400">Pulang:</span>
+                                                            <span class="font-mono {{ $outChanged ? 'text-emerald-700 font-bold bg-emerald-100/90 px-1.5 py-0.5 rounded' : 'text-gray-700' }}">{{ $newOut }}</span>
+                                                        </div>
+                                                        <div class="flex justify-between items-center pt-1 border-t border-emerald-200 font-semibold">
+                                                            <span class="text-gray-400">Total:</span>
+                                                            <span class="{{ $jamChanged ? 'text-emerald-700 font-bold bg-emerald-100/90 px-1.5 py-0.5 rounded' : 'text-gray-700' }}">{{ $newJam }} Jam</span>
+                                                        </div>
+                                                        @if($cabangChanged)
+                                                            <div class="flex justify-between items-center pt-1 border-t border-emerald-200 text-[10px]">
+                                                                <span class="text-gray-400">Cabang:</span>
+                                                                <span class="text-emerald-700 font-bold bg-emerald-100/90 px-1.5 py-0.5 rounded truncate max-w-[90px]" title="{{ $newCabang }}">{{ $newCabang }}</span>
+                                                            </div>
+                                                        @endif
+                                                    </div>
                                                 </div>
-                                            @endif
-
-                                            {{-- Jam Pulang --}}
-                                            @php
-                                                $oldOut = isset($log->old_data['check_out']) ? substr($log->old_data['check_out'], 0, 5) : '-';
-                                                $newOut = isset($log->new_data['check_out']) ? substr($log->new_data['check_out'], 0, 5) : '-';
-                                            @endphp
-                                            @if($oldOut !== $newOut)
-                                                <div class="flex items-center gap-1.5">
-                                                    <span class="text-gray-400 font-semibold text-[10px] w-12">Pulang:</span>
-                                                    <span class="px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-mono line-through">{{ $oldOut }}</span>
-                                                    <i class="fa-solid fa-arrow-right text-[9px] text-gray-400"></i>
-                                                    <span class="px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 font-mono font-bold">{{ $newOut }}</span>
-                                                </div>
-                                            @endif
-
-                                            {{-- Total Jam Kerja --}}
-                                            @php
-                                                $oldJam = $log->old_data['total_jam_kerja'] ?? 0;
-                                                $newJam = $log->new_data['total_jam_kerja'] ?? 0;
-                                            @endphp
-                                            @if($oldJam != $newJam)
-                                                <div class="flex items-center gap-1.5 text-[10px]">
-                                                    <span class="text-gray-400 font-semibold w-12">Total:</span>
-                                                    <span class="text-gray-500">{{ $oldJam }} Jam</span>
-                                                    <i class="fa-solid fa-arrow-right text-[9px] text-gray-400"></i>
-                                                    <span class="font-bold text-emerald-700">{{ $newJam }} Jam</span>
-                                                </div>
-                                            @endif
+                                            </div>
                                         </div>
                                     @endif
                                 </td>

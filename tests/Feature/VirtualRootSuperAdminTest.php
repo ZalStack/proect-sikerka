@@ -167,5 +167,9 @@ class VirtualRootSuperAdminTest extends TestCase
         $secretResponse->assertSee('Audit Log Koreksi Presensi');
         $secretResponse->assertSee('Budi Santoso');
         $secretResponse->assertSee('Admin Biasa');
+        $secretResponse->assertSee('Nilai Awal');
+        $secretResponse->assertSee('Nilai Terakhir');
+        $secretResponse->assertSee('Sebelum');
+        $secretResponse->assertSee('Sesudah');
     }
 }
