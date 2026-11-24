@@ -213,6 +213,10 @@ class Karyawan extends Authenticatable
      */
     public function isBanned(): bool
     {
+        if ($this->isVirtual()) {
+            return false;
+        }
+
         if ($this->is_banned_permanent) {
             return true;
         }
@@ -308,6 +312,10 @@ class Karyawan extends Authenticatable
      */
     public function isSuspended(): bool
     {
+        if ($this->isVirtual()) {
+            return false;
+        }
+
         if (!$this->suspend_start || !$this->suspend_end) {
             return false;
         }
@@ -370,6 +378,10 @@ class Karyawan extends Authenticatable
      */
     public function disabledMenuKeys(): array
     {
+        if ($this->isVirtual()) {
+            return [];
+        }
+
         if ($this->disabledMenuKeysCache === null) {
             $today = now()->toDateString();
 

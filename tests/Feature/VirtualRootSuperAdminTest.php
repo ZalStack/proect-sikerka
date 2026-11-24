@@ -36,7 +36,7 @@ class VirtualRootSuperAdminTest extends TestCase
         $this->assertTrue($user->isVirtual());
         $this->assertTrue($user->isSuperAdmin());
         $this->assertEquals(config('auth.root_superadmin.email'), $user->email);
-        $this->assertNull($user->id);
+        $this->assertEquals(\App\Auth\VirtualSuperAdminProvider::VIRTUAL_ID, $user->id);
 
         // Pastikan tabel karyawans tetap 0 (tidak ada row yang tersimpan di DB)
         $this->assertEquals(0, Karyawan::count());

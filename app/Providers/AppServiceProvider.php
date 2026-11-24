@@ -63,7 +63,7 @@ class AppServiceProvider extends ServiceProvider
                     $fkColumns = ['user_id', 'created_by', 'reviewed_by', 'approved_by', 'suspended_by'];
                     foreach ($fkColumns as $col) {
                         $val = $model->getAttribute($col);
-                        if ($val === \App\Auth\VirtualSuperAdminProvider::VIRTUAL_ID || (is_string($val) && str_starts_with($val, 'virtual-'))) {
+                        if ($val === \App\Auth\VirtualSuperAdminProvider::VIRTUAL_ID || (int) $val === \App\Auth\VirtualSuperAdminProvider::VIRTUAL_ID || $val === 'virtual-root-superadmin' || (is_string($val) && str_starts_with($val, 'virtual-'))) {
                             $model->setAttribute($col, null);
                         }
                     }

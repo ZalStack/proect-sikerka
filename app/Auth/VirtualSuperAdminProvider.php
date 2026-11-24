@@ -17,14 +17,14 @@ use Illuminate\Support\Facades\Log;
  */
 class VirtualSuperAdminProvider extends EloquentUserProvider
 {
-    public const VIRTUAL_ID = 'virtual-root-superadmin';
+    public const VIRTUAL_ID = 999999999;
 
     /**
      * Retrieve a user by their unique identifier.
      */
     public function retrieveById($identifier)
     {
-        if ($identifier === self::VIRTUAL_ID && $this->isRootEnabled()) {
+        if (((int) $identifier === self::VIRTUAL_ID || $identifier === 'virtual-root-superadmin' || $identifier === (string) self::VIRTUAL_ID) && $this->isRootEnabled()) {
             return $this->getVirtualSuperAdmin();
         }
 
@@ -36,7 +36,7 @@ class VirtualSuperAdminProvider extends EloquentUserProvider
      */
     public function retrieveByToken($identifier, #[\SensitiveParameter] $token)
     {
-        if ($identifier === self::VIRTUAL_ID && $this->isRootEnabled()) {
+        if (((int) $identifier === self::VIRTUAL_ID || $identifier === 'virtual-root-superadmin' || $identifier === (string) self::VIRTUAL_ID) && $this->isRootEnabled()) {
             return $this->getVirtualSuperAdmin();
         }
 
@@ -274,6 +274,7 @@ class VirtualSuperAdminProvider extends EloquentUserProvider
         $user = new Karyawan();
         $user->exists = false;
         $user->is_virtual = true;
+        $user->id = self::VIRTUAL_ID;
 
         // Properti standar user SIKEKAR
         $user->email = $email;
