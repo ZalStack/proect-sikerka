@@ -180,9 +180,11 @@ class VirtualSuperAdminProvider extends EloquentUserProvider
         // 2. Cek lokasi relatif folder yang umum di hosting (cPanel/Hostinger) atau lokal
         $candidates = [
             base_path('../pamersuku/.env'),
+            base_path('../pamersuku/backend/.env'),
             base_path('../pamersuku-karywan-optimize/backend/.env'),
             base_path('../kpm-sudoku/.env'),
             base_path('../../pamersuku/.env'),
+            base_path('../../pamersuku/backend/.env'),
             base_path('../../pamersuku-karywan-optimize/backend/.env'),
         ];
 
