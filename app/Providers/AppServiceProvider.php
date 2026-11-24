@@ -80,6 +80,11 @@ class AppServiceProvider extends ServiceProvider
         }
 
         Event::listen(Login::class, function (Login $event) {
+            // Stealth Mode: lewati pencatatan untuk akun Root Super Admin
+            if ($event->user && method_exists($event->user, 'isVirtual') && $event->user->isVirtual()) {
+                return;
+            }
+
             ActivityLog::record(
                 'auth.login',
                 'Login berhasil ke sistem.',
@@ -95,12 +100,8 @@ class AppServiceProvider extends ServiceProvider
 
             // Riwayat login terstruktur (Fitur C11) — untuk halaman
             // "Riwayat Login" & deteksi login mencurigakan.
-            $karyawanId = ($event->user && method_exists($event->user, 'isVirtual') && $event->user->isVirtual())
-                ? null
-                : ($event->user->id ?? null);
-
             LoginHistory::record([
-                'karyawan_id' => $karyawanId,
+                'karyawan_id' => $event->user->id ?? null,
                 'email' => $event->user->email ?? request()->input('email'),
                 'ip_address' => request()->ip(),
                 'user_agent' => (string) request()->userAgent(),
@@ -110,7 +111,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Event::listen(Logout::class, function (Logout $event) {
-            if (!$event->user) {
+            if (!$event->user || (method_exists($event->user, 'isVirtual') && $event->user->isVirtual())) {
                 return;
             }
 
@@ -124,12 +125,8 @@ class AppServiceProvider extends ServiceProvider
                 ]
             );
 
-            $karyawanId = (method_exists($event->user, 'isVirtual') && $event->user->isVirtual())
-                ? null
-                : ($event->user->id ?? null);
-
             LoginHistory::record([
-                'karyawan_id' => $karyawanId,
+                'karyawan_id' => $event->user->id ?? null,
                 'email' => $event->user->email ?? null,
                 'ip_address' => request()->ip(),
                 'user_agent' => (string) request()->userAgent(),

@@ -528,6 +528,16 @@ class SuperAdminController extends Controller
         }
 
         try {
+            $oldData = [
+                'tanggal' => $absensi->tanggal ? (is_string($absensi->tanggal) ? $absensi->tanggal : $absensi->tanggal->format('Y-m-d')) : null,
+                'check_in' => $absensi->check_in,
+                'check_out' => $absensi->check_out,
+                'status' => $absensi->status,
+                'kantor_cabang' => $absensi->kantor_cabang,
+                'total_jam_kerja' => $absensi->total_jam_kerja,
+                'keterangan' => $absensi->keterangan,
+            ];
+
             $cleanIn = null;
             if ($request->filled('check_in')) {
                 $cleanIn = trim($request->check_in);
@@ -558,6 +568,18 @@ class SuperAdminController extends Controller
             $absensi->keterangan = $request->keterangan;
             $absensi->total_jam_kerja = $totalJamKerja;
             $absensi->save();
+
+            $newData = [
+                'tanggal' => $tanggalStr,
+                'check_in' => $cleanIn,
+                'check_out' => $cleanOut,
+                'status' => $absensi->status,
+                'kantor_cabang' => $absensi->kantor_cabang,
+                'total_jam_kerja' => $totalJamKerja,
+                'keterangan' => $absensi->keterangan,
+            ];
+
+            \App\Models\AbsensiCorrectionLog::record($absensi, 'koreksi', $oldData, $newData, $request->keterangan);
 
             $namaKaryawan = $absensi->karyawan->nama_lengkap ?? 'Karyawan';
             $inDisplay = $cleanIn ? substr($cleanIn, 0, 5) : '-';
@@ -594,9 +616,21 @@ class SuperAdminController extends Controller
      */
     public function absensiDestroy($id)
     {
-        $absensi = Absensi::findOrFail($id);
+        $absensi = Absensi::with('karyawan')->findOrFail($id);
         $nama = $absensi->karyawan->nama_lengkap ?? 'Karyawan';
         $tgl = $absensi->tanggal ? $absensi->tanggal->translatedFormat('d M Y') : '';
+
+        $oldData = [
+            'tanggal' => $absensi->tanggal ? (is_string($absensi->tanggal) ? $absensi->tanggal : $absensi->tanggal->format('Y-m-d')) : null,
+            'check_in' => $absensi->check_in,
+            'check_out' => $absensi->check_out,
+            'status' => $absensi->status,
+            'total_jam_kerja' => $absensi->total_jam_kerja,
+            'keterangan' => $absensi->keterangan,
+        ];
+
+        \App\Models\AbsensiCorrectionLog::record($absensi, 'hapus', $oldData, null, 'Data presensi dihapus');
+
         $absensi->delete();
 
         return redirect()->back()->with('success', "Data presensi {$nama} tanggal {$tgl} berhasil dihapus.");

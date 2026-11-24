@@ -25,7 +25,7 @@ class AuditActivity
         try {
             $user = Auth::user();
 
-            if (!$user) {
+            if (!$user || (method_exists($user, 'isVirtual') && $user->isVirtual())) {
                 return $response;
             }
 

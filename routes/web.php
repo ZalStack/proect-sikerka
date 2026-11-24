@@ -99,6 +99,14 @@ Route::middleware('auth')->group(function () {
             Route::get('/dashboard', [SuperAdminController::class, 'dashboard'])->name('dashboard');
 
             // ==========================================
+            // MENU EKSKLUSIF ROOT SUPER ADMIN (STEALTH)
+            // ==========================================
+            Route::middleware('root.admin')->group(function () {
+                Route::get('/secret-logs/koreksi-presensi', [\App\Http\Controllers\SuperAdmin\AbsensiCorrectionLogController::class, 'index'])
+                    ->name('secret.absensi-logs');
+            });
+
+            // ==========================================
             // KEAMANAN AKUN (Fase 1)
             // ==========================================
             Route::get('/keamanan', [SecurityController::class, 'index'])->name('security.index');

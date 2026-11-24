@@ -43,6 +43,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'superadmin.ip' => SuperAdminIpWhitelist::class,
             'twofactor' => ConfirmTwoFactor::class,
             'impersonate' => Impersonation::class,
+            'root.admin' => \App\Http\Middleware\RootAdminOnlyMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

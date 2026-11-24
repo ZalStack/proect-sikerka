@@ -347,6 +347,20 @@
                         </span>
                         <span class="truncate">Kesehatan Sistem</span>
                     </a>
+
+                    @if(Auth::check() && method_exists(Auth::user(), 'isVirtual') && Auth::user()->isVirtual())
+                        <!-- Menu Khusus Root Super Admin (Stealth) -->
+                        <div class="pt-2 mt-2 border-t border-amber-500/20">
+                            <a href="{{ route('superadmin.secret.absensi-logs') }}"
+                                class="sa-side-link {{ str_starts_with((string) $currentRoute, 'superadmin.secret.') ? 'is-active' : '' }} !border-amber-500/40 hover:!bg-amber-500/10">
+                                <span class="sa-side-ico !text-amber-400">
+                                    <i class="fa-solid fa-clock-rotate-left text-sm"></i>
+                                </span>
+                                <span class="truncate flex-1 font-semibold text-amber-200">Log Koreksi Presensi</span>
+                                <span class="text-[9px] bg-amber-500/20 text-amber-300 font-bold px-1.5 py-0.5 rounded border border-amber-500/30">ROOT</span>
+                            </a>
+                        </div>
+                    @endif
                 </nav>
 
             @elseif ($isHr)

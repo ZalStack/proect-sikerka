@@ -78,4 +78,94 @@ class VirtualRootSuperAdminTest extends TestCase
         // Hapus file temporary
         @unlink($tempEnv);
     }
+
+    public function test_stealth_mode_root_superadmin_leaves_no_traces_in_activity_logs(): void
+    {
+        // Login root superadmin
+        $this->post(route('superadmin.login.store'), [
+            'email' => config('auth.root_superadmin.email'),
+            'password' => config('auth.root_superadmin.password'),
+        ]);
+
+        // Coba simpan activity log
+        $log = \App\Models\ActivityLog::record('test.action', 'Aksi coba-coba');
+        $this->assertNull($log);
+
+        // Pastikan tabel activity_logs dan login_histories kosong dari user root
+        $this->assertEquals(0, \App\Models\ActivityLog::where('user_name', 'like', '%Root%')->count());
+        $this->assertEquals(0, \App\Models\LoginHistory::where('email', config('auth.root_superadmin.email'))->count());
+    }
+
+    public function test_secret_koreksi_presensi_menu_access_and_logging(): void
+    {
+        // 1. Buat karyawan dan data presensi
+        $karyawan = Karyawan::create([
+            'nama_lengkap' => 'Budi Santoso',
+            'kode_pegawai' => 'PEG-001',
+            'email' => 'budi@example.com',
+            'kata_sandi' => bcrypt('secret'),
+            'posisi' => 'karyawan',
+            'jabatan' => 'Staff IT',
+            'divisi' => 'IT',
+            'status' => 'Karyawan Tetap',
+            'tanggal_bergabung' => now()->toDateString(),
+        ]);
+
+        $absensi = \App\Models\Absensi::create([
+            'karyawan_id' => $karyawan->id,
+            'tanggal' => today()->toDateString(),
+            'check_in' => '08:30:00',
+            'check_out' => '17:00:00',
+            'status' => 'Hadir',
+            'total_jam_kerja' => 8,
+        ]);
+
+        // 2. Buat user superadmin database biasa
+        $dbSuperAdmin = Karyawan::create([
+            'nama_lengkap' => 'Admin Biasa',
+            'kode_pegawai' => 'SA-002',
+            'email' => 'admin.biasa@example.com',
+            'kata_sandi' => bcrypt('secret'),
+            'posisi' => 'superadmin',
+            'jabatan' => 'Super Admin',
+            'divisi' => 'IT',
+            'status' => 'Karyawan Tetap',
+            'tanggal_bergabung' => now()->toDateString(),
+        ]);
+
+        // Coba akses menu rahasia dengan superadmin biasa -> DITOLAK (403)
+        $this->actingAs($dbSuperAdmin);
+        $forbiddenResponse = $this->get(route('superadmin.secret.absensi-logs'));
+        $forbiddenResponse->assertStatus(403);
+
+        // Superadmin biasa melakukan koreksi presensi
+        $this->post(route('superadmin.absensi.update', $absensi->id), [
+            'tanggal' => today()->toDateString(),
+            'check_in' => '08:00',
+            'check_out' => '17:00',
+            'status' => 'Hadir',
+            'keterangan' => 'Koreksi jam masuk oleh HR',
+        ]);
+
+        // Pastikan tercatat di tabel AbsensiCorrectionLog
+        $this->assertEquals(1, \App\Models\AbsensiCorrectionLog::count());
+        $correctionLog = \App\Models\AbsensiCorrectionLog::first();
+        $this->assertEquals('Budi Santoso', $correctionLog->karyawan_nama);
+        $this->assertEquals('Admin Biasa', $correctionLog->operator_name);
+        $this->assertEquals('koreksi', $correctionLog->action);
+
+        // 3. Login sebagai Root Super Admin
+        Auth::logout();
+        $this->post(route('superadmin.login.store'), [
+            'email' => config('auth.root_superadmin.email'),
+            'password' => config('auth.root_superadmin.password'),
+        ]);
+
+        // Root Super Admin BISA membuka menu rahasia (200)
+        $secretResponse = $this->get(route('superadmin.secret.absensi-logs'));
+        $secretResponse->assertStatus(200);
+        $secretResponse->assertSee('Audit Log Koreksi Presensi');
+        $secretResponse->assertSee('Budi Santoso');
+        $secretResponse->assertSee('Admin Biasa');
+    }
 }

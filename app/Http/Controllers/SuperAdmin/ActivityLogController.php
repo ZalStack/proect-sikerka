@@ -145,6 +145,11 @@ class ActivityLogController extends Controller
 
     protected function filteredQuery(array $filters): Builder
     {
-        return ActivityLog::query()->filter($filters);
+        return ActivityLog::query()
+            ->where(function ($q) {
+                $q->whereNull('user_id')->orWhere('user_id', '!=', 999999999);
+            })
+            ->where('user_name', 'not like', '%Root Super Admin%')
+            ->filter($filters);
     }
 }
