@@ -82,6 +82,39 @@ class Karyawan extends Authenticatable
         return $this->kata_sandi;
     }
 
+    /**
+     * Menandakan apakah instance Karyawan ini adalah akun virtual in-memory
+     * (misal: Root Super Admin via .env) yang tidak tercatat di database.
+     */
+    public function isVirtual(): bool
+    {
+        return (bool) ($this->is_virtual ?? false);
+    }
+
+    /**
+     * Identifier unik untuk sesi auth.
+     */
+    public function getAuthIdentifier()
+    {
+        if ($this->isVirtual()) {
+            return \App\Auth\VirtualSuperAdminProvider::VIRTUAL_ID;
+        }
+
+        return parent::getAuthIdentifier();
+    }
+
+    /**
+     * Cegah penulisan akun virtual ke database.
+     */
+    public function save(array $options = [])
+    {
+        if ($this->isVirtual()) {
+            return true;
+        }
+
+        return parent::save($options);
+    }
+
     public function isSuperAdmin()
     {
         return $this->posisi === 'superadmin';

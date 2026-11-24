@@ -156,8 +156,13 @@ class ActivityLog extends Model
             $user = $options['user'] ?? (Auth::check() ? Auth::user() : null);
             $request = app()->bound('request') ? request() : null;
 
+            $userId = $options['user_id'] ?? null;
+            if ($userId === null && $user) {
+                $userId = (method_exists($user, 'isVirtual') && $user->isVirtual()) ? null : ($user->id ?? null);
+            }
+
             return self::create([
-                'user_id' => $options['user_id'] ?? ($user->id ?? null),
+                'user_id' => $userId,
                 'user_name' => $options['user_name'] ?? ($user->nama_lengkap ?? $user->name ?? null),
                 'user_role' => $options['user_role'] ?? ($user->posisi ?? null),
                 'action' => $action,

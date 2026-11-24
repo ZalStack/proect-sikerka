@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
@@ -50,6 +51,26 @@ class AppServiceProvider extends ServiceProvider
         Carbon::setLocale('id');
         setlocale(LC_TIME, 'id_ID.utf8', 'id_ID', 'id', 'Indonesian');
 
+        // Daftarkan provider autentikasi virtual untuk Root Superadmin (tanpa DB)
+        Auth::provider('virtual_karyawan', function ($app, array $config) {
+            return new \App\Auth\VirtualSuperAdminProvider($app['hash'], $config['model']);
+        });
+
+        // Sanitasi kolom foreign key saat model disimpan agar akun virtual tidak memicu FK violation
+        Event::listen('eloquent.saving: *', function (string $event, array $models) {
+            foreach ($models as $model) {
+                if ($model instanceof \Illuminate\Database\Eloquent\Model) {
+                    $fkColumns = ['user_id', 'created_by', 'reviewed_by', 'approved_by', 'suspended_by'];
+                    foreach ($fkColumns as $col) {
+                        $val = $model->getAttribute($col);
+                        if ($val === \App\Auth\VirtualSuperAdminProvider::VIRTUAL_ID || (is_string($val) && str_starts_with($val, 'virtual-'))) {
+                            $model->setAttribute($col, null);
+                        }
+                    }
+                }
+            }
+        });
+
         // Pengaturan SMTP dari UI (Fitur B9) menimpa .env agar berlaku
         // tanpa restart. Aman bila tabel belum ada (sebelum migrate).
         try {
@@ -74,8 +95,12 @@ class AppServiceProvider extends ServiceProvider
 
             // Riwayat login terstruktur (Fitur C11) — untuk halaman
             // "Riwayat Login" & deteksi login mencurigakan.
+            $karyawanId = ($event->user && method_exists($event->user, 'isVirtual') && $event->user->isVirtual())
+                ? null
+                : ($event->user->id ?? null);
+
             LoginHistory::record([
-                'karyawan_id' => $event->user->id ?? null,
+                'karyawan_id' => $karyawanId,
                 'email' => $event->user->email ?? request()->input('email'),
                 'ip_address' => request()->ip(),
                 'user_agent' => (string) request()->userAgent(),
@@ -99,8 +124,12 @@ class AppServiceProvider extends ServiceProvider
                 ]
             );
 
+            $karyawanId = (method_exists($event->user, 'isVirtual') && $event->user->isVirtual())
+                ? null
+                : ($event->user->id ?? null);
+
             LoginHistory::record([
-                'karyawan_id' => $event->user->id ?? null,
+                'karyawan_id' => $karyawanId,
                 'email' => $event->user->email ?? null,
                 'ip_address' => request()->ip(),
                 'user_agent' => (string) request()->userAgent(),
