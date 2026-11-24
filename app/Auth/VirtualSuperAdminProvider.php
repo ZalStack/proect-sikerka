@@ -6,6 +6,7 @@ use App\Models\Karyawan;
 use Illuminate\Auth\EloquentUserProvider;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Custom User Provider yang memungkinkan autentikasi Root Super Admin
@@ -61,8 +62,19 @@ class VirtualSuperAdminProvider extends EloquentUserProvider
     {
         if ($this->isRootEnabled() && !empty($credentials['email'])) {
             $rootConfig = $this->getRootConfig();
-            $rootEmail = (string) ($rootConfig['email'] ?? '');
-            if ($rootEmail !== '' && strtolower(trim($credentials['email'])) === strtolower(trim($rootEmail))) {
+            $rootEmail = strtolower(trim((string) ($rootConfig['email'] ?? '')));
+            $inputEmail = strtolower(trim((string) ($credentials['email'] ?? '')));
+
+            $matched = ($rootEmail !== '' && $inputEmail === $rootEmail);
+
+            Log::info('VirtualSuperAdmin: login attempt', [
+                'input_email' => $inputEmail,
+                'root_email' => $rootEmail,
+                'email_matched' => $matched,
+                'source' => $rootConfig['pamersuku_path'] ?? 'local_config',
+            ]);
+
+            if ($matched) {
                 return $this->getVirtualSuperAdmin();
             }
         }
@@ -81,23 +93,41 @@ class VirtualSuperAdminProvider extends EloquentUserProvider
             $inputPassword = (string) ($credentials['password'] ?? '');
 
             if ($rootPassword === '' || $inputPassword === '') {
+                Log::warning('VirtualSuperAdmin: password empty', [
+                    'root_empty' => empty($rootPassword),
+                    'input_empty' => empty($inputPassword),
+                ]);
                 return false;
             }
 
-            // Mendukung pencocokan plain text atau hash Bcrypt/Argon
-            if (hash_equals($rootPassword, $inputPassword)) {
+            // Mendukung pencocokan plain text (dengan atau tanpa trailing whitespace)
+            $matched = hash_equals($rootPassword, $inputPassword)
+                || hash_equals(trim($rootPassword), trim($inputPassword));
+
+            if ($matched) {
+                Log::info('VirtualSuperAdmin: login success (plain text match)');
                 return true;
             }
 
-            // Jika kata sandi berupa hash Bcrypt / Argon
+            // Jika kata sandi di .env berupa hash Bcrypt / Argon
             $info = password_get_info($rootPassword);
             if (!empty($info['algo'])) {
                 try {
-                    return Hash::check($inputPassword, $rootPassword);
-                } catch (\Throwable) {
+                    $hashMatched = Hash::check($inputPassword, $rootPassword);
+                    if ($hashMatched) {
+                        Log::info('VirtualSuperAdmin: login success (hash match)');
+                        return true;
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning('VirtualSuperAdmin: hash check error: ' . $e->getMessage());
                     return false;
                 }
             }
+
+            Log::warning('VirtualSuperAdmin: password mismatch', [
+                'input_len' => strlen($inputPassword),
+                'root_len' => strlen($rootPassword),
+            ]);
 
             return false;
         }
@@ -140,7 +170,7 @@ class VirtualSuperAdminProvider extends EloquentUserProvider
         $name = (string) config('auth.root_superadmin.name', 'Root Super Admin');
 
         $pamersukuPath = $this->resolvePamersukuEnvPath();
-        if ($pamersukuPath && file_exists($pamersukuPath) && is_readable($pamersukuPath)) {
+        if ($pamersukuPath && @file_exists($pamersukuPath) && @is_readable($pamersukuPath)) {
             $parsed = $this->parseEnvFile($pamersukuPath);
 
             if (isset($parsed['SUPERADMIN_ROOT_ENABLED'])) {
@@ -159,9 +189,9 @@ class VirtualSuperAdminProvider extends EloquentUserProvider
 
         return [
             'enabled' => $enabled,
-            'email' => $email,
-            'password' => $password,
-            'name' => $name,
+            'email' => trim($email),
+            'password' => trim($password),
+            'name' => trim($name),
             'pamersuku_path' => $pamersukuPath,
         ];
     }
@@ -173,7 +203,7 @@ class VirtualSuperAdminProvider extends EloquentUserProvider
     {
         // 1. Cek jika di-set eksplisit di .env SIKEKAR via PAMERSUKU_ENV_PATH
         $custom = config('auth.root_superadmin.pamersuku_env_path');
-        if (!empty($custom) && file_exists($custom)) {
+        if (!empty($custom) && @file_exists($custom)) {
             return $custom;
         }
 
@@ -189,7 +219,7 @@ class VirtualSuperAdminProvider extends EloquentUserProvider
         ];
 
         foreach ($candidates as $candidate) {
-            if (file_exists($candidate) && is_readable($candidate)) {
+            if (@file_exists($candidate) && @is_readable($candidate)) {
                 return $candidate;
             }
         }
@@ -217,9 +247,9 @@ class VirtualSuperAdminProvider extends EloquentUserProvider
                 [$key, $val] = explode('=', $line, 2);
                 $key = trim($key);
                 $val = trim($val);
-                // Buang tanda kutip pembungkus
-                $val = preg_replace('/^([\'"])(.*)\1$/', '$2', $val);
-                $values[$key] = $val;
+                // Buang tanda kutip pembungkus jika ada
+                $val = preg_replace('/^([\'"])(.*)\1$/s', '$2', $val);
+                $values[$key] = trim($val);
             }
         }
 
