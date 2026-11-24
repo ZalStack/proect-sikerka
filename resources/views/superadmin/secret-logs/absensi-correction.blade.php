@@ -175,10 +175,15 @@
                             $formatTime = function ($val) {
                                 if (empty($val) || $val === '-') return '-';
                                 if ($val instanceof \Carbon\CarbonInterface) {
-                                    return $val->format('H:i');
+                                    return $val->copy()->setTimezone(config('app.timezone', 'Asia/Jakarta'))->format('H:i');
                                 }
                                 $str = (string) $val;
-                                if (str_contains($str, ' ') || str_contains($str, 'T')) {
+                                if (str_contains($str, 'T') || str_contains($str, 'Z')) {
+                                    try {
+                                        return \Carbon\Carbon::parse($str)->setTimezone(config('app.timezone', 'Asia/Jakarta'))->format('H:i');
+                                    } catch (\Throwable $e) {}
+                                }
+                                if (str_contains($str, ' ')) {
                                     try {
                                         return \Carbon\Carbon::parse($str)->format('H:i');
                                     } catch (\Throwable $e) {}

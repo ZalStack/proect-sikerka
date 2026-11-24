@@ -531,10 +531,15 @@ class SuperAdminController extends Controller
             $formatTimeValue = function ($val) {
                 if (empty($val)) return null;
                 if ($val instanceof \Carbon\CarbonInterface) {
-                    return $val->format('H:i');
+                    return $val->copy()->setTimezone(config('app.timezone', 'Asia/Jakarta'))->format('H:i');
                 }
                 $val = (string) $val;
-                if (str_contains($val, ' ') || str_contains($val, 'T')) {
+                if (str_contains($val, 'T') || str_contains($val, 'Z')) {
+                    try {
+                        return Carbon::parse($val)->setTimezone(config('app.timezone', 'Asia/Jakarta'))->format('H:i');
+                    } catch (\Throwable $e) {}
+                }
+                if (str_contains($val, ' ')) {
                     try {
                         return Carbon::parse($val)->format('H:i');
                     } catch (\Throwable $e) {}
@@ -640,10 +645,15 @@ class SuperAdminController extends Controller
         $formatTimeValue = function ($val) {
             if (empty($val)) return null;
             if ($val instanceof \Carbon\CarbonInterface) {
-                return $val->format('H:i');
+                return $val->copy()->setTimezone(config('app.timezone', 'Asia/Jakarta'))->format('H:i');
             }
             $val = (string) $val;
-            if (str_contains($val, ' ') || str_contains($val, 'T')) {
+            if (str_contains($val, 'T') || str_contains($val, 'Z')) {
+                try {
+                    return Carbon::parse($val)->setTimezone(config('app.timezone', 'Asia/Jakarta'))->format('H:i');
+                } catch (\Throwable $e) {}
+            }
+            if (str_contains($val, ' ')) {
                 try {
                     return Carbon::parse($val)->format('H:i');
                 } catch (\Throwable $e) {}
