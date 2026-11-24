@@ -11,6 +11,7 @@ class AbsensiCorrectionLogController extends Controller
     public function index(Request $request)
     {
         $search = trim((string) $request->input('search'));
+        $karyawanId = $request->input('karyawan_id');
         $action = $request->input('action');
         $operator = $request->input('operator');
         $from = $request->input('from');
@@ -25,6 +26,10 @@ class AbsensiCorrectionLogController extends Controller
                   ->orWhere('operator_name', 'like', "%{$search}%")
                   ->orWhere('keterangan', 'like', "%{$search}%");
             });
+        }
+
+        if ($karyawanId) {
+            $query->where('karyawan_id', $karyawanId);
         }
 
         if ($action) {
@@ -53,8 +58,13 @@ class AbsensiCorrectionLogController extends Controller
         ];
 
         $operatorList = AbsensiCorrectionLog::distinct()->pluck('operator_name')->filter()->values();
+        $karyawanList = AbsensiCorrectionLog::select('karyawan_id', 'karyawan_nama', 'karyawan_kode')
+            ->whereNotNull('karyawan_nama')
+            ->groupBy('karyawan_id', 'karyawan_nama', 'karyawan_kode')
+            ->orderBy('karyawan_nama')
+            ->get();
 
-        return view('superadmin.secret-logs.absensi-correction', compact('logs', 'stats', 'operatorList', 'search', 'action', 'operator', 'from', 'to'));
+        return view('superadmin.secret-logs.absensi-correction', compact('logs', 'stats', 'operatorList', 'karyawanList', 'karyawanId', 'search', 'action', 'operator', 'from', 'to'));
     }
 
     /**
