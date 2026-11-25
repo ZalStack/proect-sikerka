@@ -508,4 +508,211 @@ class Phase7ManajemenCutiTest extends TestCase
 
         $this->assertSame(20, CutiPolicy::kuotaFor($k, now()->year, 'Cuti Tahunan'));
     }
+
+    public function test_superadmin_can_access_kuota_tab(): void
+    {
+        $sa = $this->makeSuperadmin();
+        $k = $this->makeKaryawan();
+        Cuti::getOrCreateKuota($k->id, 'Cuti Tahunan');
+
+        $response = $this->actingAs($sa)->get(route('superadmin.manajemen-cuti.index', ['tab' => 'kuota']));
+        $response->assertOk();
+        $response->assertSee('Saldo &amp; Kuota Cuti Tersedia Tiap Karyawan', false);
+        $response->assertSee($k->nama_lengkap);
+    }
+
+    public function test_superadmin_can_store_jadwal_cuti_for_karyawan(): void
+    {
+        $sa = $this->makeSuperadmin();
+        $k = $this->makeKaryawan();
+        CutiType::seedDefaults();
+
+        $kuota = Cuti::getOrCreateKuota($k->id, 'Cuti Tahunan');
+        $this->assertSame(12, (int) $kuota->sisa_cuti);
+
+        $mulai = now()->addDays(2)->toDateString();
+        $selesai = now()->addDays(4)->toDateString(); // 3 hari
+
+        $response = $this->actingAs($sa)->post(route('superadmin.manajemen-cuti.jadwal.store'), [
+            'karyawan_id' => $k->id,
+            'jenis_cuti' => 'Cuti Tahunan',
+            'tanggal_mulai' => $mulai,
+            'tanggal_selesai' => $selesai,
+            'keterangan' => 'Jadwal cuti dinas dari Super Admin',
+            'status' => 'approved',
+        ]);
+
+        $response->assertRedirect(route('superadmin.manajemen-cuti.index', ['tab' => 'pengajuan']));
+        $response->assertSessionHas('success');
+
+        $kuota->refresh();
+        $this->assertSame(9, (int) $kuota->sisa_cuti);
+        $this->assertSame(3, (int) $kuota->cuti_digunakan);
+
+        $jadwal = Cuti::pengajuan()->where('karyawan_id', $k->id)->first();
+        $this->assertNotNull($jadwal);
+        $this->assertSame('approved', $jadwal->status);
+        $this->assertSame(3, $jadwal->durasi);
+
+        // Audit log tercatat
+        $log = ActivityLog::where('action', 'cuti.jadwal_create')->latest('id')->first();
+        $this->assertNotNull($log);
+    }
+
+    public function test_superadmin_cannot_store_jadwal_if_dates_conflict(): void
+    {
+        $sa = $this->makeSuperadmin();
+        $k = $this->makeKaryawan();
+        CutiType::seedDefaults();
+
+        Cuti::create([
+            'karyawan_id' => $k->id,
+            'jenis_cuti' => 'Cuti Tahunan',
+            'tanggal_mulai' => now()->addDays(3)->toDateString(),
+            'tanggal_selesai' => now()->addDays(6)->toDateString(),
+            'status' => 'approved',
+            'keterangan' => 'Cuti awal',
+        ]);
+
+        // Coba jadwalkan tanggal yang bertabrakan
+        $response = $this->actingAs($sa)->post(route('superadmin.manajemen-cuti.jadwal.store'), [
+            'karyawan_id' => $k->id,
+            'jenis_cuti' => 'Cuti Tahunan',
+            'tanggal_mulai' => now()->addDays(5)->toDateString(),
+            'tanggal_selesai' => now()->addDays(8)->toDateString(),
+            'keterangan' => 'Bentrok',
+            'status' => 'pending',
+        ]);
+
+        $response->assertSessionHas('error');
+    }
+
+    public function test_superadmin_can_update_jadwal_cuti_and_adjusts_quota(): void
+    {
+        $sa = $this->makeSuperadmin();
+        $k = $this->makeKaryawan();
+        CutiType::seedDefaults();
+
+        $kuota = Cuti::getOrCreateKuota($k->id, 'Cuti Tahunan');
+
+        // Buat jadwal awal 2 hari (addDays 2 s/d 3)
+        $jadwal = Cuti::create([
+            'karyawan_id' => $k->id,
+            'jenis_cuti' => 'Cuti Tahunan',
+            'jatah_cuti' => 12,
+            'sisa_cuti' => 10,
+            'cuti_digunakan' => 2,
+            'tanggal_mulai' => now()->addDays(2)->toDateString(),
+            'tanggal_selesai' => now()->addDays(3)->toDateString(), // 2 hari
+            'status' => 'approved',
+            'keterangan' => 'Jadwal awal',
+        ]);
+        $kuota->update(['sisa_cuti' => 10, 'cuti_digunakan' => 2]);
+
+        // Update menjadi 4 hari (menambah 2 hari jadwal cuti)
+        $response = $this->actingAs($sa)->put(route('superadmin.manajemen-cuti.jadwal.update', $jadwal->id), [
+            'tanggal_mulai' => now()->addDays(2)->toDateString(),
+            'tanggal_selesai' => now()->addDays(5)->toDateString(), // 4 hari (+2 hari)
+            'keterangan' => 'Perpanjang jadwal cuti',
+            'status' => 'approved',
+        ]);
+
+        $response->assertRedirect(route('superadmin.manajemen-cuti.index', ['tab' => 'pengajuan']));
+        $kuota->refresh();
+        $this->assertSame(8, (int) $kuota->sisa_cuti);
+        $this->assertSame(4, (int) $kuota->cuti_digunakan);
+
+        // Update menjadi 1 hari (mengurangi 3 hari jadwal cuti)
+        $response2 = $this->actingAs($sa)->put(route('superadmin.manajemen-cuti.jadwal.update', $jadwal->id), [
+            'tanggal_mulai' => now()->addDays(2)->toDateString(),
+            'tanggal_selesai' => now()->addDays(2)->toDateString(), // 1 hari (-3 hari)
+            'keterangan' => 'Perpendek jadwal cuti',
+            'status' => 'approved',
+        ]);
+
+        $response2->assertRedirect(route('superadmin.manajemen-cuti.index', ['tab' => 'pengajuan']));
+        $kuota->refresh();
+        $this->assertSame(11, (int) $kuota->sisa_cuti);
+        $this->assertSame(1, (int) $kuota->cuti_digunakan);
+    }
+
+    public function test_superadmin_can_delete_jadwal_cuti_and_restores_quota(): void
+    {
+        $sa = $this->makeSuperadmin();
+        $k = $this->makeKaryawan();
+        CutiType::seedDefaults();
+
+        $kuota = Cuti::getOrCreateKuota($k->id, 'Cuti Tahunan');
+        $kuota->update(['sisa_cuti' => 9, 'cuti_digunakan' => 3]);
+
+        $jadwal = Cuti::create([
+            'karyawan_id' => $k->id,
+            'jenis_cuti' => 'Cuti Tahunan',
+            'jatah_cuti' => 12,
+            'sisa_cuti' => 9,
+            'cuti_digunakan' => 3,
+            'tanggal_mulai' => now()->addDays(2)->toDateString(),
+            'tanggal_selesai' => now()->addDays(4)->toDateString(), // 3 hari
+            'status' => 'approved',
+            'keterangan' => 'Jadwal yang akan dihapus',
+        ]);
+
+        $response = $this->actingAs($sa)->delete(route('superadmin.manajemen-cuti.jadwal.destroy', $jadwal->id));
+        $response->assertRedirect(route('superadmin.manajemen-cuti.index', ['tab' => 'pengajuan']));
+
+        $kuota->refresh();
+        $this->assertSame(12, (int) $kuota->sisa_cuti);
+        $this->assertSame(0, (int) $kuota->cuti_digunakan);
+        $this->assertNull(Cuti::find($jadwal->id));
+    }
+
+    public function test_superadmin_can_adjust_kuota_tambah_kurang_and_set(): void
+    {
+        $sa = $this->makeSuperadmin();
+        $k = $this->makeKaryawan();
+        CutiType::seedDefaults();
+
+        $kuota = Cuti::getOrCreateKuota($k->id, 'Cuti Tahunan');
+        $this->assertSame(12, (int) $kuota->sisa_cuti);
+
+        // 1. Tambah Kuota (+3 hari)
+        $resTambah = $this->actingAs($sa)->post(route('superadmin.manajemen-cuti.kuota.adjust'), [
+            'karyawan_id' => $k->id,
+            'jenis_cuti' => 'Cuti Tahunan',
+            'action_type' => 'tambah',
+            'jumlah_hari' => 3,
+            'alasan' => 'Bonus lembur akhir tahun',
+        ]);
+        $resTambah->assertRedirect(route('superadmin.manajemen-cuti.index', ['tab' => 'kuota']));
+        $kuota->refresh();
+        $this->assertSame(15, (int) $kuota->sisa_cuti);
+        $this->assertSame(15, (int) $kuota->jatah_cuti);
+
+        // 2. Kurang Kuota (-2 hari)
+        $resKurang = $this->actingAs($sa)->post(route('superadmin.manajemen-cuti.kuota.adjust'), [
+            'karyawan_id' => $k->id,
+            'jenis_cuti' => 'Cuti Tahunan',
+            'action_type' => 'kurang',
+            'jumlah_hari' => 2,
+            'alasan' => 'Penyesuaian keterlambatan',
+        ]);
+        $resKurang->assertRedirect(route('superadmin.manajemen-cuti.index', ['tab' => 'kuota']));
+        $kuota->refresh();
+        $this->assertSame(13, (int) $kuota->sisa_cuti);
+        $this->assertSame(13, (int) $kuota->jatah_cuti);
+
+        // 3. Set Manual (jatah 10, sisa 8)
+        $resSet = $this->actingAs($sa)->post(route('superadmin.manajemen-cuti.kuota.adjust'), [
+            'karyawan_id' => $k->id,
+            'jenis_cuti' => 'Cuti Tahunan',
+            'action_type' => 'set',
+            'jatah_baru' => 10,
+            'sisa_baru' => 8,
+            'alasan' => 'Penetapan ulang saldo kuota',
+        ]);
+        $resSet->assertRedirect(route('superadmin.manajemen-cuti.index', ['tab' => 'kuota']));
+        $kuota->refresh();
+        $this->assertSame(10, (int) $kuota->jatah_cuti);
+        $this->assertSame(8, (int) $kuota->sisa_cuti);
+    }
 }

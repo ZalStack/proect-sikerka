@@ -22,29 +22,7 @@ class CutiController extends Controller
      */
     private function getOrCreateKuota(int $karyawanId, string $jenisCuti = 'Cuti Tahunan'): Cuti
     {
-        $kuota = Cuti::kuota()
-            ->where('karyawan_id', $karyawanId)
-            ->where('jenis_cuti', $jenisCuti)
-            ->first();
-
-        if (!$kuota) {
-            $karyawan = Karyawan::find($karyawanId);
-            $jatah = $karyawan
-                ? \App\Models\CutiPolicy::kuotaFor($karyawan, now()->year, $jenisCuti)
-                : 12;
-
-            $kuota = Cuti::create([
-                'karyawan_id' => $karyawanId,
-                'jenis_cuti' => $jenisCuti,
-                'jatah_cuti' => $jatah,
-                'sisa_cuti' => $jatah,
-                'cuti_digunakan' => 0,
-                'status' => 'approved',
-                'tanggal_pengajuan' => Carbon::now(),
-            ]);
-        }
-
-        return $kuota;
+        return Cuti::getOrCreateKuota($karyawanId, $jenisCuti);
     }
 
     /**
@@ -53,10 +31,7 @@ class CutiController extends Controller
      */
     private function findKuota(int $karyawanId, string $jenisCuti = 'Cuti Tahunan'): ?Cuti
     {
-        return Cuti::kuota()
-            ->where('karyawan_id', $karyawanId)
-            ->where('jenis_cuti', $jenisCuti)
-            ->first();
+        return Cuti::findKuota($karyawanId, $jenisCuti);
     }
 
     /**

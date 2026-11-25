@@ -56,11 +56,52 @@ class Cuti extends Model
         return $query->whereNotNull('tanggal_mulai');
     }
 
+    /**
+     * Cari atau buat baris kuota cuti untuk karyawan dan jenis cuti tertentu.
+     */
+    public static function getOrCreateKuota(int $karyawanId, string $jenisCuti = 'Cuti Tahunan'): self
+    {
+        $kuota = self::kuota()
+            ->where('karyawan_id', $karyawanId)
+            ->where('jenis_cuti', $jenisCuti)
+            ->first();
+
+        if (!$kuota) {
+            $karyawan = Karyawan::find($karyawanId);
+            $jatah = $karyawan
+                ? \App\Models\CutiPolicy::kuotaFor($karyawan, now()->year, $jenisCuti)
+                : (\App\Models\CutiType::where('nama', $jenisCuti)->value('kuota_hari') ?? 12);
+
+            $kuota = self::create([
+                'karyawan_id' => $karyawanId,
+                'jenis_cuti' => $jenisCuti,
+                'jatah_cuti' => $jatah,
+                'sisa_cuti' => $jatah,
+                'cuti_digunakan' => 0,
+                'status' => 'approved',
+                'tanggal_pengajuan' => \Carbon\Carbon::now(),
+            ]);
+        }
+
+        return $kuota;
+    }
+
+    /**
+     * Cari baris kuota tanpa membuat baru jika belum ada.
+     */
+    public static function findKuota(int $karyawanId, string $jenisCuti = 'Cuti Tahunan'): ?self
+    {
+        return self::kuota()
+            ->where('karyawan_id', $karyawanId)
+            ->where('jenis_cuti', $jenisCuti)
+            ->first();
+    }
+
     // Hitung durasi cuti dalam hari
-    public function getDurasiAttribute()
+    public function getDurasiAttribute(): int
     {
         if ($this->tanggal_mulai && $this->tanggal_selesai) {
-            return $this->tanggal_mulai->diffInDays($this->tanggal_selesai) + 1;
+            return (int) $this->tanggal_mulai->diffInDays($this->tanggal_selesai) + 1;
         }
         return 0;
     }

@@ -194,13 +194,17 @@ Route::middleware('auth')->group(function () {
             Route::match(['PUT', 'POST'], '/kebijakan-cuti/{cutiPolicy}', [CutiPolicyController::class, 'update'])->name('cuti-policies.update');
             Route::delete('/kebijakan-cuti/{cutiPolicy}', [CutiPolicyController::class, 'destroy'])->name('cuti-policies.destroy');
 
-            // Manajemen Cuti Superadmin (Hub 2 tab: Pengaturan Jenis + Pengajuan Karyawan)
+            // Manajemen Cuti Superadmin (Hub 3 tab: Pengaturan Jenis + Pengajuan/Jadwal Karyawan + Kuota Karyawan)
             Route::get('/manajemen-cuti', [ManajemenCutiController::class, 'index'])->name('manajemen-cuti.index');
             Route::post('/manajemen-cuti/type', [ManajemenCutiController::class, 'storeType'])->name('manajemen-cuti.type.store');
             Route::match(['PUT', 'POST'], '/manajemen-cuti/type/{cutiType}', [ManajemenCutiController::class, 'updateType'])->name('manajemen-cuti.type.update');
             Route::delete('/manajemen-cuti/type/{cutiType}', [ManajemenCutiController::class, 'destroyType'])->name('manajemen-cuti.type.destroy');
             Route::post('/manajemen-cuti/approve/{id}', [CutiController::class, 'approve'])->name('manajemen-cuti.approve');
             Route::post('/manajemen-cuti/bulk-approve', [CutiController::class, 'bulkApprove'])->name('manajemen-cuti.bulk-approve');
+            Route::post('/manajemen-cuti/jadwal', [ManajemenCutiController::class, 'storeJadwal'])->name('manajemen-cuti.jadwal.store');
+            Route::match(['PUT', 'POST'], '/manajemen-cuti/jadwal/{cuti}', [ManajemenCutiController::class, 'updateJadwal'])->name('manajemen-cuti.jadwal.update');
+            Route::delete('/manajemen-cuti/jadwal/{cuti}', [ManajemenCutiController::class, 'destroyJadwal'])->name('manajemen-cuti.jadwal.destroy');
+            Route::post('/manajemen-cuti/kuota/adjust', [ManajemenCutiController::class, 'adjustKuota'])->name('manajemen-cuti.kuota.adjust');
 
             // Offboarding terpusat (resign, arsip, pulihkan)
             Route::get('/offboarding', [OffboardingController::class, 'index'])->name('offboarding.index');
